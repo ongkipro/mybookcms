@@ -163,7 +163,7 @@ export function ContentWorkbench() {
       if (!response.ok || !payload.success) {
         throw new Error(payload.error || "Media gagal diunggah.");
       }
-      setMediaUrl(String(payload.data?.url || ""));
+      setMediaUrl(String(payload.url || ""));
       event.currentTarget.reset();
       toast.success("Media tenant tersimpan di R2.");
     } catch (error) {

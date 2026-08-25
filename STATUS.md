@@ -8,19 +8,24 @@ The Malaysia cutover is locally integrated. Active runtime money is MYR integer
 sen; checkout supports COD/manual transfer; D1 owns Malaysia postcode/weight
 shipping; Pengiriman is manual; the storefront uses one controlled Malaysia
 hybrid voice; and inherited external logistics, automatic payment, TikTok, and
-Indonesian address runtime paths are removed. Meta Pixel/CAPI and Google GTM/Ads
-configuration are restored, together with one read-only Google
-Merchant-compatible catalog URL shared by Google and Meta.
+Indonesian address runtime paths are removed. Configured Meta Pixel/CAPI and
+Google GTM/Ads load directly for this Malaysia storefront. Accepted orders write
+server Purchase into the same D1 batch, the thanks-page browser leg deduplicates
+against it, and a one-minute schedule drains the outbox independently. Migration
+`0057` restores the order-attribution column accidentally omitted by the Malaysia
+table rebuild. One read-only Merchant-compatible catalog URL is shared by Google
+and Meta.
 
 No remote D1 migration or deployment has been performed for this install.
 Therefore no hosted or production behaviour is claimed.
 
 ## Verified local evidence
 
-- Local D1 is at schema version 56 with 2,931 official Malaysia postcode rows,
-  16 active state/WP first-kilogram reference rates and five weight bands in
-  each of four broad fallback zones. Obsolete
-  provider/ad/payment tables are absent.
+- Local D1 is at schema version 58 with 2,931 official Malaysia postcode rows,
+  four active zones/ranges, complete directory coverage including Kalabakan
+  `91400`, 16 active state/WP first-kilogram reference rates, five contiguous
+  fallback bands in each zone, and the restored `orders.ad_click_ids` column.
+  Obsolete provider/payment tables are absent.
 - Preview data contains three fictional products with one published hybrid
   Malaysia presentation, one fictional Maybank account, editable reference
   rates, two COD orders, and one manual-transfer order.
@@ -30,8 +35,8 @@ Therefore no hosted or production behaviour is claimed.
   and RM15/26/39/48/60 in Sabah, Sarawak, and Labuan.
 - Dashboard data contains three active orders worth RM94.70; unfiltered order
   listing returns `200` and uses MYR metadata.
-- `npm test`: 298 tests, 297 passed, 0 failed, 1 intentionally skipped.
-- `npm run check`: 303 files, 0 errors, 0 warnings, 0 hints.
+- `npm test`: 309 tests, 308 passed, 0 failed, 1 intentionally skipped.
+- `npm run check`: 307 files, 0 errors, 0 warnings, 0 hints.
 - `npm run build`: Cloudflare server build completed.
 - Public locale code, cookies, query overrides, Headless locale parameters, and
   admin language selectors are absent. The storefront document language is
@@ -173,46 +178,60 @@ Therefore no hosted or production behaviour is claimed.
 
 ### Scope and verified health
 
-- The executable tree contains 361 TypeScript, TSX, Astro, CSS, and SQL source
-  files (49,536 lines), including 96 page/route files, 38 API handlers, 56
-  forward-only migrations, 63 Node test files, 41 React components, and 19
-  Astro components.
+- The executable tree includes 58 forward-only migrations and 66 Node test
+  files. The runtime surface remains Astro 7 SSR on Cloudflare Workers.
 - The runtime boundary is coherent: Astro 7 SSR on Cloudflare Workers, D1 as
   commerce authority, KV for sessions and bounded counters, R2 for merchant
   media, one Malaysia store per install, MYR integer sen, and no external
   payment or logistics dependency.
-- `npm test` passed 297 of 298 tests with one intentional skip. Node's
-  experimental coverage report measured 82.47% lines, 73.80% branches, and
-  83.37% functions among modules loaded by the suite.
-- `npm run check` reported 303 files with zero errors, warnings, or hints.
+- `npm test` passed 308 of 309 tests with one intentional skip. Isolated
+  workerd-backed D1 tests apply all 58 migrations and prove both the Malaysia
+  shipping policy and order duplicate/oversell/terminal/delete invariants.
+- `npm run check` reported 307 files with zero errors, warnings, or hints and
+  verifies `worker-configuration.d.ts` has no Wrangler configuration drift.
   `npm run build` completed the Cloudflare server bundle.
-- A clean isolated D1 accepted all 56 migrations and contained 2,931 Malaysia
-  postcode rows. The existing local D1 also reports schema version 56, one
-  installed store, 2,931 postcode rows, and 36 active shipping-rate rows.
+- The existing local D1 advanced to schema 58. Migration `0057` restores
+  `orders.ad_click_ids` without rewriting existing orders.
 - `npm audit` reported zero known advisories across the complete lockfile and
   the production-only graph.
-- `wrangler deploy --dry-run` validated the redirected Astro deployment config:
-  194 Worker modules, 8,974.66 KiB uncompressed and 1,670.49 KiB gzip.
-  `wrangler check startup` measured 41.4 ms active local startup CPU, including
-  1.1 ms garbage collection. These are local measurements, not production
-  latency claims.
-- Real Chromium against the local Worker rendered the storefront at 1280 px and
-  the product/checkout route at 390 px with zero root overflow, failed requests,
-  or console errors. The checkout island normalized a Malaysia phone and
-  advanced its disabled action from the name step to the location step. An
-  unauthenticated `/admin/dashboard` request redirected to `/hello`.
+- `wrangler deploy --dry-run` accepted the redirected Astro deployment config.
+  A prior real local scheduled invocation returned
+  `{ outcome: "ok", noRetry: false }`.
+- Real Chromium at 390 px proved no cookie notification or privacy-preference
+  control renders, configured tags initialize immediately, `fbclid` persists
+  into bounded `_fbc` and HttpOnly attribution cookies, and the page has zero
+  horizontal overflow.
+- The same product-page run emitted PageView plus canonical
+  `p10001-v10001` / MYR 24.90 ViewContent immediately. Vendor traffic was
+  intercepted deliberately; no production Meta/Google endpoint was exercised.
+- An unauthenticated `/admin/dashboard` request still redirects to `/hello`.
 
-### Prioritized findings
+### Open prioritized findings
 
 | Priority | Finding | Evidence and impact | Closure evidence |
 | --- | --- | --- | --- |
-| P1 — release blocker | The repository has no Git `HEAD`, tracked files, or remote. | `git rev-parse --verify HEAD` fails, `git remote -v` is empty, and every project file is untracked. Hosted CI, reviewable change history, rollback provenance, and reproducible release evidence therefore do not exist yet. | Establish the intended repository baseline and remote, then observe the committed `CI` workflow pass on that exact revision. Commit/push remain operator actions. |
-| P1 — advertising reliability | The Meta CAPI outbox has retry timestamps but no independent clock. | `src/worker.ts` exports only `fetch`; `wrangler.jsonc` declares no scheduled trigger; the only `drainCapiOutbox` caller is `src/pages/api/meta-event.ts`. A retryable event is revisited only after a later Meta event reaches that route, so the final event before a quiet period or outage can remain pending indefinitely. Retention pruning has the same dependency. | Add one approved scheduled or queue-owned drain path and prove a due event retries without a new browser event, concurrent drains retain the lease invariant, and delivered/failed retention runs on schedule. |
-| P1 — commerce regression evidence | The suite does not execute the authoritative D1 order write and only partially executes lifecycle mutation code. | Coverage reports `src/lib/order-persistence.ts` at 22.45% lines and 0% functions, `order-lifecycle.ts` at 41.96% lines/33.33% functions, and no test references `persistOrder` or `allocateOrderNumber`. Pricing, duplicate submission, order/item atomicity, stock decrement, oversell rejection, restoration, and deletion are load-bearing money/stock invariants. Clean migrations do not prove those transitions. | Add an isolated D1 behavioral check that creates concurrent/duplicate orders, proves authoritative price and stock, rejects oversell without partial rows, and proves terminal transition/deletion restores stock exactly once. |
-| P2 — upload boundary | Two authenticated image-upload conventions enforce different trust controls. | `src/pages/api/admin/upload-r2.ts` limits files to 2 MB, verifies signatures, and applies a KV hourly limit. `src/pages/api/admin/media.ts` accepts 5 MB based on browser-supplied MIME only, reads the full multipart body before validation, and has no abuse limit. Both are reachable by the advertiser role. Same-origin delivery uses `nosniff`, reducing script-execution risk, but a compromised or malicious operator can still store malformed content or consume R2/Worker resources through the weaker route. | Cut over both callers to one upload boundary with an early body cap, signature validation, generated keys, and one shared abuse policy; prove malformed, oversized, and over-limit uploads are rejected. |
-| P2 — CI supply chain | The dormant CI workflow does not declare token permissions and uses mutable action tags. | `.github/workflows/ci.yml` uses `actions/checkout@v4` and `actions/setup-node@v4` and has no `permissions` block. The workflow performs verification only and receives no project secrets, which limits impact, but action compromise inherits the repository's configured default `GITHUB_TOKEN` authority. | Set explicit read-only token permissions, pin each external action to a reviewed full commit SHA, and observe the workflow on the established remote. |
-| P3 — platform drift | Worker bindings are hand-maintained and the entrypoint hides an adapter type mismatch with a double cast. | `src/env.d.ts` manually defines `CloudflareRuntimeEnv`; `src/worker.ts` casts `request as unknown as AstroRequest`; CI does not run `wrangler types --check`. Build and dry-run pass now, but config/binding drift can reach deployment before TypeScript detects it. | Generate bindings from the canonical Wrangler config, remove redundant hand-written binding declarations where compatible with Astro, and make generated-type drift a CI failure. |
-| P3 — diagnostic signal | Expected failure-path tests print production-style errors and stack traces during a green run. | `npm test` passes, but intentionally failing D1/catalog/template cases emit `console.error` output. This makes a successful CI log resemble a runtime incident and can obscure a new unexpected error. | Capture/assert expected logs in those tests and leave unexpected console errors visible and failing. |
+| P1 — release evidence | The hardened revision is local and uncommitted. | Hosted CI has not observed this working tree, and no production migration/deployment occurred. | Commit/push only on operator request, observe CI on the exact revision, then apply migrations `0056` and `0057` and smoke one approved install under the production gate. |
+| P1 — live advertising evidence | Local signal contracts are complete but the local store remains unconfigured for live Pixel/token delivery. | Browser QA intercepted vendor traffic deliberately, so Meta Test Events, live browser/CAPI deduplication, Event Match Quality, token validity, and Events Manager diagnostics remain external evidence. | Configure one approved install and verify PageView/ViewContent/Purchase plus dedup and match keys in Meta Test Events. |
+
+### Locally closed findings
+
+- Real workerd-backed D1 coverage now proves duplicate submission, oversell
+  rollback, terminal stock restoration, and delete restoration exactly once.
+  It exposed and closed two checkout-blocking defects: migration `0049` had
+  omitted `orders.ad_click_ids`, and `persistOrder` supplied one excess SQL
+  placeholder.
+- `/api/admin/media` is the sole authenticated upload boundary. Both callers
+  share a streamed request cap, 2 MB file cap, magic-byte verification,
+  generated R2 keys, derivative scoping, and one KV hourly policy; the weaker
+  endpoint and obsolete helper were removed.
+- CI grants only `contents: read`; checkout/setup-node are pinned to reviewed
+  full commit SHAs. Wrangler-generated binding types are committed and
+  `npm run check` fails on drift. The Worker entrypoint no longer uses the
+  adapter double cast.
+- Expected catalog/install/content/template/tenant/audit failure logs are
+  captured and asserted by their owning tests. Unexpected `console.error`
+  remains visible; the green full-suite output contains no production-style
+  stack traces.
 
 No confirmed unauthenticated admin bypass, attacker-controlled SQL
 interpolation sink, or known dependency advisory was found. That statement is

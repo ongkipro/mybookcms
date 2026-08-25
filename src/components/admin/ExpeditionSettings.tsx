@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, LoaderCircle, MapPin, Pencil, Plus, RefreshCw, Save, X } from "lucide-react";
 import { toast } from "sonner";
+import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../ui/card";
 import { Input } from "../ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Switch } from "../ui/switch";
 import { formatMyr } from "../../lib/storefront-locale";
 
@@ -59,6 +62,8 @@ export function ExpeditionSettings() {
     maxWeightGrams: "5000",
     amountRinggit: "6.50",
   });
+  const [newRuleSubmitAttempted, setNewRuleSubmitAttempted] = useState(false);
+  const [newRuleServerError, setNewRuleServerError] = useState("");
 
   const load = useCallback(async (showLoader = true) => {
     if (showLoader) setLoading(true);
@@ -95,6 +100,48 @@ export function ExpeditionSettings() {
     () => rates.filter((rate) => !isRetiredFlatReference(rate)),
     [rates],
   );
+  const newRuleValidation = useMemo(() => {
+    const errors: Partial<Record<keyof typeof newRule, string>> = {};
+    const zoneId = Number(newRule.zoneId);
+    const minWeightGrams = Number(newRule.minWeightGrams);
+    const maxWeightGrams = Number(newRule.maxWeightGrams);
+    const amountRinggit = Number(newRule.amountRinggit);
+    const amountSen = toSen(newRule.amountRinggit);
+
+    if (!newRule.zoneId.trim() || !Number.isInteger(zoneId) || zoneId < 1) {
+      errors.zoneId = "Pilih zona fallback.";
+    }
+    if (!newRule.minWeightGrams.trim() || !Number.isInteger(minWeightGrams) || minWeightGrams < 1) {
+      errors.minWeightGrams = "Berat minimum harus berupa bilangan bulat minimal 1 gram.";
+    }
+    if (!newRule.maxWeightGrams.trim() || !Number.isInteger(maxWeightGrams) || maxWeightGrams < 1) {
+      errors.maxWeightGrams = "Berat maksimum harus berupa bilangan bulat minimal 1 gram.";
+    } else if (!errors.minWeightGrams && maxWeightGrams < minWeightGrams) {
+      errors.maxWeightGrams = "Berat maksimum tidak boleh lebih kecil dari berat minimum.";
+    }
+    if (
+      !newRule.amountRinggit.trim() ||
+      !Number.isFinite(amountRinggit) ||
+      amountRinggit < 0 ||
+      !Number.isSafeInteger(amountSen) ||
+      amountSen < 0
+    ) {
+      errors.amountRinggit = "Nilai MYR harus non-negatif dan dapat disimpan sebagai integer sen.";
+    }
+
+    return {
+      errors,
+      zoneId,
+      minWeightGrams,
+      maxWeightGrams,
+      amountSen,
+      isValid: Object.keys(errors).length === 0,
+    };
+  }, [newRule]);
+  const selectedNewRuleZone = useMemo(
+    () => zones.find((zone) => String(zone.id) === newRule.zoneId),
+    [newRule.zoneId, zones],
+  );
 
   const patch = async (body: Record<string, unknown>, key: string) => {
     setPending(key);
@@ -117,31 +164,33 @@ export function ExpeditionSettings() {
 
   const addRate = async (event: React.SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const amountSen = toSen(newRule.amountRinggit);
-    if (!Number.isSafeInteger(amountSen) || amountSen < 0) {
-      toast.error("Nilai MYR tidak valid.");
-      return;
-    }
+    setNewRuleSubmitAttempted(true);
+    setNewRuleServerError("");
+    if (!newRuleValidation.isValid) return;
+
     setPending("new-rate");
     try {
       const response = await fetch("/api/admin/expeditions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          zoneId: Number(newRule.zoneId),
+          zoneId: newRuleValidation.zoneId,
           kind: "rate",
-          minWeightGrams: Number(newRule.minWeightGrams),
-          maxWeightGrams: Number(newRule.maxWeightGrams),
-          amountSen,
+          minWeightGrams: newRuleValidation.minWeightGrams,
+          maxWeightGrams: newRuleValidation.maxWeightGrams,
+          amountSen: newRuleValidation.amountSen,
           isActive: false,
         }),
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok || !payload.success) throw new Error(payload.error || "Tarif gagal ditambahkan.");
       toast.success(payload.message || "Tarif ditambahkan.");
+      setNewRuleSubmitAttempted(false);
       await load(false);
     } catch (cause) {
-      toast.error(cause instanceof Error ? cause.message : "Tarif gagal ditambahkan.");
+      const message = cause instanceof Error ? cause.message : "Tarif gagal ditambahkan.";
+      setNewRuleServerError(message);
+      toast.error(message);
     } finally {
       setPending("");
     }
@@ -428,20 +477,216 @@ export function ExpeditionSettings() {
       </div>
     </section>
 
-    <form onSubmit={addRate} className="rounded-xl border border-slate-200 bg-white p-5" aria-labelledby="new-rate-title">
-      <h2 id="new-rate-title" className="font-black text-slate-950">Tambah weight band fallback</h2>
-      <p className="mt-1 text-xs text-slate-500">Rule fallback baru disimpan nonaktif agar bisa diperiksa sebelum dipublikasikan.</p>
-      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <label className="text-xs font-bold text-slate-600">Zona
-          <select className="admin-input-flat mt-1 min-h-10 w-full" value={newRule.zoneId} onChange={(event) => setNewRule((current) => ({ ...current, zoneId: event.target.value }))}>
-            {zones.map((zone) => <option key={zone.id} value={zone.id}>{zone.name}</option>)}
-          </select>
-        </label>
-        <label className="text-xs font-bold text-slate-600">Berat minimum (g)<Input className="mt-1" type="number" min="1" step="1" value={newRule.minWeightGrams} onChange={(event) => setNewRule((current) => ({ ...current, minWeightGrams: event.target.value }))} /></label>
-        <label className="text-xs font-bold text-slate-600">Berat maksimum (g)<Input className="mt-1" type="number" min="1" step="1" value={newRule.maxWeightGrams} onChange={(event) => setNewRule((current) => ({ ...current, maxWeightGrams: event.target.value }))} /></label>
-        <label className="text-xs font-bold text-slate-600">Nilai (RM)<Input className="mt-1" type="number" min="0" step="0.01" value={newRule.amountRinggit} onChange={(event) => setNewRule((current) => ({ ...current, amountRinggit: event.target.value }))} /></label>
-      </div>
-      <Button className="mt-4" type="submit" disabled={pending === "new-rate"}>{pending === "new-rate" ? <LoaderCircle className="animate-spin" /> : <Plus />}Tambah tarif</Button>
+    <form
+      className="scroll-mt-24"
+      onSubmit={addRate}
+      aria-labelledby="new-rate-title"
+      aria-busy={pending === "new-rate"}
+      noValidate
+    >
+      <Card size="sm">
+        <CardHeader className="border-b">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <CardTitle id="new-rate-title" as="h2">Tambah weight band fallback</CardTitle>
+              <CardDescription className="mt-1 max-w-2xl">
+                Tambahkan tarif cadangan zona untuk rentang berat tertentu. Rule disimpan nonaktif dan baru dipakai setelah operator mengaktifkannya.
+              </CardDescription>
+            </div>
+            <Badge variant="secondary">Nonaktif · perlu tinjauan</Badge>
+          </div>
+        </CardHeader>
+
+        <CardContent className="space-y-5">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(12rem,1fr)_minmax(22rem,2fr)_minmax(10rem,1fr)]">
+            <div className="space-y-1.5">
+              <label htmlFor="new-rate-zone" className="block text-xs font-bold text-foreground">
+                Zona
+              </label>
+              <Select
+                value={newRule.zoneId || null}
+                onValueChange={(value) => {
+                  setNewRule((current) => ({ ...current, zoneId: value || "" }));
+                  setNewRuleServerError("");
+                }}
+                disabled={pending === "new-rate"}
+                required
+              >
+                <SelectTrigger
+                  id="new-rate-zone"
+                  className="h-11 w-full"
+                  aria-invalid={Boolean(newRuleValidation.errors.zoneId)}
+                  aria-describedby="new-rate-zone-description"
+                >
+                  <SelectValue>{selectedNewRuleZone?.name || "Pilih zona"}</SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {zones.map((zone) => (
+                    <SelectItem key={zone.id} value={String(zone.id)}>{zone.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p
+                id="new-rate-zone-description"
+                className={`text-xs ${newRuleValidation.errors.zoneId ? "font-medium text-destructive" : "text-muted-foreground"}`}
+              >
+                {newRuleValidation.errors.zoneId || "Zona yang menerima rule fallback ini."}
+              </p>
+            </div>
+
+            <fieldset className="space-y-1.5">
+              <legend className="text-xs font-bold text-foreground">Weight band</legend>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label htmlFor="new-rate-min-weight" className="block text-xs font-medium text-foreground">
+                    Berat minimum (gram)
+                  </label>
+                  <Input
+                    id="new-rate-min-weight"
+                    className="h-11"
+                    type="number"
+                    min="1"
+                    step="1"
+                    required
+                    disabled={pending === "new-rate"}
+                    value={newRule.minWeightGrams}
+                    aria-invalid={Boolean(newRuleValidation.errors.minWeightGrams)}
+                    aria-describedby="new-rate-min-weight-description"
+                    onChange={(event) => {
+                      setNewRule((current) => ({ ...current, minWeightGrams: event.target.value }));
+                      setNewRuleServerError("");
+                    }}
+                  />
+                  <p
+                    id="new-rate-min-weight-description"
+                    className={`text-xs ${newRuleValidation.errors.minWeightGrams ? "font-medium text-destructive" : "text-muted-foreground"}`}
+                  >
+                    {newRuleValidation.errors.minWeightGrams || "Bilangan bulat mulai dari 1 gram."}
+                  </p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label htmlFor="new-rate-max-weight" className="block text-xs font-medium text-foreground">
+                    Berat maksimum (gram)
+                  </label>
+                  <Input
+                    id="new-rate-max-weight"
+                    className="h-11"
+                    type="number"
+                    min="1"
+                    step="1"
+                    required
+                    disabled={pending === "new-rate"}
+                    value={newRule.maxWeightGrams}
+                    aria-invalid={Boolean(newRuleValidation.errors.maxWeightGrams)}
+                    aria-describedby="new-rate-max-weight-description"
+                    onChange={(event) => {
+                      setNewRule((current) => ({ ...current, maxWeightGrams: event.target.value }));
+                      setNewRuleServerError("");
+                    }}
+                  />
+                  <p
+                    id="new-rate-max-weight-description"
+                    className={`text-xs ${newRuleValidation.errors.maxWeightGrams ? "font-medium text-destructive" : "text-muted-foreground"}`}
+                  >
+                    {newRuleValidation.errors.maxWeightGrams || "Harus sama dengan atau lebih besar dari minimum."}
+                  </p>
+                </div>
+              </div>
+            </fieldset>
+
+            <div className="space-y-1.5">
+              <label htmlFor="new-rate-amount" className="block text-xs font-bold text-foreground">
+                Tarif fallback (MYR)
+              </label>
+              <Input
+                id="new-rate-amount"
+                className="h-11"
+                type="number"
+                min="0"
+                step="0.01"
+                required
+                disabled={pending === "new-rate"}
+                value={newRule.amountRinggit}
+                aria-invalid={Boolean(newRuleValidation.errors.amountRinggit)}
+                aria-describedby="new-rate-amount-description"
+                onChange={(event) => {
+                  setNewRule((current) => ({ ...current, amountRinggit: event.target.value }));
+                  setNewRuleServerError("");
+                }}
+              />
+              <p
+                id="new-rate-amount-description"
+                className={`text-xs ${newRuleValidation.errors.amountRinggit ? "font-medium text-destructive" : "text-muted-foreground"}`}
+              >
+                {newRuleValidation.errors.amountRinggit || "Dikonversi dan disimpan sebagai integer sen."}
+              </p>
+            </div>
+          </div>
+
+          <section className="rounded-lg bg-muted/60 p-4" aria-labelledby="new-rate-summary-title">
+            <p id="new-rate-summary-title" className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+              Ringkasan sebelum simpan
+            </p>
+            <dl className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div>
+                <dt className="text-xs text-muted-foreground">Zona</dt>
+                <dd className="mt-1 font-medium text-foreground">{selectedNewRuleZone?.name || "Belum dipilih"}</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted-foreground">Weight band</dt>
+                <dd className="mt-1 font-medium text-foreground">
+                  {!newRuleValidation.errors.minWeightGrams && !newRuleValidation.errors.maxWeightGrams
+                    ? `${newRuleValidation.minWeightGrams.toLocaleString("id-ID")}–${newRuleValidation.maxWeightGrams.toLocaleString("id-ID")} gram`
+                    : "Belum valid"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted-foreground">Tarif fallback</dt>
+                <dd className="mt-1 font-medium text-foreground">
+                  {!newRuleValidation.errors.amountRinggit ? formatMyr(newRuleValidation.amountSen) : "Belum valid"}
+                </dd>
+              </div>
+            </dl>
+          </section>
+
+          {newRuleSubmitAttempted && !newRuleValidation.isValid && (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-destructive" role="alert">
+              <p className="flex items-center gap-2 text-sm font-semibold">
+                <AlertTriangle className="size-4" aria-hidden="true" />
+                Periksa isian berikut sebelum menyimpan:
+              </p>
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-xs">
+                {Object.values(newRuleValidation.errors).map((message) => (
+                  <li key={message}>{message}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {newRuleServerError && (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive" role="alert">
+              <p className="font-semibold">Weight band belum tersimpan.</p>
+              <p className="mt-1 text-xs">{newRuleServerError} Draft tetap tersedia untuk diperbaiki atau dicoba kembali.</p>
+            </div>
+          )}
+        </CardContent>
+
+        <CardFooter className="flex-col items-stretch gap-3 sm:flex-row sm:justify-between">
+          <p className="text-xs text-muted-foreground">
+            Setelah tersimpan, tinjau rule lalu aktifkan melalui switch pada zona terkait.
+          </p>
+          <Button
+            className="w-full sm:w-auto"
+            size="xl"
+            type="submit"
+            disabled={pending === "new-rate"}
+          >
+            {pending === "new-rate" ? <LoaderCircle className="animate-spin" /> : <Plus />}
+            {pending === "new-rate" ? "Menyimpan sebagai nonaktif…" : "Simpan weight band nonaktif"}
+          </Button>
+        </CardFooter>
+      </Card>
     </form>
   </div>;
 }

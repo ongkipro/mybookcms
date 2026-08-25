@@ -31,8 +31,10 @@ export function maskAdsSecret(value: string) {
   return `${value.slice(0, 4)}••••${value.slice(-4)}`;
 }
 
-export async function getStoreAdsConfig(locals?: App.Locals): Promise<StoreAdsConfig> {
-  const env = getRuntimeEnv(locals);
+export async function getStoreAdsConfigFromEnv(
+  source?: object | null,
+): Promise<StoreAdsConfig> {
+  const env = source as Record<string, unknown> | null | undefined;
   const fallbackToken = getEnvValue("META_CAPI_ACCESS_TOKEN", env).trim();
   const fallbackSource = fallbackToken ? "environment" as const : "none" as const;
   const database = env?.OMS_DB as D1Database | undefined;
@@ -88,4 +90,8 @@ export async function getStoreAdsConfig(locals?: App.Locals): Promise<StoreAdsCo
       googleAdsConversionLabel: "",
     };
   }
+}
+
+export function getStoreAdsConfig(locals?: App.Locals) {
+  return getStoreAdsConfigFromEnv(getRuntimeEnv(locals));
 }

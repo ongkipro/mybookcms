@@ -62,9 +62,11 @@ test("a null or empty column falls back rather than blanking the field", () => {
   assert.equal(partial.siteUrl, envTenantConfig.siteUrl);
 });
 
-test("an invalid stored value degrades instead of taking the storefront down", () => {
+test("an invalid stored value degrades instead of taking the storefront down", (context) => {
   // Every one of these used to be impossible: the values came from a build. Now
   // an operator can type them, so each must fail soft.
+  const logged: unknown[][] = [];
+  context.mock.method(console, "error", (...args: unknown[]) => logged.push(args));
   const tenant = resolveTenantConfig({
     site_url: "http://not-https.example/with/path",
     theme_color: "rebeccapurple",
@@ -80,6 +82,9 @@ test("an invalid stored value degrades instead of taking the storefront down", (
     "compact-market",
     "malformed template ID degrades to the default rather than throwing",
   );
+  assert.deepEqual(logged, [
+    ["tenant-malformed-storefront-template", "Not a valid template ID"],
+  ]);
 });
 
 test("a runtime template slug survives identity resolution for D1 validation", () => {
@@ -89,15 +94,22 @@ test("a runtime template slug survives identity resolution for D1 validation", (
   assert.equal(tenant.storefrontTemplate, "merchant-runtime-template");
 });
 
-test("an unknown storefront template no longer throws", () => {
+test("an unknown storefront template no longer throws", (context) => {
   // It used to throw at module load, which in a Worker means every route
   // returns 500 — a single bad database row would have taken the store offline.
+  const logged: unknown[][] = [];
+  context.mock.method(console, "error", (...args: unknown[]) => logged.push(args));
   assert.doesNotThrow(() =>
     resolveTenantConfig({ storefront_template: "🙂" }),
   );
+  assert.deepEqual(logged, [
+    ["tenant-malformed-storefront-template", "🙂"],
+  ]);
 });
 
-test("identity reads survive a missing table and a failing database", async () => {
+test("identity reads survive a missing table and a failing database", async (context) => {
+  const logged: unknown[][] = [];
+  context.mock.method(console, "error", (...args: unknown[]) => logged.push(args));
   const throwing = {
     prepare() {
       throw new Error("no such table: stores");
@@ -113,6 +125,7 @@ test("identity reads survive a missing table and a failing database", async () =
   // A null read must still produce a usable identity, because that is exactly
   // the state of a database on its very first request.
   assert.equal(resolveTenantConfig(null).name, envTenantConfig.name);
+  assert.deepEqual(logged, [["tenant-identity-unmigrated"]]);
 });
 
 test("the resolved config is frozen so a page cannot mutate shared identity", () => {

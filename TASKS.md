@@ -1,9 +1,67 @@
 # Tasks: MyBookCMS
 
-> A23 is the only authoritative active queue. Sections below A23 are inherited
+> A25 is the only authoritative active queue. Sections below A25 are inherited
 > historical evidence and must not be used as current product requirements or
-> implementation instructions. Do not mark A23 complete until final test,
-> build, and browser evidence is recorded.
+> implementation instructions. A25 is complete locally; hosted CI, remote
+> migration, deployment, vendor verification, commit, and push remain separately
+> gated.
+
+## A25 — Persistence, upload, and delivery integrity
+
+- [x] **A-181** — Prove and repair real-D1 order invariants. **Done locally 2026-08-25:** an isolated workerd-backed D1 applies all 58 migrations and proves duplicate submission, oversell rollback, terminal restoration, and delete restoration exactly once. The proof exposed and fixed the omitted `orders.ad_click_ids` column through forward migration `0057` and removed one excess `persistOrder` SQL placeholder.
+      Primary requirement: REQ-198
+      Constraints: REQ-182, REQ-193
+      Dependencies: A-178
+      Done when: the real D1 proof passes all four state scenarios with no orphan order/item/outbox row and the local migration chain reaches schema 58.
+- [x] **A-182** — Unify authenticated image upload policy. **Done locally 2026-08-25:** Product and Content upload through `/api/admin/media`; the route bounds streamed multipart bodies before parsing, enforces a 2 MB file cap, verifies magic bytes, generates scoped R2 keys, validates derivative siblings, and uses one KV hourly policy. `/api/admin/upload-r2` and the weaker helper were removed.
+      Primary requirement: REQ-199
+      Constraints: REQ-182
+      Dependencies: None
+      Done when: route tests prove accepted image persistence, MIME spoof refusal, missing-Content-Length body refusal, hourly refusal, and derivative key safety; repository search finds one authenticated upload endpoint.
+- [x] **A-183** — Harden CI and Worker binding drift. **Done locally 2026-08-25:** CI grants `contents: read`, pins checkout/setup-node to reviewed full SHAs, commits Wrangler-generated binding declarations, and makes `npm run check` run `wrangler types --check`. The Worker entrypoint uses the adapter handler directly without the former double cast.
+      Primary requirement: REQ-200
+      Constraints: REQ-182
+      Dependencies: None
+      Done when: generated types are current, strict diagnostics pass, build/dry-run pass, and hosted CI remains explicitly unclaimed until the revision is pushed.
+- [x] **A-184** — Make green failure-path tests diagnostically quiet. **Done locally 2026-08-25:** expected catalog, install, content, template, tenant, and Headless audit errors are captured and asserted by their owning tests; unexpected console errors remain visible.
+      Primary requirement: REQ-201
+      Constraints: REQ-182
+      Dependencies: None
+      Done when: the full green suite emits no production-style error stack while exact expected labels/messages remain regression-checked.
+- [x] **A-185** — Verify and reconcile A25. **Done locally 2026-08-25:** focused order tests pass 4/4, upload tests 5/5, expected-log tests 57/57, full suite 308/309 with one intentional skip, 307-file diagnostics are clean, generated bindings have no drift, build/dry-run pass, and local D1 reaches schema 58. No remote migration, deployment, commit, push, or vendor request occurred.
+      Primary requirements: REQ-198, REQ-199, REQ-200, REQ-201
+      Constraints: REQ-182
+      Dependencies: A-181, A-182, A-183, A-184
+      Done when: all focused/full/local platform gates pass and canonical documents match the executable tree.
+
+
+## A24 — Shipping bootstrap and direct advertising reliability
+
+- [x] **A-176** — Repair clean-install Malaysia shipping policy. **Done locally 2026-08-25:** migration `0056` provisions four active zones/ranges, 16 state/WP first-kilogram rules, 20 fallback rules, and complete official postcode coverage; it repairs Sabah through Kalabakan `91400` without overriding active merchant rules.
+      Primary requirement: REQ-177
+      Constraints: REQ-178, REQ-189
+      Dependencies: None
+      Done when: an isolated real D1 applies every migration and proves 4/4/36 policy rows, 2,931 directory rows, zero unmapped postcodes, and one Sabah match for `91400`.
+- [x] **A-177** — Keep the Malaysia storefront free of cookie notification UI. **Done locally 2026-08-25:** configured Meta/Google tags and bounded attribution load directly; the banner, preference control, consent endpoint, and dead state were removed; the Malay cookie policy discloses storage and browser controls without EU-style opt-in UX.
+      Primary requirement: REQ-193
+      Constraints: REQ-182, REQ-197
+      Dependencies: None
+      Done when: repository search finds no notification/consent control path and browser proof shows configured tags/events start directly with no banner or page overflow.
+- [x] **A-178** — Transactionally enqueue accepted-order Meta Purchase. **Done locally 2026-08-25:** configured order, item, stock decrement, and canonical `purchase:{orderNumber}` payload share one D1 batch; thanks emits the browser leg with the same identity.
+      Primary requirement: REQ-193
+      Constraints: REQ-195, REQ-197
+      Dependencies: None
+      Done when: focused tests prove canonical variant ID, MYR merchandise-only value, preserved `_fbp`/`_fbc`, shared batch membership, and no outbox row without configured Meta signal context.
+- [x] **A-179** — Drain Meta CAPI independently of storefront traffic. **Done locally 2026-08-25:** the Worker exposes a scheduled handler, Wrangler declares a one-minute Cron Trigger, and the configured drain retains the existing lease/retry/retention behavior.
+      Primary requirement: REQ-197
+      Constraints: REQ-193
+      Dependencies: A-178
+      Done when: Wrangler dry-run accepts the handler/config and a real local scheduled invocation returns `outcome: ok`.
+- [x] **A-180** — Verify and reconcile the hardening slice. **Done locally 2026-08-25:** 301/302 tests pass with one intentional skip, 306 files have zero diagnostics, build/dry-run pass, local D1 is schema 57 with zero unmapped postcodes, and 390 px browser proof shows no cookie notification while configured PageView/ViewContent and attribution start directly.
+      Primary requirement: REQ-177, REQ-193, REQ-197
+      Constraints: REQ-182
+      Dependencies: A-176, A-177, A-178, A-179
+      Done when: code, requirements, architecture, status, installation, observability, and browser/runtime evidence agree without any remote mutation claim.
 
 ## A23 — Malaysia market replatforming
 

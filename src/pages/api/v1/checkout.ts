@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { resolveAcceptedOrderMetaContext } from "../../../lib/accepted-order-meta.ts";
 import { hasClickId, readClickIdCookie, serializeClickIds } from "../../../lib/click-ids.ts";
 import { handleOptions, headlessError, headlessOk, validateHeadlessRequest } from "../../../lib/headless-api";
 import { orderSubmitSchema } from "../../../lib/order-schema";
@@ -45,6 +46,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       shippingRateRuleId: quote.rateRuleId,
       shippingAmountSen: quote.amountSen,
       adClickIds: hasClickId(clickIds) ? serializeClickIds(clickIds) : undefined,
+      metaPurchase: await resolveAcceptedOrderMetaContext(request, locals),
     });
     return validation.finalize(headlessOk({ order: {
       id: order.id,

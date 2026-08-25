@@ -33,7 +33,7 @@ test("homepage content accepts no testimonials", () => {
   assert.deepEqual(homeContentSchema.shape.proofs.parse([]), []);
 });
 
-test("an empty home-content row is distinguishable from a D1 read failure", async () => {
+test("an empty home-content row is distinguishable from a D1 read failure", async (context) => {
   const emptyDatabase = {
     prepare: () => ({ first: async () => null }),
   } as unknown as D1Database;
@@ -44,6 +44,8 @@ test("an empty home-content row is distinguishable from a D1 read failure", asyn
       },
     }),
   } as unknown as D1Database;
+  const logged: unknown[][] = [];
+  context.mock.method(console, "error", (...args: unknown[]) => logged.push(args));
 
   assert.deepEqual(await loadPublishedHomeContent(emptyDatabase), {
     state: "unpublished",
@@ -51,6 +53,12 @@ test("an empty home-content row is distinguishable from a D1 read failure", asyn
   assert.deepEqual(await loadPublishedHomeContent(failedDatabase), {
     state: "unavailable",
   });
+  assert.equal(logged.length, 1);
+  assert.equal(logged[0]?.[0], "storefront-home-content-load");
+  assert.equal(
+    logged[0]?.[1] instanceof Error ? logged[0][1].message : logged[0]?.[1],
+    "D1 unavailable",
+  );
 });
 
 test("published home content reads the single hybrid presentation", async () => {

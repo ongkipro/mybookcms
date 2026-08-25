@@ -112,7 +112,7 @@ test("invalid and executable template definitions are rejected before persistenc
   assert.equal(rows.length, 0);
 });
 
-test("invalid persisted definitions and D1 failures fail closed", async () => {
+test("invalid persisted definitions and D1 failures fail closed", async (context) => {
   const invalidDatabase = templateDatabase([
     {
       storeId: 1,
@@ -127,6 +127,8 @@ test("invalid persisted definitions and D1 failures fail closed", async () => {
       }),
     },
   ]);
+  const logged: unknown[][] = [];
+  context.mock.method(console, "error", (...args: unknown[]) => logged.push(args));
   assert.deepEqual(
     await resolveStorefrontTemplate(invalidDatabase, "broken-template"),
     { state: "invalid" },
@@ -145,6 +147,17 @@ test("invalid persisted definitions and D1 failures fail closed", async () => {
   assert.deepEqual(
     await resolveStorefrontTemplate(unavailableDatabase, "runtime-template"),
     { state: "unavailable" },
+  );
+  assert.equal(logged.length, 2);
+  assert.deepEqual(logged[0]?.slice(0, 2), [
+    "storefront-template-invalid",
+    "broken-template",
+  ]);
+  assert.equal(logged[0]?.[2] instanceof Error, true);
+  assert.equal(logged[1]?.[0], "storefront-template-resolve");
+  assert.equal(
+    logged[1]?.[1] instanceof Error ? logged[1][1].message : logged[1]?.[1],
+    "D1 unavailable",
   );
 });
 

@@ -23,11 +23,15 @@ SELECT id, '87000', '87033', 1 FROM shipping_zones WHERE code = 'labuan'
     SELECT 1 FROM shipping_postcode_ranges
     WHERE postcode_start = '87000' AND postcode_end = '87033'
   );
+UPDATE shipping_postcode_ranges
+SET postcode_end = '91400', updated_at = CURRENT_TIMESTAMP
+WHERE shipping_zone_id = (SELECT id FROM shipping_zones WHERE code = 'sabah')
+  AND postcode_start = '88000' AND postcode_end = '91309';
 INSERT INTO shipping_postcode_ranges (shipping_zone_id, postcode_start, postcode_end, is_active)
-SELECT id, '88000', '91309', 1 FROM shipping_zones WHERE code = 'sabah'
+SELECT id, '88000', '91400', 1 FROM shipping_zones WHERE code = 'sabah'
   AND NOT EXISTS (
     SELECT 1 FROM shipping_postcode_ranges
-    WHERE postcode_start = '88000' AND postcode_end = '91309'
+    WHERE is_active = 1 AND postcode_start <= '91400' AND postcode_end >= '88000'
   );
 INSERT INTO shipping_postcode_ranges (shipping_zone_id, postcode_start, postcode_end, is_active)
 SELECT id, '93000', '98859', 1 FROM shipping_zones WHERE code = 'sarawak'

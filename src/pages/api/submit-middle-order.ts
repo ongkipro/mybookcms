@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { resolveAcceptedOrderMetaContext } from "../../lib/accepted-order-meta.ts";
 import { hasClickId, readOrderAttribution, serializeClickIds } from "../../lib/click-ids.ts";
 import { getRuntimeEnv } from "../../lib/env.ts";
 import { checkRateLimit, getClientIp, rateLimitHeaders } from "../../lib/rate-limit.ts";
@@ -62,6 +63,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       shippingCost: 0,
       paymentMethod: "cod",
       adClickIds: hasClickId(clickIds) ? serializeClickIds(clickIds) : undefined,
+      metaPurchase: await resolveAcceptedOrderMetaContext(request, locals),
     });
     return json({
       success: true,

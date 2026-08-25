@@ -1,3 +1,4 @@
+import { getStoreAdsConfigFromEnv } from "./ads-config.ts";
 import { sendPreparedMetaCapi, type PreparedMetaPayload } from "./meta-capi.ts";
 
 type OutboxRow = {
@@ -111,4 +112,12 @@ export async function drainCapiOutbox(
     await deliverCapiEvent(database, row.event_name, row.event_id, pixelId, accessToken);
   }
   await pruneCapiOutbox(database);
+}
+
+export async function drainConfiguredCapiOutbox(env: Env) {
+  const database = env.OMS_DB;
+  if (!database?.prepare) return;
+  const config = await getStoreAdsConfigFromEnv(env);
+  if (!config.metaPixelId || !config.metaCapiToken) return;
+  await drainCapiOutbox(database, config.metaPixelId, config.metaCapiToken);
 }

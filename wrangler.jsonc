@@ -52,7 +52,7 @@
     {
       "binding": "OMS_DB",
       "database_name": "mybookcms-d1",
-      "database_id": "304e20a2-1a5e-44e7-9b9e-5e664ce82269",
+      "database_id": "00000000-0000-0000-0000-000000000000",
       "migrations_dir": "src/db/migrations"
     }
   ],
@@ -72,6 +72,11 @@
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1
+  },
+
+  // Retry Meta CAPI outbox events independently of storefront traffic.
+  "triggers": {
+    "crons": ["* * * * *"]
   },
 
   "routes": [

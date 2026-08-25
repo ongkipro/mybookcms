@@ -229,7 +229,7 @@ export function ProductForm({ productId }: { productId?: string }) {
       const webpFile = await convertImageToWebP(file);
       const formData = new FormData();
       formData.set("file", webpFile);
-      const response = await fetch("/api/admin/upload-r2", {
+      const response = await fetch("/api/admin/media", {
         method: "POST",
         body: formData,
       });
@@ -248,7 +248,7 @@ export function ProductForm({ productId }: { productId?: string }) {
         const cardForm = new FormData();
         cardForm.set("file", cardFile);
         cardForm.set("derivative_of", String(result.fileName || ""));
-        await fetch("/api/admin/upload-r2", { method: "POST", body: cardForm });
+        await fetch("/api/admin/media", { method: "POST", body: cardForm });
       } catch {
         // deliberately ignored - see above
       }

@@ -413,7 +413,7 @@ test('allowed requests audit the final handler status exactly once', async () =>
   ]);
 });
 
-test('final audit storage failure never turns an accepted handler response into a retry', async () => {
+test('final audit storage failure never turns an accepted handler response into a retry', async (context) => {
   const secret = 'mybook_live_audit_failure_test_secret';
   const keyHash = await hashApiKeySecret(secret);
   const { database } = createPolicyDatabase({ keyHash, auditFails: true });
@@ -429,15 +429,19 @@ test('final audit storage failure never turns an accepted handler response into 
   if (!validation.allowed) return;
 
   const response = headlessOk({ order: { id: 42 } }, 201, validation.corsHeaders);
-  const originalConsoleError = console.error;
-  console.error = () => {};
-  try {
-    const finalized = await validation.finalize(response);
-    assert.equal(finalized, response);
-    assert.equal(finalized.status, 201);
-  } finally {
-    console.error = originalConsoleError;
-  }
+  const logged: unknown[][] = [];
+  context.mock.method(console, 'error', (...args: unknown[]) => logged.push(args));
+  const finalized = await validation.finalize(response);
+  assert.equal(finalized, response);
+  assert.equal(finalized.status, 201);
+  assert.deepEqual(logged, [[
+    'headless-api-audit-write-failed',
+    {
+      operation: 'checkoutCreate',
+      statusCode: 201,
+      error: 'local audit store unavailable',
+    },
+  ]]);
 });
 
 test('operator policy validation rejects empty scopes and unbounded limits', () => {

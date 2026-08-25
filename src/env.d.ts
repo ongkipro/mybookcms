@@ -8,35 +8,21 @@ type D1Result<T = unknown> =
   import("@cloudflare/workers-types/index.ts").D1Result<T>;
 type R2Bucket = import("@cloudflare/workers-types/index.ts").R2Bucket;
 type Ai = import("@cloudflare/workers-types/index.ts").Ai;
+type Fetcher = import("@cloudflare/workers-types/index.ts").Fetcher;
 
-interface SharedEnvVars {
-  PUBLIC_SITE_NAME?: string;
-  PUBLIC_SITE_URL?: string;
-  PUBLIC_SITE_DESCRIPTION?: string;
-  PUBLIC_SITE_LOGO?: string;
-  PUBLIC_SITE_TAGLINE?: string;
-  PUBLIC_SITE_THEME_COLOR?: string;
-  PUBLIC_SITE_LOCALE?: string;
-  PUBLIC_STOREFRONT_TEMPLATE?: string;
-  PUBLIC_ADMIN_NAME?: string;
-  PUBLIC_EMBED_ALLOWED_ORIGINS?: string;
+// Optional install-level values are intentionally absent from Wrangler's
+// required bindings. Keep only these optional augmentations hand-written; all
+// configured bindings come from worker-configuration.d.ts.
+interface OptionalInstallEnv {
   PUBLIC_HEADLESS_ALLOWED_ORIGINS?: string;
-  AUTH_SECRET?: string;
-  INSTALL_TOKEN?: string;
-  /** Optional per-install HTTPS endpoint for redacted operational alerts. */
   OPS_ALERT_WEBHOOK_URL?: string;
   BOOTSTRAP_ADMIN_PASSWORD?: string;
 }
 
-interface CloudflareRuntimeEnv extends SharedEnvVars {
-  SESSION: KVNamespace;
-  OMS_DB: D1Database;
-  ASSET_BUCKET: R2Bucket;
-  AI: Ai;
-  ASSETS: unknown;
-}
+interface Env extends OptionalInstallEnv {}
+
 declare namespace Cloudflare {
-  interface Env extends CloudflareRuntimeEnv {}
+  interface Env extends OptionalInstallEnv {}
 }
 
 declare module "cloudflare:workers" {
@@ -74,5 +60,4 @@ interface Window {
   _fbq?: Window["fbq"];
   __MYBOOK_TRACK__?: (eventName: string, payload?: Record<string, unknown>) => string | undefined;
   __MYBOOK_GOOGLE_PURCHASE__?: (value: number, transactionId: string) => void;
-  __MYBOOK_UPDATE_AD_CONSENT__?: (granted: boolean) => void;
 }

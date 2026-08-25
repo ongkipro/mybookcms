@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { resolveAcceptedOrderMetaContext } from "../../lib/accepted-order-meta.ts";
 import { hasClickId, readOrderAttribution, serializeClickIds } from "../../lib/click-ids.ts";
 import { orderSubmitSchema } from "../../lib/order-schema";
 import { getRuntimeEnv } from "../../lib/env";
@@ -190,6 +191,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       shippingRateRuleId: quote.rateRuleId,
       shippingAmountSen: quote.amountSen,
       adClickIds: hasClickId(clickIds) ? serializeClickIds(clickIds) : undefined,
+      metaPurchase: await resolveAcceptedOrderMetaContext(request, locals),
     });
 
     const paymentStatus =

@@ -1,6 +1,6 @@
 # MyBookCMS Architecture
 
-> Verified against disk: 2026-08-24 @ MyBookCMS working tree
+> Verified against disk: 2026-08-25 @ MyBookCMS working tree
 
 MyBookCMS is a single-store commerce CMS for Malaysia. One install owns one
 Cloudflare Worker, D1 database, KV namespace, R2 bucket, domain, and operator
@@ -14,6 +14,9 @@ team. The repository is the product template; it does not deploy a store.
   KV is used for sessions and bounded counters; R2 stores merchant media.
 - Binding names are fixed: `OMS_DB`, `SESSION`, `ASSET_BUCKET`, `AI`, and
   `ASSETS`.
+- `worker-configuration.d.ts` is generated from `wrangler.jsonc`; the hand-written
+  `env.d.ts` contains only Astro/application globals and optional install values.
+  `npm run check` runs Wrangler's drift check before Astro and TypeScript.
 
 ## Market contract
 
@@ -32,13 +35,15 @@ team. The repository is the product template; it does not deploy a store.
 
 ## Shipping and fulfilment
 
-Shipping is internal policy, not an external service. D1 stores active
-the official city/state/postcode snapshot, active five-digit postcode ranges,
-Malaysia zones, state/WP weight-rate bands, and broad fallback bands.
-Quote resolution must reject malformed/unmapped postcodes, overlapping active
-ranges, an untrusted location mismatch, and missing weight bands before an order
-is written. The market scope is
-Peninsular Malaysia, Sabah, Sarawak, and Labuan.
+Shipping is internal policy, not an external service. D1 stores the official
+city/state/postcode snapshot, active five-digit postcode ranges, Malaysia
+zones, state/WP weight-rate bands, and broad fallback bands. Migration `0056`
+makes that policy part of every clean schema: four active zones, complete
+official postcode coverage including Sabah `91400`, sixteen active state/WP
+first-kilogram rules, and five active fallback bands per zone. Quote resolution
+rejects malformed/unmapped postcodes, overlapping active ranges, an untrusted
+location mismatch, and missing weight bands before an order is written. The
+market scope is Peninsular Malaysia, Sabah, Sarawak, and Labuan.
 
 Reference policy has exact one-kilogram bands through 5 kg. Resolution first
 selects an active state/WP rule that covers the requested weight; if that scope
@@ -89,39 +94,48 @@ environment. The admin browser receives only the source and, for a valid D1
 token, its mask. An environment-managed token is usable but neither revealable
 nor removable through the database form.
 
-Storefront events share deterministic `event_id` values between browser and
-Meta CAPI legs. Canonical item identity is `p{productId}-v{variantId}`; event
-money crosses the boundary as MYR major units while D1 remains integer sen.
-Malaysia advanced matching normalizes telephone numbers to country code `60`,
-uses country `my`, and hashes identity fields before transmission. The server
-stores bounded Google/Meta click identifiers and UTM attribution with the order,
-including browser-issued `_fbp` and `_fbc` values when present. Order events
-prefer that immutable order snapshot over cookies from a later thanks-page
-request. CAPI delivery targets the verified Meta Graph API `v26.0` endpoint and
-sends its credential only in the `Authorization: Bearer` header, with a bounded
-timeout and sanitized provider failure classification.
+Configured storefront events load directly and share deterministic `event_id`
+values between browser and Meta CAPI legs. Canonical item identity is
+`p{productId}-v{variantId}`; event money crosses the boundary as MYR major units
+while D1 remains integer sen. Malaysia advanced matching normalizes telephone
+numbers to country code `60`, uses country `my`, and hashes identity fields
+before transmission. The server stores bounded Google/Meta click identifiers
+and UTM attribution with the order, including browser-issued `_fbp` and `_fbc`
+values when present. CAPI delivery targets the verified Meta Graph API `v26.0`
+endpoint and sends its credential only in the `Authorization: Bearer` header,
+with a bounded timeout and sanitized provider failure classification.
 
-The capability-protected thanks page owns Purchase timing for both COD and manual
-transfer. It first re-resolves the persisted order with `order_number` plus the
-checkout-issued status token, then emits browser Meta, GTM, and Google signals
-and posts the matching Meta CAPI event without waiting for paid, delivered, or an
-admin status change. ViewContent and InitiateCheckout accept only a canonical
-variant identity and rebuild the name and MYR value from the active, in-stock D1
-catalog. Lead and Purchase independently rebuild item identity, merchandise
+When Meta Pixel and CAPI are configured, accepted COD and manual-transfer order
+persistence prepares the authoritative Purchase from the selected D1 variant,
+accepted quantity, customer identity, and stored attribution. The order, item,
+stock decrement, and pending CAPI outbox row share one D1 batch. The
+capability-protected thanks page re-resolves the order with `order_number` plus
+the checkout-issued status token and emits the browser Meta/GTM/Google leg with
+the same `purchase:{orderNumber}` identity; Meta deduplicates it against the
+server row. Neither leg waits for paid, delivered, or an admin status change.
+
+ViewContent and InitiateCheckout accept only a canonical variant identity and
+rebuild the name and MYR value from the active, in-stock D1 catalog. Lead and
+the fallback thanks-page Purchase route rebuild order identity, merchandise
 subtotal, and customer matching from the capability-owned order. The Meta CAPI
 outbox has a unique event-name/event-id constraint, an atomic five-minute
-delivery lease, bounded retry and terminal failure classification, and bounded
-retention pruning (seven days after delivery; thirty days after terminal
-failure). Google offline conversion upload is not implemented. Empty or invalid
-configuration renders no vendor script or outbound request.
+delivery lease, one-minute scheduled draining independent of browser traffic,
+bounded retry and terminal failure classification, and bounded retention
+pruning (seven days after delivery; thirty days after terminal failure). Google
+offline conversion upload remains unimplemented. Empty or invalid configuration
+renders no corresponding vendor script or outbound request.
 
 The order persistence response returns two advertising facts from the accepted
 variant and line item: canonical `p{productId}-v{variantId}` identity and
 `product_value_sen`. The shared checkout stores those exact server values for
-the no-store thanks page. Browser Purchase converts that merchandise subtotal to
-MYR; the capability-protected status endpoint and server CAPI path
-independently recalculate it from `order_items`. Shipping, COD fee, admin fee,
-and any other order-level charge are never advertising revenue.
+the no-store thanks page. Transactional server Purchase and the
+capability-protected thanks path derive merchandise value independently from
+authoritative D1/order facts. Shipping, COD fee, admin fee, and any other
+order-level charge are never advertising revenue.
+
+Migration `0057` restores `orders.ad_click_ids`, which migration `0049` omitted
+while rebuilding the table. The column is part of the order transaction and the
+capability-protected fallback event read; migrations remain forward-only.
 
 `BaseLayout` owns the store tracking loader. PDP, CMS landing pages, and the
 native landing template emit `ViewContent` through its one global contract and
@@ -181,6 +195,13 @@ than coercing every entry point to one route.
 - Browser input is never pricing, stock, or shipping authority.
 - Stock reservation/restoration and order lifecycle transitions use shared
   lifecycle code; direct status writes must not bypass it.
+- `/api/admin/media` is the only authenticated image-upload boundary. It caps
+  the request stream before multipart parsing, verifies a 2 MB image against an
+  allowlisted signature, generates the R2 key, constrains derivative siblings,
+  and applies one KV hourly policy to Product and Content uploads.
+- The clean migration chain and order lifecycle execute against workerd-backed
+  D1 tests for duplicate, oversell, terminal restoration, and deletion
+  invariants; fake statement-order tests do not substitute for D1 semantics.
 - Secrets remain server-only and are never returned by an admin API.
 - Advertising tokens are encrypted at rest; click-attribution cookies used by
   order persistence are HttpOnly and bounded to approved Meta/Google/UTM keys.

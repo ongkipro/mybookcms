@@ -1,6 +1,6 @@
 # Installing MyBookCMS
 
-> Verified against disk: 2026-08-23 @ MyBookCMS working tree
+> Verified against disk: 2026-08-25 @ MyBookCMS working tree
 
 Each installation is a new Malaysia store. Create resources owned by that store:
 one Cloudflare Worker, D1 database, KV namespace, R2 bucket, domain, and a
@@ -17,6 +17,7 @@ separate secret set. Never reuse another store's identifiers or data.
 
 ```bash
 npm ci
+npm run cf:types
 npm run check
 npm test
 npm run db:migrate:local
@@ -37,12 +38,17 @@ The preview seed is idempotent fictional data and must never be run with
 
 1. Copy the product into a new install repository.
 2. Create new D1, KV, and R2 resources and place only their identifiers in the
-   install's `wrangler.jsonc`.
+   install's `wrangler.jsonc`. Run `npm run cf:types`; generated binding names
+   must be committed with that install, while `npm run check` rejects drift.
 3. Configure `AUTH_SECRET` and `INSTALL_TOKEN` as Worker secrets.
 4. Apply the checked-in migration chain to the new database only after review.
+   Migration `0056` provisions the active canonical Malaysia shipping policy;
+   migration `0057` restores order advertising attribution after the Malaysia
+   table rebuild. No separate remote seed is required.
 5. Open `/install` and create the store identity and first operator credential.
-6. Review seller bank accounts, the Malaysia postcode directory, every state/WP
-   rate, fallback zone, and weight band before accepting checkout traffic.
+6. Review seller bank accounts, all four active shipping zones, official
+   postcode coverage, every state/WP rate, and all fallback weight bands before
+   accepting checkout traffic.
 
 The store uses MYR integer sen, one Malaysia-market hybrid public voice, COD/manual bank
 transfer, and internal postcode shipping. It requires no external courier or

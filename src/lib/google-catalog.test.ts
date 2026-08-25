@@ -80,12 +80,24 @@ test("rejects unsafe origin, invalid IDs, and invalid prices", () => {
   assert.throws(() => formatGoogleMyr(0));
 });
 
-test("feed callers can distinguish a database failure from a genuinely empty catalog", async () => {
+test("feed callers can distinguish a database failure from a genuinely empty catalog", async (context) => {
   const database = {
     prepare: () => ({}),
     batch: async () => { throw new Error("D1 unavailable"); },
   };
   const locals = { runtimeEnv: { OMS_DB: database } } as unknown as App.Locals;
+  const logged: unknown[][] = [];
+  context.mock.method(console, "error", (...args: unknown[]) => logged.push(args));
   assert.deepEqual(await getStorefrontProducts(locals), []);
   await assert.rejects(() => getStorefrontProductsStrict(locals), /D1 unavailable/);
+  assert.deepEqual(
+    logged.map(([label, error]) => [
+      label,
+      error instanceof Error ? error.message : error,
+    ]),
+    [
+      ["storefront-catalog-load", "D1 unavailable"],
+      ["storefront-catalog-load", "D1 unavailable"],
+    ],
+  );
 });

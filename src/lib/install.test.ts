@@ -295,13 +295,15 @@ test("a second install cannot take the admin account from the first", async () =
   assert.equal(stores.total, 1);
 });
 
-test("an install with no seeded credential row refuses instead of bricking", async () => {
+test("an install with no seeded credential row refuses instead of bricking", async (context) => {
   const { raw, database } = sqliteD1();
   raw.exec("DELETE FROM admin_credentials");
 
   const planned = planInstall(valid);
   assert.equal(planned.ok, true);
   if (!planned.ok) return;
+  const logged: unknown[][] = [];
+  context.mock.method(console, "error", (...args: unknown[]) => logged.push(args));
 
   const result = await runInstall(database, planned.plan);
   assert.equal(result.ok, false);
@@ -311,9 +313,10 @@ test("an install with no seeded credential row refuses instead of bricking", asy
     total: number;
   };
   assert.equal(stores.total, 0);
+  assert.deepEqual(logged, [["install-no-credential-row"]]);
 });
 
-test("a failing database reports rather than throwing", async () => {
+test("a failing database reports rather than throwing", async (context) => {
   const database = {
     prepare: () => ({
       bind() { return this; },
@@ -327,7 +330,15 @@ test("a failing database reports rather than throwing", async () => {
   const planned = planInstall(valid);
   assert.equal(planned.ok, true);
   if (!planned.ok) return;
+  const logged: unknown[][] = [];
+  context.mock.method(console, "error", (...args: unknown[]) => logged.push(args));
 
   const result = await runInstall(database, planned.plan);
   assert.equal(result.ok, false);
+  assert.equal(logged.length, 1);
+  assert.equal(logged[0]?.[0], "install-run");
+  assert.equal(
+    logged[0]?.[1] instanceof Error ? logged[0][1].message : logged[0]?.[1],
+    "D1_ERROR: no such table: stores",
+  );
 });

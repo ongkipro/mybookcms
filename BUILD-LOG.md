@@ -4581,3 +4581,95 @@ invalid source and `Aktif` / `Environment` for the server-managed source. The
 QA interceptor observed zero mutation requests and zero Meta/Google vendor
 requests. No Meta Test Event, database write, remote D1 operation, deployment,
 commit, or push occurred.
+
+## 2026-08-25 — Shipping bootstrap and consented advertising reliability
+
+Migration `0056` closes the clean-install shipping gap by provisioning four
+active Malaysia zones, four non-overlapping active postcode ranges, sixteen
+state/WP first-kilogram rules, and twenty contiguous fallback bands. It repairs
+the canonical Sabah range through Kalabakan `91400` while preserving any active
+merchant rule already owning a scope. The local seed uses the same boundary.
+A real isolated D1 applied all 57 migrations and proved 2,931 directory rows,
+zero unmapped postcodes, and exactly one Sabah match for Kalabakan.
+
+Optional advertising is now explicit opt-in. Before consent, the storefront
+loads no Meta/Google vendor script, sends no advertising event, and persists no
+click-attribution cookie. Equal accept/reject controls, a reopenable footer
+preference, and the revised Malay cookie policy expose the choice without a dark
+pattern. Grant stores bounded attribution, including `_fbc`; rejection removes
+the advertising identifiers. The event-ID generator retains secure randomness
+on the approved HTTP Tailscale development origin where `crypto.randomUUID()` is
+not exposed.
+
+Consented COD/manual-transfer order persistence now prepares authoritative
+Purchase from the accepted D1 variant and writes the order, item, stock
+decrement, and CAPI outbox row in one D1 batch. The thanks page emits the browser
+leg with the same `purchase:{orderNumber}` identity. The Worker adds a one-minute
+scheduled drain, retaining the existing lease, retry, terminal-failure, and
+retention behavior independently of later storefront traffic.
+
+Executable evidence: the focused hardening suite passed 26/26; the full suite
+ran 306 tests (305 passed, one intentional skip); `npm run check` inspected 310
+files with zero diagnostics; build and Wrangler dry-run completed; and a real
+local scheduled invocation returned `outcome: ok`. Chromium at 390 px proved
+zero pre-consent vendor/event requests, equal 44 px actions, persisted
+rejection, focus-managed reopen, consented click attribution, and queued
+PageView plus canonical `p10001-v10001` / MYR 24.90 ViewContent flush with zero
+page overflow. Vendor requests were intercepted deliberately; local Pixel/token
+configuration was restored to empty. No remote migration, deployment, vendor
+test event, commit, or push occurred.
+
+### Same-day Malaysia policy correction — no cookie notification
+
+The user explicitly rejected EU-style cookie notification UX for this simple
+Malaysia storefront. The consent banner, footer preference, consent endpoint,
+cookie state module, and their tests were removed in one clean cutover.
+Configured Meta/Google tags and bounded click attribution now start directly;
+the Malay cookie policy discloses essential/session and advertising storage plus
+browser controls without presenting accept/reject UI.
+
+The shipping migration, transactional accepted-order Purchase, canonical
+browser/server event IDs, encrypted token handling, and one-minute CAPI outbox
+drain are unchanged. The simplified suite ran 302 tests (301 passed, one
+intentional skip), `npm run check` inspected 306 files with zero diagnostics,
+build and Wrangler dry-run completed, and 390 px Chromium proved zero
+notification/preference nodes, zero page overflow, direct `_fbc`/HttpOnly click
+attribution, and immediate PageView plus canonical `p10001-v10001` / MYR 24.90
+ViewContent. Vendor traffic remained intercepted; local Pixel configuration was
+restored to empty. No remote migration, deployment, vendor test event, commit,
+or push occurred.
+
+## 2026-08-25 — Persistence, upload, and delivery integrity
+
+A workerd-backed D1 integration harness applied the complete migration chain and
+immediately exposed two checkout blockers hidden by statement fakes. Migration
+`0049` had rebuilt `orders` without the still-active `ad_click_ids` column, and
+the accepted-order INSERT supplied 28 values for 27 columns. Forward migration
+`0057` restores attribution without rewriting existing orders; the INSERT now
+matches its bound values. Four real-D1 cases prove duplicate submission,
+oversell rollback, terminal restoration, and delete restoration exactly once.
+The existing local D1 applied `0057` and reached schema 58; no remote D1 was
+accessed.
+
+Product and Content uploads now share `/api/admin/media`. The boundary reads a
+bounded multipart stream before parsing, caps images at 2 MB, validates
+JPG/PNG/WebP/GIF/AVIF signatures, generates R2 keys, constrains derivative
+siblings, and applies one KV hourly limit. The weaker second endpoint and its
+obsolete 5 MB MIME-only helper were deleted. Focused route tests passed 5/5,
+including a missing-Content-Length oversized body and MIME spoof.
+
+CI now grants `contents: read` and pins `actions/checkout` and
+`actions/setup-node` to reviewed full SHAs. Wrangler generates
+`src/worker-configuration.d.ts`; `npm run check` runs `wrangler types --check`
+before Astro/TypeScript, and the Worker entrypoint no longer requires the former
+double cast. Expected catalog/install/content/template/tenant/audit error logs
+are captured and asserted locally instead of printing incident-like stacks from
+a green run.
+
+Executable evidence: focused order tests passed 4/4, upload tests passed 5/5,
+and expected-log tests passed 57/57. `npm test` ran 309 tests (308 passed, one
+intentional skip) with no production-style error stack; `npm run check`
+inspected 307 files with zero errors, warnings, or hints and confirmed generated
+types are current; `npm run build` and `wrangler deploy --dry-run` completed.
+No hosted CI run, remote migration, deployment, vendor request, commit, or push
+occurred.

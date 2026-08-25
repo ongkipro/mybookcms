@@ -13,7 +13,7 @@ import {
 const postcodeRanges: MalaysiaPostcodeRange[] = [
   { id: 1, zoneCode: "peninsular", postcodeStart: "01000", postcodeEnd: "86999", isActive: 1 },
   { id: 2, zoneCode: "labuan", postcodeStart: "87000", postcodeEnd: "87033", isActive: 1 },
-  { id: 3, zoneCode: "sabah", postcodeStart: "88000", postcodeEnd: "91309", isActive: 1 },
+  { id: 3, zoneCode: "sabah", postcodeStart: "88000", postcodeEnd: "91400", isActive: 1 },
   { id: 4, zoneCode: "sarawak", postcodeStart: "93000", postcodeEnd: "98859", isActive: 1 },
 ];
 
@@ -49,6 +49,17 @@ test("uses inclusive gram bands and returns an immutable order quote snapshot", 
   });
   assert.equal(Object.isFrozen(quote), true);
   assert.equal(quoteMalaysiaShipping({ postcode: "91309", weightGrams: 5000, postcodeRanges, rateRules }).zoneCode, "sabah");
+});
+
+test("maps the official Kalabakan 91400 postcode to Sabah", () => {
+  const quote = quoteMalaysiaShipping({
+    postcode: "91400",
+    weightGrams: 1000,
+    postcodeRanges,
+    rateRules,
+  });
+  assert.equal(quote.zoneCode, "sabah");
+  assert.equal(quote.amountSen, 1300);
 });
 
 test("re-quotes an existing multi-line order from persisted quantities and weights", async () => {

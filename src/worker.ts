@@ -1,11 +1,19 @@
 import type { ExportedHandler } from "@cloudflare/workers-types";
 import { handle } from "@astrojs/cloudflare/handler";
-type AstroRequest = Parameters<typeof handle>[0];
+import { drainConfiguredCapiOutbox } from "./lib/capi-outbox.ts";
 
 export default {
-  fetch(request, env, ctx) {
-    // @astrojs/cloudflare's public handler uses the DOM Request type while
-    // ExportedHandler supplies the structurally compatible Workers Request.
-    return handle(request as unknown as AstroRequest, env, ctx);
+  fetch: handle,
+  scheduled(_controller, env, ctx) {
+    ctx.waitUntil(
+      drainConfiguredCapiOutbox(env).catch((error) => {
+        console.error("capi-outbox-scheduled", {
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }),
+    );
   },
-} satisfies ExportedHandler<CloudflareRuntimeEnv>;
+} satisfies {
+  fetch: typeof handle;
+  scheduled: NonNullable<ExportedHandler<Env>["scheduled"]>;
+};
