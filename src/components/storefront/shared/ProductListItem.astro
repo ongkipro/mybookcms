@@ -1,0 +1,77 @@
+---
+import { cardImageSrc } from '../../../lib/image-derivative';
+
+/** The card only counts these. Requiring the full variant shape made every
+ *  caller carry fields the card never reads. */
+interface ProductVariant {
+  id?: string;
+  label?: string;
+  price?: number;
+  comparePrice?: number;
+}
+
+interface Props {
+  product: {
+    slug: string;
+    productName: string;
+    heroImage: string;
+    category: string;
+    price: number;
+    comparePrice?: number;
+    variants: ProductVariant[];
+  };
+  formatPrice: (value: number) => string;
+  priority?: boolean;
+}
+
+const { product, formatPrice, priority = false } = Astro.props;
+const comparePrice = product.comparePrice ?? 0;
+const hasDiscount = comparePrice > product.price;
+const discountPercentage = hasDiscount
+  ? Math.round((1 - product.price / comparePrice) * 100)
+  : 0;
+---
+
+<article class="group h-full bg-white">
+  <a
+    href={`/produk/${product.slug}`}
+    class="flex h-full flex-col focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#111111]"
+  >
+    <div class="relative aspect-square overflow-hidden border-b border-[#E5E5E5] bg-[#F5F5F5]">
+      <img
+        src={cardImageSrc(product.heroImage)}
+        alt={`Foto ${product.productName}`}
+        width="320"
+        height="320"
+        class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+        loading={priority ? 'eager' : 'lazy'}
+        decoding="async"
+        fetchpriority={priority ? 'high' : undefined}
+      />
+      {discountPercentage > 0 && (
+        <span class="absolute left-2 top-2 bg-[#111111] px-2 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-white">
+          -{discountPercentage}%
+        </span>
+      )}
+    </div>
+
+    <div class="flex flex-1 flex-col p-3">
+      <div class="flex items-center justify-between gap-2 text-[9px] font-semibold uppercase tracking-[0.15em] text-[#767676]">
+        <span class="min-w-0 truncate">{product.category}</span>
+        <span class="shrink-0">{product.variants.length} pilihan</span>
+      </div>
+      <h2 class="mt-1.5 line-clamp-2 min-h-10 text-sm font-semibold leading-5 text-[#111111]">
+        {product.productName}
+      </h2>
+
+      <div class="mt-auto flex items-baseline gap-2 pt-3">
+        <p class="text-sm font-bold leading-5 text-[#111111]">{formatPrice(product.price)}</p>
+        {hasDiscount && (
+          <p class="text-[10px] leading-4 text-[#767676] line-through">
+            {formatPrice(comparePrice)}
+          </p>
+        )}
+      </div>
+    </div>
+  </a>
+</article>

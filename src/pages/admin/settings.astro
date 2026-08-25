@@ -1,0 +1,32 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import AdminPageHeader from '../../components/admin/AdminPageHeader.astro';
+export const prerender = false;
+const mayManageAccess = Astro.locals.admin?.role === 'owner';
+const cards = [
+  { href: '/admin/settings/store', title: 'Store & CS', description: 'Identitas merchant, bahasa storefront, dan WhatsApp Malaysia.' },
+  { href: '/admin/expeditions', title: 'Tarif Malaysia', description: 'Zona poskod dan weight band dalam MYR.' },
+  { href: '/admin/payments', title: 'Pembayaran', description: 'COD dan rekening transfer bank manual.' },
+  { href: '/admin/settings/crm', title: 'CRM Templates', description: 'Template follow-up order dan pembayaran.' },
+  { href: '/admin/settings/developer', title: 'Headless API', description: 'API key dan domain allowlist.' },
+  ...(mayManageAccess ? [{ href: '/admin/settings/access', title: 'Akses Pengguna', description: 'Role dan izin operator.' }] : []),
+];
+---
+
+<AdminLayout title="Pengaturan" activeMenu="settings">
+  <div class="space-y-6">
+    <AdminPageHeader
+      eyebrow="Workspace"
+      title="Pengaturan sistem"
+      description="Konfigurasi toko, pembayaran, shipping rate, dan akses operator Malaysia."
+    />
+    <section class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3" aria-label="Halaman pengaturan">
+      {cards.map((card) => (
+        <a href={card.href} class="rounded-xl border border-slate-200 bg-white p-5 hover:border-blue-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
+          <p class="font-black text-slate-950">{card.title}</p>
+          <p class="mt-1 text-xs leading-5 text-slate-500">{card.description}</p>
+        </a>
+      ))}
+    </section>
+  </div>
+</AdminLayout>

@@ -1,0 +1,17 @@
+---
+import { ExpeditionSettings } from '../../components/admin/ExpeditionSettings';
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import AdminPageHeader from '../../components/admin/AdminPageHeader.astro';
+export const prerender = false;
+---
+
+<AdminLayout title="Tarif Malaysia" activeMenu="expeditions">
+  <div class="mx-auto max-w-6xl space-y-5">
+    <AdminPageHeader
+      eyebrow="Malaysia shipping"
+      title="Zona & tarif pengiriman"
+      description="Kelola cakupan poskod dan weight band MYR milik toko."
+    />
+    <ExpeditionSettings client:load />
+  </div>
+</AdminLayout>

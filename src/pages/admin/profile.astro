@@ -1,0 +1,130 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import AdminPageHeader from '../../components/admin/AdminPageHeader.astro';
+export const prerender = false;
+const mustChangePassword = Astro.locals.admin?.mustChangePassword ?? false;
+const pageTitle = mustChangePassword ? 'Amankan akun admin' : 'Profil Admin';
+---
+
+<AdminLayout title={pageTitle} activeMenu="profile">
+  <div class="mx-auto max-w-3xl space-y-5">
+    <AdminPageHeader
+      eyebrow="Account & security"
+      title={pageTitle}
+      description="Kelola username dan password akun serta keamanan sesi admin."
+    />
+
+    <div id="profileLoading" class="h-72 animate-pulse rounded-xl bg-slate-100" role="status" aria-live="polite" aria-busy="true">
+      <span class="sr-only">Memuat profil admin.</span>
+    </div>
+    <div id="profileError" class="hidden rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-800" role="alert"></div>
+
+    <form id="profileForm" class="hidden rounded-xl border border-slate-200 bg-white p-5 md:p-7" novalidate aria-busy="false">
+      <div id="defaultCredentialNotice" class="hidden mb-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold leading-6 text-amber-900" role="alert">
+        Akun masih memakai password default. Ganti password sebelum membuka menu admin lainnya.
+      </div>
+      <fieldset>
+        <legend class="font-black text-slate-950">Kredensial login</legend>
+        <p class="mt-1 text-xs leading-5 text-slate-500">Perubahan akan mengakhiri seluruh sesi admin.</p>
+        <div class="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+          <label class="block text-xs font-black text-slate-700" for="profileUsername">Username baru
+            <input id="profileUsername" name="username" type="text" required minlength="3" maxlength="64" pattern="[a-z0-9._-]{3,64}" autocomplete="username" class="admin-input-flat mt-2 min-h-11 text-base sm:text-sm" />
+          </label>
+          <label class="block text-xs font-black text-slate-700" for="currentPassword">Password saat ini
+            <input id="currentPassword" name="current_password" type="password" required maxlength="1024" autocomplete="current-password" class="admin-input-flat mt-2 min-h-11 text-base sm:text-sm" />
+          </label>
+          <label class="block text-xs font-black text-slate-700" for="newPassword">Password baru
+            <input id="newPassword" name="new_password" type="password" required minlength="8" maxlength="128" autocomplete="new-password" class="admin-input-flat mt-2 min-h-11 text-base sm:text-sm" />
+          </label>
+          <label class="block text-xs font-black text-slate-700" for="confirmPassword">Konfirmasi password baru
+            <input id="confirmPassword" name="confirm_password" type="password" required minlength="8" maxlength="128" autocomplete="new-password" class="admin-input-flat mt-2 min-h-11 text-base sm:text-sm" />
+          </label>
+        </div>
+      </fieldset>
+      <div class="mt-5 flex flex-col-reverse items-stretch gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
+        <p id="profileStatus" class="min-h-5 text-xs font-bold text-slate-500" role="status" aria-live="polite">Password baru minimal 8 karakter dan tidak boleh sama dengan username.</p>
+        <button id="saveProfile" type="submit" class="btn-primary min-h-11 px-5 text-xs">Simpan Profil</button>
+      </div>
+    </form>
+
+    <aside class="rounded-xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-700">
+      Rekening transfer manual dikelola dari <a class="font-bold text-blue-700 underline" href="/admin/payments">menu Pembayaran</a>. Zona dan tarif pengiriman dikelola dari <a class="font-bold text-blue-700 underline" href="/admin/expeditions">Tarif Malaysia</a>.
+    </aside>
+  </div>
+
+  <script>
+    const byId = <T extends HTMLElement>(id: string) => document.getElementById(id) as T | null;
+    let pending = false;
+
+    const status = (message: string, state: 'idle' | 'success' | 'error') => {
+      const node = byId('profileStatus');
+      if (!node) return;
+      node.textContent = message;
+      node.setAttribute('role', state === 'error' ? 'alert' : 'status');
+      node.className = `min-h-5 text-xs font-bold ${state === 'success' ? 'text-blue-700' : state === 'error' ? 'text-rose-700' : 'text-slate-500'}`;
+    };
+
+    const setPending = (next: boolean) => {
+      pending = next;
+      const button = byId<HTMLButtonElement>('saveProfile');
+      if (button) {
+        button.disabled = next;
+        button.textContent = next ? 'Menyimpan…' : 'Simpan Profil';
+      }
+      byId<HTMLFormElement>('profileForm')?.setAttribute('aria-busy', String(next));
+    };
+
+    const load = async () => {
+      const response = await fetch('/api/admin/profile', { headers: { Accept: 'application/json' } });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || !payload.success) throw new Error(payload.error || 'Gagal memuat profil admin.');
+      const username = byId<HTMLInputElement>('profileUsername');
+      if (username) username.value = payload.data.username;
+      byId('defaultCredentialNotice')?.classList.toggle('hidden', !payload.data.must_change_password);
+      byId('profileLoading')?.classList.add('hidden');
+      byId('profileForm')?.classList.remove('hidden');
+    };
+
+    load().catch((error) => {
+      byId('profileLoading')?.classList.add('hidden');
+      const node = byId('profileError');
+      if (node) {
+        node.textContent = error instanceof Error ? error.message : 'Gagal memuat profil admin.';
+        node.classList.remove('hidden');
+      }
+    });
+
+    byId<HTMLFormElement>('profileForm')?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const form = event.currentTarget as HTMLFormElement;
+      if (pending || !form.reportValidity()) return;
+      const values = new FormData(form);
+      if (values.get('new_password') !== values.get('confirm_password')) {
+        status('Konfirmasi password baru tidak sama.', 'error');
+        byId<HTMLInputElement>('confirmPassword')?.focus();
+        return;
+      }
+      setPending(true);
+      status('Menyimpan profil dan mengakhiri seluruh sesi…', 'idle');
+      try {
+        const response = await fetch('/api/admin/profile', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: values.get('username'),
+            current_password: values.get('current_password'),
+            new_password: values.get('new_password'),
+            confirm_password: values.get('confirm_password'),
+          }),
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok || !payload.success) throw new Error(payload.error || 'Profil admin gagal disimpan.');
+        status(payload.message || 'Profil admin tersimpan. Silakan login kembali.', 'success');
+        window.setTimeout(() => window.location.assign('/hello'), 900);
+      } catch (error) {
+        status(error instanceof Error ? error.message : 'Profil admin gagal disimpan.', 'error');
+        setPending(false);
+      }
+    });
+  </script>
+</AdminLayout>

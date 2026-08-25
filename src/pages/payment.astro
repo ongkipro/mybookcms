@@ -1,0 +1,6 @@
+---
+// Malaysia checkout renders manual-transfer instructions on the confirmation
+// page. Keep this legacy address safe for old links without retaining the
+// former provider-hosted payment flow.
+return Astro.redirect(`/thanks${Astro.url.search}`, 308);
+---

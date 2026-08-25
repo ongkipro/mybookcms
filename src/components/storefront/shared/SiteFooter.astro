@@ -1,0 +1,38 @@
+---
+const footerLegal = [
+  // Keep only the customer links needed for browsing, contact and store terms.
+  { label: 'Produk', href: '/produk' },
+  { label: 'Halaman', href: '/landing-page' },
+  { label: 'Hubungi Kami', href: '/kontak' },
+  { label: 'Jejak Pesanan', href: '/order-status' },
+  { label: 'Dasar Privasi', href: '/kebijakan-privasi' },
+  { label: 'Terma & Syarat', href: '/syarat-ketentuan' },
+  { label: 'Penghantaran & Pemulangan', href: '/pengiriman' },
+];
+---
+
+<footer class="border-fade-t bg-white px-5 py-12 text-[#111111]">
+  <div class="mx-auto max-w-[480px] space-y-6 text-center">
+    <!-- Policy Links -->
+    <nav
+      aria-label="Pautan footer"
+      class="flex flex-wrap items-center justify-center gap-x-5 gap-y-3 text-[10px] font-semibold uppercase tracking-widest text-[#555555]"
+    >
+      {
+        footerLegal.map((item) => (
+          <a
+            href={item.href}
+            class="underline-offset-4 transition-colors hover:text-[#111111] hover:underline focus-visible:text-[#111111] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111111] focus-visible:ring-offset-2"
+          >
+            {item.label}
+          </a>
+        ))
+      }
+    </nav>
+
+    <!-- Copyright -->
+    <p class="text-[10px] uppercase tracking-wider text-[#767676]">
+      © {new Date().getFullYear()} {Astro.locals.tenant.name}. Semua hak terpelihara.
+    </p>
+  </div>
+</footer>

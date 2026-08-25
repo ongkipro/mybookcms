@@ -1,0 +1,24 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { OrdersTable } from '../../../components/admin/OrdersTable';
+import AdminPageHeader from '../../../components/admin/AdminPageHeader.astro';
+
+export const prerender = false;
+
+---
+
+<AdminLayout title="Manajemen Pesanan" activeMenu="orders">
+  <div class="space-y-5">
+    <AdminPageHeader
+      eyebrow="Operasional Penjualan"
+      title="Manajemen Pesanan"
+      description="Validasi pembayaran, alamat Malaysia, dan pemenuhan pesanan manual."
+    >
+      <div slot="actions" class="grid grid-cols-2 gap-2 sm:flex">
+        <a href="/admin/expeditions" class="btn-secondary min-h-11 px-4 text-xs">Tarif Malaysia</a>
+        <a href="/admin/shipping" class="btn-primary min-h-11 px-4 text-xs">Pengiriman</a>
+      </div>
+    </AdminPageHeader>
+    <OrdersTable client:load />
+  </div>
+</AdminLayout>

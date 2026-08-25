@@ -1,0 +1,116 @@
+import { type Product } from "../data/products.ts";
+import { getRuntimeEnv } from "./env.ts";
+import {
+  mergeStorefrontCatalog,
+  type CatalogProductRow,
+  type CatalogVariantRow,
+} from "./catalog-data.ts";
+import {
+  loadPublishedProductContent,
+  mergeRuntimeProductContent,
+} from "./storefront-content.ts";
+import { catalogProductId } from "./catalog-id.ts";
+
+async function loadCatalogRows(database: D1Database) {
+  const [products, variants] = await database.batch([
+    database.prepare(`
+      SELECT id, title, slug, category, image_url, is_active, created_at
+      FROM products
+      ORDER BY created_at DESC, id DESC
+    `),
+    database.prepare(`
+      SELECT id, product_id, sku, title, price, compare_price, stock
+      FROM product_variants
+      ORDER BY product_id ASC, id ASC
+    `),
+  ]);
+
+  return {
+    products: (products.results ?? []) as CatalogProductRow[],
+    variants: (variants.results ?? []) as CatalogVariantRow[],
+  };
+}
+
+async function loadLocalDevCatalogRows() {
+  try {
+    const { DatabaseSync } = await import("node:sqlite");
+    const { globSync } = await import("fs");
+    const files = globSync(".wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite");
+    const dbPath = files.find((f) => !f.endsWith("-shm") && !f.endsWith("-wal") && !f.includes("metadata"));
+    if (!dbPath) return { products: [], variants: [] };
+    const db = new DatabaseSync(dbPath);
+    const products = db.prepare(`
+      SELECT id, title, slug, category, image_url, is_active, created_at
+      FROM products
+      ORDER BY created_at DESC, id DESC
+    `).all() as unknown as CatalogProductRow[];
+    const variants = db.prepare(`
+      SELECT id, product_id, sku, title, price, compare_price, stock
+      FROM product_variants
+      ORDER BY product_id ASC, id ASC
+    `).all() as unknown as CatalogVariantRow[];
+    return { products, variants };
+  } catch {
+    return { products: [], variants: [] };
+  }
+}
+
+async function loadStorefrontProducts(
+  locals: App.Locals | undefined,
+  throwOnFailure: boolean,
+): Promise<Product[]> {
+  const database = getRuntimeEnv(locals)?.OMS_DB as D1Database | undefined;
+
+  try {
+    const rows = database && typeof database === "object"
+      ? await loadCatalogRows(database)
+      : await loadLocalDevCatalogRows();
+
+    const runtimeContent = database && typeof database === "object"
+      ? await loadPublishedProductContent(database)
+      : new Map();
+
+    const presentations = mergeRuntimeProductContent(
+      rows.products,
+      runtimeContent,
+    );
+    return mergeStorefrontCatalog(rows.products, rows.variants, presentations);
+  } catch (error) {
+    console.error("storefront-catalog-load", error);
+    if (throwOnFailure) throw error;
+    return [];
+  }
+}
+
+export async function getStorefrontProducts(
+  locals?: App.Locals,
+): Promise<Product[]> {
+  return loadStorefrontProducts(locals, false);
+}
+
+/**
+ * Feed and diagnostics callers must distinguish a genuinely empty catalog from
+ * a database failure. Public storefront pages retain their existing empty-state
+ * fallback through `getStorefrontProducts()`.
+ */
+export async function getStorefrontProductsStrict(
+  locals: App.Locals,
+): Promise<Product[]> {
+  return loadStorefrontProducts(locals, true);
+}
+
+export async function getStorefrontProduct(locals: App.Locals, key: string) {
+  const products = await getStorefrontProducts(locals);
+
+  return products.find(
+    (product) =>
+      product.slug === key ||
+      product.productId === key ||
+      String(product.catalogId) === key ||
+      // `/api/v1/products` hands a caller this same numeric Product ID.
+      // Accepting it back keeps the documented list/detail round trip stable.
+      // is the difference between a documented round trip and a 404 on the value
+      // the API just returned.
+      catalogProductId(product.productId) === key,
+  );
+}

@@ -1,0 +1,199 @@
+type LegalPageKey = 'privacy' | 'shipping' | 'tos' | 'disclaimer' | 'contact';
+type LegalPageTemplate = {
+  badge: string;
+  title: string;
+  description: string;
+  sections: Array<{ title: string; paragraphs: string[] }>;
+};
+
+export const legalPages: Record<LegalPageKey, LegalPageTemplate> = {
+  privacy: {
+    badge: 'Dasar Privasi',
+    title: 'Dasar Privasi {{store}}',
+    description: 'Penjelasan tentang data yang boleh diproses apabila anda melawat kedai atau membuat pesanan di {{store}}.',
+    sections: [
+      {
+        title: 'Data pesanan',
+        paragraphs: [
+          'Apabila anda membuat pesanan, sistem boleh memproses nama, nombor telefon atau WhatsApp, alamat penghantaran, item pesanan dan kaedah bayaran yang anda berikan.',
+          'Data ini digunakan untuk merekod pesanan, menghubungi anda tentang pesanan dan menjalankan pembayaran atau penghantaran yang tersedia.',
+        ],
+      },
+      {
+        title: 'Data teknikal',
+        paragraphs: [
+          'Sistem boleh memproses maklumat teknikal yang diperlukan untuk keselamatan dan operasi checkout, seperti alamat IP serta maklumat pelayar.',
+          'Kami tidak menggunakan tracker pengiklanan atau analitik pada storefront ini.',
+        ],
+      },
+      {
+        title: 'Penyedia perkhidmatan',
+        paragraphs: [
+          'Data yang diperlukan boleh diberikan kepada pihak penghantaran, customer service atau bank penerima hanya untuk menjalankan pesanan anda.',
+          'Setiap penyedia memproses data mengikut terma dan dasar privasinya sendiri.',
+        ],
+      },
+      {
+        title: 'Keselamatan dan penyimpanan',
+        paragraphs: [
+          'Pengelola kedai menghadkan akses pentadbiran dan menggunakan langkah keselamatan teknikal yang tersedia. Tiada kaedah penyimpanan atau penghantaran data bebas risiko sepenuhnya.',
+          'Tempoh penyimpanan data bergantung pada keperluan operasi, penyelesaian pertikaian dan kewajipan undang-undang yang berkenaan.',
+        ],
+      },
+      {
+        title: 'Permintaan berkaitan data',
+        paragraphs: [
+          'Permintaan akses, pembetulan atau pemadaman data boleh dibuat melalui customer service kedai. Permintaan mungkin memerlukan pengesahan identiti dan masih tertakluk pada kewajipan penyimpanan yang berkenaan.',
+        ],
+      },
+    ],
+  },
+  shipping: {
+    badge: 'Penghantaran & Pemulangan',
+    title: 'Maklumat Penghantaran & Pemulangan {{store}}',
+    description: 'Maklumat umum tentang penghantaran domestik Malaysia, COD dan pemulangan di {{store}}.',
+    sections: [
+      {
+        title: 'Ketersediaan penghantaran',
+        paragraphs: [
+          'Kadar dan ketersediaan penghantaran bergantung pada poskod destinasi dan berat pesanan semasa checkout.',
+          'Pesanan diproses selepas maklumat pesanan disahkan. Kemas kini penghantaran dihantar terus melalui WhatsApp.',
+        ],
+      },
+      {
+        title: 'Anggaran dan penjejakan',
+        paragraphs: [
+          'Anggaran masa tiba bukan jaminan tarikh penerimaan. Cuaca, cuti umum, kapasiti kurier dan keadaan kawasan boleh menjejaskan tempoh penghantaran.',
+          'Hubungi kedai melalui WhatsApp jika anda memerlukan kemas kini penghantaran lanjut.',
+        ],
+      },
+      {
+        title: 'Cash on Delivery (COD)',
+        paragraphs: [
+          'COD tersedia mengikut kaedah bayaran dan kadar penghantaran yang sah semasa pesanan dibuat.',
+        ],
+      },
+      {
+        title: 'Permohonan pemulangan',
+        paragraphs: [
+          'Hubungi customer service sebelum menghantar barang kembali. Sertakan nombor pesanan, alasan dan bukti keadaan barang untuk semakan.',
+          'Kelulusan, alamat pemulangan, kos dan tempoh permohonan akan disahkan berdasarkan keadaan pesanan serta dasar kedai.',
+        ],
+      },
+    ],
+  },
+  tos: {
+    badge: 'Terma & Syarat',
+    title: 'Terma & Syarat {{store}}',
+    description: 'Terma penggunaan storefront, maklumat pesanan, harga dan ketersediaan di {{store}}.',
+    sections: [
+      {
+        title: 'Penggunaan storefront',
+        paragraphs: [
+          'Dengan menggunakan storefront dan membuat pesanan, anda mengesahkan bahawa data yang diberikan tepat dan boleh digunakan untuk memproses pesanan.',
+          'Anda tidak boleh membuat pesanan palsu, menyalahgunakan borang atau menggunakan storefront bagi aktiviti yang menyalahi undang-undang.',
+        ],
+      },
+      {
+        title: 'Produk, harga dan ketersediaan',
+        paragraphs: [
+          'Harga dipaparkan dalam Ringgit Malaysia (MYR). Pilihan produk, harga dan ketersediaan boleh berubah sebelum pesanan disahkan.',
+          'Jika produk atau perkhidmatan tidak tersedia, pengelola kedai boleh menghubungi anda tentang perubahan atau pembatalan pesanan sebelum penghantaran.',
+        ],
+      },
+      {
+        title: 'Perubahan dan pembatalan pesanan',
+        paragraphs: [
+          'Permintaan perubahan atau pembatalan perlu dibuat melalui customer service. Kemungkinan perubahan bergantung pada status pemprosesan, bayaran dan penyerahan bungkusan.',
+        ],
+      },
+      {
+        title: 'Undang-undang yang terpakai',
+        paragraphs: [
+          'Terma ini ditafsirkan menurut undang-undang yang terpakai di Malaysia. Terma khusus yang diberi semasa transaksi turut terpakai bersama halaman ini.',
+        ],
+      },
+    ],
+  },
+  disclaimer: {
+    badge: 'Disclaimer',
+    title: 'Disclaimer {{store}}',
+    description: 'Batas penggunaan maklumat produk, harga, ketersediaan dan anggaran yang dipaparkan pada storefront.',
+    sections: [
+      {
+        title: 'Maklumat storefront',
+        paragraphs: [
+          'Maklumat produk datang daripada katalog yang diterbitkan oleh pengelola kedai. Semak pilihan, harga, ketersediaan dan butiran pesanan sebelum menghantar borang.',
+          'Ketersediaan produk, kadar penghantaran dan anggaran boleh berubah mengikut keadaan transaksi.',
+        ],
+      },
+    ],
+  },
+  contact: {
+    badge: 'Hubungi Kami',
+    title: 'Hubungi {{store}}',
+    description: 'Maklumat customer service yang diterbitkan oleh pengelola {{store}}.',
+    sections: [
+      {
+        title: 'Customer service',
+        paragraphs: [
+          'Gunakan maklumat berikut untuk pertanyaan produk, pesanan, penghantaran, bayaran atau pemulangan.',
+          'WhatsApp CS: {{whatsapp}}',
+        ],
+      },
+    ],
+  },
+};
+
+export interface LegalPageContext {
+  storeName?: string;
+  supportWhatsapp?: string;
+}
+
+/**
+ * Legal copy is shipped as a template so a fresh install renders its own
+ * identity instead of the name it was cloned from. Any paragraph whose
+ * placeholder cannot be resolved is dropped rather than shown half-filled.
+ */
+export function getTenantLegalPage(
+  key: keyof typeof legalPages,
+  storeName?: string,
+  context: LegalPageContext = {},
+) {
+  const page = legalPages[key];
+  const store = storeName || context.storeName || 'Kedai Kami';
+  const whatsapp = context.supportWhatsapp?.trim() || '';
+  const fill = (value: string) =>
+    value.replaceAll('{{store}}', store).replaceAll('{{whatsapp}}', whatsapp);
+
+  if (key === 'contact' && !whatsapp) {
+    return {
+      ...page,
+      title: fill(page.title),
+      description: 'Pengelola kedai belum menerbitkan maklumat customer service.',
+      sections: [
+        {
+          title: 'Maklumat hubungan belum tersedia',
+          paragraphs: [
+            'Nombor WhatsApp customer service belum dikonfigurasikan oleh pengelola kedai.',
+          ],
+        },
+      ],
+    };
+  }
+
+  return {
+    ...page,
+    title: fill(page.title),
+    description: fill(page.description),
+    sections: page.sections
+      .map((section) => ({
+        ...section,
+        title: fill(section.title),
+        paragraphs: section.paragraphs
+          .filter((paragraph) => whatsapp || !paragraph.includes('{{whatsapp}}'))
+          .map(fill),
+      }))
+      .filter((section) => section.paragraphs.length > 0),
+  };
+}

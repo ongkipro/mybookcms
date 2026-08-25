@@ -1,0 +1,20 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import GeoIpResolvedForm from '../components/storefront/forms/GeoIpResolvedForm.astro';
+import { getStorefrontProduct } from '../lib/catalog';
+import { resolveFormVariant } from '../lib/form-config';
+
+export const prerender = false;
+
+const productKey = Astro.url.searchParams.get('product_id')?.trim();
+if (!productKey) return Astro.redirect('/produk');
+const variantKey = Astro.url.searchParams.get('variant_id')?.trim() || Astro.url.searchParams.get('variant')?.trim();
+const product = await getStorefrontProduct(Astro.locals, productKey);
+if (!product) return Astro.redirect('/produk');
+const selectedVariant = resolveFormVariant(product, variantKey);
+if (!selectedVariant) return Astro.redirect(`/produk/${product.slug}`);
+---
+
+<BaseLayout title={`Form Full ${product.productName} - ${Astro.locals.tenant.name}`} description={`Borang pesanan lengkap ${product.productName} dengan alamat, kadar penghantaran, COD dan pindahan bank.`} image={product.heroImage} hideHeader={true} hideFooter={true}>
+  <div class="mx-auto max-w-[480px] bg-white py-4"><GeoIpResolvedForm mode="full" productSlug={product.slug} selectedVariantId={selectedVariant.id} /></div>
+</BaseLayout>

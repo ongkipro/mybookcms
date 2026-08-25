@@ -1,0 +1,101 @@
+---
+import { getStoreAdsConfig, GOOGLE_ADS_ID_PATTERN, GOOGLE_ADS_LABEL_PATTERN, GOOGLE_TAG_MANAGER_ID_PATTERN, META_PIXEL_ID_PATTERN } from '../../../lib/ads-config';
+const config = await getStoreAdsConfig(Astro.locals);
+const metaPixelId = META_PIXEL_ID_PATTERN.test(config.metaPixelId) ? config.metaPixelId : '';
+const gtmId = GOOGLE_TAG_MANAGER_ID_PATTERN.test(config.googleTagManagerId) ? config.googleTagManagerId : '';
+const googleAdsId = GOOGLE_ADS_ID_PATTERN.test(config.googleAdsConversionId) ? config.googleAdsConversionId : '';
+const googleAdsLabel = GOOGLE_ADS_LABEL_PATTERN.test(config.googleAdsConversionLabel) ? config.googleAdsConversionLabel : '';
+const hasGoogleAds = Boolean(googleAdsId && googleAdsLabel);
+---
+
+{(metaPixelId || gtmId || hasGoogleAds) && <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin />}
+{metaPixelId && <link rel="preconnect" href="https://connect.facebook.net" crossorigin />}
+
+{gtmId && <script is:inline define:vars={{ gtmId }}>
+  (() => {
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({ 'gtm.start': Date.now(), event: 'gtm.js' });
+    const script = document.createElement('script'); script.async = true;
+    script.src = `https://www.googletagmanager.com/gtm.js?id=${encodeURIComponent(gtmId)}`;
+    document.head.appendChild(script);
+  })();
+</script>}
+
+{hasGoogleAds && <script is:inline define:vars={{ googleAdsId, googleAdsLabel }}>
+  (() => {
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = window.gtag || function () { window.dataLayer.push(arguments); };
+    window.gtag('consent', 'default', {
+      ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied', analytics_storage: 'denied', wait_for_update: 500,
+    });
+    window.gtag('js', new Date()); window.gtag('config', googleAdsId);
+    const script = document.createElement('script'); script.async = true;
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(googleAdsId)}`;
+    document.head.appendChild(script);
+    window.__MYBOOK_GOOGLE_PURCHASE__ = (value, transactionId) => {
+      if (!transactionId) return;
+      window.gtag('event', 'conversion', { send_to: `${googleAdsId}/${googleAdsLabel}`, value: Number(value || 0), currency: 'MYR', transaction_id: transactionId });
+    };
+    window.__MYBOOK_UPDATE_AD_CONSENT__ = (granted) => {
+      const state = granted ? 'granted' : 'denied';
+      window.gtag('consent', 'update', { ad_storage: state, ad_user_data: state, ad_personalization: state, analytics_storage: state });
+    };
+  })();
+</script>}
+
+{metaPixelId && <script is:inline define:vars={{ metaPixelId }}>
+  (() => {
+    if (!window.fbq) {
+      const fbq = window.fbq = function () { fbq.callMethod ? fbq.callMethod.apply(fbq, arguments) : fbq.queue.push(arguments); };
+      if (!window._fbq) window._fbq = fbq; fbq.push = fbq; fbq.loaded = true; fbq.version = '2.0'; fbq.queue = [];
+      const script = document.createElement('script'); script.async = true; script.src = 'https://connect.facebook.net/en_US/fbevents.js'; document.head.appendChild(script);
+    }
+    window.fbq('init', metaPixelId);
+  })();
+</script>}
+
+{(metaPixelId || gtmId || hasGoogleAds) && <script is:inline define:vars={{ metaPixelId }}>
+  (() => {
+    const post = (payload) => metaPixelId
+      ? fetch('/api/meta-event', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), keepalive: true }).catch(() => {})
+      : Promise.resolve();
+    window.__MYBOOK_TRACK__ = (eventName, payload = {}) => {
+      const eventId = payload.event_id || `${String(eventName).toLowerCase()}:${crypto.randomUUID()}`;
+      const contentIds = Array.isArray(payload.content_ids)
+        ? payload.content_ids.filter((item) => typeof item === 'string' && item)
+        : payload.content_id ? [payload.content_id] : [];
+      const hasValue = typeof payload.value === 'number' && Number.isFinite(payload.value);
+      const pixelData = {
+        content_name: payload.content_name,
+        ...(contentIds.length ? { content_ids: contentIds, content_type: 'product' } : {}),
+        ...(hasValue ? { value: Number(payload.value), currency: 'MYR' } : {}),
+      };
+      if (window.fbq) window.fbq('track', eventName, pixelData, { eventID: eventId });
+      void post({ event_name: eventName, event_id: eventId, order_number: payload.order_number, status_token: payload.status_token, content_id: payload.content_id, content_name: payload.content_name, value: hasValue ? Number(payload.value) : undefined });
+      window.dataLayer = window.dataLayer || [];
+      const gtmEvent = eventName === 'ViewContent' ? 'view_item' : eventName === 'InitiateCheckout' ? 'begin_checkout' : eventName === 'Lead' ? 'generate_lead' : eventName.toLowerCase();
+      window.dataLayer.push({ ecommerce: null });
+      window.dataLayer.push({
+        event: gtmEvent,
+        tracking_owner: 'mybookcms',
+        meta_event_id: eventId,
+        ...(hasValue || contentIds.length
+          ? {
+              ecommerce: {
+                currency: 'MYR',
+                value: hasValue ? Number(payload.value) : undefined,
+                transaction_id: payload.order_number,
+                items: contentIds.map((itemId) => ({
+                  item_id: itemId,
+                  item_name: payload.content_name,
+                  quantity: 1,
+                })),
+              },
+            }
+          : {}),
+      });
+      return eventId;
+    };
+    if (metaPixelId) window.__MYBOOK_TRACK__('PageView', { event_id: `pageview:${crypto.randomUUID()}`, content_name: document.title });
+  })();
+</script>}

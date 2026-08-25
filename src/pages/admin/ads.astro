@@ -1,0 +1,47 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import AdminPageHeader from '../../components/admin/AdminPageHeader.astro';
+export const prerender = false;
+---
+
+<AdminLayout title="Ads & Tracking" activeMenu="ads">
+  <div class="space-y-6">
+    <AdminPageHeader
+      eyebrow="Growth signals"
+      title="Ads & tracking"
+      description="Kelola Meta dan Google secara terpisah dengan status konfigurasi yang dapat diaudit."
+    />
+    <div id="ads-loading" class="grid grid-cols-1 gap-4 lg:grid-cols-2" role="status" aria-live="polite" aria-busy="true" aria-atomic="true">
+      <span class="sr-only">Memuat status channel tracking.</span>
+      <div class="h-56 animate-pulse rounded-xl bg-slate-100"></div><div class="h-56 animate-pulse rounded-xl bg-slate-100"></div>
+    </div>
+    <div id="ads-error" class="hidden rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-800" role="alert"></div>
+    <section id="ads-channels" class="hidden grid grid-cols-1 gap-4 lg:grid-cols-2" aria-label="Channel tracking">
+      <article class="rounded-xl border border-slate-200 bg-white p-6 text-slate-950 shadow-sm">
+        <div class="flex items-start justify-between gap-3"><div><p class="text-[10px] font-black uppercase tracking-wider text-sky-700">Meta</p><h3 class="mt-1 text-lg font-black">Pixel & Conversions API</h3></div><span id="meta-badge" class="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-black text-slate-600" aria-live="polite" aria-atomic="true">Memuat</span></div>
+        <p class="mt-3 text-xs leading-5 text-slate-500">Browser Pixel, encrypted server token, deduplication, Purchase dari thanks page terverifikasi, dan shared catalog XML.</p>
+        <dl class="mt-5 grid grid-cols-2 gap-3 text-xs"><div class="min-w-0 rounded-xl bg-slate-50 p-3"><dt class="font-bold text-slate-500">Pixel</dt><dd id="pixel-state" class="mt-1 break-all font-mono font-black">—</dd></div><div class="min-w-0 rounded-xl bg-slate-50 p-3"><dt class="font-bold text-slate-500">CAPI token</dt><dd id="capi-state" class="mt-1 font-black">—</dd></div></dl>
+        <a href="/admin/ads/meta" class="btn-blue mt-5 min-h-11 w-full px-5 text-xs sm:w-auto">Kelola Meta</a>
+      </article>
+      <article class="rounded-xl border border-slate-200 bg-white p-6 text-slate-950 shadow-sm">
+        <div class="flex items-start justify-between gap-3"><div><p class="text-[10px] font-black uppercase tracking-wider text-amber-700">Google</p><h3 class="mt-1 text-lg font-black">Tag Manager & Ads</h3></div><span id="google-badge" class="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-black text-slate-600">Memuat</span></div>
+        <p class="mt-3 text-xs leading-5 text-slate-500">Kelola GTM ecommerce, conversion action Purchase, dan shared catalog XML varian MYR untuk Google serta Meta.</p>
+        <dl class="mt-5 grid grid-cols-1 gap-3 text-xs sm:grid-cols-3"><div class="min-w-0 rounded-xl bg-slate-50 p-3"><dt class="font-bold text-slate-500">GTM</dt><dd id="gtm-state" class="mt-1 truncate font-mono font-black">—</dd></div><div class="min-w-0 rounded-xl bg-slate-50 p-3"><dt class="font-bold text-slate-500">Conversion ID</dt><dd id="google-id-state" class="mt-1 truncate font-mono font-black">—</dd></div><div class="min-w-0 rounded-xl bg-slate-50 p-3"><dt class="font-bold text-slate-500">Label</dt><dd id="google-label-state" class="mt-1 truncate font-mono font-black">—</dd></div></dl>
+        <a href="/admin/ads/google" class="btn-secondary mt-5 min-h-11 w-full px-5 text-xs sm:w-auto">Kelola Google</a>
+      </article>
+    </section>
+  </div>
+  <script>
+    const setText = (id: string, value: string) => { const node = document.getElementById(id); if (node) node.textContent = value; };
+    const setBadge = (id: string, ready: boolean, problem = false) => { const node = document.getElementById(id); if (!node) return; node.textContent = problem ? 'Perlu tindakan' : ready ? 'Aktif' : 'Belum lengkap'; node.className = ready && !problem ? 'rounded-full bg-blue-100 px-2.5 py-1 text-[10px] font-black text-blue-800' : 'rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-black text-amber-800'; };
+    fetch('/api/admin/ads', { headers: { Accept: 'application/json' } }).then(async (response) => { const payload = await response.json().catch(() => ({})); if (!response.ok || !payload.success) throw new Error(payload.error || 'Gagal memuat konfigurasi.'); return payload.data; }).then((data) => {
+      const metaBroken = data.meta_capi_token_source === 'invalid';
+      const metaUsable = data.meta_capi_token_source === 'database' || data.meta_capi_token_source === 'environment';
+      setText('pixel-state', data.meta_pixel_id ? 'Aktif' : 'Belum diisi'); setText('capi-state', metaBroken ? 'Token tidak valid' : metaUsable ? data.meta_capi_token_source === 'environment' ? 'Environment' : 'Tersimpan' : 'Belum diisi');
+      setText('gtm-state', data.google_tag_manager_id || 'Belum diisi'); setText('google-id-state', data.google_ads_conversion_id || 'Belum diisi'); setText('google-label-state', data.google_ads_conversion_label || 'Belum diisi');
+      setBadge('meta-badge', Boolean(data.meta_pixel_id && metaUsable), metaBroken);
+      setBadge('google-badge', Boolean(data.google_tag_manager_id || (data.google_ads_conversion_id && data.google_ads_conversion_label)));
+      document.getElementById('ads-loading')?.classList.add('hidden'); document.getElementById('ads-loading')?.setAttribute('aria-busy', 'false'); document.getElementById('ads-channels')?.classList.remove('hidden');
+    }).catch((error) => { document.getElementById('ads-loading')?.classList.add('hidden'); const box = document.getElementById('ads-error'); if (box) { box.textContent = error instanceof Error ? error.message : 'Gagal memuat konfigurasi.'; box.classList.remove('hidden'); } });
+  </script>
+</AdminLayout>

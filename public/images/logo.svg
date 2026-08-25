@@ -1,0 +1,19 @@
+<!--
+  The product favicon, used by every admin page and the login screen.
+
+  It previously spelled out the reference store's name in two 62px words, so
+  every install shipped a browser tab wearing someone else's brand — the same
+  defect as the login-screen artwork, on a surface nobody thought to look at.
+  It was also 960x240, which a square favicon slot letterboxes into an
+  illegible sliver.
+
+  Now: the emblem only, square, no wording. A merchant who wants their own mark
+  replaces this file; nothing here claims to be theirs in the meantime.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <rect width="256" height="256" fill="#111111"/>
+  <rect x="32" y="32" width="192" height="192" fill="none" stroke="#C5A880" stroke-width="8"/>
+  <rect x="80" y="80" width="96" height="24" fill="#C5A880"/>
+  <rect x="80" y="116" width="96" height="24" fill="#F8F7F4"/>
+  <rect x="80" y="152" width="56" height="24" fill="#C5A880"/>
+</svg>

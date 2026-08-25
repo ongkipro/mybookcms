@@ -1,0 +1,41 @@
+---
+import PageIntro from '../components/storefront/shared/PageIntro.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+const copy = { about: 'Tentang Kami', home: 'Laman Utama', profile: 'Profil Kedai', welcome: 'Selamat datang ke', explore: 'Terokai katalog kami untuk mencari produk yang anda perlukan.' };
+---
+
+<BaseLayout
+  shell="storefront"
+  title={`Tentang ${Astro.locals.tenant.name}`}
+  description={`Profil dan maklumat tentang ${Astro.locals.tenant.name}.`}
+  breadcrumbs={[
+    { name: copy.home, url: '/' },
+    { name: copy.about, url: '/tentang' },
+  ]}
+>
+  <main id="konten-utama" class="min-h-screen bg-[#FAFAFA] text-[#16191F]">
+    <PageIntro
+      badge={copy.about}
+      title={`Tentang ${Astro.locals.tenant.name}`}
+      description={Astro.locals.tenant.description}
+      breadcrumbs={[{ label: copy.home, href: '/' }, { label: copy.about }]}
+    />
+
+    <section class="mx-auto max-w-[480px] px-5 py-8">
+      <div class="border-b border-[#EAEDED] pb-6">
+        <p class="text-[11px] font-normal uppercase tracking-[0.12em] text-[#232F3E]">{copy.profile}</p>
+        <h2 class="mt-2 text-[22px] font-semibold tracking-[-0.02em] text-[#16191F]">
+          {copy.welcome} {Astro.locals.tenant.name}
+        </h2>
+        <div class="mt-4 space-y-4 text-[14px] leading-7 text-[#545B64]">
+          <p>
+            {Astro.locals.tenant.description}
+          </p>
+          <p>
+            {copy.explore}
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+</BaseLayout>

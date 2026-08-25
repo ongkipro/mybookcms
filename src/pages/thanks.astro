@@ -1,0 +1,167 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Icon from '../components/storefront/shared/Icon.astro';
+import { getStorefrontProducts } from '../lib/catalog';
+import { getStoreSupportWhatsapp } from '../lib/public-store';
+import { resolveStorefrontLocale } from '../lib/storefront-locale';
+
+export const prerender = false;
+Astro.response.headers.set('Cache-Control', 'no-store');
+
+const locale = resolveStorefrontLocale(Astro.locals.tenant.locale);
+const supportWhatsapp = await getStoreSupportWhatsapp(Astro.locals);
+const products = await getStorefrontProducts(Astro.locals);
+const productCatalog = products.map((product) => ({
+  catalogId: String(product.catalogId ?? ''),
+  productId: product.productId,
+  name: product.productName,
+  headline: product.headline,
+  image: product.heroImage,
+  variants: product.variants.map((variant) => ({ id: variant.id, catalogId: String(variant.catalogId ?? ''), label: variant.label })),
+}));
+---
+
+<BaseLayout title={`Pesanan diterima — ${Astro.locals.tenant.name}`} description={`Konfirmasi pesanan ${Astro.locals.tenant.name}.`} hideHeader={true} hideFooter={true} noindex={true}>
+  <main class="min-h-screen bg-white py-4 text-[14px] text-[#111111] sm:py-8">
+    <section id="thanks-unavailable" class="mx-auto hidden w-full max-w-[480px] border border-[#E5E5E5] bg-white px-5 py-12 text-center" role="alert">
+      <Icon name="lucide:circle-alert" class="mx-auto size-10 text-[#555555]" aria-hidden="true" />
+      <h1 class="mt-4 text-xl font-semibold tracking-tight">Maklumat pesanan tidak tersedia</h1>
+      <p class="mx-auto mt-2 max-w-[330px] text-sm leading-6 text-[#555555]">Buka semula status pesanan dengan nombor pesanan dan kod status selamat anda.</p>
+      <div class="mt-6 grid gap-2 sm:grid-cols-2">
+        <a href="/order-status" class="inline-flex min-h-12 items-center justify-center border border-[#111111] px-4 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#111111]">Semak status pesanan</a>
+        <a href="/produk" class="inline-flex min-h-12 items-center justify-center bg-[#111111] px-4 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#111111]">Lihat produk</a>
+      </div>
+    </section>
+
+    <div id="thanks-shell" hidden class="mx-auto w-full max-w-[480px] overflow-hidden border border-[#E5E5E5] bg-white">
+      <header class="flex min-h-14 items-center justify-center border-b border-[#E5E5E5] px-5 py-4">
+        <span class="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#555555]">{Astro.locals.tenant.name}</span>
+      </header>
+
+      <section class="px-5 pb-6 pt-7 text-center">
+        <div class="mx-auto grid size-16 place-items-center rounded-full bg-[#2c6ecb] text-white"><Icon name="lucide:circle-check" class="size-9" aria-hidden="true" /></div>
+        <h1 class="mx-auto mt-4 max-w-[340px] text-[22px] font-semibold leading-tight tracking-[-0.03em]">Pesanan anda telah diterima</h1>
+        <p class="mx-auto mt-2 max-w-[340px] text-[13px] leading-6 text-[#555555]">Kami akan menyemak maklumat pesanan dan menghubungi anda melalui WhatsApp jika diperlukan.</p>
+      </section>
+
+      <section class="border-y border-[#E5E5E5] bg-[#F5F5F5] px-5 py-5 text-center">
+        <p id="payment-title" class="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#555555]">Jumlah bayaran</p>
+        <p id="total-payment-hero" class="mt-1.5 text-[32px] font-bold leading-none tracking-[-0.04em]">—</p>
+        <span id="payment-badge" class="mt-3 inline-flex min-h-7 items-center border border-[#E5E5E5] bg-white px-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#555555]">—</span>
+      </section>
+
+      <section class="px-5 py-5">
+        <div class="mb-3 flex items-center justify-between gap-3"><h2 class="text-[15px] font-semibold tracking-[-0.02em]">Produk dipesan</h2><span class="border border-[#E5E5E5] bg-[#F5F5F5] px-2.5 py-1 text-[11px] text-[#555555]">Qty 1</span></div>
+        <div class="flex items-center gap-4">
+          <div class="grid size-[84px] shrink-0 place-items-center overflow-hidden border border-[#E5E5E5] bg-[#F5F5F5]"><img id="product-image" src={Astro.locals.tenant.logo} alt="" class="h-full w-full object-contain" width="84" height="84" /></div>
+          <div class="min-w-0 flex-1"><h3 id="product-name" class="text-[18px] font-semibold leading-tight tracking-[-0.03em]">—</h3><p id="variant-label" class="mt-1 text-[13px] leading-5 text-[#1f5199]">—</p><p id="product-headline" class="mt-1 line-clamp-2 text-[12px] leading-5 text-[#555555]"></p></div>
+        </div>
+      </section>
+
+      <section class="border-t border-[#E5E5E5] px-5 py-5">
+        <h2 class="mb-3 text-[15px] font-semibold tracking-[-0.02em]">Ringkasan pembayaran</h2>
+        <div class="divide-y divide-[#E5E5E5] border border-[#E5E5E5]">
+          <div class="flex justify-between gap-3 px-4 py-3 text-[13px]"><span class="text-[#555555]">Subtotal produk</span><span id="product-subtotal">—</span></div>
+          <div class="flex justify-between gap-3 px-4 py-3 text-[13px]"><span class="text-[#555555]">Penghantaran</span><span id="shipping-cost">—</span></div>
+          <div class="flex items-center justify-between gap-3 bg-[#F5F5F5] px-4 py-4"><div><p class="text-[13px]">Jumlah bayaran</p><p class="mt-0.5 text-[10px] uppercase tracking-[0.1em] text-[#555555]">Produk + penghantaran</p></div><strong id="total-payment" class="text-[21px] font-bold tracking-[-0.03em]">—</strong></div>
+        </div>
+      </section>
+
+      <section class="border-t border-[#E5E5E5] px-5 py-5">
+        <h2 class="mb-3 text-[15px] font-semibold tracking-[-0.02em]">Maklumat penghantaran</h2>
+        <dl class="divide-y divide-[#E5E5E5] text-[13px]">
+          <div class="grid grid-cols-[108px_1fr] gap-3 py-3"><dt class="text-[#555555]">Nombor pesanan</dt><dd id="order-id" class="text-right font-semibold">—</dd></div>
+          <div class="grid grid-cols-[108px_1fr] gap-3 py-3"><dt class="text-[#555555]">Nama</dt><dd id="customer-name" class="text-right">—</dd></div>
+          <div class="grid grid-cols-[108px_1fr] gap-3 py-3"><dt class="text-[#555555]">WhatsApp</dt><dd id="customer-phone" class="text-right">—</dd></div>
+          <div class="grid grid-cols-[108px_1fr] gap-3 py-3"><dt class="text-[#555555]">Alamat</dt><dd id="full-address" class="text-right leading-6">—</dd></div>
+          <div class="grid grid-cols-[108px_1fr] gap-3 py-3"><dt class="text-[#555555]">Bandar / negeri</dt><dd id="area-display" class="text-right leading-6">—</dd></div>
+        </dl>
+      </section>
+
+      <section class="border-t border-[#E5E5E5] bg-[#F5F5F5] px-5 py-5">
+        <h2 class="mb-4 text-[15px] font-semibold tracking-[-0.02em]">Status pesanan</h2>
+        <div class="space-y-4 text-[13px]">
+          <div class="grid grid-cols-[18px_1fr] gap-3"><span class="mt-0.5 size-4 rounded-full bg-[#2c6ecb] ring-4 ring-[#eef4fc]"></span><div><p>Pesanan diterima</p><p class="mt-0.5 text-xs text-[#555555]">Maklumat pesanan berjaya disimpan.</p></div></div>
+          <div class="grid grid-cols-[18px_1fr] gap-3"><span class="mt-1 size-3 rounded-full bg-white ring-2 ring-[#2c6ecb] ring-offset-2 ring-offset-[#F5F5F5]"></span><div><p>Semakan admin</p><p class="mt-0.5 text-xs text-[#555555]">Pembayaran dan alamat disemak sebelum diproses.</p></div></div>
+          <div class="grid grid-cols-[18px_1fr] gap-3"><span class="mt-0.5 size-4 rounded-full bg-[#E5E5E5]"></span><div><p class="text-[#555555]">Proses & penghantaran</p><p class="mt-0.5 text-xs text-[#555555]">Kemas kini seterusnya dihantar melalui WhatsApp.</p></div></div>
+        </div>
+      </section>
+
+      <section class="border-t border-[#E5E5E5] px-5 py-5">
+        <div class="border border-[#E5E5E5] p-4">
+          <h2 id="payment-note-title" class="text-[15px] font-semibold">Arahan pembayaran</h2>
+          <p id="payment-note" class="mt-2 text-[13px] leading-6 text-[#555555]"></p>
+          <dl id="bank-details" class="mt-3 hidden divide-y divide-[#E5E5E5] border border-[#E5E5E5] text-[13px]">
+            <div class="flex justify-between gap-3 px-3 py-2.5"><dt class="text-[#555555]">Bank</dt><dd id="bank-name" class="text-right font-semibold"></dd></div>
+            <div class="flex justify-between gap-3 px-3 py-2.5"><dt class="text-[#555555]">Nama akaun</dt><dd id="bank-holder" class="text-right font-semibold"></dd></div>
+            <div class="flex justify-between gap-3 px-3 py-2.5"><dt class="text-[#555555]">Nombor akaun</dt><dd id="bank-account" class="break-all text-right font-mono font-semibold"></dd></div>
+          </dl>
+        </div>
+        <p class="mt-3 text-[11px] leading-5 text-[#767676]">Status pembayaran dan penghantaran digunakan untuk mengesahkan pesanan serta pengukuran iklan.</p>
+      </section>
+
+      <section class="border-t border-[#E5E5E5] px-5 py-6 text-center">
+        <p class="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#555555]">Langkah seterusnya</p>
+        <h2 class="mt-1.5 text-[20px] font-semibold tracking-[-0.03em]">Simpan nombor pesanan anda</h2>
+        <p class="mx-auto mt-2 max-w-[340px] text-[13px] leading-6 text-[#555555]">Hubungi admin jika maklumat perlu diperbetulkan atau semak status pesanan pada bila-bila masa.</p>
+        <div class="mt-4 grid gap-2">
+          <a id="wa-confirm" href="#" target="_blank" rel="nofollow noopener noreferrer" class="hidden min-h-12 items-center justify-center gap-2 bg-[#111111] px-4 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#111111]"><Icon name="lucide:message-circle" class="size-5" aria-hidden="true" />Hubungi admin melalui WhatsApp</a>
+          <a href="/order-status" class="inline-flex min-h-12 items-center justify-center border border-[#111111] px-4 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#111111]">Semak status pesanan</a>
+          <a href="/produk" class="inline-flex min-h-12 items-center justify-center px-4 text-sm font-semibold text-[#555555] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#111111]">Teruskan melihat produk</a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script is:inline define:vars={{ locale, supportWhatsapp, productCatalog }}>
+    const state = (() => { try { return JSON.parse(sessionStorage.getItem('thanks_state') || 'null'); } catch { return null; } })();
+    const shell = document.getElementById('thanks-shell');
+    const unavailable = document.getElementById('thanks-unavailable');
+    if (!state?.order_id || !state?.status_token) unavailable?.classList.remove('hidden');
+    else {
+      shell?.removeAttribute('hidden');
+      const money = (value) => new Intl.NumberFormat(locale, { style: 'currency', currency: 'MYR' }).format(Math.round(Number(value || 0)) / 100);
+      const set = (id, value) => { const element = document.getElementById(id); if (element) element.textContent = value || '—'; };
+      const product = productCatalog.find((item) => item.catalogId === String(state.product_id) || item.productId === String(state.product_id));
+      const variant = product?.variants.find((item) => item.catalogId === String(state.variant_unique_id) || item.id === String(state.variant_unique_id));
+      const productValueSen = Math.max(0, Number(state.product_value_sen || 0));
+      const isTransfer = state.payment_method === 'manual_transfer';
+      set('payment-title', isTransfer ? 'Pindahan bank manual' : 'Bayar apabila bungkusan tiba');
+      set('payment-badge', isTransfer ? 'Manual bank transfer' : 'COD');
+      set('total-payment-hero', money(state.total_payment)); set('total-payment', money(state.total_payment));
+      set('product-subtotal', money(productValueSen)); set('shipping-cost', money(state.shipping_cost));
+      set('order-id', state.order_id); set('customer-name', state.name); set('customer-phone', state.phone); set('full-address', state.address);
+      set('area-display', [state.district, state.province, state.postal_code].filter(Boolean).join(', '));
+      set('product-name', state.product_name || product?.name); set('variant-label', state.variant_label || variant?.label); set('product-headline', product?.headline || '');
+      const productImage = document.getElementById('product-image');
+      if (productImage && product?.image) { productImage.src = product.image; productImage.alt = state.product_name || product.name; }
+      set('payment-note-title', isTransfer ? 'Arahan pindahan bank' : 'Arahan COD');
+      set('payment-note', isTransfer ? 'Pindahkan jumlah tepat ke akaun di bawah dan simpan bukti pembayaran untuk pengesahan admin.' : 'Sediakan jumlah bayaran apabila bungkusan tiba. Admin akan menghubungi anda jika ada maklumat yang perlu disahkan.');
+      if (isTransfer && state.payment) {
+        document.getElementById('bank-details')?.classList.remove('hidden');
+        set('bank-name', state.payment.bank_name || state.payment.bank_code); set('bank-holder', state.payment.account_holder); set('bank-account', state.payment.account_number);
+      }
+      const digits = String(supportWhatsapp || '').replace(/\D/g, '').replace(/^0/, '60');
+      const wa = document.getElementById('wa-confirm');
+      if (wa && digits) { wa.href = `https://wa.me/${digits}?text=${encodeURIComponent(`Salam, saya ingin mengesahkan pesanan ${state.order_id}.`)}`; wa.classList.remove('hidden'); wa.classList.add('inline-flex'); }
+      const once = (key) => {
+        try {
+          const name = `mybook_ads_${key}`;
+          if (localStorage.getItem(name) === '1') return false;
+          localStorage.setItem(name, '1');
+          return true;
+        } catch {
+          return true;
+        }
+      };
+      const orderLocator = String(state.order_id);
+      fetch('/api/order-status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order_id: orderLocator, status_token: state.status_token }), cache: 'no-store' }).then((response) => response.ok ? response.json() : null).then((statusData) => {
+        const orderNumber = String(statusData?.order_number || '').trim();
+        if (!statusData?.success || !orderNumber || !once(`purchase_${orderNumber}`)) return;
+        const value = Number(statusData.product_value_myr || 0);
+        window.__MYBOOK_TRACK__?.('Purchase', { event_id: `purchase:${orderNumber}`, order_number: orderNumber, status_token: state.status_token, content_ids: statusData.content_ids, content_id: statusData.content_ids?.[0], content_name: statusData.content_name, value });
+        window.__MYBOOK_GOOGLE_PURCHASE__?.(value, orderNumber);
+      }).catch(() => {});
+    }
+  </script>
+</BaseLayout>

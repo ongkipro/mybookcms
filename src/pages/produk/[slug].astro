@@ -1,0 +1,503 @@
+---
+import Breadcrumb from '../../components/storefront/shared/Breadcrumb.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getStorefrontProduct } from '../../lib/catalog';
+import { getProductPageLanding } from '../../lib/landing-pages';
+import Icon from '../../components/storefront/shared/Icon.astro';
+import RatingStars from '../../components/storefront/shared/RatingStars.astro';
+import GeoIpResolvedForm from '../../components/storefront/forms/GeoIpResolvedForm.astro';
+import ProductImageGallery from '../../components/storefront/ProductImageGallery.astro';
+import { formatMyr } from '../../lib/storefront-locale';
+
+export const prerender = false;
+
+const product = await getStorefrontProduct(Astro.locals, Astro.params.slug || '');
+if (!product) {
+  return Astro.rewrite('/404');
+}
+
+// A landing page may have taken this product's page over (A21). The landing
+// route owns the whole rendering path already, so this hands off to it rather
+// than growing a second copy here. The URL stays `/produk/<slug>`: that is the
+// product's address, and the landing page's own slug redirects to it, so the
+// two never compete as duplicate content.
+const productPageLanding = await getProductPageLanding(
+  Astro.locals,
+  String(product.productId),
+);
+if (productPageLanding) {
+  // The rewritten route does NOT see this route's `Astro.url` — it sees the
+  // landing slug — so the hand-off is signalled on the request itself.
+  // Without it the landing route reads a direct visit, redirects back here,
+  // and the two bounce forever.
+  return Astro.rewrite(
+    new Request(new URL(`/${productPageLanding.slug}`, Astro.url), {
+      headers: new Headers({
+        ...Object.fromEntries(Astro.request.headers),
+        'x-mybook-product-page': product.slug,
+      }),
+    }),
+  );
+}
+
+const cheapestVariant = [...product.variants].sort((a, b) => a.price - b.price)[0] ?? null;
+const requestedVariantId = Astro.url.searchParams.get('variant_id')?.trim() || '';
+const selectedVariant = product.variants.find((variant) =>
+  String(variant.catalogId ?? variant.id) === requestedVariantId
+) ?? cheapestVariant;
+const displayPrice = selectedVariant?.price ?? product.price;
+const displayComparePrice = selectedVariant?.comparePrice ?? product.comparePrice ?? 0;
+const displayDiscount =
+  displayComparePrice > displayPrice ? Math.round((1 - displayPrice / displayComparePrice) * 100) : 0;
+const formatPrice = (value: number) => formatMyr(value, Astro.locals.tenant.locale);
+const copy = {
+  home: 'Laman Utama', products: 'Produk', catalog: 'Katalog', sold: 'terjual', ratings: 'penilaian', options: 'Pilihan',
+  availableCod: 'Sedia dihantar • COD atau pindahan bank', info: 'Maklumat Produk', category: 'Kategori', focus: 'Fokus Produk',
+  availability: 'Ketersediaan', available: 'Stok tersedia untuk semua pilihan yang dipaparkan.', benefits: 'Manfaat Utama',
+  keyPoints: 'Perkara Penting Produk', ideal: 'Sesuai Untuk', ratingLabel: 'Penilaian produk', reviews: 'Ulasan Produk',
+  review: 'ulasan', verified: 'Disahkan', shipping: 'Maklumat Penghantaran', shippingText: 'Kadar penghantaran dikira secara automatik di checkout selepas alamat dan poskod dilengkapkan.',
+  price: 'Harga', order: 'Buat Pesanan',
+};
+
+const ratingValue = product.ratingValue;
+const reviewCount = product.reviewCount;
+const soldCount = product.soldCount;
+const hasAggregateRating =
+  typeof ratingValue === 'number' && typeof reviewCount === 'number' && reviewCount > 0;
+const hasSoldCount = typeof soldCount === 'number' && soldCount > 0;
+const formattedRating = hasAggregateRating ? ratingValue.toFixed(1) : null;
+const soldLabel = hasSoldCount
+  ? soldCount >= 1000
+    ? `${(soldCount / 1000).toFixed(1).replace('.0', '')}k+ ${copy.sold}`
+    : `${soldCount} ${copy.sold}`
+  : null;
+
+const productImages = product.images && product.images.length > 0 ? product.images : [product.heroImage];
+
+const productAccent = '#111111';
+const canonical = `${Astro.locals.tenant.siteUrl}/produk/${product.slug}`;
+const variantUrl = (variant: (typeof product.variants)[number]) => {
+  const url = new URL(canonical);
+  url.searchParams.set('variant_id', String(variant.catalogId ?? variant.id));
+  return url.toString();
+};
+const productTitle = product.seoTitle;
+const productDescription = product.seoDescription;
+const productSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  name: product.productName,
+  image: [new URL(product.heroImage, Astro.locals.tenant.siteUrl).toString()],
+  description: product.description,
+  sku: product.productId,
+  offers: {
+    '@type': 'AggregateOffer',
+    priceCurrency: 'MYR',
+    lowPrice: (displayPrice / 100).toFixed(2),
+    highPrice: (Math.max(...product.variants.map((v) => v.price), displayPrice) / 100).toFixed(2),
+    offerCount: String(product.variants.length),
+    offers: product.variants.map((v) => ({
+      '@type': 'Offer',
+      price: (v.price / 100).toFixed(2),
+      priceCurrency: 'MYR',
+      availability: 'https://schema.org/InStock',
+      url: variantUrl(v),
+    })),
+  },
+  ...(hasAggregateRating
+    ? {
+        aggregateRating: {
+          '@type': 'AggregateRating',
+          ratingValue: formattedRating,
+          reviewCount: String(reviewCount),
+        },
+      }
+    : {}),
+  ...(product.reviews.length > 0
+    ? {
+        review: product.reviews.map((review) => ({
+          '@type': 'Review',
+          author: {
+            '@type': 'Person',
+            name: review.name,
+          },
+          reviewRating: {
+            '@type': 'Rating',
+            ratingValue: String(review.rating),
+            bestRating: '5',
+          },
+          reviewBody: review.comment,
+        })),
+      }
+    : {}),
+};
+
+const productSchemaJson = JSON.stringify(productSchema).replace(/</g, '\\u003c');
+---
+
+<BaseLayout
+  title={productTitle}
+  description={productDescription}
+  image={product.heroImage}
+  preloadImages={product.heroImage}
+  canonical={canonical}
+  hideHeader={false}
+  hideFooter={false}
+  product={{
+    name: product.productName,
+    description: product.description,
+    image: product.heroImage,
+    url: canonical,
+    category: product.category,
+    ratingValue: ratingValue,
+    reviewCount: reviewCount,
+    offers: product.variants.map((v) => ({
+      price: v.price,
+      priceCurrency: 'MYR',
+      availability: 'InStock',
+      url: variantUrl(v),
+      name: v.label,
+      ...(v.sku ? { sku: v.sku } : {}),
+    })),
+  }}
+  breadcrumbs={[
+    { name: copy.home, url: '/' },
+    { name: copy.products, url: '/produk' },
+    { name: product.productName, url: canonical },
+  ]}
+>
+  <script is:inline type="application/ld+json" set:html={productSchemaJson} />
+  <script is:inline define:vars={{ contentId: selectedVariant?.catalogId ? `p${product.catalogId}-v${selectedVariant.catalogId}` : '', contentName: product.productName, contentValue: displayPrice / 100 }}>
+    window.__MYBOOK_TRACK__?.('ViewContent', { content_id: contentId, content_name: contentName, value: contentValue });
+  </script>
+
+  <main class="mx-auto max-w-[480px] bg-white pb-20">
+    <Breadcrumb
+      items={[
+        { label: copy.catalog, href: '/produk' },
+        { label: product.category, href: '/produk' },
+        { label: product.productName },
+      ]}
+    />
+    <!-- Product Hero Gallery Component -->
+    <div class="bg-white">
+      <ProductImageGallery
+        images={productImages}
+        productName={product.productName}
+        badgeText={product.tag}
+        discountPercentage={displayDiscount}
+      />
+    </div>
+
+    <!-- Main Header & Pricing Surface -->
+    <section class="border-fade-b bg-white px-5 py-5">
+      <h1 class="text-[20px] font-semibold leading-[1.35] tracking-[-0.025em] text-[#111111]">
+        {product.productName}
+      </h1>
+      <p class="mt-1 text-[13px] leading-relaxed text-[#555555]">
+        {product.subheadline || product.description}
+      </p>
+
+      <!-- Rating & Sold Claims -->
+      <div class="mt-3 flex items-center gap-3 text-[12px] text-[#555555]">
+        {
+          hasAggregateRating && (
+            <>
+              <div class="flex items-center gap-1.5">
+                <RatingStars
+                  rating={ratingValue}
+                  starClass="h-[13px] w-[13px]"
+                  label={`Penilaian produk ${formattedRating} daripada 5 bintang`}
+                />
+                <span class="font-semibold text-[#111111]">{formattedRating}</span>
+              </div>
+              <span>{reviewCount} {copy.ratings}</span>
+            </>
+          )
+        }
+        {hasAggregateRating && hasSoldCount && <span class="h-3 w-px bg-[#E5E5E5]" />}
+        {hasSoldCount && <span class="font-normal text-[#767676]">{soldLabel}</span>}
+      </div>
+
+      <!-- Pricing Display -->
+      <div class="mt-4 flex items-baseline gap-3 border-fade-t pt-4">
+        <span class="text-[24px] font-bold leading-none tracking-tight text-[#111111]">
+          {formatPrice(displayPrice)}
+        </span>
+        {
+          displayComparePrice > displayPrice && (
+            <span class="text-[13px] font-normal text-[#767676] line-through">
+              {formatPrice(displayComparePrice)}
+            </span>
+          )
+        }
+      </div>
+    </section>
+
+    <!-- Variant Offer Matrix -->
+    <section class="border-fade-b bg-white px-5 py-6">
+      <h2 class="text-[12px] font-semibold uppercase tracking-[0.12em] text-[#111111]">
+        {copy.options} ({product.variants.length})
+      </h2>
+      <div class="divide-y divide-[#E5E5E5]">
+        {
+          product.variants.map((v) => (
+            <div class="flex items-start justify-between gap-4 py-4">
+              <div class="min-w-0 flex-1">
+                <div class="flex items-start gap-2">
+                  <span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#111111]" aria-hidden="true" />
+                  <div class="min-w-0">
+                    <p class="text-[14px] font-semibold text-[#111111]">{v.label}</p>
+                    <p class="mt-0.5 text-[11px] text-[#555555]">{copy.availableCod}</p>
+                  </div>
+                </div>
+              </div>
+              <div class="shrink-0 text-right">
+                <p class="text-[16px] font-bold leading-none text-[#111111]">
+                  {formatPrice(v.price)}
+                </p>
+                {v.comparePrice && (
+                  <p class="mt-1 text-[11px] leading-none text-[#767676] line-through">
+                    {formatPrice(v.comparePrice)}
+                  </p>
+                )}
+              </div>
+            </div>
+          ))
+        }
+      </div>
+    </section>
+
+    <!-- Detailed Specifications -->
+    <section class="border-fade-b bg-white px-5 py-6">
+      <h2 class="border-fade-b pb-3 text-[12px] font-semibold uppercase tracking-[0.12em] text-[#111111]">{copy.info}</h2>
+      <div class="mt-4 grid gap-5 text-[14px] leading-6 text-[#555555]">
+        <p>{product.description}</p>
+
+        <div class="grid gap-3 border-fade-b pb-4">
+          <div class="flex items-start gap-3">
+            <Icon
+              name="lucide:pencil"
+              class="mt-0.5 h-[18px] w-[18px] shrink-0"
+              style={`color: ${productAccent}`}
+              aria-hidden="true"
+            />
+            <div>
+              <p class="font-semibold text-[#111111]">{copy.category}</p>
+              <p>{product.category}</p>
+            </div>
+          </div>
+          <div class="flex items-start gap-3">
+            <Icon
+              name="lucide:package"
+              class="mt-0.5 h-[18px] w-[18px] shrink-0"
+              style={`color: ${productAccent}`}
+              aria-hidden="true"
+            />
+            <div>
+              <p class="font-semibold text-[#111111]">{copy.focus}</p>
+              <p>{product.tag}</p>
+            </div>
+          </div>
+          <div class="flex items-start gap-3">
+            <Icon
+              name="lucide:sliders-horizontal"
+              class="mt-0.5 h-[18px] w-[18px] shrink-0"
+              style={`color: ${productAccent}`}
+              aria-hidden="true"
+            />
+            <div>
+              <p class="font-semibold text-[#111111]">{copy.availability}</p>
+              <p>{copy.available}</p>
+            </div>
+          </div>
+        </div>
+
+        {product.benefits && product.benefits.length > 0 && (
+          <div class="grid gap-4 border-fade-b pb-4">
+            <div class="flex items-center gap-2">
+              <Icon name="lucide:check" class="h-[17px] w-[17px]" style={`color: ${productAccent}`} aria-hidden="true" />
+              <h3 class="text-[13px] font-semibold uppercase tracking-[0.08em] text-[#111111]">{copy.benefits}</h3>
+            </div>
+            <div class="space-y-3">
+              {
+                product.benefits.map((b) => (
+                  <div class="grid grid-cols-[8px_1fr] gap-3">
+                    <span
+                      class="mt-3 h-px w-2 bg-[#111111]"
+                      aria-hidden="true"
+                    />
+                    <span class="min-w-0 leading-6">{b}</span>
+                  </div>
+                ))
+              }
+            </div>
+          </div>
+        )}
+
+        {product.keyPoints && product.keyPoints.length > 0 && (
+          <div class="grid gap-4 border-fade-b pb-4">
+            <div class="flex items-center gap-2">
+              <Icon name="lucide:plus" class="h-[17px] w-[17px]" style={`color: ${productAccent}`} aria-hidden="true" />
+              <h3 class="text-[13px] font-semibold uppercase tracking-[0.08em] text-[#111111]">{copy.keyPoints}</h3>
+            </div>
+            <div class="space-y-3">
+              {
+                product.keyPoints.map((point) => (
+                  <div class="grid grid-cols-[8px_1fr] gap-3">
+                    <span
+                      class="mt-3 h-px w-2 bg-[#111111]"
+                      aria-hidden="true"
+                    />
+                    <span class="min-w-0 leading-6">{point}</span>
+                  </div>
+                ))
+              }
+            </div>
+          </div>
+        )}
+
+        {product.idealFor && product.idealFor.length > 0 && (
+          <div>
+            <div class="mb-3 flex items-center gap-2">
+              <Icon
+                name="lucide:download"
+                class="h-[17px] w-[17px]"
+                style={`color: ${productAccent}`}
+                aria-hidden="true"
+              />
+              <h3 class="text-[13px] font-semibold uppercase tracking-[0.08em] text-[#111111]">{copy.ideal}</h3>
+            </div>
+            <div class="flex flex-wrap gap-x-3 gap-y-2">
+              {
+                product.idealFor.map((item) => (
+                  <span class="inline-flex items-center gap-2 text-[12px] font-normal text-[#555555]">
+                    <span
+                      class="h-px w-2 bg-[#111111]"
+                      aria-hidden="true"
+                    />
+                    <span>{item}</span>
+                  </span>
+                ))
+              }
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
+
+    <!-- Product Reviews -->
+    {
+      (hasAggregateRating || product.reviews.length > 0) && (
+        <section class="border-fade-b bg-white px-5 py-6">
+          <div class="border-fade-b pb-3.5">
+            <div class="flex items-center gap-2">
+              <RatingStars max={1} starClass="h-[17px] w-[17px]" label={copy.ratingLabel} />
+              <h2 class="text-[12px] font-semibold uppercase tracking-[0.12em] text-[#111111]">{copy.reviews}</h2>
+            </div>
+
+            {hasAggregateRating && (
+              <div class="mt-2.5 flex items-center gap-1.5 border-fade-t pt-2.5 text-[12px] font-bold text-[#111111]">
+                <span class="text-[#111111]">★ {formattedRating} / 5.0</span>
+                <span class="text-[#555555]">• {reviewCount} {copy.review}</span>
+              </div>
+            )}
+          </div>
+
+          {product.reviews.length > 0 && (
+            <div class="mt-4 space-y-4">
+              {product.reviews.map((review) => (
+                <div class="border-fade-b pb-4 last:border-0 last:pb-0">
+                  <div class="flex items-center gap-3">
+                    <div 
+                      class="flex h-10 w-10 shrink-0 items-center justify-center border border-[#111111] bg-[#111111] text-[13px] font-bold uppercase text-white"
+                      style="font-family: 'Cinzel', serif;"
+                    >
+                      {review.name.charAt(0)}
+                    </div>
+                    <div class="min-w-0 flex-1">
+                      <div class="flex items-center gap-1.5">
+                        <p class="text-[12px] font-bold text-[#111111]">{review.name}</p>
+                        {review.verified && (
+                          <span class="inline-flex items-center gap-0.5 border border-[#111111] bg-white px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wider text-[#767676]">
+                            {copy.verified}
+                          </span>
+                        )}
+                      </div>
+                      <p class="mt-0.5 flex items-center gap-2 text-[11px] text-[#767676]"><span>{review.location}</span><span class="h-3 w-px bg-[#E5E5E5]" aria-hidden="true" /><span>{review.date}</span></p>
+                    </div>
+                  </div>
+                  <RatingStars rating={review.rating} class="mt-2" starClass="h-2.5 w-2.5" />
+                  <p class="mt-1.5 text-[13px] leading-6 text-[#555555]">"{review.comment}"</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      )
+    }
+
+    <!-- Shipping Information Notice Card -->
+    <section class="border-fade-b bg-white px-5 py-5">
+      <div class="flex items-start gap-3.5 text-[12px] leading-relaxed text-[#555555]">
+        <Icon name="lucide:truck" class="mt-0.5 h-5 w-5 shrink-0" style={`color: ${productAccent}`} aria-hidden="true" />
+        <div>
+          <p class="font-bold uppercase tracking-wider text-[#111111]">{copy.shipping}</p>
+          <p class="mt-1 leading-5 text-[#555555]">{copy.shippingText}</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Direct Order Form Container -->
+    <section id="form-pemesanan" class="mt-4 scroll-mt-6 overflow-hidden rounded-none bg-white p-2">
+      <GeoIpResolvedForm mode="hybrid" productSlug={product.slug} selectedVariantId={selectedVariant?.id} embedded={true} />
+    </section>
+
+    <!-- Sticky Mobile Purchase Bar (Auto-hides when order form is visible) -->
+    <div id="sticky-purchase-bar" class="fixed inset-x-0 bottom-0 z-40 mx-auto flex w-full max-w-[480px] items-center justify-between border-fade-t bg-white/95 px-5 py-3 shadow-[0_-8px_24px_rgba(17,17,17,0.08)] backdrop-blur-md transition-all duration-300 lg:hidden">
+      <div>
+        <p class="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#555555]">{copy.price}</p>
+        <p class="text-base font-bold text-[#111111]">{formatPrice(displayPrice)}</p>
+      </div>
+      <a
+        href="#form-pemesanan"
+        class="inline-flex min-h-11 items-center justify-center rounded-full border border-[#2c6ecb] bg-[#2c6ecb] px-6 text-[10px] font-semibold uppercase tracking-[0.1em] text-white transition-colors hover:border-[#1f5199] hover:bg-[#1f5199] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2c6ecb] active:scale-[0.98]"
+      >
+        {copy.order}
+      </a>
+    </div>
+  </main>
+
+  <script>
+    function initStickyBarObserver() {
+      const stickyBar = document.getElementById('sticky-purchase-bar');
+      const orderForm = document.getElementById('form-pemesanan');
+      if (!stickyBar || !orderForm) return;
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              stickyBar.style.transform = 'translateY(100%)';
+              stickyBar.style.opacity = '0';
+              stickyBar.style.pointerEvents = 'none';
+            } else {
+              stickyBar.style.transform = 'translateY(0)';
+              stickyBar.style.opacity = '1';
+              stickyBar.style.pointerEvents = 'auto';
+            }
+          });
+        },
+        { threshold: 0, rootMargin: '0px 0px -40px 0px' }
+      );
+
+      observer.observe(orderForm);
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initStickyBarObserver);
+    } else {
+      initStickyBarObserver();
+    }
+  </script>
+</BaseLayout>

@@ -1,0 +1,39 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageIntro from '../components/storefront/shared/PageIntro.astro';
+const copy = { title: 'Ulasan Pembeli', unavailable: 'Halaman ulasan pembeli belum tersedia buat masa ini.', info: 'Maklumat', heading: 'Ulasan Belum Tersedia', intro: 'Sistem ulasan pembeli sedang disediakan dan belum dapat dipaparkan.', home: 'Laman Utama', reviews: 'Ulasan', empty: 'Belum ada ulasan', emptyText: 'Kami sedang menyediakan sistem untuk memaparkan ulasan pembeli yang disahkan.', back: 'Kembali ke Laman Utama' };
+---
+
+<BaseLayout
+  shell="storefront"
+  title={`${copy.title} - ${Astro.locals.tenant.name}`}
+  description={copy.unavailable}
+  noindex={true}
+  breadcrumbs={[
+    { name: copy.home, url: '/' },
+    { name: copy.title, url: '/testimoni' },
+  ]}
+>
+  <main id="konten-utama" class="min-h-screen bg-white text-[#111111]">
+    <PageIntro
+      badge={copy.info}
+      title={copy.heading}
+      description={copy.intro}
+      breadcrumbs={[{ label: copy.home, href: '/' }, { label: copy.reviews }]}
+    />
+
+    <div class="mx-auto max-w-[480px] px-5 py-12 text-center">
+      <div class="rounded-xl border border-[#E5E5E5] bg-[#F5F5F5] p-8">
+        <h2 class="text-[15px] font-semibold text-[#111111]">{copy.empty}</h2>
+        <p class="mt-2 text-[13px] text-[#555555]">
+          {copy.emptyText}
+        </p>
+        <div class="mt-6">
+          <a href="/" class="inline-flex w-full items-center justify-center rounded-md bg-[#111111] px-6 py-2.5 text-[12px] font-semibold uppercase tracking-widest text-white transition-colors hover:bg-[#333333] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111111] focus-visible:ring-offset-2">
+            {copy.back}
+          </a>
+        </div>
+      </div>
+    </div>
+  </main>
+</BaseLayout>

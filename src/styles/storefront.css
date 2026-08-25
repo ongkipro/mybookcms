@@ -1,0 +1,89 @@
+/* Public storefront surface. Keep visual rules public-only so the CMS can evolve
+ * independently; checkout owns its separate form-hybrid.css layer.
+ */
+@import './foundation.css';
+
+@source "../components/storefront";
+/* Class names are also written in plain TypeScript - `lib/ui-variants.ts`
+   holds the cva variants both surfaces render with. With `source(none)` every
+   place a class name is *written* has to be declared, not just the templates. */
+@source "../lib";
+@source "../layouts/BaseLayout.astro";
+@source "../layouts/EmbedLayout.astro";
+@source "../pages";
+@source not "../pages/admin";
+@source not "../pages/api";
+/* Landing content lives in D1, where the scanner cannot reach it. This file is
+   generated from that content by scripts/generate-landing-safelist.mjs so the
+   utilities it uses are emitted; without it a landing page renders its markup
+   with almost none of its styling. */
+@source "./landing-safelist.html";
+
+/* No src file references these. They are kept on the public side rather than
+   deleted because merchant-authored landing HTML lives in D1, where grep
+   cannot see it, and that content renders here. */
+/* A brush-stroke underline used throughout merchant landing copy. It arrived
+   with imported content that defined it in a per-page <style> block, which does
+   not survive the move into D1 - the class is not a Tailwind utility, so the
+   safelist cannot generate it either. It lives here for the same reason as the
+   highlight classes below. */
+.hl-brush {
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  padding-bottom: 0.14em;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20320%2024'%20preserveAspectRatio='none'%3E%3Cpath%20d='M3%2013C55%206%20120%2016%20182%2011S292%208%20317%2012L315%2020C252%2015%20150%2023%2072%2019S13%2021%205%2020C2%2017%202%2016%203%2013Z'%20fill='%23FF9900'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center 100%;
+  background-size: 100% 0.32em;
+}
+
+/* High-Trust Unified Blue & Slate Highlights */
+.text-highlight-blue {
+  background-color: rgba(37, 99, 235, 0.12);
+  color: #1d4ed8;
+  padding: 0.05rem 0.35rem;
+  border-radius: 0.25rem;
+  display: inline-block;
+}
+
+.text-highlight-violet,
+.text-highlight-amber,
+.text-highlight-sky,
+.text-highlight-rose {
+  background-color: rgba(241, 245, 249, 0.9);
+  color: #0f172a;
+  padding: 0.05rem 0.35rem;
+  border-radius: 0.25rem;
+  display: inline-block;
+}
+
+/* Public storefront entry. Keep visual rules public-only so the CMS can evolve
+ * independently; checkout owns its separate form-hybrid.css layer. */
+
+
+.nav-line-hover { position: relative; transition: color 0.15s ease; }
+.nav-line-hover:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 4px; }
+.nav-line-hover::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 100%;
+  height: 2.5px;
+  background-color: #2563eb;
+  border-radius: 9999px;
+  transform: scaleX(0);
+  transform-origin: bottom right;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.nav-line-hover:hover::after, .nav-line-hover.active-line::after { transform: scaleX(1); transform-origin: bottom left; }
+
+/* Paduka asked the public surface to be clean white. The shared canvas token is
+   #fafafa, which admin keeps; the storefront overrides it here rather than
+   changing foundation.css, so the two surfaces stay independent. */
+:root {
+  --bg-canvas: #ffffff;
+  /* foundation sets body colour to slate-900 for both surfaces. The storefront
+     ink is #111111; admin keeps its slate. */
+  --text-main: #111111;
+}

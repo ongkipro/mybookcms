@@ -1,0 +1,20 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import LegalPage from '../components/storefront/shared/LegalPage.astro';
+
+const page = {
+  badge: 'Cookie',
+  title: 'Dasar Cookie',
+  description: `Maklumat tentang cookie penting yang digunakan oleh ${Astro.locals.tenant.name}.`,
+  sections: [
+    { title: 'Cookie yang digunakan', paragraphs: ['Kami menggunakan cookie penting sahaja untuk memastikan borang checkout dan sesi laman berfungsi dengan selamat.', 'Cookie ini tidak digunakan untuk pengiklanan, analitik, atau penjejakan merentas laman.'] },
+    { title: 'Sesi checkout', paragraphs: ['Data sementara dalam pelayar membantu memaparkan ringkasan pesanan selepas anda menghantar checkout. Ia bukan profil pengiklanan dan tidak dikongsi dengan rangkaian iklan.'] },
+    { title: 'Pilihan anda', paragraphs: ['Anda boleh memadam atau menyekat cookie melalui tetapan pelayar. Jika cookie penting disekat, sebahagian fungsi checkout atau sesi mungkin tidak berfungsi seperti yang dijangka.'] },
+    { title: 'Kemaskini dasar', paragraphs: [`Kami akan mengemas kini dasar ini jika cara ${Astro.locals.tenant.name} menggunakan cookie penting berubah.`] },
+  ],
+};
+---
+
+<BaseLayout title={`${page.title} - ${Astro.locals.tenant.name}`} description={page.description} breadcrumbs={[{ name: 'Laman Utama', url: '/' }, { name: page.title, url: '/kebijakan-cookie' }]}>
+  <LegalPage {...page} breadcrumbs={[{ label: 'Laman Utama', href: '/' }, { label: page.title }]} />
+</BaseLayout>

@@ -1,0 +1,145 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import AdminPageHeader from '../../../components/admin/AdminPageHeader.astro';
+import { PUBLIC_CATALOG_FEED_PATH } from '../../../lib/google-catalog';
+export const prerender = false;
+---
+
+<AdminLayout title="Google Ads & Merchant Center Engine" activeMenu="ads">
+  <div class="space-y-6">
+    <AdminPageHeader eyebrow="Google Ads Signal OS" title="Google Ads & Merchant Center Engine" description="Kelola GTM, conversion action Purchase, sinyal ecommerce, dan catalog XML untuk pasar Malaysia." backHref="/admin/ads" backLabel="Ads & tracking">
+      <div slot="actions" class="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+        <a id="header-feed-link" href={PUBLIC_CATALOG_FEED_PATH} target="_blank" rel="noopener" class="btn-secondary inline-flex min-h-11 flex-1 items-center justify-center px-4 text-xs sm:flex-none">XML Feed ↗</a>
+        <span id="google-badge" class="inline-flex min-h-11 flex-1 items-center justify-center rounded-full bg-slate-100 px-3 text-xs font-bold text-slate-600 sm:flex-none">Memuat…</span>
+      </div>
+    </AdminPageHeader>
+
+    <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <article class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><p class="text-[11px] font-bold uppercase tracking-wider text-slate-500">GTM Container</p><p id="kpi-gtm" class="mt-2 break-all font-mono text-sm font-extrabold">—</p><p class="mt-1 text-[11px] text-slate-500">Ecommerce dataLayer</p></article>
+      <article class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><p class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Ads Conversion</p><p id="kpi-ads" class="mt-2 break-all font-mono text-sm font-extrabold">—</p><p class="mt-1 text-[11px] text-slate-500">Purchase MYR</p></article>
+      <article class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><p class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Catalog Feed</p><p id="kpi-catalog" class="mt-2 text-sm font-extrabold">Memuat…</p><p class="mt-1 text-[11px] text-slate-500">RSS 2.0 XML</p></article>
+      <article class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><p class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Offer dalam feed</p><p id="kpi-offers" class="mt-2 text-sm font-extrabold">—</p><p class="mt-1 text-[11px] text-slate-500">Satu per varian</p></article>
+    </div>
+
+    <div class="overflow-x-auto border-b border-slate-200 text-sm font-bold" role="tablist" aria-label="Pengaturan Google">
+      <div class="flex min-w-max [&>button]:shrink-0 [&>button]:whitespace-nowrap">
+        <button class="google-tab min-h-11 border-b-2 border-blue-600 px-4 py-2.5 text-blue-700" type="button" role="tab" aria-selected="true" aria-controls="google-config" id="google-tab-config" data-panel="google-config">⚙️ Konfigurasi ID</button>
+        <button class="google-tab min-h-11 border-b-2 border-transparent px-4 py-2.5 text-slate-500" type="button" role="tab" aria-selected="false" aria-controls="google-guide" id="google-tab-guide" data-panel="google-guide" tabindex="-1">📘 Tutorial Step-by-Step</button>
+        <button class="google-tab min-h-11 border-b-2 border-transparent px-4 py-2.5 text-slate-500" type="button" role="tab" aria-selected="false" aria-controls="google-catalog" id="google-tab-catalog" data-panel="google-catalog" tabindex="-1">🛒 Catalog XML Feed</button>
+        <button class="google-tab min-h-11 border-b-2 border-transparent px-4 py-2.5 text-slate-500" type="button" role="tab" aria-selected="false" aria-controls="google-inspector" id="google-tab-inspector" data-panel="google-inspector" tabindex="-1">🔬 Sinyal & Payload Inspector</button>
+      </div>
+    </div>
+
+    <section id="google-config" role="tabpanel" aria-labelledby="google-tab-config">
+      <div id="google-loading" class="h-64 animate-pulse rounded-xl bg-slate-100 shadow-sm" role="status" aria-live="polite" aria-busy="true" aria-atomic="true"><span class="sr-only">Memuat konfigurasi Google.</span></div>
+      <div id="google-error" class="hidden rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-800" role="alert"></div>
+      <form id="google-form" class="hidden rounded-xl border border-slate-200 bg-white text-slate-950 shadow-sm" novalidate>
+        <div class="border-b border-slate-200 p-5 md:p-6">
+          <div class="flex items-center justify-between gap-3"><label for="google-gtm" class="text-xs font-black">Google Tag Manager Container ID</label><span class="rounded bg-slate-100 px-2 py-0.5 font-mono text-[10px] text-slate-600">Opsional</span></div>
+          <input id="google-gtm" class="admin-input-flat mt-2 h-11 font-mono text-base uppercase md:text-sm" autocomplete="off" maxlength="24" pattern="GTM-[A-Za-z0-9]{4,20}" placeholder="GTM-XXXXXXX" />
+          <p class="mt-1.5 text-[11px] leading-5 text-slate-500">Mengaktifkan container GTM untuk event <code>view_item</code>, <code>begin_checkout</code>, dan <code>purchase</code>.</p>
+        </div>
+        <div class="grid grid-cols-1 gap-5 p-5 md:grid-cols-2 md:p-6">
+          <div><label for="google-id" class="text-xs font-black">Google Ads Conversion ID</label><input id="google-id" class="admin-input-flat mt-2 h-11 font-mono text-base uppercase md:text-sm" autocomplete="off" maxlength="24" pattern="AW-[0-9]{5,20}" placeholder="AW-123456789" /><p class="mt-1.5 text-[11px] text-slate-500">Format Google Tag: <code>AW-XXXXXXXXX</code>.</p></div>
+          <div><label for="google-label" class="text-xs font-black">Purchase Conversion Label</label><input id="google-label" class="admin-input-flat mt-2 h-11 font-mono text-base md:text-sm" autocomplete="off" maxlength="100" pattern="[A-Za-z0-9_-]{1,100}" placeholder="AbCd_EFGHIJKlm" /><p class="mt-1.5 text-[11px] text-slate-500">Label khusus conversion action Purchase.</p></div>
+        </div>
+        <div class="mx-5 mb-5 rounded-xl border border-blue-200 bg-blue-50/70 p-4 text-xs leading-5 text-blue-900 md:mx-6">
+          <div class="flex items-start gap-2.5"><span aria-hidden="true">💡</span><div><strong>Ketentuan pengisian</strong><ul class="mt-1 list-disc space-y-0.5 pl-4 text-[11px]"><li>Conversion ID dan Label harus diisi bersamaan.</li><li>GTM dapat digunakan secara independen.</li><li>Consent Google default <strong>denied</strong> sampai integrasi consent toko memberi pembaruan.</li><li>Purchase dikirim dari thanks page setelah order dan status token terverifikasi.</li></ul></div></div>
+        </div>
+        <div class="flex flex-col gap-3 border-t border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between"><p id="google-status" class="min-h-5 text-xs font-bold text-slate-500" role="status" aria-live="polite">Perubahan belum disimpan.</p><button id="save-google" type="submit" class="btn-blue min-h-11 w-full px-6 text-xs sm:w-auto">Simpan Konfigurasi</button></div>
+      </form>
+    </section>
+
+    <section id="google-guide" role="tabpanel" aria-labelledby="google-tab-guide" class="hidden">
+      <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+        <div class="flex flex-col gap-3 border-b border-slate-100 pb-4 sm:flex-row sm:items-center sm:justify-between"><div><h3 class="text-base font-extrabold">Panduan Google Ads & Merchant Center</h3><p class="mt-1 text-xs text-slate-500">Lima langkah untuk konfigurasi dan verifikasi sinyal Malaysia.</p></div><span class="w-fit rounded-full bg-blue-100 px-3 py-1 text-xs font-black text-blue-800">5 langkah praktis</span></div>
+        <div class="mt-6 space-y-6">
+          <div class="relative pl-8 before:absolute before:bottom-0 before:left-3.5 before:top-8 before:w-0.5 before:bg-slate-200"><span class="absolute left-0 top-0 flex size-7 items-center justify-center rounded-full bg-blue-600 text-xs font-black text-white">1</span><div class="rounded-xl border border-slate-200 bg-slate-50/50 p-4"><h4 class="text-sm font-black">Buat conversion action Purchase</h4><p class="mt-1 text-xs leading-5 text-slate-600">Gunakan nilai berbeda untuk setiap conversion, currency MYR, dan Count: Every. Nilai yang dikirim adalah subtotal barang, tanpa shipping, COD fee, atau admin fee.</p></div></div>
+          <div class="relative pl-8 before:absolute before:bottom-0 before:left-3.5 before:top-8 before:w-0.5 before:bg-slate-200"><span class="absolute left-0 top-0 flex size-7 items-center justify-center rounded-full bg-blue-600 text-xs font-black text-white">2</span><div class="rounded-xl border border-slate-200 bg-slate-50/50 p-4"><h4 class="text-sm font-black">Siapkan consent dan atribusi</h4><p class="mt-1 text-xs leading-5 text-slate-600">Google consent dimulai dari denied. Click ID <code>gclid</code>, <code>gbraid</code>, dan <code>wbraid</code> disimpan pada order; offline upload belum menjadi bagian versi ini.</p></div></div>
+          <div class="relative pl-8 before:absolute before:bottom-0 before:left-3.5 before:top-8 before:w-0.5 before:bg-slate-200"><span class="absolute left-0 top-0 flex size-7 items-center justify-center rounded-full bg-blue-600 text-xs font-black text-white">3</span><div class="rounded-xl border border-slate-200 bg-slate-50/50 p-4"><h4 class="text-sm font-black">Salin ID ke form konfigurasi</h4><p class="mt-1 text-xs leading-5 text-slate-600">Masukkan GTM Container ID bila digunakan. Untuk Google Ads langsung, masukkan pasangan Conversion ID dan Purchase Label.</p></div></div>
+          <div class="relative pl-8 before:absolute before:bottom-0 before:left-3.5 before:top-8 before:w-0.5 before:bg-slate-200"><span class="absolute left-0 top-0 flex size-7 items-center justify-center rounded-full bg-blue-600 text-xs font-black text-white">4</span><div class="rounded-xl border border-slate-200 bg-slate-50/50 p-4"><h4 class="text-sm font-black">Hubungkan catalog XML</h4><p class="mt-1 text-xs leading-5 text-slate-600">Tambahkan URL feed pada Merchant Center sebagai scheduled fetch untuk target Malaysia dan currency MYR. Shipping serta return policy tetap dikonfigurasi di Merchant Center.</p></div></div>
+          <div class="relative pl-8"><span class="absolute left-0 top-0 flex size-7 items-center justify-center rounded-full bg-emerald-600 text-xs font-black text-white">5</span><div class="rounded-xl border border-emerald-200 bg-emerald-50/50 p-4"><h4 class="text-sm font-black text-emerald-950">Verifikasi sinyal live</h4><p class="mt-1 text-xs leading-5 text-emerald-800">Gunakan Tag Assistant. Pastikan ID varian sama dengan feed, transaction_id sama dengan invoice, dan Purchase muncul saat thanks page tervalidasi untuk COD maupun transfer manual.</p></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="google-catalog" role="tabpanel" aria-labelledby="google-tab-catalog" class="hidden">
+      <div id="catalog-loading" class="h-64 animate-pulse rounded-xl bg-slate-100 shadow-sm" role="status" aria-live="polite" aria-busy="true" aria-atomic="true"><span class="sr-only">Memuat catalog XML.</span></div>
+      <div id="catalog-error" class="hidden rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-800" role="alert"></div>
+      <div id="catalog-content" class="hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div><span class="inline-block rounded-md bg-blue-100 px-2 py-0.5 text-[10px] font-black uppercase text-blue-800">Variant XML Engine</span><h3 class="mt-1 text-base font-extrabold">Shared Google & Meta Product Catalog Feed</h3><p class="mt-1 text-xs leading-5 text-slate-500">Satu URL RSS 2.0 untuk Google Merchant Center dan Meta Commerce Manager. Feed berisi produk aktif dan offer varian MYR; ID-nya sama dengan event storefront.</p></div>
+          <div class="grid grid-cols-1 gap-2 sm:flex"><button id="catalog-copy" type="button" class="btn-secondary min-h-11 px-4 text-xs">Salin Link Feed</button><a id="catalog-open" href={PUBLIC_CATALOG_FEED_PATH} target="_blank" rel="noopener" class="btn-blue inline-flex min-h-11 items-center justify-center px-4 text-xs">Buka Feed XML ↗</a></div>
+        </div>
+        <div id="catalog-banner" class="mt-5 rounded-xl border p-4"><div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><p class="text-[10px] font-bold uppercase tracking-wider">Status validasi lokal</p><p id="catalog-readiness" class="mt-1 font-extrabold">—</p><p id="catalog-counts" class="mt-1 text-xs opacity-80">—</p></div><button id="catalog-recheck" type="button" class="btn-secondary min-h-11 w-full px-4 text-xs sm:w-auto">Periksa ulang</button></div></div>
+        <label class="mt-5 grid grid-cols-1 gap-2 text-xs font-black">URL feed publik<input id="catalog-url" readonly class="admin-input-flat h-11 font-mono text-xs font-normal" /></label>
+        <p id="catalog-action-status" class="mt-2 min-h-5 text-xs font-bold text-slate-500" role="status" aria-live="polite"></p>
+        <div class="mt-5 overflow-x-auto rounded-lg border border-slate-200">
+          <table class="w-full min-w-[760px] text-left text-xs"><thead class="bg-slate-100 text-[11px] uppercase tracking-wider text-slate-600"><tr><th class="p-3">ID</th><th class="p-3">Produk / varian</th><th class="p-3">Harga</th><th class="p-3">Ketersediaan</th><th class="p-3">Jenis produk</th></tr></thead><tbody id="catalog-table-body" class="divide-y divide-slate-100"></tbody></table>
+        </div>
+        <div id="catalog-empty" class="mt-4 hidden rounded-lg bg-slate-50 p-4 text-sm text-slate-600">Belum ada offer yang layak diterbitkan.</div>
+        <div id="catalog-warnings-card" class="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4"><h4 class="text-sm font-extrabold text-amber-950">Perlu ditinjau</h4><ul id="catalog-warnings" class="mt-2 space-y-1.5 text-xs leading-5 text-amber-900"></ul></div>
+      </div>
+    </section>
+
+    <section id="google-inspector" role="tabpanel" aria-labelledby="google-tab-inspector" class="hidden">
+      <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+        <div class="border-b border-slate-100 pb-4"><h3 class="text-base font-extrabold">Sinyal & Payload Inspector</h3><p class="mt-1 text-xs text-slate-500">Kontrak payload storefront; ini contoh dokumentasi, bukan event live.</p></div>
+        <div class="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div class="overflow-x-auto rounded-xl bg-slate-950 p-4 text-[11px] leading-5 text-slate-200"><pre><code>{`dataLayer.push({
+  event: 'purchase',
+  ecommerce: {
+    currency: 'MYR',
+    value: 32.90,
+    transaction_id: 'INV-10001',
+    items: [{
+      item_id: 'p10001-v10001',
+      item_name: 'Everyday Planner',
+      quantity: 1
+    }]
+  }
+})`}</code></pre></div>
+          <div class="space-y-3 text-xs"><div class="rounded-lg bg-slate-50 p-4"><p class="font-black">Nilai Purchase</p><p class="mt-1 leading-5 text-slate-600">Subtotal item dari <code>order_items</code>. Shipping, COD fee, admin fee, dan charge lain tidak masuk.</p></div><div class="rounded-lg bg-slate-50 p-4"><p class="font-black">Pemicu Purchase</p><p class="mt-1 leading-5 text-slate-600">Thanks page memverifikasi order dan status token, lalu mengirim Purchase untuk COD maupun transfer manual tanpa menunggu perubahan status admin.</p></div><div class="rounded-lg bg-slate-50 p-4"><p class="font-black">Consent & identitas</p><p class="mt-1 leading-5 text-slate-600">Consent default denied. Canonical ID <code>p&#123;productId&#125;-v&#123;variantId&#125;</code> dipakai oleh landing, checkout, thanks, dan catalog.</p></div></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    type CatalogPreview = { id: string; title: string; price: string; salePrice?: string; availability: string; productType: string };
+    type CatalogData = { feed_url: string; product_count: number; offer_count: number; warning_count: number; readiness: 'empty' | 'review' | 'ready'; readiness_label: string; warnings: Array<{ message: string }>; preview: CatalogPreview[] };
+    const tabs = [...document.querySelectorAll<HTMLButtonElement>('.google-tab')];
+    const activate = (index: number, focus = true) => { tabs.forEach((tab, item) => { const active = item === index; tab.setAttribute('aria-selected', String(active)); tab.tabIndex = active ? 0 : -1; tab.classList.toggle('border-blue-600', active); tab.classList.toggle('text-blue-700', active); tab.classList.toggle('border-transparent', !active); tab.classList.toggle('text-slate-500', !active); document.getElementById(tab.dataset.panel || '')?.classList.toggle('hidden', !active); }); tabs[index]?.scrollIntoView({ block: 'nearest', inline: 'nearest' }); if (focus) tabs[index]?.focus(); };
+    tabs.forEach((tab, index) => { tab.addEventListener('click', () => activate(index, false)); tab.addEventListener('keydown', (event) => { const next = event.key === 'ArrowRight' ? (index + 1) % tabs.length : event.key === 'ArrowLeft' ? (index - 1 + tabs.length) % tabs.length : event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : -1; if (next >= 0) { event.preventDefault(); activate(next); } }); });
+
+    const setText = (id: string, value: string | number) => { const element = document.getElementById(id); if (element) element.textContent = String(value); };
+    const form = document.getElementById('google-form') as HTMLFormElement | null;
+    const gtm = document.getElementById('google-gtm') as HTMLInputElement | null;
+    const conversionId = document.getElementById('google-id') as HTMLInputElement | null;
+    const label = document.getElementById('google-label') as HTMLInputElement | null;
+    const status = document.getElementById('google-status');
+    let savePending = false;
+    const message = (value: string, error = false) => { if (!status) return; status.textContent = value; status.className = `min-h-5 text-xs font-bold ${error ? 'text-rose-700' : 'text-blue-700'}`; status.setAttribute('role', error ? 'alert' : 'status'); };
+    const renderConfig = (data: Record<string, string>) => {
+      if (gtm) gtm.value = data.google_tag_manager_id || ''; if (conversionId) conversionId.value = data.google_ads_conversion_id || ''; if (label) label.value = data.google_ads_conversion_label || '';
+      setText('kpi-gtm', data.google_tag_manager_id || 'Belum diisi'); setText('kpi-ads', data.google_ads_conversion_id || 'Belum diisi');
+      const ready = Boolean(data.google_tag_manager_id || (data.google_ads_conversion_id && data.google_ads_conversion_label)); const badge = document.getElementById('google-badge'); if (badge) { badge.textContent = ready ? 'Aktif' : 'Belum lengkap'; badge.className = `inline-flex min-h-11 flex-1 items-center justify-center rounded-full px-3 text-xs font-bold sm:flex-none ${ready ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800'}`; }
+    };
+    fetch('/api/admin/ads').then(async (response) => { const body = await response.json(); if (!response.ok || !body.success) throw new Error(body.error); return body.data; }).then((data) => { renderConfig(data); document.getElementById('google-loading')?.classList.add('hidden'); document.getElementById('google-loading')?.setAttribute('aria-busy', 'false'); form?.classList.remove('hidden'); }).catch((error) => { document.getElementById('google-loading')?.classList.add('hidden'); const box = document.getElementById('google-error'); if (box) { box.textContent = error instanceof Error ? error.message : 'Gagal memuat Google.'; box.classList.remove('hidden'); } });
+    form?.addEventListener('submit', async (event) => { event.preventDefault(); if (savePending || !form.reportValidity()) return; const hasId = Boolean(conversionId?.value.trim()); const hasLabel = Boolean(label?.value.trim()); if (hasId !== hasLabel) { message('Conversion ID dan Purchase Label harus diisi berpasangan.', true); (hasId ? label : conversionId)?.focus(); return; } savePending = true; const button = document.getElementById('save-google') as HTMLButtonElement | null; if (button) { button.disabled = true; button.textContent = 'Menyimpan…'; } try { const response = await fetch('/api/admin/ads', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'save-google', google_tag_manager_id: gtm?.value.trim(), google_ads_conversion_id: conversionId?.value.trim(), google_ads_conversion_label: label?.value.trim() }) }); const body = await response.json().catch(() => ({})); if (!response.ok || !body.success) throw new Error(body.error || 'Gagal menyimpan Google.'); renderConfig(body.data); message(body.message || 'Konfigurasi Google tersimpan.'); } catch (error) { message(error instanceof Error ? error.message : 'Gagal menyimpan Google.', true); } finally { savePending = false; if (button) { button.disabled = false; button.textContent = 'Simpan Konfigurasi'; } } });
+
+    const cell = (value: string, className = 'p-3 align-top text-slate-700') => { const element = document.createElement('td'); element.className = className; element.textContent = value; return element; };
+    const renderCatalog = (data: CatalogData) => {
+      setText('kpi-catalog', data.readiness_label); setText('kpi-offers', data.offer_count); setText('catalog-readiness', data.readiness_label); setText('catalog-counts', `${data.product_count} produk · ${data.offer_count} offer · ${data.warning_count} peringatan`);
+      const url = document.getElementById('catalog-url') as HTMLInputElement | null; if (url) url.value = data.feed_url; for (const key of ['catalog-open', 'header-feed-link']) { const link = document.getElementById(key) as HTMLAnchorElement | null; if (link) link.href = data.feed_url; }
+      const banner = document.getElementById('catalog-banner'); if (banner) banner.className = `mt-5 rounded-xl border p-4 ${data.readiness === 'ready' ? 'border-emerald-200 bg-emerald-50 text-emerald-950' : data.readiness === 'empty' ? 'border-slate-200 bg-slate-50 text-slate-800' : 'border-amber-200 bg-amber-50 text-amber-950'}`;
+      const table = document.getElementById('catalog-table-body'); table?.replaceChildren(); data.preview.forEach((item) => { const row = document.createElement('tr'); row.append(cell(item.id, 'p-3 align-top font-mono font-bold text-slate-900'), cell(item.title), cell(item.salePrice ? `${item.salePrice} (asal ${item.price})` : item.price, 'p-3 align-top font-mono text-slate-700'), cell(item.availability === 'in_stock' ? 'Tersedia' : item.availability), cell(item.productType)); table?.append(row); });
+      document.getElementById('catalog-empty')?.classList.toggle('hidden', data.offer_count > 0); const warningList = document.getElementById('catalog-warnings'); warningList?.replaceChildren(); data.warnings.forEach((warning) => { const item = document.createElement('li'); item.className = 'flex gap-2 before:mt-2 before:size-1.5 before:shrink-0 before:rounded-full before:bg-amber-600'; item.textContent = warning.message; warningList?.append(item); }); document.getElementById('catalog-warnings-card')?.classList.toggle('hidden', data.warnings.length === 0);
+    };
+    let catalogPending = false;
+    const loadCatalog = async () => { if (catalogPending) return; catalogPending = true; const button = document.getElementById('catalog-recheck') as HTMLButtonElement | null; if (button) { button.disabled = true; button.textContent = 'Memeriksa…'; } setText('catalog-action-status', 'Memeriksa feed lokal…'); try { const response = await fetch('/api/admin/ads/google-catalog', { cache: 'no-store' }); const body = await response.json().catch(() => ({})); if (!response.ok || !body.success) throw new Error(body.error || 'Catalog Google gagal dimuat.'); renderCatalog(body.data); document.getElementById('catalog-loading')?.classList.add('hidden'); document.getElementById('catalog-loading')?.setAttribute('aria-busy', 'false'); document.getElementById('catalog-error')?.classList.add('hidden'); document.getElementById('catalog-content')?.classList.remove('hidden'); setText('catalog-action-status', 'Feed lokal berhasil diperiksa.'); } catch (error) { document.getElementById('catalog-loading')?.classList.add('hidden'); const box = document.getElementById('catalog-error'); if (box) { box.textContent = error instanceof Error ? error.message : 'Catalog Google gagal dimuat.'; box.classList.remove('hidden'); } setText('kpi-catalog', 'Periksa feed'); setText('kpi-offers', 'Gagal'); } finally { catalogPending = false; if (button) { button.disabled = false; button.textContent = 'Periksa ulang'; } } };
+    document.getElementById('catalog-recheck')?.addEventListener('click', loadCatalog);
+    document.getElementById('catalog-copy')?.addEventListener('click', async () => { const input = document.getElementById('catalog-url') as HTMLInputElement | null; if (!input?.value) return; try { await navigator.clipboard.writeText(input.value); setText('catalog-action-status', 'URL feed disalin.'); } catch { input.select(); setText('catalog-action-status', 'Salin manual URL yang sudah dipilih.'); } });
+    loadCatalog();
+  </script>
+</AdminLayout>

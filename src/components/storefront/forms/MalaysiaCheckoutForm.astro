@@ -1,0 +1,633 @@
+---
+import { getStorefrontProduct } from '../../../lib/catalog';
+import { resolveFormVariant } from '../../../lib/form-config';
+import { formatMyr, resolveStorefrontLocale } from '../../../lib/storefront-locale';
+import {
+  MALAYSIA_CUSTOMER_NAME_REGEX,
+  MALAYSIA_MOBILE_REGEX,
+  MAX_CUSTOMER_NAME_LENGTH,
+  MAX_DELIVERY_ADDRESS_LENGTH,
+  MIN_CUSTOMER_NAME_LENGTH,
+  MIN_DELIVERY_ADDRESS_LENGTH,
+} from '../../../lib/validation';
+
+interface Props {
+  mode?: 'middle' | 'full' | 'hybrid';
+  productSlug?: string;
+  selectedVariantId?: string;
+  embedded?: boolean;
+  bannerImage?: string;
+}
+
+const { mode = 'hybrid', productSlug = 'asahan-portable', selectedVariantId, bannerImage } = Astro.props;
+const isMiddle = mode === 'middle';
+const product = await getStorefrontProduct(Astro.locals, productSlug);
+if (!product) throw new Error(`Product ${productSlug} not found`);
+const selectedVariant = resolveFormVariant(product, selectedVariantId) || product.variants[0];
+const locale = resolveStorefrontLocale(Astro.locals.tenant.locale);
+const t = {
+      variant: 'Pilih varian', recipient: 'Maklumat penghantaran', name: 'Nama penuh', phone: 'Nombor telefon Malaysia', address: 'Alamat jalan lengkap', addressPlaceholder: 'Nombor rumah/unit, jalan dan tanda berdekatan', location: 'Cari bandar atau poskod', locationPlaceholder: 'Contoh: Kuala Lumpur atau 50450', locationHint: 'Taip sekurang-kurangnya 3 huruf atau poskod tepat 5 digit.', searching: 'Mencari lokasi…', found: 'lokasi ditemui', empty: 'Tiada lokasi sepadan. Cuba bandar, negeri atau poskod 5 digit.', searchFailed: 'Lokasi gagal dicari.', retry: 'Cuba lagi', deliverTo: 'Hantar ke', change: 'Ubah', addressPending: 'Lengkapkan alamat jalan di atas.', payment: 'Kaedah bayaran', summary: 'Ringkasan pesanan', shipping: 'Penghantaran', total: 'Jumlah', quote: 'Pilih lokasi penghantaran', submit: 'Buat Pesanan Sekarang', loading: 'Mengira penghantaran…', unavailable: 'Penghantaran belum tersedia untuk lokasi ini.', quoteFailed: 'Kadar penghantaran gagal dikira.', quoteChanged: 'Kadar penghantaran berubah. Semak jumlah baharu dan hantar semula.', selectFromList: 'Cari dan pilih bandar atau poskod daripada senarai.', submitting: 'Membuat pesanan…', completeName: 'Lengkapkan nama dahulu', completePhone: 'Lengkapkan nombor WhatsApp dahulu', completeAddress: 'Lengkapkan alamat dahulu', chooseLocation: 'Pilih lokasi penghantaran', loadingPayment: 'Memuatkan kaedah bayaran…', choosePayment: 'Pilih kaedah bayaran', nameEmpty: 'Nama penuh belum diisi.', nameShort: 'Nama penuh terlalu pendek (minimum 2 aksara).', nameInvalid: 'Nama penuh mengandungi aksara yang tidak dibenarkan.', phoneEmpty: 'Nombor WhatsApp belum diisi.', phoneInvalid: 'Masukkan nombor mudah alih Malaysia yang sah. Contoh: 0123456789.', addressEmpty: 'Alamat lengkap belum diisi.', addressShort: 'Alamat lengkap terlalu pendek (minimum 10 aksara).', addressInvalid: 'Alamat lengkap mesti mengandungi nama jalan atau kawasan.', paymentRequired: 'Pilih kaedah bayaran.', bankRequired: 'Pilih akaun bank penerima.', paymentFailed: 'Kaedah bayaran gagal dimuatkan.', fixFields: 'Semak ruangan yang ditandakan sebelum membuat pesanan.',
+    };
+const instanceId = `my-checkout-${crypto.randomUUID()}`;
+const searchId = `${instanceId}-location-search`;
+const listId = `${instanceId}-location-list`;
+const locationStatusId = `${instanceId}-location-status`;
+const formatPrice = (amountSen: number) => formatMyr(amountSen, locale);
+---
+
+<section class="bg-white" data-malaysia-checkout data-hybrid-form-root data-instance-id={instanceId} data-product-id={product.catalogId} data-product-name={product.productName} data-form-mode={mode}>
+  <section class="pb-8 pt-0">
+    <form class="grid gap-5 pt-4" novalidate>
+      <div class="absolute left-[-10000px] top-auto size-px overflow-hidden" aria-hidden="true"><label>Jangan isi kolom ini<input type="text" name="website" tabindex="-1" autocomplete="off" /></label></div>
+      <div class="px-4">
+        <section class="form-block form-block-first">
+          <div class="form-block-head gap-1.5"><h2 class="section-title">Pilih Varian</h2><p class="section-lead">Pilih varian produk yang ingin dipesan.</p></div>
+          <div class="variant-group simple-variant-group">
+            {product.variants.map((variant) => {
+              const comparePrice = variant.comparePrice ?? variant.price;
+              const hasDiscount = comparePrice > variant.price;
+              return <label class="variant-option simple-variant-option"><input type="radio" name="variant_id" value={variant.id} data-price={variant.price} data-compare={comparePrice} data-label={variant.label} checked={variant.id === selectedVariant.id} /><div class="variant-copy simple-variant-copy"><div class="variant-radio"></div><div class="variant-main simple-variant-main"><div class="simple-variant-head"><p class="variant-label">{variant.label}</p></div><div class="variant-price-row simple-variant-price-row"><span class="variant-price">{formatPrice(variant.price)}</span>{hasDiscount && <span class="simple-variant-dot" aria-hidden="true"></span>}{hasDiscount && <span class="variant-compare">{formatPrice(comparePrice)}</span>}</div></div></div></label>;
+            })}
+          </div>
+        </section>
+
+        <section class="form-block">
+          <div class="form-block-head gap-1.5"><h2 class="section-title">Data penerima</h2><p class="section-lead">Isi data dengan betul supaya pesanan mudah diproses.</p></div>
+          <div class="field-grid address-field-grid">
+            <div class="form-field form-field-full"><input id={`${instanceId}-name`} required name="customer_name" minlength={MIN_CUSTOMER_NAME_LENGTH} maxlength={MAX_CUSTOMER_NAME_LENGTH} autocomplete="name" placeholder=" " /><label for={`${instanceId}-name`}>Nama penuh</label></div>
+            <div class="form-field form-field-full"><input id={`${instanceId}-phone`} required name="customer_phone" type="tel" inputmode="numeric" autocomplete="tel" placeholder=" " /><label for={`${instanceId}-phone`}>Nombor WhatsApp Malaysia</label></div>
+            <div class="form-field form-field-full"><textarea id={`${instanceId}-address`} required name="address" rows="2" minlength={MIN_DELIVERY_ADDRESS_LENGTH} maxlength={MAX_DELIVERY_ADDRESS_LENGTH} autocomplete="street-address" placeholder=" "></textarea><label for={`${instanceId}-address`}>Alamat lengkap &amp; panduan lokasi</label></div>
+            {!isMiddle && <div class="form-field form-field-full"><div data-location-search-container class="form-field"><input id={searchId} data-location-search required type="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls={listId} aria-describedby={locationStatusId} autocomplete="off" enterkeyhint="search" placeholder=" " /><label for={searchId}>Cari bandar atau poskod</label></div><div id={listId} data-location-list class="district-list" role="listbox" aria-label={t.location} hidden></div><div data-location-picked class="shipping-address-summary" aria-live="polite" hidden><div class="shipping-address-summary-head"><strong>Hantar ke</strong><button type="button" data-location-change class="district-edit-button">Ubah</button></div><p data-selected-address class="shipping-address-line">{t.addressPending}</p><p data-selected-location class="district-picked-subtitle">-</p></div><div class="location-help-row"><small id={locationStatusId} data-location-status class="district-help" role="status" aria-live="polite">{t.locationHint}</small><button type="button" data-location-retry class="district-edit-button district-retry-button" hidden>{t.retry}</button></div><input type="hidden" name="location_id" data-location-id /><input type="hidden" name="district" data-district /><input type="hidden" name="city" data-city /><input type="hidden" name="province" data-province /><input type="hidden" name="postal_code" data-postcode /></div>}
+          </div>
+        </section>
+
+        {!isMiddle && <section class="form-block"><div class="inner-card"><div class="space-y-3 payment-block"><div class="payment-block-anchor" aria-hidden="true"><span></span><small>Pilih cara bayar</small><span></span></div><div data-payment-options class="payment-options" aria-busy="true"><p class="text-sm text-[#555555]">{t.loadingPayment}</p></div><small id={`${instanceId}-payment-feedback`} data-payment-feedback class="field-feedback" role="alert" hidden></small><button type="button" data-payment-retry class="district-edit-button" hidden>{t.retry}</button></div></div></section>}
+
+        <section class="form-block summary-block">
+          <div class="form-block-head"><h2 class="section-title">Ringkasan Pesanan</h2><p class="section-lead">Semak butiran pesanan sebelum meneruskan.</p></div>
+          <div class="summary-card" aria-live="polite"><div class="summary-row summary-row-product"><strong class="summary-product-name">{product.productName}</strong><div class="summary-price"><span data-summary-label class="summary-variant">{selectedVariant.label}</span><span class="summary-price-figures"><span data-summary-compare class="summary-compare-wrap" hidden={(selectedVariant.comparePrice ?? selectedVariant.price) <= selectedVariant.price}>{formatPrice(selectedVariant.comparePrice ?? selectedVariant.price)}</span><strong data-product-total>{formatPrice(selectedVariant.price)}</strong></span></div></div><div class="summary-row"><span>Penghantaran</span><strong data-shipping>{isMiddle ? 'Disahkan oleh CS' : t.quote}</strong><button type="button" data-quote-retry class="district-edit-button" hidden>{t.retry}</button></div><div class="total-box"><div><p>Jumlah Bayaran</p><small>{isMiddle ? 'Penghantaran disahkan melalui WhatsApp' : 'Termasuk produk + penghantaran'}</small></div><div class="total-box-side"><strong data-total>{formatPrice(selectedVariant.price)}</strong></div></div></div>
+          <div class="info-box"><span>Harga dan stok disahkan semula semasa pesanan diproses. Pastikan nombor WhatsApp aktif.</span></div>
+          <div class="submit-panel"><div class="cta-row"><button type="submit" class="submit-main" data-state="disabled" disabled><span class="submit-main-label" data-submit-label>{t.completeName}</span><span class="submit-main-icon" aria-hidden="true">→</span></button></div><div class="trust-strip" aria-label="Maklumat pesanan"><span><b aria-hidden="true">✓</b><i>Data pesanan</i></span><span><b aria-hidden="true">✓</b><i>Harga disahkan</i></span><span><b aria-hidden="true">✓</b><i>Konfirmasi admin</i></span></div>{bannerImage && <div class="mt-4 overflow-hidden border-t border-[#E5E5E5]"><img src={bannerImage} alt={`Maklumat promosi ${product.productName}`} class="mx-auto block h-auto w-full object-contain" loading="lazy" decoding="async" /></div>}<p data-checkout-error class="form-error" role="alert" tabindex="-1" hidden></p></div>
+        </section>
+      </div>
+    </form>
+  </section>
+</section>
+
+<script is:inline define:vars={{ instanceId, t, locale, isMiddle, customerNamePattern: MALAYSIA_CUSTOMER_NAME_REGEX.source, malaysiaMobilePattern: MALAYSIA_MOBILE_REGEX.source, minNameLength: MIN_CUSTOMER_NAME_LENGTH, maxNameLength: MAX_CUSTOMER_NAME_LENGTH, minAddressLength: MIN_DELIVERY_ADDRESS_LENGTH, maxAddressLength: MAX_DELIVERY_ADDRESS_LENGTH }}>
+  const root = document.querySelector(`[data-instance-id="${instanceId}"]`);
+  const form = root?.querySelector('form');
+  const money = (value) => new Intl.NumberFormat(locale, { style: 'currency', currency: 'MYR' }).format(Math.round(Number(value || 0)) / 100);
+  const productTotal = root?.querySelector('[data-product-total]');
+  const shippingEl = root?.querySelector('[data-shipping]');
+  const totalEl = root?.querySelector('[data-total]');
+  const errorEl = root?.querySelector('[data-checkout-error]');
+  const paymentOptions = root?.querySelector('[data-payment-options]');
+  const paymentFeedback = root?.querySelector('[data-payment-feedback]');
+  const paymentRetry = root?.querySelector('[data-payment-retry]');
+  const submit = form?.querySelector('button[type="submit"]');
+  const submitLabel = root?.querySelector('[data-submit-label]');
+  const summaryLabel = root?.querySelector('[data-summary-label]');
+  const summaryCompare = root?.querySelector('[data-summary-compare]');
+  const nameInput = form?.querySelector('[name="customer_name"]');
+  const phoneInput = form?.querySelector('[name="customer_phone"]');
+  const addressInput = form?.querySelector('[name="address"]');
+  const searchContainer = root?.querySelector('[data-location-search-container]');
+  const searchInput = root?.querySelector('[data-location-search]');
+  const listbox = root?.querySelector('[data-location-list]');
+  const locationStatus = root?.querySelector('[data-location-status]');
+  const locationRetry = root?.querySelector('[data-location-retry]');
+  const picked = root?.querySelector('[data-location-picked]');
+  const selectedAddress = root?.querySelector('[data-selected-address]');
+  const selectedLocationText = root?.querySelector('[data-selected-location]');
+  const quoteRetry = root?.querySelector('[data-quote-retry]');
+  const fields = {
+    id: form?.querySelector('[data-location-id]'), district: form?.querySelector('[data-district]'),
+    city: form?.querySelector('[data-city]'), province: form?.querySelector('[data-province]'),
+    postcode: form?.querySelector('[data-postcode]'),
+  };
+  let shippingCost = null;
+  let selectedLocation = null;
+  let locationResults = [];
+  let activeIndex = -1;
+  let searchTimer = null;
+  let searchSequence = 0;
+  let searchController = null;
+  let locationLoading = false;
+  let quoteLoading = false;
+  let quoteSequence = 0;
+  let quoteController = null;
+  let quoteKey = '';
+  let paymentMethodsLoading = !isMiddle;
+  let paymentMethodsLoaded = isMiddle;
+  let paymentMethodsFailed = false;
+  let submitting = false;
+
+  const normalizeName = (value) => String(value || '').replace(/\s+/gu, ' ').trim();
+  const normalizeAddress = (value) => String(value || '').replace(/\s+/gu, ' ').trim();
+  const normalizePhone = (value) => {
+    let digits = String(value || '').replace(/\D/g, '');
+    if (!digits) return '';
+    if (digits.startsWith('00')) digits = digits.slice(2);
+    if (digits.startsWith('600')) return `60${digits.slice(3)}`;
+    if (digits.startsWith('0')) return `60${digits.slice(1)}`;
+    if (digits.startsWith('1')) return `60${digits}`;
+    return digits;
+  };
+  const validName = () => {
+    const value = normalizeName(nameInput?.value);
+    return value.length >= minNameLength && value.length <= maxNameLength && new RegExp(customerNamePattern, 'u').test(value);
+  };
+  const validPhone = () => new RegExp(malaysiaMobilePattern).test(normalizePhone(phoneInput?.value));
+  const validAddress = () => {
+    const value = normalizeAddress(addressInput?.value);
+    return value.length >= minAddressLength && value.length <= maxAddressLength && /\p{L}/u.test(value);
+  };
+  const validLocation = () => isMiddle || Boolean(
+    selectedLocation && Number(fields.id?.value) > 0 && /^\d{5}$/.test(fields.postcode?.value || ''),
+  );
+  const currentQuoteKey = () => {
+    const variantId = form?.querySelector('input[name="variant_id"]:checked')?.value || '';
+    return selectedLocation && variantId ? `${selectedLocation.location_id}:${variantId}` : '';
+  };
+  const selectedPayment = () => form?.querySelector('input[name="payment_method"]:checked');
+  const validPayment = () => {
+    if (isMiddle) return true;
+    const method = selectedPayment();
+    if (!method || !['cod', 'manual_transfer'].includes(method.value)) return false;
+    return method.value !== 'manual_transfer' || Number(method.dataset.bankId) > 0;
+  };
+  const ensureFeedback = (input) => {
+    if (!input) return null;
+    const wrapper = input.closest('.form-field');
+    if (!wrapper) return null;
+    let feedback = wrapper.querySelector(':scope > .field-feedback');
+    if (!feedback) {
+      feedback = document.createElement('small');
+      feedback.id = `${input.id}-feedback`;
+      feedback.className = 'field-feedback';
+      feedback.setAttribute('role', 'alert');
+      feedback.hidden = true;
+      wrapper.append(feedback);
+    }
+    const describedBy = new Set((input.getAttribute('aria-describedby') || '').split(/\s+/).filter(Boolean));
+    describedBy.add(feedback.id);
+    input.setAttribute('aria-describedby', [...describedBy].join(' '));
+    return feedback;
+  };
+  const setFieldState = (input, message = '', showValid = false) => {
+    if (!input) return;
+    const feedback = ensureFeedback(input);
+    input.classList.toggle('field-invalid', Boolean(message));
+    input.classList.toggle('field-valid', !message && showValid);
+    input.setAttribute('aria-invalid', String(Boolean(message)));
+    if (feedback) {
+      feedback.textContent = message;
+      feedback.hidden = !message;
+    }
+  };
+  const validateName = (showError = false) => {
+    const value = normalizeName(nameInput?.value);
+    let message = '';
+    if (!value) message = t.nameEmpty;
+    else if (value.length < minNameLength) message = t.nameShort;
+    else if (value.length > maxNameLength || !new RegExp(customerNamePattern, 'u').test(value)) message = t.nameInvalid;
+    setFieldState(nameInput, showError ? message : '', !message && Boolean(value));
+    return !message;
+  };
+  const validatePhone = (showError = false) => {
+    const raw = String(phoneInput?.value || '').trim();
+    const message = !raw ? t.phoneEmpty : validPhone() ? '' : t.phoneInvalid;
+    setFieldState(phoneInput, showError ? message : '', !message && Boolean(raw));
+    return !message;
+  };
+  const validateAddress = (showError = false) => {
+    const value = normalizeAddress(addressInput?.value);
+    let message = '';
+    if (!value) message = t.addressEmpty;
+    else if (value.length < minAddressLength) message = t.addressShort;
+    else if (value.length > maxAddressLength || !/\p{L}/u.test(value)) message = t.addressInvalid;
+    setFieldState(addressInput, showError ? message : '', !message && Boolean(value));
+    return !message;
+  };
+  const validateLocation = (showError = false) => {
+    if (isMiddle) return true;
+    const valid = validLocation();
+    setFieldState(searchInput, showError && !valid ? t.selectFromList : '', valid);
+    return valid;
+  };
+  const setPaymentError = (message = '') => {
+    if (!paymentFeedback) return;
+    paymentFeedback.textContent = message;
+    paymentFeedback.hidden = !message;
+    paymentOptions?.querySelectorAll('input[name="payment_method"]').forEach((input) => {
+      input.setAttribute('aria-invalid', String(Boolean(message)));
+      if (paymentFeedback.id) input.setAttribute('aria-describedby', paymentFeedback.id);
+    });
+  };
+  const validatePayment = (showError = false) => {
+    if (isMiddle) return true;
+    const method = selectedPayment();
+    const message = !method ? t.paymentRequired : method.value === 'manual_transfer' && Number(method.dataset.bankId) <= 0 ? t.bankRequired : '';
+    setPaymentError(showError ? message : '');
+    return !message;
+  };
+  const getSubmitStatus = () => {
+    if (!form?.querySelector('input[name="variant_id"]:checked') || !validName()) return { ready: false, label: t.completeName };
+    if (!validPhone()) return { ready: false, label: t.completePhone };
+    if (!validAddress()) return { ready: false, label: t.completeAddress };
+    if (isMiddle) return { ready: true, label: t.submit };
+    if (locationLoading) return { ready: false, label: t.searching };
+    if (!validLocation()) return { ready: false, label: t.chooseLocation };
+    if (quoteLoading || !Number.isInteger(shippingCost) || quoteKey !== currentQuoteKey()) return { ready: false, label: t.loading };
+    if (paymentMethodsLoading) return { ready: false, label: t.loadingPayment };
+    if (!paymentMethodsLoaded || paymentMethodsFailed || !validPayment()) return { ready: false, label: t.choosePayment };
+    return { ready: true, label: t.submit };
+  };
+  const setSubmitState = () => {
+    if (!submit) return;
+    const status = getSubmitStatus();
+    submit.disabled = submitting || !status.ready;
+    submit.dataset.state = submitting ? 'loading' : status.ready ? 'ready' : 'disabled';
+    submit.setAttribute('aria-disabled', String(submit.disabled));
+    if (submitLabel) submitLabel.textContent = submitting ? t.submitting : status.label;
+  };
+  const updateTotal = () => {
+    const variant = form?.querySelector('input[name="variant_id"]:checked');
+    const price = Number(variant?.dataset.price || 0);
+    if (productTotal) productTotal.textContent = money(price);
+    if (summaryLabel) summaryLabel.textContent = variant?.dataset.label || '';
+    const compare = Number(variant?.dataset.compare || price);
+    if (summaryCompare) {
+      summaryCompare.textContent = money(compare);
+      summaryCompare.hidden = compare <= price;
+    }
+    if (totalEl) totalEl.textContent = money(price + (isMiddle ? 0 : (shippingCost || 0)));
+    setSubmitState();
+  };
+  const resetQuote = (message = t.quote) => {
+    if (isMiddle) return updateTotal();
+    shippingCost = null;
+    quoteKey = '';
+    if (shippingEl) shippingEl.textContent = message;
+    if (quoteRetry) quoteRetry.hidden = true;
+    updateTotal();
+  };
+  const setLocationStatus = (message, retry = false) => {
+    if (locationStatus) locationStatus.textContent = message;
+    if (locationRetry) locationRetry.hidden = !retry;
+  };
+  const closeList = () => {
+    if (!listbox || !searchInput) return;
+    listbox.hidden = true;
+    listbox.innerHTML = '';
+    searchInput.setAttribute('aria-expanded', 'false');
+    searchInput.removeAttribute('aria-activedescendant');
+    activeIndex = -1;
+  };
+  const showLocationMessage = (message) => {
+    if (!listbox || !searchInput) return;
+    locationResults = [];
+    activeIndex = -1;
+    listbox.replaceChildren();
+    const row = document.createElement('div');
+    row.className = 'district-empty';
+    row.textContent = message;
+    listbox.append(row);
+    listbox.hidden = false;
+    searchInput.setAttribute('aria-expanded', 'true');
+    searchInput.removeAttribute('aria-activedescendant');
+  };
+  const setActiveOption = (index) => {
+    if (!listbox || !searchInput || !locationResults.length) return;
+    activeIndex = (index + locationResults.length) % locationResults.length;
+    listbox.querySelectorAll('[role="option"]').forEach((option, optionIndex) => {
+      const active = optionIndex === activeIndex;
+      option.setAttribute('aria-selected', String(active));
+      if (active) {
+        searchInput.setAttribute('aria-activedescendant', option.id);
+        option.scrollIntoView({ block: 'nearest' });
+      }
+    });
+  };
+  const quote = async () => {
+    const variantId = form?.querySelector('input[name="variant_id"]:checked')?.value;
+    if (!selectedLocation || !variantId) return resetQuote();
+    const key = `${selectedLocation.location_id}:${variantId}`;
+    const sequence = ++quoteSequence;
+    quoteController?.abort();
+    quoteController = new AbortController();
+    quoteLoading = true;
+    resetQuote(t.loading);
+    setSubmitState();
+    try {
+      const response = await fetch(`/api/shipping-rates?postcode=${encodeURIComponent(selectedLocation.postal_code)}&variant_id=${encodeURIComponent(variantId)}`, { signal: quoteController.signal });
+      const body = await response.json();
+      const amount = Number(body?.rates?.[0]?.shipping_cost);
+      if (!response.ok || !Number.isInteger(amount)) {
+        const failure = new Error(body?.error || t.quoteFailed);
+        failure.retryable = response.status === 429 || response.status >= 500;
+        throw failure;
+      }
+      if (sequence !== quoteSequence || key !== currentQuoteKey()) return;
+      shippingCost = amount;
+      quoteKey = key;
+      if (shippingEl) shippingEl.textContent = money(amount);
+      if (quoteRetry) quoteRetry.hidden = true;
+      updateTotal();
+    } catch (error) {
+      if (error?.name === 'AbortError' || sequence !== quoteSequence) return;
+      shippingCost = null;
+      quoteKey = '';
+      if (shippingEl) shippingEl.textContent = error?.retryable ? t.quoteFailed : t.unavailable;
+      if (quoteRetry) quoteRetry.hidden = !error?.retryable;
+      updateTotal();
+    } finally {
+      if (sequence === quoteSequence) {
+        quoteLoading = false;
+        setSubmitState();
+      }
+    }
+  };
+  const syncSelectedAddress = () => {
+    if (selectedAddress) selectedAddress.textContent = addressInput?.value.trim() || t.addressPending;
+  };
+  const selectLocation = (item) => {
+    searchController?.abort();
+    locationLoading = false;
+    selectedLocation = item;
+    if (fields.id) fields.id.value = item.location_id;
+    if (fields.district) fields.district.value = item.city;
+    if (fields.city) fields.city.value = item.city;
+    if (fields.province) fields.province.value = item.province;
+    if (fields.postcode) fields.postcode.value = item.postal_code;
+    if (searchInput) searchInput.value = `${item.city}, ${item.province} ${item.postal_code}`;
+    if (selectedLocationText) selectedLocationText.textContent = `${item.city}, ${item.province} ${item.postal_code}`;
+    syncSelectedAddress();
+    closeList();
+    if (searchContainer) searchContainer.hidden = true;
+    if (picked) picked.hidden = false;
+    setLocationStatus('');
+    validateLocation(false);
+    quote();
+  };
+  const renderLocations = (items) => {
+    locationResults = items;
+    if (!listbox || !searchInput) return;
+    listbox.innerHTML = '';
+    items.forEach((item, index) => {
+      const option = document.createElement('button');
+      option.type = 'button';
+      option.id = `${instanceId}-location-${index}`;
+      option.setAttribute('role', 'option');
+      option.setAttribute('aria-selected', 'false');
+      option.className = 'district-item';
+      const primary = document.createElement('strong');
+      primary.className = 'block';
+      primary.textContent = `${item.city} · ${item.postal_code}`;
+      const secondary = document.createElement('small');
+      secondary.textContent = item.province;
+      option.append(primary, secondary);
+      option.addEventListener('pointerdown', (event) => event.preventDefault());
+      option.addEventListener('click', () => selectLocation(item));
+      option.addEventListener('mousemove', () => setActiveOption(index));
+      listbox.append(option);
+    });
+    listbox.hidden = false;
+    searchInput.setAttribute('aria-expanded', 'true');
+    setActiveOption(0);
+  };
+  const searchLocations = async () => {
+    const query = searchInput?.value.trim() || '';
+    const numeric = /^\d+$/.test(query);
+    if ((numeric && query.length !== 5) || (!numeric && query.length < 3)) {
+      searchController?.abort();
+      closeList();
+      setLocationStatus(t.locationHint);
+      locationLoading = false;
+      setSubmitState();
+      return;
+    }
+    const sequence = ++searchSequence;
+    searchController?.abort();
+    searchController = new AbortController();
+    locationLoading = true;
+    showLocationMessage(t.searching);
+    setLocationStatus(t.searching);
+    setSubmitState();
+    if (listbox) listbox.setAttribute('aria-busy', 'true');
+    try {
+      const response = await fetch(`/api/locations?search=${encodeURIComponent(query)}`, { signal: searchController.signal });
+      const body = await response.json();
+      if (!response.ok) {
+        const failure = new Error(body?.error || t.searchFailed);
+        failure.retryable = response.status === 429 || response.status >= 500;
+        throw failure;
+      }
+      if (sequence !== searchSequence) return;
+      const items = Array.isArray(body?.items) ? body.items.slice(0, 10) : [];
+      if (!items.length) {
+        showLocationMessage(t.empty);
+        setLocationStatus(t.empty);
+        return;
+      }
+      renderLocations(items);
+      setLocationStatus(`${items.length} ${t.found}`);
+    } catch (error) {
+      if (error?.name === 'AbortError') return;
+      showLocationMessage(t.searchFailed);
+      setLocationStatus(t.searchFailed, error?.retryable !== false);
+    } finally {
+      if (sequence === searchSequence) {
+        locationLoading = false;
+        if (listbox) listbox.removeAttribute('aria-busy');
+        setSubmitState();
+      }
+    }
+  };
+
+  root?.querySelectorAll('input[name="variant_id"]').forEach((input) => input.addEventListener('change', () => {
+    updateTotal();
+    if (selectedLocation) quote();
+  }));
+  nameInput?.addEventListener('input', () => {
+    const cleaned = nameInput.value.replace(/[^\p{L}\p{M}\s.'‘’-]/gu, '').replace(/\s{2,}/gu, ' ');
+    if (cleaned !== nameInput.value) nameInput.value = cleaned;
+    validateName(nameInput.classList.contains('field-invalid'));
+    setSubmitState();
+  });
+  nameInput?.addEventListener('blur', () => {
+    nameInput.value = normalizeName(nameInput.value);
+    validateName(true);
+    setSubmitState();
+  });
+  phoneInput?.addEventListener('input', () => {
+    const digits = phoneInput.value.replace(/\D/g, '');
+    if (digits !== phoneInput.value) phoneInput.value = digits;
+    validatePhone(phoneInput.classList.contains('field-invalid'));
+    setSubmitState();
+  });
+  phoneInput?.addEventListener('blur', () => {
+    phoneInput.value = normalizePhone(phoneInput.value);
+    validatePhone(true);
+    setSubmitState();
+  });
+  addressInput?.addEventListener('input', () => {
+    syncSelectedAddress();
+    validateAddress(addressInput.classList.contains('field-invalid'));
+    setSubmitState();
+  });
+  addressInput?.addEventListener('blur', () => {
+    addressInput.value = normalizeAddress(addressInput.value);
+    syncSelectedAddress();
+    validateAddress(true);
+    setSubmitState();
+  });
+  searchInput?.addEventListener('input', () => {
+    selectedLocation = null;
+    Object.values(fields).forEach((field) => { if (field) field.value = ''; });
+    quoteSequence += 1;
+    quoteController?.abort();
+    quoteLoading = false;
+    resetQuote();
+    setFieldState(searchInput);
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(searchLocations, /^\d{5}$/.test(searchInput.value.trim()) ? 0 : 200);
+  });
+  searchInput?.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowDown' && !listbox?.hidden) { event.preventDefault(); setActiveOption(activeIndex + 1); }
+    else if (event.key === 'ArrowUp' && !listbox?.hidden) { event.preventDefault(); setActiveOption(activeIndex - 1); }
+    else if (event.key === 'Enter' && !listbox?.hidden && activeIndex >= 0) { event.preventDefault(); selectLocation(locationResults[activeIndex]); }
+    else if (event.key === 'Escape') { event.preventDefault(); closeList(); }
+  });
+  searchInput?.addEventListener('blur', () => setTimeout(() => {
+    closeList();
+    validateLocation(Boolean(searchInput.value.trim()));
+    setSubmitState();
+  }, 120));
+  root?.querySelector('[data-location-change]')?.addEventListener('click', () => {
+    quoteSequence += 1;
+    quoteController?.abort();
+    quoteLoading = false;
+    selectedLocation = null;
+    Object.values(fields).forEach((field) => { if (field) field.value = ''; });
+    if (picked) picked.hidden = true;
+    if (searchContainer) searchContainer.hidden = false;
+    if (searchInput) searchInput.value = '';
+    resetQuote();
+    setFieldState(searchInput);
+    setLocationStatus(t.locationHint);
+    setTimeout(() => searchInput?.focus(), 0);
+  });
+  locationRetry?.addEventListener('click', searchLocations);
+  quoteRetry?.addEventListener('click', quote);
+
+  const loadPaymentMethods = async () => {
+    if (isMiddle || !paymentOptions) return;
+    paymentMethodsLoading = true;
+    paymentMethodsLoaded = false;
+    paymentMethodsFailed = false;
+    paymentOptions.setAttribute('aria-busy', 'true');
+    paymentOptions.innerHTML = `<p class="text-sm text-[#555555]">${t.loadingPayment}</p>`;
+    if (paymentRetry) paymentRetry.hidden = true;
+    setPaymentError('');
+    setSubmitState();
+    try {
+      const response = await fetch('/api/payment-methods');
+      const body = await response.json();
+      const methods = Array.isArray(body?.data) ? body.data.filter((method) => method.is_active) : [];
+      if (!response.ok || !methods.length) throw new Error(body?.error || t.paymentFailed);
+      paymentOptions.innerHTML = '';
+      methods.forEach((method, index) => {
+        const label = document.createElement('label');
+        label.className = 'payment-option';
+        const input = document.createElement('input');
+        input.type = 'radio';
+        input.name = 'payment_method';
+        input.value = String(method.payment_method || '');
+        input.checked = index === 0;
+        input.dataset.bankId = String(method.seller_bank_account_id || '');
+        input.setAttribute('aria-describedby', paymentFeedback?.id || '');
+        input.addEventListener('change', () => {
+          validatePayment(false);
+          setSubmitState();
+        });
+        const copy = document.createElement('div'); copy.className = 'payment-option-copy';
+        const radio = document.createElement('div'); radio.className = 'payment-option-radio';
+        const main = document.createElement('div'); main.className = 'payment-option-main';
+        const name = document.createElement('p'); name.className = 'payment-option-label'; name.textContent = String(method.name || '');
+        const description = document.createElement('p'); description.className = 'payment-option-desc'; description.textContent = String(method.description || '');
+        main.append(name, description); copy.append(radio, main); label.append(input, copy); paymentOptions.append(label);
+      });
+      paymentMethodsLoaded = true;
+    } catch {
+      paymentMethodsFailed = true;
+      paymentOptions.innerHTML = `<p class="text-sm text-[#555555]">${t.paymentFailed}</p>`;
+      if (paymentRetry) paymentRetry.hidden = false;
+      setPaymentError(t.paymentFailed);
+    } finally {
+      paymentMethodsLoading = false;
+      paymentOptions.removeAttribute('aria-busy');
+      setSubmitState();
+    }
+  };
+  paymentRetry?.addEventListener('click', loadPaymentMethods);
+  if (!isMiddle) loadPaymentMethods();
+
+  form?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (errorEl) errorEl.hidden = true;
+    const nameValid = validateName(true);
+    const phoneValid = validatePhone(true);
+    const addressValid = validateAddress(true);
+    const locationValid = validateLocation(true);
+    const paymentValid = validatePayment(true);
+    const quoteValid = isMiddle || (
+      Number.isInteger(shippingCost) && quoteKey === currentQuoteKey() && !quoteLoading
+    );
+    if (!nameValid || !phoneValid || !addressValid || !locationValid || !paymentValid || !quoteValid) {
+      const firstInvalid = form.querySelector('.field-invalid, input[name="payment_method"][aria-invalid="true"]');
+      firstInvalid?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      firstInvalid?.focus({ preventScroll: true });
+      if (errorEl) {
+        errorEl.textContent = t.fixFields;
+        errorEl.hidden = false;
+      }
+      setSubmitState();
+      return;
+    }
+    nameInput.value = normalizeName(nameInput.value);
+    phoneInput.value = normalizePhone(phoneInput.value);
+    addressInput.value = normalizeAddress(addressInput.value);
+    submitting = true; setSubmitState();
+    const data = Object.fromEntries(new FormData(form));
+    const method = form.querySelector('input[name="payment_method"]:checked');
+    const payload = { ...data, payment_method: isMiddle ? 'cod' : (method?.value || 'cod'), seller_bank_account_id: isMiddle ? undefined : (method?.dataset.bankId || undefined), quantity: 1, shipping_cost: isMiddle ? 0 : shippingCost, submit_token: crypto.randomUUID() };
+    const selectedVariantForSignal = form.querySelector('input[name="variant_id"]:checked');
+    const signalContentId = root?.dataset.productId && selectedVariantForSignal?.value ? `p${root.dataset.productId}-v${selectedVariantForSignal.value}` : '';
+    window.__MYBOOK_TRACK__?.('InitiateCheckout', { event_id: `checkout:${crypto.randomUUID()}`, content_id: signalContentId, content_name: root?.dataset.productName || '', value: Number(selectedVariantForSignal?.dataset.price || 0) / 100 });
+    try {
+      const response = await fetch(isMiddle ? '/api/submit-middle-order' : '/api/submit-order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const body = await response.json();
+      if (!response.ok || !body?.success) {
+        if (response.status === 409 && body?.code === 'SHIPPING_QUOTE_CHANGED' && Number.isInteger(Number(body.shipping_cost))) {
+          shippingCost = Number(body.shipping_cost);
+          if (shippingEl) shippingEl.textContent = money(shippingCost);
+          updateTotal();
+          throw new Error(t.quoteChanged);
+        }
+        throw new Error(body?.error || 'Unable to place the order.');
+      }
+      const variant = form.querySelector('input[name="variant_id"]:checked');
+      sessionStorage.setItem('thanks_state', JSON.stringify({ order_pk: body.order.id, order_id: body.order.order_number, status_token: body.order.status_token, payment_method: body.order.payment_method, payment_status: body.order.payment_status, total_payment: body.order.total_payment, shipping_cost: isMiddle ? 0 : shippingCost, product_value_sen: Number(body.order.product_value_sen || 0), payment: body.payment || null, name: data.customer_name, phone: data.customer_phone, address: data.address, district: data.district, province: data.province, postal_code: data.postal_code, product_id: root?.dataset.productId || '', variant_unique_id: variant?.value, content_id: body.order.content_id || '', variant_label: variant?.dataset.label || '', product_name: root?.dataset.productName || '' }));
+      window.location.assign('/thanks');
+    } catch (error) {
+      if (errorEl) { errorEl.textContent = error instanceof Error ? error.message : 'Unable to place the order.'; errorEl.hidden = false; errorEl.focus(); }
+    } finally { submitting = false; setSubmitState(); }
+  });
+  ensureFeedback(nameInput);
+  ensureFeedback(phoneInput);
+  ensureFeedback(addressInput);
+  if (!isMiddle) ensureFeedback(searchInput);
+  updateTotal();
+</script>

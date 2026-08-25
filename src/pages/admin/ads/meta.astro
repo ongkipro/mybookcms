@@ -1,0 +1,396 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import AdminPageHeader from '../../../components/admin/AdminPageHeader.astro';
+import { Button } from '../../../components/ui/button';
+import { Card, CardContent, CardFooter } from '../../../components/ui/card';
+import { Input } from '../../../components/ui/input';
+import { Skeleton } from '../../../components/ui/skeleton';
+import { META_GRAPH_API_VERSION } from '../../../lib/meta-capi';
+import { PUBLIC_CATALOG_FEED_PATH } from '../../../lib/google-catalog';
+export const prerender = false;
+---
+
+<AdminLayout title="Meta Pixel & CAPI" activeMenu="ads">
+  <div class="space-y-6">
+    <AdminPageHeader eyebrow="Meta signals" title="Pixel & Conversions API (CAPI)" description="Kelola browser Pixel dan server-side events untuk funnel Malaysia." backHref="/admin/ads" backLabel="Ads & tracking">
+      <div slot="actions" class="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+        <a href={PUBLIC_CATALOG_FEED_PATH} target="_blank" rel="noopener" class="btn-secondary inline-flex min-h-11 flex-1 items-center justify-center px-4 text-xs sm:flex-none">XML Feed ↗</a>
+        <span id="meta-badge" class="inline-flex min-h-11 flex-1 items-center rounded-full bg-slate-100 px-3 text-xs font-bold text-slate-600 sm:flex-none">Memuat…</span>
+      </div>
+    </AdminPageHeader>
+    <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><p class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Meta Pixel</p><p id="kpi-pixel" class="mt-2 break-all font-mono text-sm font-extrabold">—</p></div>
+      <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><p class="text-[11px] font-bold uppercase tracking-wider text-slate-500">CAPI</p><p id="kpi-capi" class="mt-2 text-sm font-extrabold">—</p></div>
+      <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><p class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Currency</p><p class="mt-2 text-sm font-extrabold">MYR</p></div>
+      <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><p class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Graph API</p><p class="mt-2 font-mono text-sm font-extrabold">{META_GRAPH_API_VERSION}</p></div>
+    </div>
+    <div class="overflow-x-auto border-b border-slate-200" role="tablist" aria-label="Meta settings">
+      <div class="flex min-w-max gap-1"><button class="meta-tab min-h-11 border-b-2 border-blue-600 px-4 text-xs font-bold text-blue-700" role="tab" aria-selected="true" aria-controls="meta-config" id="meta-tab-config" data-panel="meta-config">Konfigurasi</button><button class="meta-tab min-h-11 border-b-2 border-transparent px-4 text-xs font-bold text-slate-500" role="tab" aria-selected="false" aria-controls="meta-guide" id="meta-tab-guide" data-panel="meta-guide" tabindex="-1">Tutorial</button><button class="meta-tab min-h-11 border-b-2 border-transparent px-4 text-xs font-bold text-slate-500" role="tab" aria-selected="false" aria-controls="meta-policy" id="meta-tab-policy" data-panel="meta-policy" tabindex="-1">Signal policy</button></div>
+    </div>
+    <section id="meta-config" role="tabpanel" aria-labelledby="meta-tab-config">
+      <Skeleton id="meta-loading" className="h-64 w-full rounded-xl" role="status" aria-live="polite" aria-busy="true" aria-atomic="true"><span class="sr-only">Memuat konfigurasi Meta.</span></Skeleton>
+      <div id="meta-error" class="hidden rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-800" role="alert" aria-live="assertive">
+        <p id="meta-error-text"></p>
+        <Button id="retry-meta" type="button" variant="outline" size="lg" className="mt-3 min-h-11">Muat ulang</Button>
+      </div>
+      <Card id="meta-card" className="hidden gap-0 py-0 border border-slate-200 shadow-sm">
+        <form id="meta-form" novalidate aria-busy="false">
+          <CardContent className="grid grid-cols-1 gap-5 p-5 md:grid-cols-2 md:gap-6 md:p-6">
+            <div class="grid content-start grid-cols-1 gap-1.5">
+              <label for="meta-pixel" class="text-xs font-black text-slate-700">Meta Pixel ID</label>
+              <Input id="meta-pixel" className="h-11 font-mono" inputMode="numeric" autoComplete="off" pattern="[0-9]{5,25}" maxLength={25} placeholder="123456789012345" aria-describedby="meta-pixel-help meta-pixel-error" />
+              <p id="meta-pixel-help" class="text-[11px] leading-5 text-slate-500">5–25 digit dari Events Manager → Data Sources.</p>
+              <p id="meta-pixel-error" class="hidden text-[11px] font-bold leading-5 text-rose-700" role="alert"></p>
+            </div>
+
+            <div class="grid content-start grid-cols-1 gap-1.5">
+              <div class="flex items-center justify-between gap-3">
+                <label for="meta-token" class="text-xs font-black text-slate-700">Token Akses CAPI</label>
+                <span id="token-hint" class="text-[10px] font-bold text-slate-400" aria-hidden="true">Belum ada</span>
+              </div>
+              <div class="relative">
+                <Input id="meta-token" type="password" className="h-11 pr-24 font-mono" autoComplete="new-password" maxLength={4096} placeholder="Tempel access token" aria-describedby="token-state token-guidance meta-token-error token-warning" />
+                <Button id="toggle-token" type="button" variant="ghost" size="sm" className="absolute inset-y-0 right-0 h-11 min-w-20 rounded-l-none px-3 text-xs font-bold" aria-controls="meta-token" aria-label="Tampilkan token baru" aria-pressed="false" disabled>Tampilkan</Button>
+              </div>
+              <p id="token-state" class="text-[11px] font-bold leading-5 text-slate-600" role="status" aria-live="polite" aria-atomic="true">Belum ada token tersimpan.</p>
+              <p id="token-guidance" class="text-[11px] leading-5 text-slate-500">Token disimpan terenkripsi dan tidak pernah ditampilkan kembali ke browser.</p>
+              <p id="meta-token-error" class="hidden text-[11px] font-bold leading-5 text-rose-700" role="alert"></p>
+              <label id="clear-token-row" class="hidden min-h-11 items-center gap-3 text-xs font-bold text-rose-700">
+                <input id="clear-token" type="checkbox" class="size-4 shrink-0 rounded border border-input accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30" />
+                <span id="clear-token-label">Hapus token CAPI dari database</span>
+              </label>
+              <p id="token-warning" class="hidden text-[11px] font-bold leading-5 text-rose-700" role="status">Token CAPI akan dihapus setelah Simpan Meta.</p>
+            </div>
+          </CardContent>
+
+          <div class="grid grid-cols-1 gap-4 border-t border-slate-200 bg-slate-50/70 p-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end md:px-6">
+            <div class="grid grid-cols-1 gap-1.5">
+              <div>
+                <p class="text-xs font-black text-slate-800">Uji sambungan CAPI</p>
+                <p class="mt-0.5 text-[11px] text-slate-500">Kode ini hanya digunakan untuk pengujian dan tidak disimpan.</p>
+              </div>
+              <label for="meta-test-code" class="mt-1 text-xs font-black text-slate-700">Kode Test Event Meta</label>
+              <Input id="meta-test-code" className="h-11 font-mono uppercase" autoComplete="off" pattern="TEST[0-9]{3,20}" maxLength={24} placeholder="TEST12345" aria-describedby="meta-test-help meta-test-error" />
+              <p id="meta-test-help" class="text-[11px] leading-5 text-slate-500">Format TEST diikuti 3–20 digit, contoh TEST12345.</p>
+              <p id="meta-test-error" class="hidden text-[11px] font-bold leading-5 text-rose-700" role="alert"></p>
+            </div>
+            <Button id="test-meta" type="button" variant="outline" size="xl" className="min-w-40" disabled>Kirim test event</Button>
+          </div>
+
+          <CardFooter className="flex flex-col gap-3 border-t border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between md:px-6">
+            <p id="meta-status" class="min-h-5 text-xs font-bold text-slate-500" role="status" aria-live="polite" aria-atomic="true">Perubahan belum ada.</p>
+            <Button id="save-meta" type="submit" size="xl" className="w-full min-w-36 sm:w-auto" disabled>Simpan Meta</Button>
+          </CardFooter>
+        </form>
+      </Card>
+    </section>
+    <section id="meta-guide" role="tabpanel" aria-labelledby="meta-tab-guide" class="hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm md:p-6"><h3 class="font-extrabold">Setup singkat</h3><ol class="mt-4 list-decimal space-y-3 pl-5 text-sm leading-6 text-slate-600"><li>Buat Pixel pada Meta Events Manager dan salin Pixel ID.</li><li>Buat System User access token dengan akses dataset yang tepat.</li><li>Simpan konfigurasi, lalu gunakan Test Event Code untuk memverifikasi CAPI.</li><li>Gunakan <a href={PUBLIC_CATALOG_FEED_PATH} target="_blank" rel="noopener" class="font-bold text-blue-700 underline underline-offset-2">satu feed XML yang sama</a> pada Meta Commerce Manager; ID offer wajib tetap sama dengan event storefront.</li><li>Pastikan domain storefront diverifikasi pada Business Manager sebelum kampanye aktif.</li></ol></section>
+    <section id="meta-policy" role="tabpanel" aria-labelledby="meta-tab-policy" class="hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm md:p-6"><h3 class="font-extrabold">Signal policy MyBookCMS</h3><dl class="mt-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2"><div class="rounded-lg bg-slate-50 p-4"><dt class="font-bold">Thanks page</dt><dd class="mt-1 text-slate-600">Order dan status token diverifikasi sebelum Purchase.</dd></div><div class="rounded-lg bg-slate-50 p-4"><dt class="font-bold">COD</dt><dd class="mt-1 text-slate-600">Purchase dikirim saat konfirmasi order tampil, tanpa menunggu delivered.</dd></div><div class="rounded-lg bg-slate-50 p-4"><dt class="font-bold">Transfer manual</dt><dd class="mt-1 text-slate-600">Purchase dikirim saat konfirmasi order tampil, tanpa menunggu paid.</dd></div><div class="rounded-lg bg-slate-50 p-4"><dt class="font-bold">Advanced matching</dt><dd class="mt-1 text-slate-600">Telefon +60, nama, bandar, negeri, poskod, _fbp dan _fbc.</dd></div></dl></section>
+  </div>
+  <script>
+    import { getMetaAdminFormState } from '../../../lib/meta-admin-form';
+
+    const tabs = [...document.querySelectorAll<HTMLButtonElement>('.meta-tab')];
+    const activate = (index: number) => { tabs.forEach((tab, item) => { const active = item === index; tab.setAttribute('aria-selected', String(active)); tab.tabIndex = active ? 0 : -1; tab.classList.toggle('border-blue-600', active); tab.classList.toggle('text-blue-700', active); tab.classList.toggle('border-transparent', !active); tab.classList.toggle('text-slate-500', !active); document.getElementById(tab.dataset.panel || '')?.classList.toggle('hidden', !active); }); tabs[index]?.focus(); };
+    tabs.forEach((tab, index) => { tab.addEventListener('click', () => activate(index)); tab.addEventListener('keydown', (event) => { const next = event.key === 'ArrowRight' ? (index + 1) % tabs.length : event.key === 'ArrowLeft' ? (index - 1 + tabs.length) % tabs.length : event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : -1; if (next >= 0) { event.preventDefault(); activate(next); } }); });
+    type MetaConfig = {
+      meta_pixel_id: string;
+      meta_capi_configured: boolean;
+      meta_capi_token_masked: string;
+      meta_capi_token_source: 'database' | 'environment' | 'none' | 'invalid';
+      meta_capi_environment_fallback: boolean;
+    };
+
+    const pixelPattern = /^[0-9]{5,25}$/;
+    const testCodePattern = /^TEST[0-9]{3,20}$/;
+    const form = document.getElementById('meta-form') as HTMLFormElement | null;
+    const card = document.getElementById('meta-card');
+    const loading = document.getElementById('meta-loading');
+    const loadError = document.getElementById('meta-error');
+    const loadErrorText = document.getElementById('meta-error-text');
+    const pixel = document.getElementById('meta-pixel') as HTMLInputElement | null;
+    const token = document.getElementById('meta-token') as HTMLInputElement | null;
+    const testCode = document.getElementById('meta-test-code') as HTMLInputElement | null;
+    const clearToken = document.getElementById('clear-token') as HTMLInputElement | null;
+    const clearTokenRow = document.getElementById('clear-token-row');
+    const clearTokenLabel = document.getElementById('clear-token-label');
+    const toggleToken = document.getElementById('toggle-token') as HTMLButtonElement | null;
+    const saveButton = document.getElementById('save-meta') as HTMLButtonElement | null;
+    const testButton = document.getElementById('test-meta') as HTMLButtonElement | null;
+    const status = document.getElementById('meta-status');
+    const tokenHint = document.getElementById('token-hint');
+    const tokenState = document.getElementById('token-state');
+    const tokenGuidance = document.getElementById('token-guidance');
+    const tokenWarning = document.getElementById('token-warning');
+    const pixelError = document.getElementById('meta-pixel-error');
+    const tokenError = document.getElementById('meta-token-error');
+    const testError = document.getElementById('meta-test-error');
+    let config: MetaConfig = {
+      meta_pixel_id: '',
+      meta_capi_configured: false,
+      meta_capi_token_masked: '',
+      meta_capi_token_source: 'none',
+      meta_capi_environment_fallback: false,
+    };
+    let pendingAction: '' | 'save-meta' | 'test-capi' = '';
+    let tokenVisible = false;
+
+    const message = (text: string, error = false) => {
+      if (!status) return;
+      status.textContent = text;
+      status.className = `min-h-5 text-xs font-bold ${error ? 'text-rose-700' : 'text-blue-700'}`;
+      status.setAttribute('role', error ? 'alert' : 'status');
+    };
+
+    const setFieldError = (input: HTMLInputElement | null, node: HTMLElement | null, text = '') => {
+      if (input) input.setAttribute('aria-invalid', text ? 'true' : 'false');
+      if (!node) return;
+      node.textContent = text;
+      node.classList.toggle('hidden', !text);
+    };
+
+    const renderSummary = (data: MetaConfig) => {
+      document.getElementById('kpi-pixel')!.textContent = data.meta_pixel_id || 'Belum diisi';
+      const usable = data.meta_capi_token_source === 'database' || data.meta_capi_token_source === 'environment';
+      const broken = data.meta_capi_token_source === 'invalid';
+      document.getElementById('kpi-capi')!.textContent = broken
+        ? 'Perlu tindakan'
+        : data.meta_capi_token_source === 'environment'
+          ? 'Environment'
+          : data.meta_capi_token_source === 'database'
+            ? 'Tersimpan'
+            : 'Belum diisi';
+      const ready = Boolean(data.meta_pixel_id && usable);
+      const badge = document.getElementById('meta-badge');
+      if (!badge) return;
+      badge.textContent = broken
+        ? 'Konfigurasi CAPI bermasalah'
+        : ready
+          ? 'Pixel + CAPI aktif'
+          : data.meta_pixel_id || usable ? 'Sebagian aktif' : 'Belum dikonfigurasi';
+      badge.className = `inline-flex min-h-11 flex-1 items-center justify-center rounded-full px-3 text-xs font-bold sm:flex-none ${ready ? 'bg-blue-100 text-blue-800' : broken ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800'}`;
+    };
+
+    const formState = () => getMetaAdminFormState({
+      pixelId: pixel?.value.trim() || '',
+      savedPixelId: config.meta_pixel_id,
+      pixelValidForSave: !pixel?.value.trim() || pixelPattern.test(pixel.value.trim()),
+      pixelValidForTest: pixelPattern.test(pixel?.value.trim() || ''),
+      draftToken: token?.value.trim() || '',
+      tokenUsable: config.meta_capi_token_source === 'database' || config.meta_capi_token_source === 'environment',
+      tokenRemovable: config.meta_capi_token_source === 'database' || config.meta_capi_token_source === 'invalid',
+      testCodeValid: testCodePattern.test(testCode?.value.trim().toUpperCase() || ''),
+      clearToken: Boolean(clearToken?.checked),
+      pending: Boolean(pendingAction),
+    });
+
+    const isDirty = () => formState().dirty;
+
+    const syncControls = () => {
+      if (!pixel || !token || !testCode || !clearToken) return;
+      const draftToken = token.value.trim();
+      const state = formState();
+      const deletingToken = state.deletingToken;
+      const pending = Boolean(pendingAction);
+      const tokenRemovable = config.meta_capi_token_source === 'database' || config.meta_capi_token_source === 'invalid';
+
+      if (!tokenRemovable) clearToken.checked = false;
+      clearTokenRow?.classList.toggle('hidden', !tokenRemovable);
+      clearTokenRow?.classList.toggle('flex', tokenRemovable);
+      token.disabled = pending || deletingToken;
+      clearToken.disabled = pending || !tokenRemovable;
+      if (toggleToken) toggleToken.disabled = !state.canRevealToken;
+
+      tokenWarning?.classList.toggle('hidden', !deletingToken);
+      if (deletingToken) {
+        if (tokenHint) tokenHint.textContent = 'Akan dihapus';
+        if (tokenState) tokenState.textContent = 'Penghapusan dipilih.';
+        if (tokenGuidance) tokenGuidance.textContent = 'Batalkan pilihan untuk memakai kembali token database atau memasukkan token baru.';
+        if (tokenWarning) tokenWarning.textContent = config.meta_capi_environment_fallback
+          ? 'Token database akan dihapus. Token environment akan aktif kembali setelah disimpan.'
+          : 'Token database akan dihapus setelah Simpan Meta.';
+      } else if (draftToken) {
+        if (tokenHint) tokenHint.textContent = 'Token baru';
+        if (tokenState) tokenState.textContent = 'Token baru siap disimpan.';
+        if (tokenGuidance) tokenGuidance.textContent = config.meta_capi_token_source === 'environment'
+          ? 'Token baru akan disimpan di database dan menggantikan token environment sebagai sumber aktif.'
+          : config.meta_capi_token_source === 'database'
+            ? 'Token baru akan mengganti token database setelah disimpan.'
+            : config.meta_capi_token_source === 'invalid'
+              ? 'Token baru akan memperbaiki token database yang tidak valid.'
+              : 'Token baru akan disimpan terenkripsi di database.';
+      } else if (config.meta_capi_token_source === 'database') {
+        if (tokenHint) tokenHint.textContent = 'Database';
+        if (tokenState) tokenState.textContent = `Aktif · ${config.meta_capi_token_masked}`;
+        if (tokenGuidance) tokenGuidance.textContent = 'Token disimpan terenkripsi di database. Tempel token baru untuk mengganti.';
+        if (clearTokenLabel) clearTokenLabel.textContent = 'Hapus token CAPI dari database';
+      } else if (config.meta_capi_token_source === 'environment') {
+        if (tokenHint) tokenHint.textContent = 'Environment';
+        if (tokenState) tokenState.textContent = 'Aktif · dikelola server';
+        if (tokenGuidance) tokenGuidance.textContent = 'Token berasal dari environment server dan tidak dapat dihapus dari halaman ini. Tempel token baru untuk menyimpannya di database.';
+      } else if (config.meta_capi_token_source === 'invalid') {
+        if (tokenHint) tokenHint.textContent = 'Tidak valid';
+        if (tokenState) tokenState.textContent = 'Token database tidak dapat dibaca.';
+        if (tokenGuidance) tokenGuidance.textContent = 'Tempel token baru untuk memperbaiki, atau hapus nilai token yang tidak valid.';
+        if (clearTokenLabel) clearTokenLabel.textContent = 'Hapus token database yang tidak valid';
+      } else {
+        if (tokenHint) tokenHint.textContent = 'Belum ada';
+        if (tokenState) tokenState.textContent = 'Belum ada token CAPI.';
+        if (tokenGuidance) tokenGuidance.textContent = 'Tempel token untuk menyimpannya terenkripsi di database.';
+      }
+      if (tokenState) tokenState.setAttribute('role', config.meta_capi_token_source === 'invalid' && !draftToken && !deletingToken ? 'alert' : 'status');
+
+      if (saveButton) {
+        saveButton.disabled = !state.canSave;
+        saveButton.textContent = pendingAction === 'save-meta' ? 'Menyimpan…' : 'Simpan Meta';
+      }
+      if (testButton) {
+        testButton.disabled = !state.canTest;
+        testButton.textContent = pendingAction === 'test-capi' ? 'Mengirim…' : 'Kirim test event';
+      }
+    };
+
+    const resetTokenReveal = () => {
+      tokenVisible = false;
+      if (token) token.type = 'password';
+      if (toggleToken) {
+        toggleToken.textContent = 'Tampilkan';
+        toggleToken.setAttribute('aria-label', 'Tampilkan token baru');
+        toggleToken.setAttribute('aria-pressed', 'false');
+      }
+    };
+
+    const renderConfig = (data: MetaConfig) => {
+      config = data;
+      if (pixel) pixel.value = data.meta_pixel_id || '';
+      if (token) token.value = '';
+      if (clearToken) clearToken.checked = false;
+      resetTokenReveal();
+      renderSummary(data);
+      setFieldError(pixel, pixelError);
+      setFieldError(token, tokenError);
+      syncControls();
+    };
+
+    const loadConfig = async () => {
+      loading?.classList.remove('hidden');
+      loading?.setAttribute('aria-busy', 'true');
+      loadError?.classList.add('hidden');
+      card?.classList.add('hidden');
+      try {
+        const response = await fetch('/api/admin/ads', { headers: { Accept: 'application/json' }, cache: 'no-store' });
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok || !body.success) throw new Error(body.error || 'Gagal memuat konfigurasi Meta.');
+        renderConfig(body.data);
+        loading?.setAttribute('aria-busy', 'false');
+        loading?.classList.add('hidden');
+        card?.classList.remove('hidden');
+      } catch (error) {
+        loading?.setAttribute('aria-busy', 'false');
+        loading?.classList.add('hidden');
+        if (loadErrorText) loadErrorText.textContent = error instanceof Error ? error.message : 'Gagal memuat konfigurasi Meta.';
+        loadError?.classList.remove('hidden');
+      }
+    };
+
+    const submit = async (action: 'save-meta' | 'test-capi') => {
+      if (pendingAction || !pixel || !token || !testCode || !clearToken || !form) return;
+      pendingAction = action;
+      form.setAttribute('aria-busy', 'true');
+      syncControls();
+      message(action === 'save-meta' ? 'Menyimpan konfigurasi…' : 'Mengirim test event…');
+      try {
+        const response = await fetch('/api/admin/ads', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action,
+            meta_pixel_id: pixel.value.trim(),
+            meta_capi_token: token.value.trim(),
+            meta_test_event_code: testCode.value.trim().toUpperCase(),
+            clear_meta_capi_token: clearToken.checked,
+          }),
+        });
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok || !body.success) throw new Error(body.error || body.message || 'Permintaan gagal.');
+        if (body.data) renderConfig(body.data);
+        message(body.message || 'Berhasil.');
+      } catch (error) {
+        message(error instanceof Error ? error.message : 'Permintaan gagal.', true);
+      } finally {
+        pendingAction = '';
+        form.setAttribute('aria-busy', 'false');
+        syncControls();
+      }
+    };
+
+    pixel?.addEventListener('input', () => {
+      if (!pixel.value.trim() || pixelPattern.test(pixel.value.trim())) setFieldError(pixel, pixelError);
+      message(isDirty() ? 'Perubahan belum disimpan.' : 'Perubahan belum ada.');
+      syncControls();
+    });
+    pixel?.addEventListener('blur', () => {
+      if (pixel.value.trim() && !pixelPattern.test(pixel.value.trim())) setFieldError(pixel, pixelError, 'Meta Pixel ID harus berisi 5–25 digit.');
+    });
+    token?.addEventListener('input', () => {
+      if (!token.value.trim() && tokenVisible) resetTokenReveal();
+      if (token.value.trim() || config.meta_capi_configured) setFieldError(token, tokenError);
+      message(isDirty() ? 'Perubahan belum disimpan.' : 'Perubahan belum ada.');
+      syncControls();
+    });
+    testCode?.addEventListener('input', () => {
+      testCode.value = testCode.value.toUpperCase();
+      if (!testCode.value.trim() || testCodePattern.test(testCode.value.trim())) setFieldError(testCode, testError);
+      syncControls();
+    });
+    testCode?.addEventListener('blur', () => {
+      if (testCode.value.trim() && !testCodePattern.test(testCode.value.trim())) setFieldError(testCode, testError, 'Gunakan format TEST diikuti 3–20 digit.');
+    });
+    clearToken?.addEventListener('change', () => {
+      if (clearToken.checked) {
+        if (token) token.value = '';
+        resetTokenReveal();
+      }
+      message(isDirty() ? 'Perubahan belum disimpan.' : 'Perubahan belum ada.');
+      syncControls();
+    });
+    toggleToken?.addEventListener('click', () => {
+      if (!token?.value.trim() || token.disabled) return;
+      tokenVisible = !tokenVisible;
+      token.type = tokenVisible ? 'text' : 'password';
+      toggleToken.textContent = tokenVisible ? 'Sembunyikan' : 'Tampilkan';
+      toggleToken.setAttribute('aria-label', tokenVisible ? 'Sembunyikan token baru' : 'Tampilkan token baru');
+      toggleToken.setAttribute('aria-pressed', String(tokenVisible));
+    });
+    form?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      if (!pixel || !isDirty() || (pixel.value.trim() && !pixelPattern.test(pixel.value.trim()))) return;
+      void submit('save-meta');
+    });
+    testButton?.addEventListener('click', () => {
+      if (!pixel || !token || !testCode || !clearToken) return;
+      setFieldError(pixel, pixelError);
+      setFieldError(token, tokenError);
+      setFieldError(testCode, testError);
+      if (!pixelPattern.test(pixel.value.trim())) {
+        setFieldError(pixel, pixelError, 'Isi Meta Pixel ID 5–25 digit sebelum mengirim test.');
+        pixel.focus();
+        return;
+      }
+      const tokenUsable = config.meta_capi_token_source === 'database' || config.meta_capi_token_source === 'environment';
+      if (!token.value.trim() && !tokenUsable) {
+        setFieldError(token, tokenError, 'Tempel Token Akses CAPI terlebih dahulu.');
+        token.focus();
+        return;
+      }
+      if (!testCodePattern.test(testCode.value.trim())) {
+        setFieldError(testCode, testError, 'Gunakan format TEST diikuti 3–20 digit.');
+        testCode.focus();
+        return;
+      }
+      if (!clearToken.checked) void submit('test-capi');
+    });
+    document.getElementById('retry-meta')?.addEventListener('click', () => void loadConfig());
+    void loadConfig();
+  </script>
+</AdminLayout>
