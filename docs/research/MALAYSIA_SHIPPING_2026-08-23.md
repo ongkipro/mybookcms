@@ -3,7 +3,7 @@
 ## Decision use
 
 This research supports the merchant-owned D1 rate-table design in
-[`MALAYSIA_MARKET_SPEC.md`](../../MALAYSIA_MARKET_SPEC.md). It is not a courier
+[`PRD.md`](../../PRD.md) (Market contract). It is not a courier
 contract, live quote, or a promise that a merchant will receive these rates.
 
 ## Verified observations

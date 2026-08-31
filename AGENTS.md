@@ -15,6 +15,17 @@ D1-owned postcode/weight policy. The operator admin remains Indonesian.
   `STATUS.md` owns current verified state; `BUILD-LOG.md` owns history.
 - `src/db/migrations/` is the schema record. Migrations are forward-only and
   hand-authored.
+- **`docs/lineage/inherited-tasks.md` is not a backlog.** This repository was
+  forked from the AdsBookCMS / CMSAds engine, and that file holds the upstream
+  task history. Every requirement it cites (`REQ-1`-`REQ-172`, `T1`-`T295`, and
+  the `SEC-*` / `PAY-*` / `ORD-*` / `TRK-*` / `TYP-*` / `DOC-*` / `CAT-*` /
+  `UI-*` families) is undefined in this product. Never start work from an
+  unchecked box in that file, and never cite one of those ids as a requirement.
+- A requirement id is valid here only if `PRD.md` defines it: `REQ-173`+ for
+  the product, `LOGIN-*` for admin access. If a task cites an id `PRD.md` does
+  not contain, the task is wrong — stop and say so rather than implementing it.
+- A `PRD.md` row marked `Proposal` is not accepted. Do not implement it, and do
+  not treat it as a gap to close.
 
 ## Required practice
 

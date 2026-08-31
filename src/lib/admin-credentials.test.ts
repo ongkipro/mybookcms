@@ -16,7 +16,7 @@ import { canAccessAdminRoute, isAdminRole, secureEqual, verifyPasswordHash, type
  * password nothing could open the seeded credential. That hardening made a
  * fresh install unreachable — the only accepted password came from an
  * environment variable no new Worker sets — so it was deliberately reversed on
- * 2026-08-16. See PRD-ADMIN-LOGIN.md LOGIN-1 through LOGIN-5 for the reasoning
+ * 2026-08-16. See PRD.md LOGIN-1 through LOGIN-5 (Admin access) for the reasoning
  * and for what bounds the exposure.
  */
 test('default admin credential opens a fresh install and nothing more', async () => {
