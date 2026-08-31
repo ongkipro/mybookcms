@@ -111,7 +111,7 @@ external consequence, so it is listed first and stops for the user.
       Done when, in this order, each step confirmed before the next:
         1. The user has explicitly approved a force-push for this branch.
         2. `git push --force-with-lease origin malaysia-market-audit` succeeds.
-        3. `git grep -I 'Nur Lailatul' $(git rev-list --all)` returns nothing on the remote-tracking refs.
+        3. The retired fixtures are gone from every reachable commit. Search for the operator's own name and mobile as they appear in the store database — do not write either into this file or any other, or the check becomes the leak it is meant to prevent.
         4. Only then the repository visibility is changed, and `gh api repos/ongkipro/mybookcms --jq .visibility` reports `public`.
       Note for whoever runs this: making the repository public also makes `DEFAULT_ADMIN_PASSWORD_HASH` and the documented `admin`/`admin` first-run behaviour publicly readable. That is already mitigated by `LOGIN-3`, but it becomes trivially discoverable. It also unblocks GitHub Actions, which has never run here — see `A-204`.
 
