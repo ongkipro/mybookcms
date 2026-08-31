@@ -8,6 +8,11 @@ export const SELLER_BANK_OPTIONS = [
   { code: "BANK_ISLAM", label: "Bank Islam", asset: "" },
   { code: "BSN", label: "Bank Simpanan Nasional", asset: "" },
   { code: "ALLIANCE", label: "Alliance Bank", asset: "" },
+  { code: "BANK_RAKYAT", label: "Bank Rakyat", asset: "" },
+  { code: "AFFIN", label: "Affin Bank", asset: "" },
+  { code: "BANK_MUAMALAT", label: "Bank Muamalat", asset: "" },
+  { code: "AGROBANK", label: "Agrobank", asset: "" },
+  { code: "MBSB", label: "MBSB Bank", asset: "" },
 ] as const;
 
 export type SellerBankCode = (typeof SELLER_BANK_OPTIONS)[number]["code"];

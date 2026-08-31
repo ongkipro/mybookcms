@@ -79,6 +79,26 @@ export function formatMalaysiaDate(value: Date) {
   return malaysiaDateFormatter.format(value);
 }
 
+/**
+ * One timestamp rendering for every admin surface. Orders list, order detail and
+ * the shipping workspace each carried their own copy, and they disagreed: the
+ * list rendered `id-ID` with no zone label while detail and shipping rendered
+ * `en-MY` with one, so the same order showed two different times.
+ * Admin is Indonesian (REQ-185), and the zone label is always shown because an
+ * operator may not be reading this in MYT.
+ */
+const adminDateTimeFormatter = new Intl.DateTimeFormat("id-ID", {
+  dateStyle: "medium",
+  timeStyle: "short",
+  timeZone: "Asia/Kuala_Lumpur",
+});
+
+export function formatAdminDateTime(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return `${adminDateTimeFormatter.format(date)} MYT`;
+}
+
 export function shiftAdminDate(value: string, days: number) {
   const [year, month, day] = value.split("-").map(Number);
   const shifted = new Date(Date.UTC(year, month - 1, day + days));

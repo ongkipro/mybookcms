@@ -10,10 +10,13 @@ interface Props {
 }
 
 const { title } = Astro.props;
+// Buyer-facing frame: the language must follow the tenant, never a hardcoded one.
+// REQ-185 gives every public surface one `ms-MY` document language.
+const locale = Astro.locals.tenant.locale;
 ---
 
 <!doctype html>
-<html lang="id">
+<html lang={locale}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />

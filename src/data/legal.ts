@@ -23,7 +23,14 @@ export const legalPages: Record<LegalPageKey, LegalPageTemplate> = {
         title: 'Data teknikal',
         paragraphs: [
           'Sistem boleh memproses maklumat teknikal yang diperlukan untuk keselamatan dan operasi checkout, seperti alamat IP serta maklumat pelayar.',
-          'Kami tidak menggunakan tracker pengiklanan atau analitik pada storefront ini.',
+        ],
+      },
+      {
+        title: 'Pengukuran dan pengiklanan',
+        paragraphs: [
+          'Apabila integrasi pengiklanan dikonfigurasikan untuk kedai ini, tag dan pengenal Meta dan/atau Google boleh dimuatkan pada storefront untuk mengukur keberkesanan iklan serta mengaitkan lawatan dengan hasil iklan.',
+          'Bagi pesanan yang diterima, maklumat peristiwa pembelian boleh dihantar terus dari pelayan kedai kepada platform pengiklanan tersebut. Nama, nombor telefon, bandar, negeri dan poskod yang digunakan untuk padanan dihantar dalam bentuk cincangan sehala (SHA-256), bukan sebagai teks biasa. Alamat IP dan maklumat pelayar dihantar sebagaimana adanya kerana platform tersebut memerlukannya untuk padanan.',
+          'Butiran storan dan pengenal yang terlibat diterangkan dalam Dasar Kuki kedai ini.',
         ],
       },
       {

@@ -70,7 +70,7 @@ export async function quoteMalaysiaShippingFromD1(
     LIMIT 1
   `).bind(input.variantKey, input.variantKey).first<{ weightGrams: number }>();
   if (!variant) {
-    throw new MalaysiaShippingError("Varian produk tidak ditemukan.", "VARIANT_NOT_FOUND");
+    throw new MalaysiaShippingError("Varian produk tidak dijumpai.", "VARIANT_NOT_FOUND");
   }
 
   const weightGrams = calculateCartWeightGrams([
@@ -145,6 +145,8 @@ async function quoteMalaysiaWeightFromD1(
 
 const isActive = (value: boolean | number) => value === true || value === 1;
 const isPostcode = (value: string) => /^\d{5}$/.test(value);
+const formatWeightKg = (grams: number) =>
+  (grams / 1000).toFixed(grams % 1000 === 0 ? 0 : 1);
 
 /** Converts one customer input into the only postcode representation stored in D1. */
 export function normalizeMalaysiaPostcode(value: unknown): string {
@@ -224,8 +226,23 @@ export function quoteMalaysiaShipping(input: {
     ? matchingStateRules
     : input.rateRules.filter((rule) => !rule.stateCode && matchesWeightAndZone(rule));
   if (matchingRules.length === 0) {
+    // A cart above the highest active band is refused, and the old message never
+    // said why. The ceiling is merchant data, not a constant, so it is read from
+    // the same active rules that just failed to match rather than hardcoded here
+    // or restated in the shipping policy, where an operator edit would make it a
+    // false claim.
+    const ceilingGrams = input.rateRules.reduce(
+      (highest, rule) =>
+        isActive(rule.isActive) && rule.zoneCode === zoneCode &&
+          Number.isSafeInteger(rule.maxWeightGrams) && rule.maxWeightGrams > highest
+          ? rule.maxWeightGrams
+          : highest,
+      0,
+    );
     throw new MalaysiaShippingError(
-      "Kadar penghantaran belum tersedia untuk berat ini.",
+      ceilingGrams > 0 && input.weightGrams > ceilingGrams
+        ? `Berat pesanan ${formatWeightKg(input.weightGrams)} kg melebihi had penghantaran ${formatWeightKg(ceilingGrams)} kg. Sila kurangkan kuantiti.`
+        : "Kadar penghantaran belum tersedia untuk berat ini.",
       "RATE_UNAVAILABLE",
     );
   }

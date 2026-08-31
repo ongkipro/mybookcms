@@ -1,7 +1,7 @@
 ---
 export const prerender = false;
 // Retired English slug. The canonical public address is Malay (REQ-203).
-// `/api/order-status` and any `/admin/...` route are contracts, not public copy,
+// `/api/landing-page` and any `/admin/...` route are contracts, not public copy,
 // and are deliberately untouched.
-return Astro.redirect(`/jejak-pesanan${Astro.url.search}`, 308);
+return Astro.redirect(`/halaman${Astro.url.search}`, 308);
 ---

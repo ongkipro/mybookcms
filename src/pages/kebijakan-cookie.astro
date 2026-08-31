@@ -1,43 +1,6 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
-import LegalPage from '../components/storefront/shared/LegalPage.astro';
-
-const page = {
-  badge: 'Privasi',
-  title: 'Dasar Kuki',
-  description: `Cara ${Astro.locals.tenant.name} menggunakan storan penting dan sesi serta pengenal pengiklanan Meta dan Google apabila integrasi tersebut dikonfigurasikan.`,
-  sections: [
-    {
-      title: 'Storan penting dan sesi',
-      paragraphs: [
-        'Storan penting dan data sesi digunakan untuk menyediakan fungsi laman yang anda gunakan, seperti mengekalkan sesi laman dan aliran checkout.',
-        'Jika storan ini disekat atau dipadam, sebahagian fungsi sesi atau checkout mungkin tidak berfungsi seperti yang dijangka.',
-      ],
-    },
-    {
-      title: 'Pengukuran dan atribusi pengiklanan',
-      paragraphs: [
-        'Apabila integrasi pengiklanan dikonfigurasikan untuk kedai ini, tag dan pengenal Meta dan/atau Google boleh digunakan untuk mengukur keberkesanan iklan serta mengaitkan lawatan dengan hasil iklan.',
-        'Storan dan pengenal pengiklanan ini digunakan untuk tujuan pengukuran dan atribusi. Ia tidak diperlukan untuk anda melayari produk atau menggunakan checkout.',
-      ],
-    },
-    {
-      title: 'Kawalan pelayar',
-      paragraphs: [
-        'Anda boleh mengawal, menyekat, atau memadam kuki dan data laman melalui tetapan pelayar anda. Pilihan yang tersedia bergantung pada pelayar yang digunakan.',
-        'Menyekat atau memadam storan penting dan data sesi boleh menyebabkan sebahagian fungsi laman tidak berfungsi seperti yang dijangka.',
-      ],
-    },
-    {
-      title: 'Perubahan pada dasar ini',
-      paragraphs: [
-        `Kami akan mengemas kini halaman ini jika cara ${Astro.locals.tenant.name} menggunakan storan, tag pengiklanan, atau penyedia berkaitan berubah.`,
-      ],
-    },
-  ],
-};
+export const prerender = false;
+// Retired Indonesian slug. The canonical public address is Malay (REQ-203);
+// this keeps indexed and shared `/kebijakan-cookie` links resolving with one hop.
+return Astro.redirect(`/dasar-kuki${Astro.url.search}`, 308);
 ---
-
-<BaseLayout title={`${page.title} - ${Astro.locals.tenant.name}`} description={page.description} breadcrumbs={[{ name: 'Laman Utama', url: '/' }, { name: page.title, url: '/kebijakan-cookie' }]}>
-  <LegalPage {...page} breadcrumbs={[{ label: 'Laman Utama', href: '/' }, { label: page.title }]} />
-</BaseLayout>

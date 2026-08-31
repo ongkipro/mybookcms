@@ -1,20 +1,6 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
-import LegalPage from '../components/storefront/shared/LegalPage.astro';
-import { getTenantLegalPage } from '../data/legal';
-
-const data = getTenantLegalPage('tos', Astro.locals.tenant.name);
+export const prerender = false;
+// Retired Indonesian slug. The canonical public address is Malay (REQ-203);
+// this keeps indexed and shared `/syarat-ketentuan` links resolving with one hop.
+return Astro.redirect(`/terma-syarat${Astro.url.search}`, 308);
 ---
-
-<BaseLayout title={`${data.title} - ${Astro.locals.tenant.name}`} description={data.description}>
-  <LegalPage
-    badge={data.badge}
-    title={data.title}
-    description={data.description}
-    sections={data.sections}
-    breadcrumbs={[
-      { label: 'Laman Utama', href: '/' },
-      { label: data.badge, href: '/syarat-ketentuan' },
-    ]}
-  />
-</BaseLayout>

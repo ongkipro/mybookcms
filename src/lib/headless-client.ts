@@ -272,9 +272,9 @@ export async function runHeadlessCheckoutJourney(
 }> {
   const products = await client.listProducts();
   const product = products.find((candidate) => String(candidate.id) === String(input.product_id));
-  if (!product) throw new HeadlessApiError(404, "PRODUCT_NOT_FOUND", "Produk tidak ditemukan pada katalog.");
+  if (!product) throw new HeadlessApiError(404, "PRODUCT_NOT_FOUND", "Produk tidak dijumpai dalam katalog.");
   const variant = product.variants.find((candidate) => String(candidate.id) === String(input.variant_id));
-  if (!variant) throw new HeadlessApiError(404, "VARIANT_NOT_FOUND", "Varian tidak ditemukan pada produk.");
+  if (!variant) throw new HeadlessApiError(404, "VARIANT_NOT_FOUND", "Varian tidak dijumpai pada produk.");
 
   const rates = await client.quoteShipping({
     postcode: input.postal_code,

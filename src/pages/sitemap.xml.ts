@@ -16,11 +16,11 @@ export const prerender = false;
 const STATIC_PATHS = [
   { path: "/", priority: "1.0", changefreq: "daily" },
   { path: "/produk", priority: "0.9", changefreq: "daily" },
-  { path: "/kontak", priority: "0.5", changefreq: "monthly" },
-  { path: "/pengiriman", priority: "0.4", changefreq: "monthly" },
-  { path: "/kebijakan-privasi", priority: "0.3", changefreq: "yearly" },
-  { path: "/kebijakan-cookie", priority: "0.3", changefreq: "yearly" },
-  { path: "/syarat-ketentuan", priority: "0.3", changefreq: "yearly" },
+  { path: "/hubungi-kami", priority: "0.5", changefreq: "monthly" },
+  { path: "/penghantaran", priority: "0.4", changefreq: "monthly" },
+  { path: "/dasar-privasi", priority: "0.3", changefreq: "yearly" },
+  { path: "/dasar-kuki", priority: "0.3", changefreq: "yearly" },
+  { path: "/terma-syarat", priority: "0.3", changefreq: "yearly" },
   { path: "/disclaimer", priority: "0.3", changefreq: "yearly" },
 ];
 

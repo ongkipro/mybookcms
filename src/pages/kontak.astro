@@ -1,26 +1,6 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
-import LegalPage from '../components/storefront/shared/LegalPage.astro';
-import { getTenantLegalPage } from '../data/legal';
-import { getStoreSupportWhatsapp } from '../lib/public-store';
-
-const supportWhatsapp = await getStoreSupportWhatsapp(Astro.locals);
-const data = getTenantLegalPage('contact', Astro.locals.tenant.name, {
-  supportWhatsapp: supportWhatsapp
-    ? `+${supportWhatsapp.replace(/^0/, '60')}`
-    : '',
-});
+export const prerender = false;
+// Retired Indonesian slug. The canonical public address is Malay (REQ-203);
+// this keeps indexed and shared `/kontak` links resolving with one hop.
+return Astro.redirect(`/hubungi-kami${Astro.url.search}`, 308);
 ---
-
-<BaseLayout title={`${data.title} - ${Astro.locals.tenant.name}`} description={data.description}>
-  <LegalPage
-    badge={data.badge}
-    title={data.title}
-    description={data.description}
-    sections={data.sections}
-    breadcrumbs={[
-      { label: 'Laman Utama', href: '/' },
-      { label: data.badge, href: '/kontak' },
-    ]}
-  />
-</BaseLayout>

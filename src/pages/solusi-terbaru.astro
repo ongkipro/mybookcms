@@ -1,7 +1,7 @@
 ---
 export const prerender = false;
-// Was a 301 to /landing-page, which has no route and 404s unless a landing
-// page happens to own that exact slug. Point it at the catalog instead so the
-// redirect resolves.
+// Was a 301 to /landing-page back when that had no route and 404'd. The page
+// index now lives at /halaman, but this legacy address predates it and its
+// inbound traffic wanted the catalog, so it keeps pointing there.
 return Astro.redirect('/produk', 301);
 ---

@@ -73,6 +73,6 @@ export const GET: APIRoute = async ({ request, url, locals }) => {
       return json({ success: false, error: error.message, code: error.code }, statusFor(error));
     }
     console.error("malaysia-shipping-rates", error);
-    return json({ success: false, error: "Kadar penghantaran gagal dihitung.", code: "SHIPPING_ERROR" }, 500);
+    return json({ success: false, error: "Kadar penghantaran gagal dikira.", code: "SHIPPING_ERROR" }, 500);
   }
 };

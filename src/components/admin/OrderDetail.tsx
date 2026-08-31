@@ -18,6 +18,7 @@ import { CrmActionGroup } from "./CrmActionGroup";
 import { CRM_STEPS, type CrmStepKey } from "./CrmActionButton";
 import { buildWaUrl, defaultCrmTemplates, renderCrmMessage } from "../../lib/crm-template";
 import { formatMyr } from "../../lib/storefront-locale";
+import { formatAdminDateTime } from "../../lib/admin-date-filter";
 
 type Item = {
   id: number;
@@ -71,13 +72,6 @@ const paymentLabels: Record<string, string> = {
 const stockReleasingPaymentStatuses = new Set(["failed", "refunded", "cancelled"]);
 const stockReleasingShippingStatuses = new Set(["returned", "cancelled"]);
 
-function formatDateTime(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return `${new Intl.DateTimeFormat("en-MY", {
-    dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Kuala_Lumpur",
-  }).format(date)} MYT`;
-}
 
 function customerDraft(order: Order): CustomerDraft {
   return {
@@ -411,7 +405,7 @@ export function OrderDetail({ invoice }: { invoice: string }) {
                   {copied === "invoice" ? <Check className="size-3.5 text-emerald-600" /> : <Clipboard className="size-3.5" />}{copied === "invoice" ? "Tersalin" : "Salin"}
                 </button>
               </div>
-              <p className="mt-1 text-xs text-slate-500">Dibuat {formatDateTime(order.created_at)} · ID internal <span className="font-mono font-bold">{order.id}</span></p>
+              <p className="mt-1 text-xs text-slate-500">Dibuat {formatAdminDateTime(order.created_at)} · ID internal <span className="font-mono font-bold">{order.id}</span></p>
             </div>
             <a href={buildWaUrl(order.customer_phone, directMessage)} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 text-sm font-black text-white transition-colors hover:bg-emerald-800 lg:w-auto">
               <MessageCircle className="size-4" />Chat WhatsApp
