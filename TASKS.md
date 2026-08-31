@@ -143,15 +143,17 @@ external consequence, so it is listed first and stops for the user.
       Dependencies: A-193
       Done when: the buyer sees the applicable limit before submitting rather than only at refusal, the figure is read from the active rules, and browser evidence at 390 and 1280 px shows it without layout overflow.
 
-- [ ] **A-203** — Settle whether the privacy notice must be bilingual. **Research first; may end as a Proposal rather than a change.**
-      `REQ-185` deliberately removed every public language selector and ships one `ms-MY` document language. Malaysia's PDPA 2010 is understood to require a written privacy notice in both Bahasa Malaysia and English, which would conflict with that decision for `/dasar-privasi` specifically. This has **not** been verified against a primary source and must not be treated as settled.
-      Risk: R2 — a legal-conformance question, not a code change yet.
-      Surface: research output plus, if and only if the requirement is confirmed and accepted, `src/data/legal.ts` and `PRD.md`.
-      Non-scope: reintroducing a general public language selector; producing a legal conclusion. Report what the primary source says and let the user decide.
+- [x] **A-203** — Settle whether the privacy notice must be bilingual. **Researched 2026-09-01. Confirmed against the primary source; the change itself is now REQ-211/REQ-212 and is NOT accepted yet.**
+      Verified against Laws of Malaysia **Act 709 s.7(3)**, read from the Act text rather than a summary: *"A notice under subsection (1) shall be in the national and English languages, and the individual shall be provided with a clear and readily accessible means to exercise his choice, where necessary, in the national and English languages."* It is `shall`, not a recommendation, and s.5(2) makes contravening a principle an offence carrying a fine up to RM300,000 and/or two years' imprisonment.
+      Two findings, both narrower than feared. First, s.7(3) binds the **notice**, not the storefront: `REQ-185` survives intact for product, checkout and marketing copy — only `/dasar-privasi` is affected. Second, s.7(2)(a) requires the notice *"as soon as practicable … when the data subject is first asked … to provide his personal data"*, which is the checkout form, not a footer link discovered afterwards.
+      The apparent conflict with `REQ-185` dissolves on reading: the statute demands both languages, `REQ-185` bars a *selector*. Publishing both on one page, Malay first, satisfies both without reintroducing a selector, a locale cookie, or a fallback.
+      Risk: R2 — legal conformance; the drafting of legal copy is the user's to accept, not an agent's to invent.
+      Surface: this research record, `PRD.md`.
+      Non-scope: writing or publishing the English legal text; producing a legal conclusion. This records what the statute says. Whether to act, and in what words, is the operator's decision.
       Primary requirement: REQ-185
       Constraints: REQ-203
       Dependencies: none
-      Done when: the actual statutory text is cited from a primary source, the conflict with `REQ-185` is stated plainly, and either a `Proposal` requirement is recorded or the question is closed as not applicable — with the reasoning either way.
+      Done when: the statutory text is cited from a primary source, the conflict with `REQ-185` is stated plainly, and either a `Proposal` requirement is recorded or the question is closed with reasoning. Recorded as `REQ-211` and `REQ-212`, both `Proposal`.
 
 - [ ] **A-204** — Get hosted CI to actually run. **Blocked externally; not a code defect.**
       Both CI runs on `main` failed in about four seconds with `The job was not started because recent account payments have failed or your spending limit needs to be increased`. No job has ever executed, so no green CI has ever existed for this repository and local verification is the only real evidence. Nothing in `ci.yml` is wrong; it is verification-only and deploys nothing.
