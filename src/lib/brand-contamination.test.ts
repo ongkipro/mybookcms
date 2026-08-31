@@ -34,8 +34,9 @@ const SCANNED_EXTENSIONS = new Set([
   ".html",
 ]);
 
-// The demo store's name in every spelling that has actually appeared: the bare
-// domain, and the two words with or without a separator.
+// The inherited demo store's brand, in every spelling that has actually
+// appeared. The literal name has to stay here for the guard to work — this
+// test exists precisely to fail if that brand reaches a MyBookCMS asset.
 const CONTAMINATION = /permatamall|permata[\s_-]*mall/i;
 
 function walk(dir: string): string[] {

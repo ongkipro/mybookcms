@@ -19,7 +19,7 @@ const OTHER_SECRET = 'unit-test-auth-secret-fedcba9876543210';
 
 test('session cookie security follows the request transport, not build mode', () => {
   assert.equal(shouldSecureSessionCookie(new URL('https://store.example/hello')), true);
-  assert.equal(shouldSecureSessionCookie(new URL('http://100.127.67.86:8790/hello')), false);
+  assert.equal(shouldSecureSessionCookie(new URL('http://198.51.100.10:8790/hello')), false);
 });
 
 // The admin gate that consumes these tokens lives in `src/middleware.ts`, which

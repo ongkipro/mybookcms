@@ -8,7 +8,7 @@ INSERT INTO stores (
 )
 VALUES (
   1, 'MyBookCMS Malaysia', 'mybookcms', '2026-08-23T00:00:00.000Z',
-  '+60123456789', 'http://100.127.67.86:8789',
+  '+60123456789', 'http://198.51.100.10:8789',
   'Pilihan buku dan alat tulis untuk pembaca Malaysia.', '/images/mybook-mark.webp',
   'Baca lebih, hidup lebih.', '#0f766e', 'ms-MY', 'compact-market', 'MyBookCMS Admin', 1
 )

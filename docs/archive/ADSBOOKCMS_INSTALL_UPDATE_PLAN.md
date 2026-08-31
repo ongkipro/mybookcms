@@ -9,7 +9,7 @@ withdrawn as YAGNI. This is a procedure, not a tool to build.
 - Product requirements: `PRD.md` A22, REQ-164 / REQ-167 / REQ-170 / REQ-172
   (the engine-specific REQs are withdrawn — see A22 note in `PRD.md`).
 - Execution queue: `TASKS.md` A-151 (done), A-153 (manifest), A-159 (optional).
-- Pre-remediation evidence: `docs/AUDIT-2026-08-23.md`.
+- Pre-remediation evidence: `docs/lineage/audit-2026-08-23.md`.
 
 ## 2. Model
 

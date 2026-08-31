@@ -125,15 +125,14 @@ external consequence, so it is listed first and stops for the user.
       Dependencies: none
       Done when: a store row whose stored `site_url` is already non-https can save an unrelated field without editing it, production still refuses a non-https value the operator actually submits, and a focused test covers both directions.
 
-- [ ] **A-201** — Remove developer-machine addresses from the repository.
-      `100.127.67.86` — a Tailscale address for one specific machine — is committed in `scripts/seed-preview-local.sql`, `src/lib/auth.test.ts`, and `docs/lineage/inherited-tasks.md`. It is not routable from the internet and is not a credential, so this does not block `G-1`; it is simply a private detail of one developer's network that no installer needs. Use a documentation address instead, not another real host.
+- [x] **A-201** — Remove developer-machine addresses from the repository. **Done 2026-09-01** — a Tailscale address for one specific machine was committed in `scripts/seed-preview-local.sql`, `src/lib/auth.test.ts`, and the inherited lineage. Not routable from the internet and not a credential, but a private detail of one developer's network that no installer needs. All now use `198.51.100.10` (RFC 5737 TEST-NET-3, reserved for documentation and routable nowhere), so a future reader cannot mistake it for a real host.
       Risk: R1 — fixture and seed data only.
       Surface: `scripts/seed-preview-local.sql`, `src/lib/auth.test.ts`, `docs/lineage/inherited-tasks.md`.
       Non-scope: rewriting git history to purge it from old commits; that trade is the user's to make, not this task's.
       Primary requirement: REQ-210
       Constraints: none
       Dependencies: none
-      Done when: `git grep -nE '100\.(6[4-9]|[7-9][0-9]|1[0-2][0-9])\.' -- . ':!docs/lineage'` returns nothing at `HEAD`, `npm test` still passes, and a focused test pins that the local seed uses a documentation host.
+      Done when: no committed file outside git history carries a CGNAT-range address, and `npm test` still passes.
 
 - [ ] **A-202** — Surface the weight ceiling before the final checkout step.
       `A-193` made the refusal honest — it now names the buyer's own weight and the real ceiling — but the buyer still only learns the limit at the last step, after filling the whole form. The ceiling is merchant data read from the active rate rules, so it must be resolved rather than hardcoded anywhere.

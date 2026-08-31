@@ -1,11 +1,11 @@
-# Inherited task lineage — AdsBookCMS / CMSAds engine
+# Inherited task lineage — install-11 / CMSAds engine
 
 > **This file is not a backlog.** Nothing here is work to pick up, and no `[ ]`
 > in this file is an instruction. MyBookCMS's only execution queue is the root
 > `TASKS.md`.
 >
 > These sections were inherited when this repository was forked from the
-> AdsBookCMS / CMSAds engine on 2026-08-15. They are kept as provenance for
+> install-11 / CMSAds engine on 2026-08-15. They are kept as provenance for
 > behaviour that still ships, so a reviewer can trace why a surface exists.
 
 ## Why this is quarantined
@@ -319,7 +319,7 @@ Historical rows are left exactly as they landed. Do not retro-fit them and do no
 ## Phase 24: Cloudflare Deployment-per-Tenant Foundation
 
 - [x] **T68** — Named Tenant Worker Environments.
-      -> REQ: REQ-47 · constraints: [REQ-48] · deps: [] · Done when: `wrangler.jsonc` contains a complete `petanisejahtera` environment with independently named Worker and stable isolated binding names, and `CLOUDFLARE_ENV=petanisejahtera npm run build` emits that flattened Worker configuration.
+      -> REQ: REQ-47 · constraints: [REQ-48] · deps: [] · Done when: `wrangler.jsonc` contains a complete `install-10` environment with independently named Worker and stable isolated binding names, and `CLOUDFLARE_ENV=install-10 npm run build` emits that flattened Worker configuration.
 - [x] **T69** — Custom Domain Configuration Validation.
       -> REQ: REQ-49 · deps: [T68] · Done when: tenant validation accepts only exact `custom_domain: true` route objects when production routes are present and rejects wildcard custom-domain patterns.
 - [x] **T70** — Tenant-Aware Storefront Shell.
@@ -517,7 +517,7 @@ Implementation, contract tests, static checks, build, and focused authenticated 
 - [x] **T136** — Verify the Complete Admin Workspace.
       -> REQ: REQ-18, REQ-40 · deps: [T132, T133, T134, T135] · Done when: tests, static checks, and the Cloudflare build pass; every static admin route plus real product-edit and order-detail routes returns HTTP 200; 1440px and 390px browser flows prove the shell, app menu, filters, tables/cards, and route navigation without page-level horizontal overflow.
 - [x] **T137** — Release and Smoke Test the Preview Admin Build.
-      -> REQ: REQ-18, REQ-40, REQ-66 · deps: [T136] · Done when: guarded tenant deployment publishes only `petanisejahtera-preview`; live storefront/product routes return HTTP 200 at 390px without horizontal overflow; unauthenticated admin navigation reaches the branded login; and the protected orders API returns HTTP 401 without mutating D1 or calling live providers.
+      -> REQ: REQ-18, REQ-40, REQ-66 · deps: [T136] · Done when: guarded tenant deployment publishes only `install-10-preview`; live storefront/product routes return HTTP 200 at 390px without horizontal overflow; unauthenticated admin navigation reaches the branded login; and the protected orders API returns HTTP 401 without mutating D1 or calling live providers.
 
 ## Phase 44: Precise Admin Date Filters — Deployed to Preview
 
@@ -575,7 +575,7 @@ Implementation, contract tests, static checks, build, and focused authenticated 
 - [x] **T156** — Add the AI-Agent Cloudflare Deployment Runbook.
       -> REQ: REQ-18, REQ-66 · deps: [T147] · Done when: repository docs require one exact tenant, local release gates, separately approved deployment and migration commands, wrapper-only release, selected-host smoke checks, fail-closed behavior, and evidence/non-action reporting.
 - [x] **T157** — Release and Smoke Test Mobile Bulk Selection.
-      -> REQ: REQ-18, REQ-79 · deps: [T155, T156] · Done when: the scoped commit is pushed, the guarded wrapper deploys only `petanisejahtera-preview`, and selected-host storefront/login/API smoke passes without remote D1, provider, pickup, or order mutation.
+      -> REQ: REQ-18, REQ-79 · deps: [T155, T156] · Done when: the scoped commit is pushed, the guarded wrapper deploys only `install-10-preview`, and selected-host storefront/login/API smoke passes without remote D1, provider, pickup, or order mutation.
 
 ## Phase 50: Indonesian Visual System Guide — Complete Locally
 
@@ -685,7 +685,7 @@ Implementation, contract tests, static checks, build, and focused authenticated 
 - [ ] **T193** — Delete the Standalone GitHub Repository.
       -> REQ: REQ-105 · deps: [T192] · Done when: the exact private repository is absent from GitHub. Current blocker: the authenticated `gh` token lacks the `delete_repo` OAuth scope; `gh repo delete` returned HTTP `403`, and the interrupted device authorization did not complete.
 - [x] **T194** — Rename the CMSAds Release Branch and Finalize.
-      -> REQ: REQ-105 · deps: [T192] · Done when: the cleanup is committed and pushed to `petanisejahtera-preview`, the obsolete remote branch is removed, and CMSAds tests/check/build pass.
+      -> REQ: REQ-105 · deps: [T192] · Done when: the cleanup is committed and pushed to `install-10-preview`, the obsolete remote branch is removed, and CMSAds tests/check/build pass.
 
 ## Phase 62: Documentation Current-State Hardening — Complete Locally
 
@@ -909,7 +909,7 @@ Implementation, contract tests, static checks, build, and focused authenticated 
 ## Phase 75: Manual Product Upload Sorting, Auto-Active Embed & API Error Boundary
 
 - [x] **T265** — Newest-First Product Catalog Sorting, Auto-Active Embed Status & Payment Methods Production Safety.
-      -> REQ: REQ-11, REQ-136 · deps: [T264] · Done when: `/api/admin/products` and `catalog.ts` query products ordered by `created_at DESC, id DESC`, new products default to active (`is_active: 1`), `/api/payment-methods` handles missing DB configuration gracefully with HTTP 200 JSON responses, and live deployment on `permatamall.shop` is verified.
+      -> REQ: REQ-11, REQ-136 · deps: [T264] · Done when: `/api/admin/products` and `catalog.ts` query products ordered by `created_at DESC, id DESC`, new products default to active (`is_active: 1`), `/api/payment-methods` handles missing DB configuration gracefully with HTTP 200 JSON responses, and live deployment on `install-7.example` is verified.
 
 ## Phase 76: System Audit Remediation & Hardening (Batches 1–6)
 
@@ -926,13 +926,13 @@ Implementation, contract tests, static checks, build, and focused authenticated 
 - [x] **T270** — Batch 5: Type Safety, CI Gate & Performance (`npx astro check`, `npx tsc --noEmit`, `.github/workflows/deploy.yml`).
       -> REQ: TYP-1..3 · deps: [T269] · Done when: `npx astro check` and `npx tsc --noEmit` exit 0 with 0 errors, CI deploy gate passes, and lighthouse/a11y verified.
 - [x] **T271** — Batch 6: Documentation & Production Deployment Alignment (`AGENTS.md`, `VERSION.md`, `STATUS.md`, `BUILD-LOG.md`, `TASKS.md`).
-      -> REQ: DOC-1 · deps: [T270] · Done when: all system docs reflect latest single-tenant Permatamall CLI scripts, real repository contracts, 187/187 test pass rate, 0 type errors, and clean live deployment to permatamall.shop.
+      -> REQ: DOC-1 · deps: [T270] · Done when: all system docs reflect latest single-tenant install-7 CLI scripts, real repository contracts, 187/187 test pass rate, 0 type errors, and clean live deployment to install-7.example.
 - [x] **T272** — Abandoned Lead Invoice Number Promotion & Payload Enrichment (`src/lib/order-persistence.ts`, `src/scripts/form-hybrid.ts`, `e2e-full-funnel.test.ts`).
-      -> REQ: PAY-6 · deps: [T271] · Done when: `persistOrder()` promotes draft lead order numbers from `ABN-` to official `INV-` invoice numbers upon order submission, `form-hybrid.ts` captures selected `variant_id` and calculated `total_amount` during partial lead auto-save, unit test suite passes with 187/187 100% pass rate, 0 TypeScript/Astro check errors, and live build deployed to permatamall.shop.
+      -> REQ: PAY-6 · deps: [T271] · Done when: `persistOrder()` promotes draft lead order numbers from `ABN-` to official `INV-` invoice numbers upon order submission, `form-hybrid.ts` captures selected `variant_id` and calculated `total_amount` during partial lead auto-save, unit test suite passes with 187/187 100% pass rate, 0 TypeScript/Astro check errors, and live build deployed to install-7.example.
 - [x] **T273** — Google Merchant & Meta Commerce Catalog Feed Content-ID Synchronization (`src/lib/catalog-feed.ts`, `src/lib/catalog-feed.test.ts`, `src/pages/feed/google-catalog.xml.ts`, `src/pages/feed/meta-catalog.xml.ts`).
-      -> REQ: TRK-3 · deps: [T272] · Done when: `google-catalog.xml` and `meta-catalog.xml` generate `<g:id>` strictly matching tracking `content_id` (`product.productId` for single variants and primary variant, ignoring variant SKUs like `variant_...`, with `<g:item_group_id>` for multi-variant products), unit test suite passes with 192/192 100% pass rate, 0 TypeScript/Astro check errors, and live build deployed to permatamall.shop.
+      -> REQ: TRK-3 · deps: [T272] · Done when: `google-catalog.xml` and `meta-catalog.xml` generate `<g:id>` strictly matching tracking `content_id` (`product.productId` for single variants and primary variant, ignoring variant SKUs like `variant_...`, with `<g:item_group_id>` for multi-variant products), unit test suite passes with 192/192 100% pass rate, 0 TypeScript/Astro check errors, and live build deployed to install-7.example.
 - [x] **T274** — Full Catalog Restoration, Responsive Multi-Photo Slider & D1 Product Variants Seed (`scripts/seed-catalog.sql`, `src/components/storefront/ProductImageSlider.tsx`, `src/lib/catalog-data.ts`, `src/data/products.ts`, D1 `OMS_DB`).
-      -> REQ: CAT-1 · deps: [T273] · Done when: 22 products and 110 variants are seeded into D1 database `OMS_DB`, product page mounts interactive `ProductImageSlider` component with adaptive ratio frame and multi-photo thumbnail gallery, `catalog-data.ts` builds 7-photo image galleries per product, test suite passes with 192/192 100% pass rate, 0 TypeScript/Astro check errors, git pushed to main, and live deployment on `https://permatamall.shop/` verified.
+      -> REQ: CAT-1 · deps: [T273] · Done when: 22 products and 110 variants are seeded into D1 database `OMS_DB`, product page mounts interactive `ProductImageSlider` component with adaptive ratio frame and multi-photo thumbnail gallery, `catalog-data.ts` builds 7-photo image galleries per product, test suite passes with 192/192 100% pass rate, 0 TypeScript/Astro check errors, git pushed to main, and live deployment on `https://install-7.example/` verified.
 
 - [x] **T275** - Luxury Header, Footer & Base Layout Polish (`SiteHeader.astro`, `SiteFooter.astro`, `BaseLayout.astro`).
  -> REQ: UI-1 · deps: [T274] · Done when: header announcement ticker uses dark onyx `#09090B` container with pulsing live status dot, glassmorphism sticky header with clean links, and footer uses deep onyx canvas with refined legal links.
@@ -953,7 +953,7 @@ Implementation, contract tests, static checks, build, and focused authenticated 
 - [x] **T282** — Product Detail Page PDP & Form Visual Refresh (`src/pages/produk/[slug].astro`, `ProductImageSlider.tsx`, `GeoIpResolvedForm.astro`).
       -> REQ: UI-3 · deps: [T281] · Done when: PDP renders rounded luxury product gallery, Onyx price typography, and checkout form container matches emerald/slate visual styling without touching form logic or DOM field structure.
 - [x] **T283** — Full Verification & Local Preview (`npm test`, `npx tsc --noEmit`, `npx astro check`).
-      -> REQ: UI-4 · deps: [T282] · Done when: unit test suite passes 192/192, 0 TypeScript and Astro check errors, local dev server running on Tailscale IP `http://100.127.67.86:4321/`, and 0 git push / 0 wrangler deploy executed.
+      -> REQ: UI-4 · deps: [T282] · Done when: unit test suite passes 192/192, 0 TypeScript and Astro check errors, local dev server running on Tailscale IP `http://198.51.100.10:4321/`, and 0 git push / 0 wrangler deploy executed.
 
 ## Phase 78: Ground-Up Sharp Luxury Boutique Redesign (Mobile-First 480px)
 
@@ -966,8 +966,8 @@ Implementation, contract tests, static checks, build, and focused authenticated 
 - [x] **T287** — Homepage & PDP Sharp Luxury Overhaul (`CompactMarketHome.astro`, `HeroSection.astro`, `ProductsSection.astro`, `src/pages/produk/[slug].astro`).
       -> REQ: UI-4 · deps: [T286] · Done when: homepage and PDP render sharp luxury boutique styling without bulky rounded cards, warm alabaster #F8F7F4 canvas, champagne gold #C5A880 accents, and 100% untouched checkout form logic.
 - [x] **T288** — Full System Verification & Tailscale Preview (`npm test`, `npx tsc --noEmit`, `npx astro check`).
-      -> REQ: UI-5 · deps: [T287] · Done when: unit test suite passes 192/192, 0 TypeScript and Astro check errors, local dev server running on Tailscale IP `http://100.127.67.86:4321/`, and 0 git push / 0 wrangler deploy executed.
- -> REQ: UI-5 · deps: [T278] · Done when: unit test suite passes 192/192, 0 TypeScript and Astro check errors, production build deployed to Cloudflare Worker, git committed to main, and verified on `https://permatamall.shop/`.
+      -> REQ: UI-5 · deps: [T287] · Done when: unit test suite passes 192/192, 0 TypeScript and Astro check errors, local dev server running on Tailscale IP `http://198.51.100.10:4321/`, and 0 git push / 0 wrangler deploy executed.
+ -> REQ: UI-5 · deps: [T278] · Done when: unit test suite passes 192/192, 0 TypeScript and Astro check errors, production build deployed to Cloudflare Worker, git committed to main, and verified on `https://install-7.example/`.
 
 ## Phase 79: Storefront 22-Product Content, Realistic Compare Prices & Full SEO Schema Overhaul
 
@@ -980,7 +980,7 @@ Implementation, contract tests, static checks, build, and focused authenticated 
 - [x] **T292** — Full SEO Meta & Google Merchant Schema Compliance (`json-ld.ts`, `JsonLdSchema.astro`, `[slug].astro`).
       -> REQ: UI-9 · deps: [T291] · Done when: Open Graph, Twitter Cards, Canonical URLs, and Google Merchant Schema (MerchantReturnPolicy & OfferShippingDetails) are active.
 - [x] **T293** — Verification & Production Live Deployment (`npm test`, `npx tsc --noEmit`, `npx astro check`, `wrangler deploy`).
-      -> REQ: UI-10 · deps: [T292] · Done when: 192/192 Node tests pass, 0 typecheck/Astro check errors, clean build deployed live to `https://permatamall.shop/` (commit `f44c2f1`).
+      -> REQ: UI-10 · deps: [T292] · Done when: 192/192 Node tests pass, 0 typecheck/Astro check errors, clean build deployed live to `https://install-7.example/` (commit `f44c2f1`).
 
 ## Phase 80: 5-Digit Minimum Product Content-ID Pattern Lock & Auto-Taxonomy Feed Synchronization
 
@@ -991,7 +991,7 @@ Implementation, contract tests, static checks, build, and focused authenticated 
 
 ---
 
-# Phase A — AdsBookCMS Foundation
+# Phase A — install-11 Foundation
 
 Active backlog. Every task below references a requirement in the current `PRD.md` and, where relevant, a gap from `ARCHITECTURE.md` §10. Ordered by severity, not by dependency.
 
@@ -1113,7 +1113,7 @@ A-50 install topology (blocked until A-10 removes the build-time constraint)
  -> Renamed to `adsbook_click_ids` **with** a read-only fallback on the legacy name, so no in-flight attribution was lost. Delete the fallback once 90 days have passed since deploy. The session cookie moved to `adsbook_session` and the embed namespace to `adsbook:` in the same change.
 
 - [x] **A-8** — Migrate the developer API key prefix off `cmsads_live_`. **Done 2026-08-16 — no migration needed, and that is the finding.** `key_hash` is a SHA-256 digest, so the prefix never took part in matching; rewriting it would have broken every live key. New keys carry `adsbook_live_`, old ones still validate, and the legacy prefix survives only in the mask. (`src/lib/developer-api-keys.ts`).
- -> REQ: REQ-71 · Done when: newly issued keys carry an AdsBookCMS prefix and previously issued keys still validate. The prefix is part of every stored and masked key, so this needs a dual-prefix read, not a rename.
+ -> REQ: REQ-71 · Done when: newly issued keys carry an install-11 prefix and previously issued keys still validate. The prefix is part of every stored and masked key, so this needs a dual-prefix read, not a rename.
 
 - [x] **A-9** — Finish the brand sweep in the admin embed dialog. **Done 2026-08-16.**
  -> Done when: the `cmsads-order-form-<id>` embed id template and the four user-visible "CMSAds" strings match the snippet the dialog actually generates, which now emits `adsbook-*`.
@@ -1162,7 +1162,7 @@ A-50 install topology (blocked until A-10 removes the build-time constraint)
 - [x] **A-67** — The login screen shipped one store's brand and a third-party asset to every install. **Fixed 2026-08-16.**
  -> REQ: REQ-18 · LOGIN-18 · **I recorded LOGIN-18 as done before it was.** The vendor advertisement had indeed been replaced — but with the *reference store's* brand mark, which every install would then have worn on its login screen. Replacing one brand leak with another is not a fix, and writing the status from intent rather than from disk is how it survived.
  · Also removed: a Google Fonts stylesheet and two preconnects for a family the page never applied, which told a third party the address of every operator opening the admin for no rendering benefit; and `og:image`/`twitter:image` on **every** admin page, pointing at the same store-branded panel — an admin area is `noindex`, so a social card serves nothing and leaked identity everywhere.
- · The product default logo is now a neutral AdsBookCMS mark. Before this, an install that had not set its own logo wore the demo store's.
+ · The product default logo is now a neutral install-11 mark. Before this, an install that had not set its own logo wore the demo store's.
 
 - [x] **A-61** — Ten admin controls were unreachable on a phone. **Fixed 2026-08-16.**
  -> REQ: REQ-62 · The same defect class as A-37, found across the admin by sweeping for it deliberately. Each was invisible to every static check and made a feature unusable rather than ugly.
@@ -1217,7 +1217,7 @@ A-50 install topology (blocked until A-10 removes the build-time constraint)
 - [x] **A-42** — Surface outbox and provider health in `/admin`. **Done 2026-08-16.** Verdicts come from recorded outcomes rather than clock thresholds, so a store doing two orders a week does not show red every Tuesday, and *unknown* is kept distinct from *degraded* — a provider never contacted is not one that failed. Each read is windowed to the newest 200 rows with the ceiling and upgrade path noted inline.
  -> REQ: REQ-82 · Done when: undelivered `capi_event_outbox` depth, last successful Mengantar call, last AutoLaris callback, and last CAPI delivery are visible to the operator.
 - [x] **A-43** — Reconcile the version registries. **Done 2026-08-16.**
- -> REQ: REQ-83 · `package.json` is now `adsbookcms@1.2.0`, matching `src/lib/version.ts`.
+ -> REQ: REQ-83 · `package.json` is now `install-11@1.2.0`, matching `src/lib/version.ts`.
 
 ## A6 — Install topology *(opened 2026-08-16, pending decision)*
 
@@ -1321,7 +1321,7 @@ Worker, and by reading the emitted stylesheets rather than the source.
  -> Primary requirements: REQ-67, REQ-69 · Constraints: REQ-61, REQ-68 · Dependencies: A-90, A-93 · Done when: desktop and mobile navigation use regular text with medium weight only for current state; analytics and KPIs precede secondary health diagnostics; period controls cannot request an API-invalid range; labels describe the values actually calculated; and payment actions remain hidden from roles without access.
  -> Sidebar labels are regular, current labels medium, and navigation remains motionless. The dashboard now leads with a 7-day WIB analytics overview, four unclipped KPIs, revenue trend, and payment mix; health follows as owner/admin diagnostics. The paid-order ratio is labelled `Pembayaran berhasil`, 90/180-day presets are omitted from this 31-day endpoint, custom range is capped at 31 inclusive days, and `Kelola payment` follows route authorization. Escape from mobile All Menu returns focus to its trigger. Focused tests, the full 310-test suite, 318-file check, production build, and isolated Chromium at 390/768/1280 px pass.
 
-## A10 — Permatamall-derived correctness and installer hardening
+## A10 — a sibling install-derived correctness and installer hardening
 
 - [x] **A-95** — Unify order lifecycle and stock restoration. **Done 2026-08-17.**
  -> Primary requirements: REQ-30, REQ-31 · Done when: single and bulk mutations share one transition policy; cancellation/return and destructive deletion restore reserved stock exactly once; provider-dispatched orders cannot be deleted; focused lifecycle and retention tests pass.

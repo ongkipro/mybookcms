@@ -1,5 +1,12 @@
 # BUILD LOG: MyBookCMS
 
+> **Provenance and redaction.** Entries before the MyBookCMS fork are the
+> upstream AdsBookCMS / CMSAds engine's build history. Another install's
+> hostnames, Worker and D1 resource names, and Cloudflare version identifiers
+> have been replaced with neutral descriptions: they identify a different
+> product's infrastructure and mean nothing to a reader of this repository.
+> The engineering narrative is unchanged.
+
 ## 2026-08-24 — Pengiriman membership/status decoupled; evidence fields retired
 
 - Made `shipping_queued_at` the only Pengiriman membership fact. Aksi and bulk
@@ -412,7 +419,7 @@ Treat this file as history, not as a specification. Current system state is owne
 ### Entry 29: Clean Human Storefront Header Rebuild (`design-taste` Anti-AI Slop)
 
 - Completely eliminated all AI tells from `SiteHeader.astro` and `HomeTopbar.astro` (removed pulsing dots, fake ping animations, gradient bars, and over-engineered pill badges).
-- Built a clean, solid top bar (_Garansi Original 100% • Bisa COD (Bayar di Tempat)_) and high-trust header featuring the `PetaniSejahtera` brand logo and a direct WhatsApp help link (`Bantuan WA`).
+- Built a clean, solid top bar (_Garansi Original 100% • Bisa COD (Bayar di Tempat)_) and high-trust header featuring the upstream demo brand logo and a direct WhatsApp help link (`Bantuan WA`).
 - Verified static typecheck (`npm run check`, 0 errors, 0 warnings) and Cloudflare production build (`npm run build`, 0 errors).
 
 ### Entry 30: Spec-Driven Storefront PRD & Task Decomposition (`prd-taskbreaker` Skill)
@@ -793,9 +800,9 @@ Treat this file as history, not as a specification. Current system state is owne
 ### Entry 83: Cloudflare Preview Infrastructure and Live Deployment
 
 - Authenticated Wrangler over SSH with OAuth device authorization, enabled R2, and provisioned isolated D1, KV, and R2 resources for both production and preview tenants. Production resources remain empty, unmigrated, and unattached to the root domain.
-- Updated `wrangler.jsonc` with remote tenant bindings and exact Custom Domains, then applied all seven migrations and preview-only fixtures to `cmsads-petanisejahtera-preview-d1`.
+- Updated `wrangler.jsonc` with remote tenant bindings and exact Custom Domains, then applied all seven migrations and preview-only fixtures to `the upstream preview D1`.
 - Fixed `scripts/tenant.ts` so `CLOUDFLARE_ENV` selects the Astro environment only during build and is removed when deploying the already flattened `dist/server/wrangler.json`. This prevents Wrangler from appending the tenant suffix twice.
-- Deployed Worker `cmsads-petanisejahtera-preview` version `8fd8cb52-cefa-4a39-9e37-eff508c0d034` to <https://preview.petanisejahtera.com>; uploaded eight `.dev.vars` entries through `wrangler secret bulk` without printing secret values. The incorrectly double-suffixed first-deploy Worker was deleted with operator approval.
+- Deployed Worker `the upstream preview Worker` version `<redacted>` to <the upstream preview install>; uploaded eight `.dev.vars` entries through `wrangler secret bulk` without printing secret values. The incorrectly double-suffixed first-deploy Worker was deleted with operator approval.
 - Verified remote D1 fixture counts (1 store, 1 warehouse, 3 products, 4 variants, 6 orders, 10 courier rules), `npm test` (18/18), `npm run check` (164 files, 0 diagnostics), tenant type generation, build, and Wrangler dry-run.
 - Live 390 × 844 smoke returned HTTP `200` without horizontal overflow for `/`, `/saratoga-padi`, and `/admin/login`; public district search returned 20 `suko` results and protected settings returned HTTP `401` without a session. Authenticated admin and external provider side effects were intentionally not exercised.
 - Observed one remaining preview configuration limit: unconfigured Meta tracking causes `/api/meta-event` to return HTTP `400` and produce console noise on storefront pages.
@@ -810,7 +817,7 @@ Treat this file as history, not as a specification. Current system state is owne
 - Added three Node contract tests for the bootstrap hash, random-salt replacement hashes, password rejection, and normalized usernames. `npm test` passes 21/21; `npm run check` passes 167 files with zero diagnostics; tenant build completes.
 - Browser verification at 390px, 768px, and 1440px showed zero horizontal overflow. It covered default login, forced profile routing, invalid current-password and confirmation guards, successful credential replacement, session invalidation, replacement login, provider-domain loading, logout, and closure of the old login route.
 - Production smoke exposed that PBKDF2 at 210,000 iterations exceeded the effective Cloudflare Worker request CPU budget even though Node and local Workerd passed. The credential contract now uses the existing accepted floor of 100,000 iterations; live booleans-only diagnostics confirmed the request password and username before the temporary logging was removed.
-- Applied migration `0007` remotely and deployed clean Worker version `1f93cf40-baab-49ac-9d20-3a5ba58fe6e3` to <https://preview.petanisejahtera.com>. Live smoke verified `admin` / `admin`, forced profile routing, D1/KV revision enforcement, old-route closure, logout, unauthenticated `401`, and zero 390px horizontal overflow without changing the bootstrap credential.
+- Applied migration `0007` remotely and deployed clean Worker version `<redacted>` to <the upstream preview install>. Live smoke verified `admin` / `admin`, forced profile routing, D1/KV revision enforcement, old-route closure, logout, unauthenticated `401`, and zero 390px horizontal overflow without changing the bootstrap credential.
 
 ### Entry 85: Global Admin Search and Header Profile Control
 
@@ -818,8 +825,8 @@ Treat this file as history, not as a specification. Current system state is owne
 - Added an Astro-rendered global navigation index and native `<dialog>` command palette without a new dependency. Header triggers, `Ctrl/Cmd+K`, substring filtering, empty state, arrow-key movement, Enter navigation, Escape/close handling, and focus restoration work with vanilla client JavaScript.
 - Rebalanced the header for desktop and mobile: centered search trigger on desktop, icon trigger on mobile, optional storefront shortcut at wide widths, translucent fixed shell surface, and no duplicated profile navigation.
 - Local browser verification covered 1440px and 390px layouts, `meta`/`gudang` result filtering, dialog focus, and zero horizontal overflow. `npm test` passed 21/21, `npm run check` passed 167 files with zero diagnostics, tenant validation passed both environments, and the tenant production build completed.
-- Deployed preview Worker version `b1981092-a467-420d-a893-9f456779a712`. Live smoke verified bootstrap login, top-right profile control, removed sidebar profile item, desktop and mobile command search, filtered AutoLaris/Meta results, and zero horizontal overflow.
-- Committed the complete D1-backed admin profile and global-search change as `6eef8cd`, then redeployed it as preview Worker version `e20dbeb0-58e5-492f-85aa-662dd2a9b43a`. Post-deploy smoke confirmed `/hello` availability and unauthenticated profile protection. A read-only D1 check showed the live bootstrap account had already completed forced credential replacement; the deployment did not reset or expose the replacement credential.
+- Deployed preview Worker version `<redacted>`. Live smoke verified bootstrap login, top-right profile control, removed sidebar profile item, desktop and mobile command search, filtered AutoLaris/Meta results, and zero horizontal overflow.
+- Committed the complete D1-backed admin profile and global-search change as `6eef8cd`, then redeployed it as preview Worker version `<redacted>`. Post-deploy smoke confirmed `/hello` availability and unauthenticated profile protection. A read-only D1 check showed the live bootstrap account had already completed forced credential replacement; the deployment did not reset or expose the replacement credential.
 
 ### Entry 86: D1-Backed Storefront Catalog and Scalev Identity Reconciliation
 
@@ -828,7 +835,7 @@ Treat this file as history, not as a specification. Current system state is owne
 - Added `src/lib/catalog.ts` and `src/lib/catalog-data.ts` as the request-time join between D1 operations and `src/data/products.ts` editorial content. D1 now controls public title, slug, category, image override, activation, sellable stock, price, and checkout Scalev Variant ID; missing, inactive, unmapped, sold-out, or checkout-incomplete rows fail closed.
 - Migrated home cards, product listings, dynamic and campaign detail pages, checkout forms, social proof, thanks-page recommendations, and 404 recommendations to the shared catalog loader. Checkout persistence now resolves Scalev Variant ID first and still accepts SKU/internal ID compatibility at the database boundary.
 - Local D1 migration and seed verification returned five products, ten linked variants, and the correct active/draft split. Browser smoke at 390px showed four public products, ten admin variants across five records, exact D1 prices/Scalev Variant IDs on detail checkout, the Baja activation guard returning HTTP `400`, and zero horizontal overflow.
-- Final proof: `npm test` passed 23/23; `npm run check` passed 186 files with zero errors and zero warnings (two existing unused-import hints); tenant validation passed both environments; the `petanisejahtera-preview` tenant build completed. No remote database, preview Worker, or production resource was changed.
+- Final proof: `npm test` passed 23/23; `npm run check` passed 186 files with zero errors and zero warnings (two existing unused-import hints); tenant validation passed both environments; the `the upstream install-preview` tenant build completed. No remote database, preview Worker, or production resource was changed.
 
 ### Entry 87: Identifier-Driven Adaptive Checkout Form API
 
@@ -843,14 +850,14 @@ Treat this file as history, not as a specification. Current system state is owne
 - Centralized shipping resolution in `src/lib/shipping-quote.ts`. Public quotes now resolve variant weight from active Scalev-linked D1 catalog records, then apply D1 courier and COD availability rules to the live Mengantar estimate.
 - Hardened `/api/submit-order` to independently re-fetch the quote and match the submitted courier, service index, and exact shipping cost before persistence. Manipulated cost returned HTTP `409 SHIPPING_QUOTE_CHANGED` with the current authoritative cost and zero database side effects; a valid local quote persisted the expected D1 product price plus shipping.
 - Hardened shared order persistence so draft/inactive or checkout-incomplete products cannot be ordered through either full/hybrid or middle endpoints. Both public submission routes now apply the existing per-IP limiter before payload parsing.
-- Contract tests passed 28/28; `npm run check` passed 195 files with zero errors and zero warnings (four unrelated unused-import hints); the `petanisejahtera-preview` tenant build completed. Local smoke confirmed manipulated shipping rejection, valid quote acceptance, draft-product rejection, and HTTP `429` at the configured request threshold. All temporary smoke orders and stock changes were removed; no remote database, preview Worker, or production resource changed.
+- Contract tests passed 28/28; `npm run check` passed 195 files with zero errors and zero warnings (four unrelated unused-import hints); the `the upstream install-preview` tenant build completed. Local smoke confirmed manipulated shipping rejection, valid quote acceptance, draft-product rejection, and HTTP `429` at the configured request threshold. All temporary smoke orders and stock changes were removed; no remote database, preview Worker, or production resource changed.
 
 ### Entry 89: Direct Mengantar API Order Dispatch
 
 - Created `src/lib/mengantar-order.ts` to construct canonical Mengantar API `POST /order` payloads for COD and non-COD shipments and parse provider responses.
 - Updated migration `0009_lovely_leader.sql` and `orders` schema with `destination_area_id`, `provider_order_id`, `provider_batch_id`, `provider_dispatch_error`, and `provider_dispatched_at`.
 - Integrated direct Mengantar order creation inside `/api/submit-order`: checkout persist to D1, dispatches to Mengantar using the warehouse pickup address, and updates provider identity and resi (`cnote_no`) in D1. Provider dispatch errors fail gracefully without rolling back customer orders or invoking Scalev APIs.
-- Contract tests passed 30/30; `npm run check` passed 199 files with zero errors and zero warnings; tenant validation and `petanisejahtera-preview` tenant build completed. Local smoke confirmed order persistence with Mengantar dispatch error handling.
+- Contract tests passed 30/30; `npm run check` passed 199 files with zero errors and zero warnings; tenant validation and `the upstream install-preview` tenant build completed. Local smoke confirmed order persistence with Mengantar dispatch error handling.
 
 ### Entry 90: AutoLaris Checkout and Recorded Balance — Work in Progress
 
@@ -866,7 +873,7 @@ Treat this file as history, not as a specification. Current system state is owne
 - Completed full/hybrid channel selection, conditional online-payment email validation, canonical AutoLaris invoice persistence, structured checkout responses, and `/thanks` instructions for VA, QR payload, payment code/link, base amount, provider fee, billed total, expiry, and honest provider-failure states. COD remains the only fallback when AutoLaris is unavailable.
 - Added an authenticated, schema-validated, idempotent AutoLaris reconciliation path. Pending online orders cannot dispatch; the first paid transition records `paid_at` and claims one Mengantar dispatch; duplicate callbacks return `already_reconciled` without another shipment. COD dispatch remains immediate.
 - Added payment details to admin order records and built `/admin/balance` as a responsive D1 reconciliation ledger for recorded paid funds, pending billed amounts, fees, and failures. The page explicitly states it is not a live or withdrawable AutoLaris balance and exposes no unverified withdrawal action.
-- Added contract tests for AutoLaris parsing, channel mapping, online checkout validation, payment-gated dispatch, idempotent reconciliation, and recorded-balance aggregation. `npm test` passed 36/36; `npm run check` passed 207 files with zero errors and six pre-existing hints; `npm run tenant:validate` validated both environments; and the `petanisejahtera-preview` tenant build completed.
+- Added contract tests for AutoLaris parsing, channel mapping, online checkout validation, payment-gated dispatch, idempotent reconciliation, and recorded-balance aggregation. `npm test` passed 36/36; `npm run check` passed 207 files with zero errors and six pre-existing hints; `npm run tenant:validate` validated both environments; and the `the upstream install-preview` tenant build completed.
 - Applied migrations only to local D1. A local provider stub verified one VABCA checkout/payment, complete `/thanks` instructions, a pending recorded-balance row, an authenticated paid callback, exactly one Mengantar shipment, and duplicate callback idempotency. Order detail and `/admin/balance` had zero horizontal overflow at 390px and 1280px. Remote preview and production resources were not mutated or deployed.
 
 ### Entry 92: Cek WA & Ongkir (Tariff Checker) Admin Interface
@@ -885,7 +892,7 @@ Treat this file as history, not as a specification. Current system state is owne
 - Hardened `scripts/tenant.ts` validation for duplicate Worker names, Custom Domains, D1/KV/R2 identities, exact HTTPS origin-to-domain matching, required non-secret tenant variables, and generated Worker-name identity.
 - Proved provider replacement isolation with two local D1 stores. Authenticated primary-tenant writes replaced Mengantar and AutoLaris keys/base URLs twice and returned masked values; the preview D1 retained null provider fields.
 - Reconciled the concurrently added `/admin/check` route with the established provider configuration contract so its frontmatter, query initialization, and Mengantar client construction compile.
-- Negative validator scenarios rejected unknown templates, duplicate domains, duplicate D1 resources, and origin/domain mismatch. `npm test` passed **38/38**; `npm run check` passed **213 files with 0 errors and 4 hints**; `npm run tenant:validate` passed both committed environments; final builds passed for both `petanisejahtera` and `petanisejahtera-preview`.
+- Negative validator scenarios rejected unknown templates, duplicate domains, duplicate D1 resources, and origin/domain mismatch. `npm test` passed **38/38**; `npm run check` passed **213 files with 0 errors and 4 hints**; `npm run tenant:validate` passed both committed environments; final builds passed for both `the upstream install` and `the upstream install-preview`.
 - Browser proof at 1280px and 390px confirmed the compact storefront remains 480px, the wide storefront spans the desktop viewport, both have zero horizontal overflow, and both tenant login identities render correctly. Authenticated primary admin rendered its configured name, logo, slug, and `#1B5E20` accent.
 - Remote D1, KV, R2, Worker, provider, DNS, and deployment resources were not mutated.
 
@@ -898,7 +905,7 @@ Treat this file as history, not as a specification. Current system state is owne
 - Added an `AI` binding to every Wrangler environment and made tenant validation require it. D1, KV, R2, provider credentials, content records, instructions, and admin sessions remain per-Worker.
 - Added machine-readable `tenant:list --json`, restored Worker-identity verification to direct tenant builds, and added `.github/workflows/fleet-release.yml`. CI validates one revision, derives a failure-isolated matrix from the registry, dry-runs pull requests, calls guarded per-tenant deploys on main/manual releases, and never applies D1 migrations.
 - Applied `0012` independently to both temporary local tenant D1 stores. The primary authenticated smoke saved an instruction and draft without changing the public page, then published it and rendered the runtime heading at 390px with zero overflow. Publish-without-draft and invalid operational content returned `400`; unauthenticated content state returned `401`. The preview tenant retained zero content rows/instructions and rendered its isolated fallback at 1280px with zero overflow.
-- `npm test` passed **43/43**; `npm run check` passed **217 files with 0 errors and 7 hints**; registry and workflow YAML validation passed; final `petanisejahtera` and `petanisejahtera-preview` builds passed. The actual Workers AI inference path was not invoked because it requires a remote Cloudflare AI execution; no remote migration, content publication, deploy, provider call, DNS change, or production mutation occurred.
+- `npm test` passed **43/43**; `npm run check` passed **217 files with 0 errors and 7 hints**; registry and workflow YAML validation passed; final `the upstream install` and `the upstream install-preview` builds passed. The actual Workers AI inference path was not invoked because it requires a remote Cloudflare AI execution; no remote migration, content publication, deploy, provider call, DNS change, or production mutation occurred.
 
 ### Entry 95: Canonical Auto-Generated D1 Catalog IDs
 
@@ -926,13 +933,13 @@ Treat this file as history, not as a specification. Current system state is owne
 - Proved pickup and warehouse synchronization fail closed. Missing `/time` reference returned HTTP `502` with no local schedule, then a successful response persisted the provider reference and linked order. A declined `/address` response preserved the local warehouse; successful synchronization persisted the test change, after which the original warehouse fixture was restored.
 - Browser checks covered pending QR instructions, AutoLaris payment detail, the recorded balance ledger, and shipping operations at desktop and 390px. Forged thanks state and pending online payment emitted no Purchase; a server-known COD order reached the app-owned PageView/Purchase sinks. Local Meta CAPI honestly returned HTTP `400` while unconfigured.
 - Reproduced a mobile admin accessibility defect: closing the sidebar with `Escape` left focus on `<body>` because the external sidebar trigger was not a Radix dialog trigger. Added explicit `onCloseAutoFocus` handling in `src/components/ui/sidebar.tsx`; browser proof now restores focus to `button[data-sidebar="trigger"]` and retains zero overflow.
-- Final evidence: `npm test` **49/49**; `npm run check` **219 files, 0 errors, 7 hints**; tenant validation passed both environments; the default and `petanisejahtera-preview` builds completed. Audit orders, payments, pickup rows, provider overrides, temporary admin credential, and session were removed/restored; local D1 returned to 6 orders, 0 payments, and aggregate stock 2,000. No remote resource, live provider, Worker, DNS, or production mutation occurred.
+- Final evidence: `npm test` **49/49**; `npm run check` **219 files, 0 errors, 7 hints**; tenant validation passed both environments; the default and `the upstream install-preview` builds completed. Audit orders, payments, pickup rows, provider overrides, temporary admin credential, and session were removed/restored; local D1 returned to 6 orders, 0 payments, and aggregate stock 2,000. No remote resource, live provider, Worker, DNS, or production mutation occurred.
 
 ### Entry 98: Preview D1 Migration, Worker Deployment, and Live Smoke
 
 - Committed the provider-safe checkout and operations hardening as `3938d53` on `audit-hardening-preview`.
-- Applied `0014_long_gamora.sql` to the isolated `petanisejahtera-preview` D1. The first Cloudflare query attempt returned transient API code `7403`; `wrangler whoami`, `d1 list`, and a direct remote `SELECT 1` confirmed the authenticated account and database, and the immediate guarded migration retry completed all five statements.
-- The tenant deploy command rebuilt and dry-ran the flattened preview configuration before deploying Worker version `c7c91396-ea5a-4184-a583-3a1889354937` to the exact custom domain `preview.petanisejahtera.com`.
+- Applied `0014_long_gamora.sql` to the isolated `the upstream install-preview` D1. The first Cloudflare query attempt returned transient API code `7403`; `wrangler whoami`, `d1 list`, and a direct remote `SELECT 1` confirmed the authenticated account and database, and the immediate guarded migration retry completed all five statements.
+- The tenant deploy command rebuilt and dry-ran the flattened preview configuration before deploying Worker version `<redacted>` to the exact custom domain `the upstream preview install`.
 - Live browser smoke verified the desktop storefront, `GET /api/form-config`, `GET /api/payment-methods`, the 390px full checkout with 11 payment choices and conditional email markup, and the `/admin/balance` redirect to `/hello`. All checked views had zero horizontal overflow; the guarded navigation reported no page errors or HTTP failures. No order/provider mutation or authenticated admin mutation was exercised. Production root D1/Worker/DNS, live providers, preview KV/R2 data, and credentials were not changed.
 
 ### Entry 99: Guarded Merchant Provisioning, Delegated Content Access, and Runtime-Only Content
@@ -942,7 +949,7 @@ Treat this file as history, not as a specification. Current system state is owne
 - Completed `/admin/content` with D1 draft/manual/Workers AI generation, explicit publish, repository-owned guardrails plus optional write-only tenant instructions, and R2 media upload/immutable serving. Public home/product rendering no longer consumes compiled merchant copy: missing home content shows a setup state, and unpublished product content is omitted.
 - Changed fleet delivery to pull-request validation/dry-runs plus one explicitly selected manual-dispatch tenant. Pushes to `main` no longer deploy. Updated shipping actions so courier-less middle orders open directly in the existing order shipping editor; bulk resi creation continues through the sequential Mengantar queue.
 - Browser proof covered owner access management, forced collaborator password replacement, HTTP `403` owner-route enforcement, collaborator navigation isolation, D1 draft/publication, 390px zero-overflow content UI, runtime removal of legacy product copy, and local R2 upload/serve (`201`/`200`, `image/png`, 68 bytes). Audit user/content/media were removed and the original forced-change owner state was restored.
-- Final validation passed: `npm run tenant:validate` validated both environments; `npm run check` reported 0 errors across 232 files; all 57 Node contract tests passed; and `tenant:build` completed for both `petanisejahtera` (`compact-market`) and `petanisejahtera-preview` (`wide-catalog`). No remote Cloudflare resource, migration, DNS route, credential, provider, or deployment was changed.
+- Final validation passed: `npm run tenant:validate` validated both environments; `npm run check` reported 0 errors across 232 files; all 57 Node contract tests passed; and `tenant:build` completed for both `the upstream install` (`compact-market`) and `the upstream install-preview` (`wide-catalog`). No remote Cloudflare resource, migration, DNS route, credential, provider, or deployment was changed.
 
 ### Entry 100: Canonical Order-to-Mengantar Lifecycle Documentation — In Progress
 
@@ -966,10 +973,10 @@ Treat this file as history, not as a specification. Current system state is owne
 ### Entry 102: Preview Migration, Release Deploy, and Meta CAPI Smoke Hotfix
 
 - Committed the full verified release as `3b02b46` and the unconfigured-Meta-CAPI smoke hotfix as `529f40d` on `audit-hardening-preview`. The intentionally excluded untracked `patch.cjs` remains outside both commits.
-- Applied pending migrations `0015_unique_wilson_fisk.sql` and `0016_mighty_aaron_stack.sql` to the isolated `petanisejahtera-preview` D1 after explicit operator approval. Production D1 was not changed.
-- The first preview deployment produced Worker version `6faef41c-cfa1-4db5-a363-aed63d445dfa`. Live smoke then exposed an unconfigured `/api/meta-event` request returning HTTP `400`; the endpoint now returns explicit HTTP `202` skipped semantics when either store-specific Meta credential is absent, while malformed payloads still fail closed.
+- Applied pending migrations `0015_unique_wilson_fisk.sql` and `0016_mighty_aaron_stack.sql` to the isolated `the upstream install-preview` D1 after explicit operator approval. Production D1 was not changed.
+- The first preview deployment produced Worker version `<redacted>`. Live smoke then exposed an unconfigured `/api/meta-event` request returning HTTP `400`; the endpoint now returns explicit HTTP `202` skipped semantics when either store-specific Meta credential is absent, while malformed payloads still fail closed.
 - Revalidated the hotfix with 63/63 Node tests, 0 static errors across 234 files, five non-blocking hints, a successful tenant dry-run, and a second guarded preview deployment.
-- Worker version `8bc3456b-9561-49e1-8f27-253ea1091bf1` is live on `preview.petanisejahtera.com`. Final browser smoke rendered the storefront with zero horizontal overflow, no console errors, no failed requests, and no HTTP responses at or above 400. The admin order API continued to return authenticated-boundary HTTP `401`, and `/admin/orders` redirected unauthenticated access to `/hello`.
+- Worker version `<redacted>` is live on `the upstream preview install`. Final browser smoke rendered the storefront with zero horizontal overflow, no console errors, no failed requests, and no HTTP responses at or above 400. The admin order API continued to return authenticated-boundary HTTP `401`, and `/admin/orders` redirected unauthenticated access to `/hello`.
 - No live Mengantar order, production migration, production Worker/DNS change, or Git push was performed.
 
 ### Entry 103: App-Like Mobile Admin Shell and Header Search Repair
@@ -984,18 +991,18 @@ Treat this file as history, not as a specification. Current system state is owne
 ### Entry 104: Mobile Admin Preview Deployment
 
 - Committed the verified mobile admin shell and search repair as `2766a56` on `audit-hardening-preview`.
-- `tenant:dry-run` passed for `petanisejahtera-preview`, then the guarded tenant deployment completed successfully without a schema migration.
-- Worker `cmsads-petanisejahtera-preview` version `28d295b2-0ddc-4426-9b28-bad4150daedb` is live at `preview.petanisejahtera.com`.
+- `tenant:dry-run` passed for `the upstream install-preview`, then the guarded tenant deployment completed successfully without a schema migration.
+- Worker `the upstream preview Worker` version `<redacted>` is live at `the upstream preview install`.
 - Post-deployment browser smoke at 390×844 rendered the storefront and login boundary with zero horizontal overflow, no console errors, no failed requests, and no HTTP responses at or above 400. Unauthenticated `/admin/orders` correctly redirected to `/hello`.
 - No live Mengantar order, production database mutation, production Worker/DNS change, or Git push was performed.
 
 ### Entry 105: Production Domain Restored to Standalone Storefront
 
-- Reassigned `petanisejahtera.com` from `cmsads-petanisejahtera` to the standalone `petanisejahtera` Worker built from clean GitHub-tracking branch `ongkipro/petanisejahtera@main`.
+- Reassigned `the upstream install.com` from `the upstream install` to the standalone `the upstream install` Worker built from clean GitHub-tracking branch `ongkipro/the upstream install@main`.
 - The standalone project passed 25/25 tests and its Astro Cloudflare production build. Its pre-existing strict type check currently reports 24 errors caused by unresolved Cloudflare runtime types and TypeScript 6 `Body.json()` generic calls; no source was changed or error suppressed during this restoration.
-- Wrangler transferred the existing apex custom domain and attached `www.petanisejahtera.com` to Worker version `25629c47-34c7-4d32-b1d1-96d8f5f4919e`.
+- Wrangler transferred the existing apex custom domain and attached `www.the upstream install.com` to Worker version `<redacted>`.
 - Live mobile smoke confirmed the standalone title and hero, zero horizontal overflow, no console errors, failed requests, or HTTP errors. `www` redirects to the apex, and `/admin/orders` now returns the standalone storefront's expected 404 instead of CMSAds.
-- `preview.petanisejahtera.com` remains on CMSAds Worker version `28d295b2-0ddc-4426-9b28-bad4150daedb`; an isolated reload produced no console errors, failed requests, HTTP errors, or horizontal overflow.
+- `the upstream preview install` remains on CMSAds Worker version `<redacted>`; an isolated reload produced no console errors, failed requests, HTTP errors, or horizontal overflow.
 
 ### Entry 106: Petani Sejahtera Preview Catalog Import and Release
 
@@ -1003,17 +1010,17 @@ Treat this file as history, not as a specification. Current system state is owne
 - Refined the shared storefront product card and product detail presentation: explicit starting-price context, variant count, SKU visibility, factual checkout shipping guidance, clearer content groupings, and no countdown or fabricated scarcity.
 - Verified the seed against an isolated local D1. The remote preview import then processed 18 queries and wrote 46 rows; the follow-up query returned four products, eight variants, and published `home` plus `product:10001`–`product:10004` content.
 - Validation passed with 63/63 Node tests, 0 static errors across 234 files with one pre-existing non-blocking hint, successful Astro Cloudflare build, and a successful tenant dry-run.
-- Guarded deployment published `cmsads-petanisejahtera-preview` Worker version `66a279da-db59-4e57-b2f8-96ef6f4f2ed6`. Live checks at 1280×900 and 390×844 rendered all four catalog links and both Kojien variants with zero horizontal overflow, no console errors, failed requests, or HTTP responses at or above 400.
-- `petanisejahtera.com` and `www.petanisejahtera.com` remain on the standalone Worker. No production CMSAds deployment, production database mutation, live Mengantar request, or Git push was performed.
+- Guarded deployment published `the upstream preview Worker` Worker version `<redacted>`. Live checks at 1280×900 and 390×844 rendered all four catalog links and both Kojien variants with zero horizontal overflow, no console errors, failed requests, or HTTP responses at or above 400.
+- `the upstream install.com` and `www.the upstream install.com` remain on the standalone Worker. No production CMSAds deployment, production database mutation, live Mengantar request, or Git push was performed.
 
 ### Entry 107: Mobile-First Storefront Adaptation
 
-- Switched the Petani Sejahtera preview from `wide-catalog` to the `compact-market` storefront and aligned its home hierarchy with the standalone `petanisejahtera.com` presentation: full-bleed crop carousel, concise hero content, two-column product discovery, compact solution rows, and field-proof sections.
+- Switched the Petani Sejahtera preview from `wide-catalog` to the `compact-market` storefront and aligned its home hierarchy with the standalone `the upstream install.com` presentation: full-bleed crop carousel, concise hero content, two-column product discovery, compact solution rows, and field-proof sections.
 - Restored the product catalog to the source storefront's scan-friendly mobile list and removed viewport-driven desktop grids from product detail so the internal composition remains coherent inside the 480px web-app shell.
 - Preserved the current CMSAds checkout form without changing its field names, IDs, validation, tracking selectors, or interaction flow. Only the surrounding product-page composition changed.
 - Validation passed with 63/63 Node tests, 0 static errors across 234 files with one pre-existing non-blocking hint, a successful Astro Cloudflare build, and a successful tenant dry-run.
 - Local and live browser checks passed at 390px and 480px with zero horizontal overflow. At 1280px the storefront shell measured exactly 480px; the product form retained six visible controls with a minimum computed font size of 16px.
-- Guarded deployment published `cmsads-petanisejahtera-preview` Worker version `b27d24b3-062b-4926-9813-b5d3b8201d61`. Live home, catalog, and Kojien checkout checks produced no console errors, failed requests, or HTTP responses at or above 400.
+- Guarded deployment published `the upstream preview Worker` Worker version `<redacted>`. Live home, catalog, and Kojien checkout checks produced no console errors, failed requests, or HTTP responses at or above 400.
 - No D1 catalog mutation, live Mengantar request, production CMSAds deployment, production domain change, or Git push was performed.
 
 ### Entry 108: Mobile Checkout Field Polish
@@ -1023,7 +1030,7 @@ Treat this file as history, not as a specification. Current system state is owne
 - Harmonized variant, payment, and order-summary surfaces so the form reads as one mobile checkout rather than unrelated cards.
 - Validation passed with 63/63 Node tests, 0 static errors across 234 files with one pre-existing non-blocking hint, and a successful Astro Cloudflare build.
 - Browser checks covered the middle and full forms at 390px, invalid WhatsApp feedback, `Coblong` district search and selection, zero horizontal overflow, and a 1280px viewport where the shell remained 480px and controls remained 16px. A single-input district run produced no console errors, failed requests, or HTTP responses at or above 400.
-- Guarded deployment published `cmsads-petanisejahtera-preview` Worker version `23d83db7-30b4-42f7-9c3b-216717c2de8f`. Live 390px checks returned HTTP 200 for the middle Kojien product checkout and forced full form; controls measured 16px/52px, `Coblong` returned one result, horizontal overflow remained zero, and no console errors, failed requests, or HTTP responses at or above 400 were observed. No D1 mutation, live order submission, live Mengantar request, production domain change, Git commit, or Git push was performed.
+- Guarded deployment published `the upstream preview Worker` Worker version `<redacted>`. Live 390px checks returned HTTP 200 for the middle Kojien product checkout and forced full form; controls measured 16px/52px, `Coblong` returned one result, horizontal overflow remained zero, and no console errors, failed requests, or HTTP responses at or above 400 were observed. No D1 mutation, live order submission, live Mengantar request, production domain change, Git commit, or Git push was performed.
 
 ### Entry 109: Compact Shopify-Style Checkout Fields
 
@@ -1032,14 +1039,14 @@ Treat this file as history, not as a specification. Current system state is owne
 - Preserved every field name, ID, validation rule, tracking selector, and submission contract; only presentation changed. Removed the now-unused `recipient-block` class and its styles.
 - Validation passed with 63/63 Node tests, 0 static errors across 234 files with one pre-existing non-blocking hint, and a successful Astro Cloudflare build.
 - Local browser checks covered the full form floating-label transition at rest and filled, invalid WhatsApp feedback, `Coblong` district search, and the middle form, all at 390px with zero horizontal overflow and no console errors, failed requests, or HTTP responses at or above 400.
-- Guarded deployment published `cmsads-petanisejahtera-preview` Worker version `10045839-154b-42f3-8016-411a521842c3`. Live 390px checks returned HTTP 200 for the middle Kojien product checkout and forced full form; the floating label shrank on fill, `Coblong` returned one district, horizontal overflow remained zero, and no console errors, failed requests, or HTTP responses at or above 400 were observed. No D1 mutation, live order submission, live Mengantar request, production domain change, Git commit, or Git push was performed.
+- Guarded deployment published `the upstream preview Worker` Worker version `<redacted>`. Live 390px checks returned HTTP 200 for the middle Kojien product checkout and forced full form; the floating label shrank on fill, `Coblong` returned one district, horizontal overflow remained zero, and no console errors, failed requests, or HTTP responses at or above 400 were observed. No D1 mutation, live order submission, live Mengantar request, production domain change, Git commit, or Git push was performed.
 
 ### Entry 110: Fix Resting Label Drift When Inline Error Appears
 
 - Fixed a floating-label regression: the resting label was positioned at `top: 50%` of its `.form-field`, so when an empty required field blurred and its inline error rendered, the container grew and the resting label drifted downward toward the next control.
 - Anchored the label to a fixed offset from the input top (`top: 1rem` at rest, `top: 0.85rem` for textareas, `top: 0.3rem` when focused/filled) and removed the centering transform, so the label position no longer depends on the container height.
 - Verified locally and live at 390px: an empty field's label returns to exactly its rest position after blur even while the error message expands the field (`labelTop` rest = blur = 369px, container height 46px→72px), a filled field keeps the shrunk label, `npm run check` passed with 0 errors and one pre-existing hint, and the Astro Cloudflare build succeeded.
-- Guarded deployment published `cmsads-petanisejahtera-preview` Worker version `b37ed203-fb5c-4661-b4a6-3419891b5f4d`. Live full-form checks returned HTTP 200 with zero horizontal overflow and no console errors, failed requests, or HTTP responses at or above 400. No D1 mutation, live order submission, live Mengantar request, production domain change, Git commit, or Git push was performed.
+- Guarded deployment published `the upstream preview Worker` Worker version `<redacted>`. Live full-form checks returned HTTP 200 with zero horizontal overflow and no console errors, failed requests, or HTTP responses at or above 400. No D1 mutation, live order submission, live Mengantar request, production domain change, Git commit, or Git push was performed.
 
 ### Entry 111: Compact Selected District Chip and Grouped Payment Methods
 
@@ -1048,15 +1055,15 @@ Treat this file as history, not as a specification. Current system state is owne
 - Grouped the long bank/Virtual Account list under one collapsible accordion. COD and QRIS stay as top-level rows; all `bank_transfer` channels (BCA, Mandiri, BNI, BRI, Permata, BSI, CIMB, Danamon, DANA) collapse into a single "Transfer Bank / Virtual Account" row that shows the bank count when closed and the selected bank when chosen. The group auto-expands when a bank is selected, marks itself selected, and only the chosen bank's radio fills; selecting COD/QRIS collapses and deselects it.
 - Preserved all payment field names, hidden inputs, validation, and submission contracts; only presentation and grouping changed. Fixed a CSS authoring regression from the range edits (a clipped `.payment-block-anchor small` block and an orphaned rule fragment) that had briefly dropped the payment/label styles.
 - Validation passed with 63/63 Node tests, 0 static errors across 234 files with one pre-existing non-blocking hint, and a successful Astro Cloudflare build.
-- Local browser checks proved the compact chip, the two direct rows, the collapsed group with bank count, expand/collapse, single-selection radio behavior, and COD collapsing the group, all at 390px with zero horizontal overflow. Guarded deployment published `cmsads-petanisejahtera-preview` Worker version `272a6d39-1a6b-476b-8a06-b36e42d92f62`; the live full form (AutoLaris active) returned HTTP 200 showing COD, QRIS, and the collapsed "Transfer Bank / Virtual Account — 9 bank tersedia" group with zero overflow and no console errors, failed requests, or HTTP responses at or above 400. No D1 mutation, live order submission, live Mengantar request, production domain change, Git commit, or Git push was performed.
+- Local browser checks proved the compact chip, the two direct rows, the collapsed group with bank count, expand/collapse, single-selection radio behavior, and COD collapsing the group, all at 390px with zero horizontal overflow. Guarded deployment published `the upstream preview Worker` Worker version `<redacted>`; the live full form (AutoLaris active) returned HTTP 200 showing COD, QRIS, and the collapsed "Transfer Bank / Virtual Account — 9 bank tersedia" group with zero overflow and no console errors, failed requests, or HTTP responses at or above 400. No D1 mutation, live order submission, live Mengantar request, production domain change, Git commit, or Git push was performed.
 
 ### Entry 112: Remove the Customer Email Field from Checkout
 
 - Removed the customer-facing email input from the full checkout form entirely: deleted the `#customer-email-field` markup, its script references (element lookups, show/hide in `syncPaymentFields`, submit-readiness gate, input/blur listeners, and the submit payload key), so buyers are never asked for an email.
-- Kept online (non-COD) payments working: dropped the schema's "email required for online" rule and now synthesize a deterministic, valid-format email server-side in `submit-order.ts` from the normalized phone and the request hostname (e.g. `081234567890@preview.petanisejahtera.com`) before persisting the order, so AutoLaris still receives a non-empty email. COD orders remain email-null. `customer_email` stays an optional schema/DB field for compatibility.
+- Kept online (non-COD) payments working: dropped the schema's "email required for online" rule and now synthesize a deterministic, valid-format email server-side in `submit-order.ts` from the normalized phone and the request hostname (e.g. `081234567890@the upstream preview install`) before persisting the order, so AutoLaris still receives a non-empty email. COD orders remain email-null. `customer_email` stays an optional schema/DB field for compatibility.
 - Updated the order-schema test to assert online checkout requires only a matching AutoLaris channel (no email), and that a missing channel still fails.
 - Validation passed with 63/63 Node tests, 0 static errors across 234 files with one pre-existing non-blocking hint, and a successful Astro Cloudflare build.
-- Local checks confirmed no `#customer-email`/`customer_email` element remains and that submit readiness no longer waits on email (COD and VA gate only on shipping, matching pre-change behavior). Guarded deployment published `cmsads-petanisejahtera-preview` Worker version `9cad1d0a-6cf3-4a87-ba6e-0453efe55aa3`; the live full form returned HTTP 200 with no email field, reached the ready "Buat Order Sekarang" state for both COD (`Rp8.000 (SiCepat)`) and a selected Virtual Account without any email prompt, and produced no console errors or HTTP responses at or above 400. No order was submitted, and no D1 mutation, live Mengantar request, production domain change, Git commit, or Git push was performed.
+- Local checks confirmed no `#customer-email`/`customer_email` element remains and that submit readiness no longer waits on email (COD and VA gate only on shipping, matching pre-change behavior). Guarded deployment published `the upstream preview Worker` Worker version `<redacted>`; the live full form returned HTTP 200 with no email field, reached the ready "Buat Order Sekarang" state for both COD (`Rp8.000 (SiCepat)`) and a selected Virtual Account without any email prompt, and produced no console errors or HTTP responses at or above 400. No order was submitted, and no D1 mutation, live Mengantar request, production domain change, Git commit, or Git push was performed.
 
 ### Entry 113: City/District Search, Normal-Price Summary Label, and Actual Shipping Cost
 
@@ -1065,7 +1072,7 @@ Treat this file as history, not as a specification. Current system state is owne
 - Shipping now charges the ACTUAL courier price. `MengantarClient.estimateRates` prefers `item.price` and only falls back to `estimatedSpecialPrice` when the actual is missing, instead of preferring Mengantar's special/discounted price. Server-side re-quote in `submit-order.ts` uses the same path, so the trusted/submitted shipping costs stay consistent.
 - Work was fanned out across three parallel sub-agents (search, label, shipping); the lead integrated and fixed the pre-existing `location-search.test.ts` `suko` assertion (city matches now legitimately appear, so it asserts district-first ordering instead of an all-district-prefix set) and added `district-catalog.test.ts`.
 - Validation passed with 66/66 Node tests (3 new), 0 static errors across 235 files with one pre-existing non-blocking hint, and a successful Astro Cloudflare build.
-- Guarded deployment published `cmsads-petanisejahtera-preview` Worker version `4829223e-8a14-4281-bb9a-c2b6a5b9ea73`. Live 390px full-form smoke returned HTTP 200: placeholder "Ketik kecamatan atau kota", summary label "Harga Normal", a "Bandung" city search returned 50 results, selecting the "Bandung Kidul" kecamatan resolved and loaded shipping "Rp8.500 (SiCepat)" (actual price), and the total Rp138.500 equalled the after-discount Rp130.000 plus Rp8.500 shipping, with no console errors or HTTP responses at or above 400. No order was submitted, and no D1 mutation, live order, production domain change, Git commit, or Git push was performed.
+- Guarded deployment published `the upstream preview Worker` Worker version `<redacted>`. Live 390px full-form smoke returned HTTP 200: placeholder "Ketik kecamatan atau kota", summary label "Harga Normal", a "Bandung" city search returned 50 results, selecting the "Bandung Kidul" kecamatan resolved and loaded shipping "Rp8.500 (SiCepat)" (actual price), and the total Rp138.500 equalled the after-discount Rp130.000 plus Rp8.500 shipping, with no console errors or HTTP responses at or above 400. No order was submitted, and no D1 mutation, live order, production domain change, Git commit, or Git push was performed.
 
 ### Entry 114: Responsive Admin Commerce Workspace Rebuild
 
@@ -1075,7 +1082,7 @@ Treat this file as history, not as a specification. Current system state is owne
 - Browser QA exposed and fixed a desktop Order Management grid defect: rows had seven cells under eight headers, so status actions shifted into the WhatsApp CRM column and adjacent data overlapped. Added the missing CRM cell, moved dispatch eligibility/provider feedback from the checkbox column into the invoice column, and formatted order timestamps in Jakarta time with a `WIB` suffix.
 - Validation passed with 66/66 Node tests, 0 static errors across 237 files with one pre-existing non-blocking `React.FormEvent` deprecation hint, and a successful Astro Cloudflare build.
 - Authenticated route QA returned HTTP 200 for `/admin`, Dashboard, Content, Products, Product New, Orders, Shipping, Expeditions, Check, Ads, Meta, Google, Settings, Store, Warehouse, CRM, Access, Payments, Balance, Profile, the legacy Couriers redirect, one real product-edit route, and one real order-detail route. Browser flows covered Dashboard, Orders, Shipping, mobile Menu → Settings, and mobile Order filtering at 1440px/390px with no page-level horizontal overflow. The final order table rendered 8 headers and 8 cells per row, all 6 fixture rows, all 6 CRM action groups, and no raw ISO timestamp.
-- Committed the verified implementation as `2d595bc` (`feat: refine checkout and rebuild admin workspace`). Guarded deployment published `cmsads-petanisejahtera-preview` Worker version `ff725097-7433-4a24-8741-0345239dcb9e` to `preview.petanisejahtera.com`.
+- Committed the verified implementation as `2d595bc` (`feat: refine checkout and rebuild admin workspace`). Guarded deployment published `the upstream preview Worker` Worker version `<redacted>` to `the upstream preview install`.
 - Live 390px smoke returned HTTP 200 for the storefront and `/produk/aussie`, with viewport width and document scroll width both 390px. Unauthenticated `/admin/dashboard` redirected to the branded `/hello` login with HTTP 200, and `/api/admin/orders` returned the expected JSON HTTP 401. The storefront navigation emitted no observed console errors or failed requests. No remote D1 mutation, live order/provider request, production domain change, or Git push was performed.
 
 ### Entry 115: Precise All-Time Admin Filters
@@ -1085,7 +1092,7 @@ Treat this file as history, not as a specification. Current system state is owne
 - Tightened the custom Dashboard range: native date inputs cannot exceed today, the end date cannot exceed 30 days after the start, the apply action rejects reversed/overlong ranges, and the Analytics API independently caps the range at 31 inclusive days.
 - Corrected adjacent filter UX defects found during the full-page screen: Order search now actually includes `cnote_no` to match its resi placeholder, search copy names every supported field, `Atur CRM` has one stable location, every Reset restores the period, period-only filters count as active, empty states can recover, and Order pagination feedback reports `Menampilkan X–Y dari Z order`.
 - Validation passed with 69/69 Node tests, 0 static errors across 239 files with one pre-existing non-blocking `React.FormEvent` deprecation hint, and a successful Astro Cloudflare build. Authenticated 1440px/390px browser checks proved all-time defaults, yesterday/seven-day transitions, all 6 fixture orders, one resi result, date-aware reset, custom apply, HTTP `400` boundaries, and zero page-level overflow across Dashboard, Orders, and Shipping.
-- The requested Mac Downloads reference was unavailable on this Linux host (`/Users/ongki/Downloads` was not mounted and no SSH host was configured). Committed the implementation as `6e170a7` (`fix: unify admin date filters`). Guarded deployment published only `cmsads-petanisejahtera-preview`, Worker version `37f4931c-16ee-4072-b0cc-c5c540ec7eaf`, to `preview.petanisejahtera.com`. Live 390px smoke returned HTTP `200` for `/`, `/produk/aussie`, and the branded admin-login redirect with viewport width equal to document scroll width; `/api/admin/orders` returned the expected HTTP `401`. No remote D1 mutation, live order/provider request, production-domain change, or Git push was performed.
+- The requested Mac Downloads reference was unavailable on this Linux host (`/Users/ongki/Downloads` was not mounted and no SSH host was configured). Committed the implementation as `6e170a7` (`fix: unify admin date filters`). Guarded deployment published only `the upstream preview Worker`, Worker version `<redacted>`, to `the upstream preview install`. Live 390px smoke returned HTTP `200` for `/`, `/produk/aussie`, and the branded admin-login redirect with viewport width equal to document scroll width; `/api/admin/orders` returned the expected HTTP `401`. No remote D1 mutation, live order/provider request, production-domain change, or Git push was performed.
 
 ### Entry 116: Confirmed Shipping Queue, Order Editor, and Command Search Refinement
 
@@ -1110,13 +1117,13 @@ Treat this file as history, not as a specification. Current system state is owne
 - Rebuilt command search around the actual viewport. Desktop uses a centered 576px dialog with bounded height; mobile uses a full-width bottom sheet with a 16px focused input. The scrollable all-menu sheet now uses compact grouped rows while preserving every route, active state, keyboard behavior, and focus management.
 - Retrieved `/Users/ongki/Downloads/ferioyes.png` from the configured Mac SSH host, converted the 1672×941 PNG to a 122,508-byte WebP using Pillow, and committed it as `public/admin-login.webp`. The canonical `/hello` page renders the asset as a fixed cover background with device-specific crop/overlay treatment, a readable frosted login card, safe-area-aware mobile placement, and a solid reduced-transparency fallback.
 - Validation passed with 76/76 Node tests, 0 errors/warnings/hints across 243 files, all 3 tenant environments valid, and successful preview tenant build/dry-run. Authenticated local QA returned HTTP `200` with zero page-level overflow across 18 static/dynamic admin routes at 1440×1000 and 390×844; command search navigated correctly on desktop/mobile, the all-menu remained scrollable, and login fit 320×568, 390×844, 768×1024, 1440×1000, and 2560×1440 without horizontal or vertical overflow.
-- Guarded deployment published only `cmsads-petanisejahtera-preview`, Worker version `0de6e41b-c6b8-49b6-aab4-959cae911cd2`. Live `/`, `/produk/aussie`, `/hello`, and the WebP returned HTTP `200`; unauthenticated admin navigation reached the branded image-backed login, and the protected Orders API returned the expected JSON HTTP `401`. No remote D1 mutation, live order/provider request, production-domain change, or other tenant deployment was performed.
+- Guarded deployment published only `the upstream preview Worker`, Worker version `<redacted>`. Live `/`, `/produk/aussie`, `/hello`, and the WebP returned HTTP `200`; unauthenticated admin navigation reached the branded image-backed login, and the protected Orders API returned the expected JSON HTTP `401`. No remote D1 mutation, live order/provider request, production-domain change, or other tenant deployment was performed.
 
 ### Entry 119: Mobile Search Sheet and Explicit Logout
 
 - Replaced the mobile command-search dialog with the canonical bottom Sheet while retaining the centered desktop command dialog, one shared searchable route source, keyboard selection, normalized Indonesian matching, focused 16px mobile input, bounded scrolling, and zero page-level overflow.
 - Added a visible `Keluar` row to the mobile all-menu. The row posts to the existing `/api/admin/logout` contract; local authenticated browser proof confirmed session termination and return to `/hello`.
-- Validation passed with 76/76 tests, 0 Astro/TypeScript diagnostics across 243 files, 3 valid tenant environments, and successful preview build/dry-run. Authenticated local QA confirmed mobile `pengiriman` → Shipping, desktop `Ctrl/Cmd+K`, and real logout. Guarded deployment published only `cmsads-petanisejahtera-preview` Worker version `412beada-9205-4977-8f11-a1f39707b32c`; live unauthenticated storefront/login/API smoke passed without remote data or provider mutations.
+- Validation passed with 76/76 tests, 0 Astro/TypeScript diagnostics across 243 files, 3 valid tenant environments, and successful preview build/dry-run. Authenticated local QA confirmed mobile `pengiriman` → Shipping, desktop `Ctrl/Cmd+K`, and real logout. Guarded deployment published only `the upstream preview Worker` Worker version `<redacted>`; live unauthenticated storefront/login/API smoke passed without remote data or provider mutations.
 
 ### Entry 120: Precise Mobile Bulk Selection
 
@@ -1124,7 +1131,7 @@ Treat this file as history, not as a specification. Current system state is owne
 - Replaced implicit pickup preselection with an empty, operator-controlled state. Added filter-aware push/pickup masters, indeterminate state, selected-card emphasis, live counts, clear-selection, sticky mobile action navigation, and a desktop master checkbox. Order and Shipping mobile filters now use two columns and their lists no longer add nested horizontal gutters.
 - Browser QA at 390×844 proved zero, partial, all, and clear selection across five Shipping cards; the sticky toolbar stayed reachable inside the independently scrolling admin workspace, six Order cards remained readable, and both routes had zero horizontal overflow. No mutation action was activated.
 - Added a repository-specific AI-agent Cloudflare deployment runbook covering exact tenant selection, no-side-effect gates, separate deploy/migration approvals, guarded wrapper commands, post-deploy smoke evidence, failure behavior, and mandatory reporting/non-actions.
-- Validation passed with 76/76 tests, 0 Astro/TypeScript diagnostics across 243 files, 3 valid tenant environments, and successful preview build/dry-run. Commit `11c6cc3` was pushed, then the guarded tenant wrapper deployed only `cmsads-petanisejahtera-preview`, Worker version `a1158a66-6fa5-4688-8d95-e64a72d73db5`. Selected-host public/login/API smoke passed; authenticated live bulk controls were not exercised, and no remote D1, provider, pickup, order, secret, domain, or other tenant changed.
+- Validation passed with 76/76 tests, 0 Astro/TypeScript diagnostics across 243 files, 3 valid tenant environments, and successful preview build/dry-run. Commit `11c6cc3` was pushed, then the guarded tenant wrapper deployed only `the upstream preview Worker`, Worker version `<redacted>`. Selected-host public/login/API smoke passed; authenticated live bulk controls were not exercised, and no remote D1, provider, pickup, order, secret, domain, or other tenant changed.
 
 ### Entry 121: Indonesian Visual System Guide
 
@@ -1156,15 +1163,15 @@ Treat this file as history, not as a specification. Current system state is owne
 
 ### Entry 125: Three-Tenant Product and CRM Release
 
-- Committed the product deletion/editing, CRM template and mobile control, and AutoLaris readiness work as `45e421e` on `petanisejahtera-preview`. The release gate passed 82/82 tests, zero diagnostics across 246 files, all three tenant registry validations, and independent selected build/Wrangler dry-runs for `retired-tenant`, `petanisejahtera`, and `petanisejahtera-preview`.
-- Deployed through the guarded tenant wrapper: `retired-backend-worker` version `20ae0a87-7ec6-4907-8d98-2b1740f58fb5` on `retired-tenant.example`, `cmsads-petanisejahtera` version `616ecb28-9325-466b-9d66-33aeaabbc639` on `petanisejahtera.com`, and `cmsads-petanisejahtera-preview` version `3acc7cbf-342b-41d2-b625-fd26ea268a86` on `preview.petanisejahtera.com`.
+- Committed the product deletion/editing, CRM template and mobile control, and AutoLaris readiness work as `45e421e` on `the upstream install-preview`. The release gate passed 82/82 tests, zero diagnostics across 246 files, all three tenant registry validations, and independent selected build/Wrangler dry-runs for `retired-tenant`, `the upstream install`, and `the upstream install-preview`.
+- Deployed through the guarded tenant wrapper: `retired-backend-worker` version `<redacted>` on `retired-tenant.example`, `the upstream install` version `<redacted>` on `the upstream install.com`, and `the upstream preview Worker` version `<redacted>` on `the upstream preview install`.
 - Live 390×844 smoke verified each home identity with zero page-level overflow, each tenant login boundary, `/admin/products` redirecting unauthenticated sessions to `/hello`, and protected order-list API HTTP `401`. Both Petani Sejahtera hosts had no unexpected HTTP error, console error, or failed request. a retired tenant exposed two live-content image paths returning `404`: `/images/products/zivia-tote-bag-wanita-premium/1.webp` and `/images/products/aira-tote-bag-2in1-korean-style/1.webp`; neither exists in the repository. No remote content/R2 repair was attempted without separate mutation approval.
 - No remote D1 migration, secret, provider/payment, pickup, messaging, order, content publication, R2, DNS, Custom Domain, KV, or deletion mutation occurred. Authenticated live product/CRM/AutoLaris actions were not exercised without an authorized live session; their changed behavior was browser-verified locally before release.
 
 ### Entry 126: Restore Standalone Petani Sejahtera Production
 
-- Corrected the fleet release by transferring `petanisejahtera.com` and `www.petanisejahtera.com` from `cmsads-petanisejahtera` back to the existing `petanisejahtera` Worker version `25629c47-34c7-4d32-b1d1-96d8f5f4919e`. The standalone source repository was clean and synchronized with `ongkipro/petanisejahtera@main` at `f863234`; only Worker triggers changed, not the deployed code version.
-- Removed the `petanisejahtera` production environment from the CMSAds registry. `npm run tenant:list` now exposes only `retired-tenant` and `petanisejahtera-preview`, so the guarded CMSAds deploy wrapper cannot target or reclaim the production Petani Sejahtera domain. The detached CMSAds Worker and its isolated D1/KV/R2 resources remain preserved.
+- Corrected the fleet release by transferring `the upstream install.com` and `www.the upstream install.com` from `the upstream install` back to the existing `the upstream install` Worker version `<redacted>`. The standalone source repository was clean and synchronized with `ongkipro/the upstream install@main` at `f863234`; only Worker triggers changed, not the deployed code version.
+- Removed the `the upstream install` production environment from the CMSAds registry. `npm run tenant:list` now exposes only `retired-tenant` and `the upstream install-preview`, so the guarded CMSAds deploy wrapper cannot target or reclaim the production Petani Sejahtera domain. The detached CMSAds Worker and its isolated D1/KV/R2 resources remain preserved.
 - CMSAds validation passed 82/82 tests, zero diagnostics across 246 files, and both remaining tenant environments. The standalone repository passed 25/25 tests; its pre-existing strict check still reports 24 errors from Cloudflare runtime type resolution and TypeScript 6 `Body.json()` generic calls, so no source rebuild was claimed.
 - Live 390×844 smoke rendered the standalone production title and hero with zero horizontal overflow and no CMSAds setup state. `www` redirected to the apex and `/admin/orders` returned the standalone site's expected `404`. No remote D1 migration, secret, provider/payment, order, content, media, storage, Worker deletion, or preview/a retired tenant routing mutation occurred.
 
@@ -1172,8 +1179,8 @@ Treat this file as history, not as a specification. Current system state is owne
 
 - Recovered the GitHub-tracked `deleted-storefront-repository` Astro storefront and deployed it as `retired-storefront-worker` on `retired-tenant.example/*`. Its Worker-first gateway serves all public storefront paths from static assets and forwards `/admin`, `/api`, `/hello`, and `/thanks` to `retired-backend-worker` through the private `CMSADS` service binding.
 - Converted the CMSAds a retired tenant environment to explicit `INGRESS_MODE=service-only` with no public route. `scripts/tenant.ts` now rejects routes on service-only Workers and requires an exact route for Custom Domain tenants; `scripts/install-tenant.ts` defaults new merchant environments to `custom-domain`. Three Node tests defend the ingress-mode contract.
-- Standalone proof passed 3/3 gateway tests, Astro/TypeScript check with zero errors, a 33-page Astro build, and Wrangler dry-run. CMSAds passed 85/85 tests, zero diagnostics across 247 files, both registry validations, and dry-runs for `retired-tenant` and `petanisejahtera-preview`.
-- Production deployed `retired-storefront-worker` version `f584f986-f42d-41fd-bdc6-63ccade891b9` and service-only `retired-backend-worker` version `a5b149de-3471-4d68-9abe-9e5fdbcf7fbb`; the backend deployment reported no public targets. Live 390×844 home smoke preserved the original title and hero with zero horizontal overflow. Live 1440×1000 product smoke returned the ZIVIA page, loaded its 896px source image, and had zero horizontal overflow. `/hello` returned HTTP `200`; `/api/admin/orders?limit=1` remained protected at HTTP `401`.
+- Standalone proof passed 3/3 gateway tests, Astro/TypeScript check with zero errors, a 33-page Astro build, and Wrangler dry-run. CMSAds passed 85/85 tests, zero diagnostics across 247 files, both registry validations, and dry-runs for `retired-tenant` and `the upstream install-preview`.
+- Production deployed `retired-storefront-worker` version `<redacted>` and service-only `retired-backend-worker` version `<redacted>`; the backend deployment reported no public targets. Live 390×844 home smoke preserved the original title and hero with zero horizontal overflow. Live 1440×1000 product smoke returned the ZIVIA page, loaded its 896px source image, and had zero horizontal overflow. `/hello` returned HTTP `200`; `/api/admin/orders?limit=1` remained protected at HTTP `401`.
 - No remote D1 migration, D1/KV/R2 data write, secret change, provider/payment/pickup/order mutation, content publication, media upload, or storage deletion occurred. The production mutations were limited to the approved Worker deployments and route boundary.
 
 ### Entry 128: Portable Installation and Headless Storefront Contracts
@@ -1188,10 +1195,10 @@ Treat this file as history, not as a specification. Current system state is owne
 
 ### Entry 129: GitHub Main Markdown Reconciliation
 
-- Fetched `origin` and compared the working branch with GitHub's default `main` and tracked `petanisejahtera-preview` branch before finalizing documentation. The local branch is six commits ahead of `origin/petanisejahtera-preview`; against `origin/main`, it has eight unique commits while `origin/main` has 24 unique commits. No merge, cherry-pick, reset, checkout, or remote write was performed.
+- Fetched `origin` and compared the working branch with GitHub's default `main` and tracked `the upstream install-preview` branch before finalizing documentation. The local branch is six commits ahead of `origin/the upstream install-preview`; against `origin/main`, it has eight unique commits while `origin/main` has 24 unique commits. No merge, cherry-pick, reset, checkout, or remote write was performed.
 - The only Markdown deltas unique to `origin/main` after the branch merge base were in `BUILD-LOG.md` and `STATUS.md`. All root Markdown filenames present on GitHub remain present locally; this work adds `INSTALLATION.md` and `STOREFRONT_INTEGRATION.md` rather than replacing an upstream document.
-- Preserved the upstream canonical-recovery history from `e15ea01`: `main` recovered the deployment-per-tenant platform, restored D1 owner authentication at `/hello`, added the stable `/admin/login` redirect, introduced migration `0017_remove_default_admin.sql`, validated 77/77 tests and zero diagnostics across 244 files, and deployed a retired tenant Worker version `d62c14fb-ece9-4326-8a8b-095b3f3472c0`. That historical Custom Domain state predates the later service-only a retired tenant cutover recorded in Entries 127–128.
-- Preserved the upstream order/shipping refinement history from `7d7736b`: the order editor adopted the installed shadcn courier-rate Select, mobile order and Shipping actions reached 44px targets, the score link moved to `/admin/check?search=<phone>`, validation passed 77/77 with zero diagnostics across 245 files, and the deployed versions were `retired-backend-worker` `bed84238-04f9-495d-b7ab-70cacaa29692` and `cmsads-petanisejahtera-preview` `d531e61b-d0c7-48f6-a444-bb7f62807f56`.
+- Preserved the upstream canonical-recovery history from `e15ea01`: `main` recovered the deployment-per-tenant platform, restored D1 owner authentication at `/hello`, added the stable `/admin/login` redirect, introduced migration `0017_remove_default_admin.sql`, validated 77/77 tests and zero diagnostics across 244 files, and deployed a retired tenant Worker version `<redacted>`. That historical Custom Domain state predates the later service-only a retired tenant cutover recorded in Entries 127–128.
+- Preserved the upstream order/shipping refinement history from `7d7736b`: the order editor adopted the installed shadcn courier-rate Select, mobile order and Shipping actions reached 44px targets, the score link moved to `/admin/check?search=<phone>`, validation passed 77/77 with zero diagnostics across 245 files, and the deployed versions were `retired-backend-worker` `<redacted>` and `the upstream preview Worker` `<redacted>`.
 - Current-state interpretation remains in `STATUS.md`: later local history supersedes those deployment versions and the old a retired tenant Custom Domain ownership, but does not erase their evidence. No deploy, migration, provider call, data mutation, secret read/change, or GitHub push occurred during this reconciliation.
 
 ### Entry 130: Canonical Forms, Province Policy, Immutable Sample, Sidebar, and Storefront Handoff
@@ -1206,11 +1213,11 @@ Treat this file as history, not as a specification. Current system state is owne
 
 ### Entry 131: Canonical Form Release to a retired tenant and Petani Sejahtera Preview
 
-- Committed the canonical form, province-policy, immutable-sample, sidebar, installer, documentation, and visual-guide work as `f35b291` and pushed `petanisejahtera-preview` to GitHub.
-- With exact tenant approval, applied remote migration `0017_freezing_greymalkin.sql` to `retired-tenant` D1 `7ea4f24f-95dc-46ea-bbf3-82f628629992`, then uploaded service-only Worker version `1b48ddfa-449c-48fa-a9b3-1f642c4dafa1`. Live `retired-tenant.example/api/form-config` returned the canonical sample, province result, and canonical form URLs through the existing private gateway.
-- With separate preview approval, applied the same migration to `petanisejahtera-preview` D1 `9963b7bc-52dd-4c22-b33b-2addbcd12768`, then deployed Worker version `cc18e5f7-a884-4eff-a39f-b3664afe00ff` to `preview.petanisejahtera.com`.
+- Committed the canonical form, province-policy, immutable-sample, sidebar, installer, documentation, and visual-guide work as `f35b291` and pushed `the upstream install-preview` to GitHub.
+- With exact tenant approval, applied remote migration `0017_freezing_greymalkin.sql` to `retired-tenant` D1 `<redacted>`, then uploaded service-only Worker version `<redacted>`. Live `retired-tenant.example/api/form-config` returned the canonical sample, province result, and canonical form URLs through the existing private gateway.
+- With separate preview approval, applied the same migration to `the upstream install-preview` D1 `<redacted>`, then deployed Worker version `<redacted>` to `the upstream preview install`.
 - Petani preview live browser QA at 1440×1000 and 390×844 returned HTTP `200` for `/`, `/produk`, `/produk/aussie`, `/hybrid-form`, `/middle-form`, `/full-form`, and `/hello`; canonical forms had zero horizontal overflow, full form exposed the district field, and legacy `/form-hybrid`, `/form-middle`, and `/form-full` returned HTTP `404`.
-- Remote reads proved migration `0017`, `Aussie Sample` product `10001`, variant `20001` (`500ml`, Rp150,000, `600g`), variant `20002` (`1 Liter`, Rp300,000, `1100g`), and the 15-code COD-disabled store policy. No Mengantar/AutoLaris call, order/payment mutation, content publication, secret operation, DNS change, resource provisioning, or production `petanisejahtera.com` deployment occurred.
+- Remote reads proved migration `0017`, `Aussie Sample` product `10001`, variant `20001` (`500ml`, Rp150,000, `600g`), variant `20002` (`1 Liter`, Rp300,000, `1100g`), and the 15-code COD-disabled store policy. No Mengantar/AutoLaris call, order/payment mutation, content publication, secret operation, DNS change, resource provisioning, or production `the upstream install.com` deployment occurred.
 
 ### Entry 132: Legacy Form Link Compatibility Restored
 
@@ -1218,16 +1225,16 @@ Treat this file as history, not as a specification. Current system state is owne
 - Canonical form implementation stays single-sourced in the three canonical renderers; no checkout component, validation, geo policy, order persistence, tracking logic, or form state machine was duplicated.
 - Updated REQ-94, REQ-96, T180, topology/handoff documentation, and current status to make compatibility explicit while keeping canonical URLs preferred for new integrations.
 - Validation passed 93/93 Node tests and Astro/TypeScript reported zero errors, warnings, or hints across 251 files. Local 390px browser proof exercised all three redirects, complete query preservation, the selected variant, rendered checkout forms, and zero horizontal overflow.
-- Committed the change as `2db4e46`, pushed `petanisejahtera-preview`, and—with exact approval—deployed `cmsads-petanisejahtera-preview` version `172b3826-e1b9-4a1e-86f2-9c40ed802ea0` to `preview.petanisejahtera.com`.
-- Live 390px browser proof observed `308` from every legacy form URL, HTTP `200` at its matching canonical renderer, complete `product_id`, `variant_id`, `utm_source`, and `event_id` preservation, selected variant `20002`, and zero horizontal overflow. No D1 migration, DNS, secret, provider call, order/payment/content mutation, or production `petanisejahtera.com` deployment occurred.
+- Committed the change as `2db4e46`, pushed `the upstream install-preview`, and—with exact approval—deployed `the upstream preview Worker` version `<redacted>` to `the upstream preview install`.
+- Live 390px browser proof observed `308` from every legacy form URL, HTTP `200` at its matching canonical renderer, complete `product_id`, `variant_id`, `utm_source`, and `event_id` preservation, selected variant `20002`, and zero horizontal overflow. No D1 migration, DNS, secret, provider call, order/payment/content mutation, or production `the upstream install.com` deployment occurred.
 
 ### Entry 133: Checkout Delivery Address Summary
 
 - Replaced the post-selection `Terpilih: ...` helper in full/hybrid checkout with a compact `Kirim ke` card. The card shows the customer's complete address on its own line and provider-resolved kelurahan/desa, kecamatan, city/regency, province, and postal code below it.
 - Added a pure location formatter with tests for complete and partially available provider data. The UI omits missing segments, stays synchronized with address edits, preserves shipping location fields, and keeps the existing district-change action.
 - Validation passed 94/94 Node tests and Astro/TypeScript reported zero errors, warnings, or hints across 251 files. Local 390px browser proof rendered `jalan maju mapan jos juss` followed by `Kel. PANJUNAN, Sukodono, Sidoarjo, Jawa Timur 61216`, then updated the address line without losing the resolved location or postal code; horizontal overflow remained zero.
-- Committed the change as `a7e7fa8`, pushed `petanisejahtera-preview`, and—with exact approval—deployed `cmsads-petanisejahtera-preview` version `4bf1d950-ce68-4532-b1f5-aeb5e6d4e98e`.
-- Live 390px browser proof reproduced `Kirim ke`, the entered address, `Kel. PANJUNAN, Sukodono, Sidoarjo, Jawa Timur 61216`, retained location ID/postal code, synchronized a subsequent address edit, removed the old `Terpilih:` copy, and kept zero horizontal overflow with no console errors. Aborted intermediate autocomplete requests were expected cancellation of superseded queries. No D1, DNS, secret, provider mutation, order/payment/content mutation, or production `petanisejahtera.com` deployment occurred.
+- Committed the change as `a7e7fa8`, pushed `the upstream install-preview`, and—with exact approval—deployed `the upstream preview Worker` version `<redacted>`.
+- Live 390px browser proof reproduced `Kirim ke`, the entered address, `Kel. PANJUNAN, Sukodono, Sidoarjo, Jawa Timur 61216`, retained location ID/postal code, synchronized a subsequent address edit, removed the old `Terpilih:` copy, and kept zero horizontal overflow with no console errors. Aborted intermediate autocomplete requests were expected cancellation of superseded queries. No D1, DNS, secret, provider mutation, order/payment/content mutation, or production `the upstream install.com` deployment occurred.
 
 ### Entry 134: Customer District Summary and Optional Admin Subdistrict Precision
 
@@ -1236,12 +1243,12 @@ Treat this file as history, not as a specification. Current system state is owne
 - Updated REQ-75, T111, and the Mengantar integration contract. Warehouse origin remains intentionally precise; public checkout remains district-only; admin order destinations support either reviewed mode without changing the dispatch payload.
 - Validation passed 94/94 Node tests and Astro/TypeScript reported zero errors, warnings, or hints across 251 files. A 390px customer flow rendered `Sukodono, Sidoarjo, Jawa Timur 61216` without kelurahan while retaining the provider location ID and postal code.
 - Desktop admin browser proof returned 12 grouped district rows without village labels in default mode and 47 individual rows with village labels in precision mode. Mode change cleared query/destination/courier state; selecting grouped Sukodono, Sidoarjo loaded 9 current courier rates and kept save disabled until a rate was selected. No order was mutated.
-- Released commit `18b6417` to `origin/petanisejahtera-preview` and approved preview Worker `cmsads-petanisejahtera-preview` version `91a1dcb6-b688-4371-a286-2d454eff0c54`. Live 390px customer proof reproduced `Sukodono, Sidoarjo, Jawa Timur 61216`, retained provider location ID/postal code, had zero horizontal overflow, and emitted no console errors. The live admin route required its existing authenticated session; admin mode behavior was therefore proven locally rather than by bypassing authentication. No D1, DNS, secret, provider call, order/payment/content mutation, or production deployment occurred.
+- Released commit `18b6417` to `origin/the upstream install-preview` and approved preview Worker `the upstream preview Worker` version `<redacted>`. Live 390px customer proof reproduced `Sukodono, Sidoarjo, Jawa Timur 61216`, retained provider location ID/postal code, had zero horizontal overflow, and emitted no console errors. The live admin route required its existing authenticated session; admin mode behavior was therefore proven locally rather than by bypassing authentication. No D1, DNS, secret, provider call, order/payment/content mutation, or production deployment occurred.
 
 ### Entry 135: Permata Shop Full System Baseline
 
-- Deployed the current backend to service-only `retired-backend-worker` version `df0893d7-ceca-4f45-a1f4-30091228d8b2`.
-- Extended the separate Permata storefront gateway to delegate the reviewed operational routes, canonical checkout forms, and compatibility redirects through its private CMSAds service binding. Added storefront-first fallback for missing CMSAds build/image/favicon assets and five passing gateway contract tests. Storefront commit `f33d85b` was pushed to `main` and production gateway `retired-storefront-worker` version `1082acb3-cf76-4ade-8564-483ba6ea77a3` was deployed to `retired-tenant.example/*`.
+- Deployed the current backend to service-only `retired-backend-worker` version `<redacted>`.
+- Extended the separate Permata storefront gateway to delegate the reviewed operational routes, canonical checkout forms, and compatibility redirects through its private CMSAds service binding. Added storefront-first fallback for missing CMSAds build/image/favicon assets and five passing gateway contract tests. Storefront commit `f33d85b` was pushed to `main` and production gateway `retired-storefront-worker` version `<redacted>` was deployed to `retired-tenant.example/*`.
 - With explicit permission to read and transfer provider configuration, copied only the Petani preview Mengantar/AutoLaris provider baseline, one warehouse, and ten courier rules into the previously empty Permata configuration. No tenant identity, catalog, order, payment, session, content, or tracking record was copied; all sensitive temporary export/import files were deleted.
 - Live 390px checkout proof resolved Sukodono, Sidoarjo to real location ID `5fc6474ff8f44b34aa4cdea5` and postal code `61216`, displayed `Sukodono, Sidoarjo, Jawa Timur 61216` without kelurahan, loaded COD plus ten online payment options, kept zero horizontal overflow, and emitted no console errors. Canonical forms and `/hello` returned `200`; every compatibility form redirected with the complete query string intact. No checkout submission, order/payment mutation, Mengantar dispatch, DNS change, or sibling-tenant deployment occurred.
 
@@ -1249,7 +1256,7 @@ Treat this file as history, not as a specification. Current system state is owne
 
 - Reproduced the report: all six CMSAds form URLs returned `200`, but the storefront exposed no working checkout navigation. PDP `BELI SEKARANG` only added an item to local cart state, and `PROSES CHECKOUT SEKARANG` opened a placeholder WhatsApp flow.
 - Replaced both behaviors with native same-origin links to `/hybrid-form?product_id=10001`, the reviewed canonical baseline while tenant-specific Permata catalog mapping is intentionally deferred. Validation passed five gateway tests, zero TypeScript/Astro errors, a complete 33-page build, and `git diff --check`.
-- Pushed storefront commit `6105f28` and deployed `retired-storefront-worker` version `88d23ad2-65f4-4b2c-af79-22739048a381`. Live mobile browser clicks from both PDP and cart reached `Form Pemesanan Aussie Sample - a retired tenant`; all canonical and compatibility form entries returned form content with final HTTP `200` and zero horizontal overflow. No checkout was submitted and no order, payment, or provider mutation occurred.
+- Pushed storefront commit `6105f28` and deployed `retired-storefront-worker` version `<redacted>`. Live mobile browser clicks from both PDP and cart reached `Form Pemesanan Aussie Sample - a retired tenant`; all canonical and compatibility form entries returned form content with final HTTP `200` and zero horizontal overflow. No checkout was submitted and no order, payment, or provider mutation occurred.
 
 ### Entry 137: AutoLaris QRIS Payment Page and Paid Receipt Boundary
 
@@ -1257,7 +1264,7 @@ Treat this file as history, not as a specification. Current system state is owne
 - Extended `/api/order-status` to return the latest recorded payment instruction only after order ID plus `public_status_token` authorization. Paid-equivalent status redirects to `/thanks`; pending, failed, and expired states remain actionable on the payment page. The paid receipt no longer exposes the raw QR payload.
 - Added `/payment` to the separately owned Permata storefront service-binding route contract. Validation passed 94/94 CMSAds tests, zero diagnostics across 252 files, a complete server build, the guarded Permata tenant dry-run, five gateway tests, zero storefront type errors, and the storefront Worker dry-run with its reviewed `CMSADS` binding.
 - Browser proof at 390px rendered a 260×260 QR with zero horizontal overflow; desktop proof centered the 440px card at 1280px. A controlled pending-then-paid response redirected to the paid receipt, which displayed `Pembayaran berhasil` and `QRIS · Lunas`. No checkout, provider request, order/payment mutation, deployment, or production traffic occurred.
-- With explicit production approval, deployed `retired-backend-worker` version `6ec506c6-afcc-4c26-988f-6309d3664593` and `retired-storefront-worker` version `54498f07-abfe-4a18-bf99-421e6f0b9c18`. Live mobile proof on `/payment` showed Permata branding, pending status, the expected total, a 260×260 QR, zero horizontal overflow, and no console or failed-network errors. Only preview state was used; no order, payment, or provider mutation occurred.
+- With explicit production approval, deployed `retired-backend-worker` version `<redacted>` and `retired-storefront-worker` version `<redacted>`. Live mobile proof on `/payment` showed Permata branding, pending status, the expected total, a 260×260 QR, zero horizontal overflow, and no console or failed-network errors. Only preview state was used; no order, payment, or provider mutation occurred.
 
 ### Entry 138: Checkout Variant, Kecamatan, and Online Payment Precision
 
@@ -1265,13 +1272,13 @@ Treat this file as history, not as a specification. Current system state is owne
 - Repaired ambiguous district resolution at the source: provider resolution now searches the selected district plus city, exact district representatives rank ahead of their villages, and the admin editor uses the same district-catalog-to-provider-resolution flow as customer checkout. Local proof selected `Taman, Sidoarjo`, retained location ID `5fc64766f8f44b34aa4cdf26`, and populated postal code `61257`.
 - Separated DANA from the Virtual Account accordion, added Indonesian QRIS/VA/DANA labels and instructions plus amount/admin-fee disclosure to `/payment`, and normalized all paid-equivalent OMS states to `Lunas`.
 - Final validation passed 95/95 tests, zero diagnostics across 252 files, and a complete Cloudflare server build. Mobile browser proof covered both sample variant prices, authenticated admin district selection, QRIS, Mandiri VA, and DANA with zero horizontal overflow.
-- Pushed commit `6779ccd` and deployed only `cmsads-petanisejahtera-preview` version `765fb7aa-af95-4f8d-b8ba-ebb4231a6bd4`. Live 390px proof selected the `1 Liter` variant at `Rp300.000`, resolved `Taman, Sidoarjo` to `5fc64766f8f44b34aa4cdf26`/`61257`, loaded a `Rp7.000` shipping quote with no district error, and rendered DANA `Rp100.000` plus `Rp2.500` fee for a `Rp102.500` total with zero horizontal overflow and no console errors. No checkout submission, order edit, payment/provider mutation, remote D1 change, or production tenant deployment occurred.
+- Pushed commit `6779ccd` and deployed only `the upstream preview Worker` version `<redacted>`. Live 390px proof selected the `1 Liter` variant at `Rp300.000`, resolved `Taman, Sidoarjo` to `5fc64766f8f44b34aa4cdf26`/`61257`, loaded a `Rp7.000` shipping quote with no district error, and rendered DANA `Rp100.000` plus `Rp2.500` fee for a `Rp102.500` total with zero horizontal overflow and no console errors. No checkout submission, order edit, payment/provider mutation, remote D1 change, or production tenant deployment occurred.
 
 ### Entry 139: Disable Provider-Rejected DANA Checkout
 
 - Confirmed the reported provider response `Channel code not found or not active` means DANA must not be presented as checkout-ready. Kept DANA in the historical provider-response type, but removed it from the checkout channel list and public payment-method response.
 - Changed server order validation to accept only checkout-enabled AutoLaris channels. A forged DANA submission now fails before persistence or provider invocation; tests cover both the absent option and rejected input.
-- Validation passed 95/95 tests, zero diagnostics across 252 files, and a complete server build. Pushed commit `746a6c2` and deployed only `cmsads-petanisejahtera-preview` version `854bb2ae-efac-438b-924a-5948c39d2d87`. Live API and 390px browser proof showed COD, QRIS, and eight VA channels with DANA absent, zero horizontal overflow, and no console errors. No checkout, order/payment/provider mutation, remote D1 change, or production deployment occurred.
+- Validation passed 95/95 tests, zero diagnostics across 252 files, and a complete server build. Pushed commit `746a6c2` and deployed only `the upstream preview Worker` version `<redacted>`. Live API and 390px browser proof showed COD, QRIS, and eight VA channels with DANA absent, zero horizontal overflow, and no console errors. No checkout, order/payment/provider mutation, remote D1 change, or production deployment occurred.
 
 ### Entry 140: Retired Tenant Stack Cleanup
 
@@ -1286,12 +1293,12 @@ Treat this file as history, not as a specification. Current system state is owne
 - The exact private GitHub repository still exists because `gh repo delete` returned HTTP `403`: the current token lacks the `delete_repo` OAuth scope. Device authorization was started and stopped without completion.
 - Remaining work is explicit in `TASKS.md` Phase 61: authorize `delete_repo` and delete the exact private GitHub repository.
 - Handoff validation after repository/assets/reference cleanup passed: one tenant environment, 95/95 tests, zero diagnostics across 252 files, and a complete Cloudflare server build.
-- Committed cleanup as `d84c714`, pushed the new `petanisejahtera-preview` branch, and removed the obsolete remote branch. Only the separately authenticated GitHub repository deletion remains open.
+- Committed cleanup as `d84c714`, pushed the new `the upstream install-preview` branch, and removed the obsolete remote branch. Only the separately authenticated GitHub repository deletion remains open.
 
 ### Entry 142: Documentation Current-State Hardening
 
 - Audited the root documentation, generated visual guide, deployable tenant registry, and the remaining GitHub deletion blocker. Reconciled current-state material to one active CMSAds environment while explicitly preserving superseded releases as historical evidence.
-- Removed stale active-headless claims from current handoff documents. The guide now distinguishes supported headless architecture from active deployment, identifies `petanisejahtera-preview` as the sole registered environment, and prohibits reuse of removed resource identifiers as inventory.
+- Removed stale active-headless claims from current handoff documents. The guide now distinguishes supported headless architecture from active deployment, identifies `the upstream install-preview` as the sole registered environment, and prohibits reuse of removed resource identifiers as inventory.
 - Static documentation audit passed across 10 HTML guide pages and 15 root Markdown files with no duplicate IDs, missing local assets, broken local links/fragments, or missing header/main/footer landmarks. Browser QA on the seven changed pages passed at 1440×1000 and 390×844 with zero horizontal overflow, no console warnings/errors, and no failed requests.
 - CMSAds validation passed one tenant environment, 95/95 tests, zero diagnostics across 252 files, and a complete Cloudflare server build. The exact private GitHub repository still exists because the authenticated token lacks `delete_repo`; no remote deletion, deployment, migration, provider call, secret operation, or tenant-data mutation occurred.
 
@@ -1340,7 +1347,7 @@ Treat this file as history, not as a specification. Current system state is owne
 
 ### Entry 149: Preview Release and Product Form Embed Plan
 
-- Deployed commit `b3b4111` to the `petanisejahtera-preview` tenant Worker and verified HTTP `200` responses for the tenant home and canonical hybrid form.
+- Deployed commit `b3b4111` to the `the upstream install-preview` tenant Worker and verified HTTP `200` responses for the tenant home and canonical hybrid form.
 - Reconciled `PLAN.md` with the implemented provider-accepted lifecycle: Order Management owns explicit sequential Push to Mengantar; only accepted provider results enter Shipping; failed attempts remain pending and retryable.
 - Defined a future per-product integration surface with canonical form links and a copy-ready plain HTML iframe. The iframe delegates to the existing CMSAds form state machine; optional JavaScript is limited to progressive height synchronization rather than duplicating checkout behavior.
 - Kept framing security fail-closed: the current deployment remains non-frameable. Future implementation requires a dedicated embed response with a tenant-configured CSP `frame-ancestors` allowlist while all other routes retain `X-Frame-Options: DENY`.
@@ -1359,7 +1366,7 @@ Treat this file as history, not as a specification. Current system state is owne
 - Replaced the two-role owner/collaborator contract with owner-managed `admin`, `advertiser`, and `customer_service` users. Creation requires an explicit delegated role and temporary password; revocation remains owner-only.
 - Centralized deny-by-default page/API permissions in the auth contract and reused the same role model for sidebar, mobile navigation, and command search visibility. Dynamic order/product/ads routes inherit parent access, unauthorized APIs return `403`, and pages return to the allowed dashboard.
 - Kept customer-service CRM actions functional by returning normalized templates inside the permitted orders response while denying `/api/admin/settings` entirely. Delegated profiles omit provider integration controls; admin can operate every tenant workflow except access management; advertiser is limited to dashboard/products/content/media/ads/profile; customer service is limited to dashboard/orders/shipping/check/rates/profile.
-- Added migration `0018_operator_roles.sql` to convert legacy collaborators to advertisers and invalidate their previous sessions through the credential revision. Applied it to local `petanisejahtera-preview` D1 only.
+- Added migration `0018_operator_roles.sql` to convert legacy collaborators to advertisers and invalidate their previous sessions through the credential revision. Applied it to local `the upstream install-preview` D1 only.
 - Browser QA created, rotated, exercised, and revoked one user per delegated role. Desktop and 390×844 checks showed the correct navigation/profile surface, expected `200`/`403` API boundaries, page redirects, zero horizontal overflow, and no application server errors. Customer-service orders loaded CRM templates without a settings request or console/network error.
 - Validation passed: 105/105 tests, zero Astro/TypeScript diagnostics across 256 files, one valid tenant configuration, production build, and `git diff --check`. No remote migration, deployment, or provider mutation was performed.
 
@@ -1373,10 +1380,10 @@ Treat this file as history, not as a specification. Current system state is owne
 
 ### Entry 153: Preview Release — Form Widget and Operator Roles
 
-- Committed the operator-role and responsive-widget release as `cb9cb59` (`feat: add tenant roles and responsive form widget`) and pushed `petanisejahtera-preview` to GitHub.
-- Deployed Worker `cmsads-petanisejahtera-preview` to `preview.petanisejahtera.com`; Cloudflare reported Version ID `16284d58-c282-48e9-b52c-fd222ffb0ecb`.
+- Committed the operator-role and responsive-widget release as `cb9cb59` (`feat: add tenant roles and responsive form widget`) and pushed `the upstream install-preview` to GitHub.
+- Deployed Worker `the upstream preview Worker` to `the upstream preview install`; Cloudflare reported Version ID `<redacted>`.
 - Verified the live widget loader and a 390×844 same-origin landing-page fixture: the custom element upgraded, rendered one canonical form iframe at 1073px, and had zero parent/iframe overflow or console/network errors.
-- Applied `0018_operator_roles.sql` to remote D1 `OMS_DB` (`9963b7bc-52dd-4c22-b33b-2addbcd12768`) and reran the migration command to prove that no migrations remain pending.
+- Applied `0018_operator_roles.sql` to remote D1 `OMS_DB` (`<redacted>`) and reran the migration command to prove that no migrations remain pending.
 
 ### Entry 154: Tenant Embed Policy and Administrative District Resolution
 
@@ -1388,9 +1395,9 @@ Treat this file as history, not as a specification. Current system state is owne
 
 ### Entry 155: Preview Release — Embed Policy and District Resolution
 
-- Committed the feature as `cf4552b` (`feat: manage embed origins and resolve districts`) and pushed `petanisejahtera-preview` to GitHub.
-- Applied remote additive migration `0019_slimy_zodiak.sql` to preview D1 `OMS_DB` (`9963b7bc-52dd-4c22-b33b-2addbcd12768`) after explicit approval.
-- Deployed Worker `cmsads-petanisejahtera-preview` to `preview.petanisejahtera.com`; Cloudflare reported Version ID `1a271892-e8d0-426b-b85b-def0e73f59a8`.
+- Committed the feature as `cf4552b` (`feat: manage embed origins and resolve districts`) and pushed `the upstream install-preview` to GitHub.
+- Applied remote additive migration `0019_slimy_zodiak.sql` to preview D1 `OMS_DB` (`<redacted>`) after explicit approval.
+- Deployed Worker `the upstream preview Worker` to `the upstream preview install`; Cloudflare reported Version ID `<redacted>`.
 - Live public verification resolved `Cakung, Administrasi Jakarta Timur` to seven Cakung/Jakarta Timur provider areas with postal code `13910`, excluded Serang, and returned four eligible quote services. `/embed/form` emitted the configured three-origin fallback CSP and omitted `X-Frame-Options`; `/produk/aussie` and unauthenticated admin API retained `X-Frame-Options: DENY`.
 - The deployed owner credential is rotated and was not available to this session, so authenticated live settings/popup proof was not repeated. Their complete behavior was exercised locally before release at mobile and desktop widths. No order was saved and no Mengantar shipment was created during live verification.
 
@@ -1405,8 +1412,8 @@ Treat this file as history, not as a specification. Current system state is owne
 
 ### Entry 157: Preview Release — Exhaustive District Coverage
 
-- Committed the resolver and checkout recovery as `832a481` (`fix: harden district resolution coverage`) and pushed `petanisejahtera-preview` to GitHub.
-- Deployed `cmsads-petanisejahtera-preview` to `https://preview.petanisejahtera.com` as Worker Version `959c049c-409a-436b-acd1-7d2593a28ab0`.
+- Committed the resolver and checkout recovery as `832a481` (`fix: harden district resolution coverage`) and pushed `the upstream install-preview` to GitHub.
+- Deployed `the upstream preview Worker` to `the upstream preview install` as Worker Version `<redacted>`.
 - Live mobile proof returned provider destination `BIRING KANAYA / MAKASSAR` with ID `5fc64d5df8f44b34aa4cfe59`, rendered the `Jaya / Aceh Jaya` discovery choice, retained zero horizontal overflow, and produced no console or failed-network errors.
 
 ### Entry 158: Jakabaring Legacy Provider District Recovery
@@ -1417,7 +1424,7 @@ Treat this file as history, not as a specification. Current system state is owne
 
 ### Entry 159: Preview Release — Jakabaring Provider Recovery
 
-- Committed and pushed the fix as `c54d7de` (`fix: resolve Jakabaring provider areas`), then deployed Worker Version `75d2fc8a-0a6e-4c5c-bdc2-9ef920cacd07` to `https://preview.petanisejahtera.com`.
+- Committed and pushed the fix as `c54d7de` (`fix: resolve Jakabaring provider areas`), then deployed Worker Version `<redacted>` to `the upstream preview install`.
 - Live mobile proof returned exactly `8 Ulu`, `9/10 Ulu`, `15 Ulu`, `Silaberanti`, and `Tuan Kentang`; selecting `SILABERANTI` loaded the Rp12,000 iDexpress quote with provider ID `5fc63c06f8f44b34aa4c9726`, postal code `30251`, zero horizontal overflow, and no console or failed-network errors.
 
 ### Entry 160: COD Province Policy Normalization
@@ -1437,7 +1444,7 @@ Treat this file as history, not as a specification. Current system state is owne
 ### Entry 162: Preview Release — Embed Handoff and Pickup Recovery
 
 - Committed and pushed the COD normalization, embed handoff, and pickup recovery as `72f66bd` (`fix: harden embedded checkout and pickup sync`).
-- Deployed Worker Version `2a640ba4-569c-4259-bf3b-cf106cbf60d8` to `https://preview.petanisejahtera.com`.
+- Deployed Worker Version `<redacted>` to `the upstream preview install`.
 - Live mobile embed proof used an intercepted submit response to prevent mutation, then replaced the top-level landing page with `/thanks`. The iframe was removed, horizontal overflow remained zero, and no console or failed-network errors occurred.
 
 ### Entry 163: AutoLaris Fee Policy and Merchandise-Only Conversion Value
@@ -1456,7 +1463,7 @@ Treat this file as history, not as a specification. Current system state is owne
 ### Entry 165: Preview Release — Payment Fee and ICO Fallback
 
 - Committed and pushed the payment fee, clean advertising value, and ICO city-average fallback as `49d2720` (`feat: refine payment fees and shipping fallback`).
-- Applied remote D1 migrations `0020_violet_kylun.sql` and `0021_hesitant_peter_parker.sql`, then deployed Worker Version `fca78428-c54f-47ad-8785-e9703372548e` to `https://preview.petanisejahtera.com`.
+- Applied remote D1 migrations `0020_violet_kylun.sql` and `0021_hesitant_peter_parker.sql`, then deployed Worker Version `<redacted>` to `the upstream preview install`.
 - Live mobile proof returned buyer-paid BCA fee Rp6,500 and QRIS rate 0.7%, resolved Cibitung/Sukabumi to a real provider destination, and loaded direct JNE, J&T, and Pos quotes. Horizontal overflow was zero and no console or failed-network errors occurred.
 
 ### Entry 166: COD Service Fee and VAT Attribution
@@ -1466,7 +1473,7 @@ Treat this file as history, not as a specification. Current system state is owne
 - Added D1 migration `0022_pink_purifiers.sql` for the store policy and per-order fee fields, then applied it to the local tenant database.
 - Mobile browser proof at 390×844 exercised seller and buyer toggle states, persistence, full checkout, and middle checkout. Buyer-paid full COD calculated Rp5,279 on Rp158,500 and totalled Rp163,779; middle COD calculated Rp4,995 on Rp150,000 before shipping; horizontal overflow remained zero.
 - A local end-to-end COD submission persisted service fee Rp4,755, VAT Rp524, buyer bearer, and total Rp163,779 for Rp150,000 merchandise plus Rp8,500 shipping. Validation passed with 127/127 tests, zero diagnostics across 265 files, one valid tenant environment, and a production build.
-- Committed and pushed the implementation as `18685f9` (`feat: add COD service fee and VAT policy`) to `petanisejahtera-preview`. Remote D1 migration and Worker deployment were not run.
+- Committed and pushed the implementation as `18685f9` (`feat: add COD service fee and VAT policy`) to `the upstream install-preview`. Remote D1 migration and Worker deployment were not run.
 
 ### Entry 167: Provider-Neutral Location and Manual Seller Transfer
 
@@ -1480,8 +1487,8 @@ Treat this file as history, not as a specification. Current system state is owne
 
 ### Entry 168: Payment and Location Preview Release
 
-- Pushed feature commit `7caf67f` (`feat: add provider-neutral seller bank payments`) to `petanisejahtera-preview`.
-- Applied remote D1 migrations `0022_pink_purifiers.sql` and `0023_legal_champions.sql` to `cmsads-petanisejahtera-preview-d1`, then deployed Worker version `8e576d19-098d-4ee2-b442-7e727b95dd28` to `preview.petanisejahtera.com`.
+- Pushed feature commit `7caf67f` (`feat: add provider-neutral seller bank payments`) to `the upstream install-preview`.
+- Applied remote D1 migrations `0022_pink_purifiers.sql` and `0023_legal_champions.sql` to `the upstream preview D1`, then deployed Worker version `<redacted>` to `the upstream preview install`.
 - Live browser proof at 390×844 opened the five related Jakabaring destinations, selected destination ID `5fc63c05f8f44b34aa4c9724`, rendered QRIS plus eight Virtual Account bank logos, retained tariff disclosure without buyer/seller attribution, exposed no provider-brand copy, and had zero horizontal overflow. A 1280×900 reload had zero horizontal overflow, console errors, or failed requests.
 
 ### Entry 169: Public Checkout Payment Mark Alignment
@@ -1489,7 +1496,7 @@ Treat this file as history, not as a specification. Current system state is owne
 - Moved each public checkout payment mark out of the title line and into the vertically centered payment-row layout.
 - Standardized bank, QRIS, and COD marks on a compact 60×40px `3:2` surface with a subtle 6px radius; COD uses a purpose-built text mark when no image asset exists.
 - Mobile browser proof expanded all eight Virtual Account rows and measured every visible mark at the expected ratio with zero vertical center offset or horizontal overflow. The 1280×900 collapsed layout passed the same geometry and overflow checks. Validation passed with 131/131 tests, zero Astro/TypeScript diagnostics across 271 files, and a production build.
-- Committed and pushed the refinement as `6096761` (`fix: align public payment marks`) and deployed preview Worker version `6eaf1e9d-0697-4e78-b79a-eab95d2f1493`.
+- Committed and pushed the refinement as `6096761` (`fix: align public payment marks`) and deployed preview Worker version `<redacted>`.
 - Live verification used a cache-busted checkout URL to bypass the previously cached document. At 390×844 and 1280×900, COD, QRIS, and all eight expanded Virtual Account marks measured 60×40px with a `3:2` ratio, zero vertical center offset, and zero horizontal overflow; no console errors or failed requests occurred.
 
 ### Entry 170: Payment Fee Clarity and Public Asset Payload
@@ -1499,7 +1506,7 @@ Treat this file as history, not as a specification. Current system state is owne
 - Expanded authenticated AutoLaris tariff guidance, removed the redundant tenant-domain line from the login header, and constrained `/api/payment-methods` to frontend-safe channel, fee, active-state, and local-asset fields.
 - Local mobile browser proof returned a 4,120-byte payment-method response with `no-store`; recomputed COD from Rp5,395 on Rp150,000 merchandise to Rp10,390 on Rp300,000 merchandise after a Rp12,000 shipping quote; displayed QRIS admin fee Rp1,134 for Rp162,000 merchandise plus shipping; measured 3.2px separation between the Virtual Account BCA label and its Rp6,500 fee; confirmed the middle thank-you copy; and found zero horizontal overflow.
 - Release validation passed with 133/133 tests, zero Astro/TypeScript diagnostics across 272 files, one valid tenant environment, and a production build.
-- Pushed feature commit `099f76b` (`feat: clarify checkout payment fees`) and deployed preview Worker version `35143f55-f95e-402b-8f0c-b3e4b5c34f93`. Live 390px proof returned the local COD asset, displayed QRIS fee Rp1,267 for Rp150,000 merchandise plus Rp31,000 shipping, retained the Rp6,500 Virtual Account fee with a 3.2px label gap, and produced zero overflow, console errors, or failed requests. Desktop checkout and the domain-free login header also produced zero horizontal overflow.
+- Pushed feature commit `099f76b` (`feat: clarify checkout payment fees`) and deployed preview Worker version `<redacted>`. Live 390px proof returned the local COD asset, displayed QRIS fee Rp1,267 for Rp150,000 merchandise plus Rp31,000 shipping, retained the Rp6,500 Virtual Account fee with a 3.2px label gap, and produced zero overflow, console errors, or failed requests. Desktop checkout and the domain-free login header also produced zero horizontal overflow.
 
 ### Entry 171: Seller Bank Validation and Stable Payment Selection
 
@@ -1507,33 +1514,33 @@ Treat this file as history, not as a specification. Current system state is owne
 - Added browser input filtering plus independent API validation: recipient names allow letters and common name punctuation but no digits, while account numbers require 6–24 digits without formatting characters. Added explicit operator copy to cross-check all three bank identity fields before saving.
 - Reordered checkout payment methods to QRIS, Transfer Bank, Virtual Account, then COD. Payment selection and group expansion now mutate state and attributes in place instead of rebuilding `#payment-options`, eliminating the payment-row flicker and preserving loaded marks.
 - Local 390px browser proof confirmed shadcn data slots, character filtering, inline validation, API rejection at the trust boundary, exact payment ordering, zero payment-list replacements, and zero horizontal overflow. The 1280px form retained 44px controls and zero overflow. Release validation passed with 133/133 tests, zero Astro/TypeScript diagnostics across 273 files, one valid tenant environment, and a production build.
-- Pushed feature commit `5d1f137` (`feat: harden seller bank payments`) and deployed preview Worker version `571c8a90-45b9-4194-a19a-3e900de53447`. Live 390px checkout proof preserved its top-level payment nodes while switching and expanding methods, showed QRIS before Transfer Bank and Virtual Account rows, and produced zero horizontal overflow, console errors, or failed requests.
+- Pushed feature commit `5d1f137` (`feat: harden seller bank payments`) and deployed preview Worker version `<redacted>`. Live 390px checkout proof preserved its top-level payment nodes while switching and expanding methods, showed QRIS before Transfer Bank and Virtual Account rows, and produced zero horizontal overflow, console errors, or failed requests.
 ### Entry 172: Admin Sidebar Header Refinement & Store Identity Presentation
 
 - Refactored `AppSidebar.tsx` and `AdminShell.tsx` to elevate store identity and platform engine details in the admin navigation header.
 - Passed tenant site name prop (`siteName`) into `AdminShell` and `AppSidebar`, dynamically displaying the store name (`Petani Sejahtera`) as the primary header title.
 - Updated header subtitle line to display engine version metadata (`v1.0.0` font mono).
 - Verified Astro/TypeScript check (`npm run check`, 0 errors across 274 files) and vitest unit tests (`npm test`, 133/133 pass).
-- Committed and pushed changes as `7064399` (`refactor(admin): update sidebar header to show store name and core version`) to `petanisejahtera-preview` and deployed Worker version `764b8b9f-7ab5-4105-a2d0-a6b3530608e3` to `preview.petanisejahtera.com`.
+- Committed and pushed changes as `7064399` (`refactor(admin): update sidebar header to show store name and core version`) to `the upstream install-preview` and deployed Worker version `<redacted>` to `the upstream preview install`.
 
 ### Entry 173: Sidebar Top CMS Logo Preservation & Store Name / Domain Alignment
 
 - Preserved top CMS logo icon (`/images/logo.webp`) in `AppSidebar.tsx` header for consistent CMS branding across merchant tenants.
 - Stripped preview and administrative operational suffixes (`Preview`, `Ops`, `Dashboard`, `CMS`) from `storeName` calculation so the header displays the clean brand title (`Petani Sejahtera`).
-- Replaced version subtitle in the top header with the store's canonical domain (`preview.petanisejahtera.com`), maintaining `CMS Core v1.0.0` version indicator with active green pulse status in the sidebar footer.
+- Replaced version subtitle in the top header with the store's canonical domain (`the upstream preview install`), maintaining `CMS Core v1.0.0` version indicator with active green pulse status in the sidebar footer.
 - Executed Astro/TypeScript check (`npm run check`, 0 errors across 274 files) and vitest unit tests (`npm test`, 133/133 pass).
-- Committed and pushed refinement as `874baf7` (`fix(admin): preserve top CMS logo, strip preview suffix from store name, and display site domain in sidebar header`) to `petanisejahtera-preview` and deployed Worker version `a689ce21-a34d-42e1-b476-5765282c2921` to `preview.petanisejahtera.com`. Live browser inspection verified clean store title, domain subtitle, top logo, and zero layout overflow.
+- Committed and pushed refinement as `874baf7` (`fix(admin): preserve top CMS logo, strip preview suffix from store name, and display site domain in sidebar header`) to `the upstream install-preview` and deployed Worker version `<redacted>` to `the upstream preview install`. Live browser inspection verified clean store title, domain subtitle, top logo, and zero layout overflow.
 ### Entry 174: Google Ads Conversion Signal Engine Protocol & Storefront Enhanced Conversions Integration
 
 - Enhanced `GoogleAdsBase.astro` and `MetaThanksTracker.astro` storefront tracking components to support Enhanced Conversions for Web by dynamically generating SHA-256 hashed customer identity objects (`sha256_phone_number`, `sha256_first_name`, `sha256_last_name`) and passing them to `window.__PS_PUSH_GOOGLE_CONVERSION__`.
 - Expanded `TRACKING_SPECS.md` with Section 8 ("Google Ads Conversion Signal Engine Protocol"), documenting Google Tag & GTM tag integration, Enhanced Conversions for Web, Consent Mode v2 matrix (`ad_storage`, `ad_user_data`, `ad_personalization`, `analytics_storage`), `transaction_id` deduplication contract, `gclid`/`gbraid`/`wbraid` click-ID attribution preservation, and Target CPA / Target ROAS Smart Bidding conversion taxonomy.
-- Release validation passed: 133/133 tests passing (`npm test`), 0 typecheck/Astro diagnostics across 274 files (`npm run check`), 1 valid tenant environment validated (`npm run tenant:validate`), and tenant bundle build complete (`npm run tenant:build -- petanisejahtera-preview`).
-- Deployed preview Worker version `2a58672f-5d04-40a4-ba23-74137bb2dcb1` live on `https://preview.petanisejahtera.com`.
+- Release validation passed: 133/133 tests passing (`npm test`), 0 typecheck/Astro diagnostics across 274 files (`npm run check`), 1 valid tenant environment validated (`npm run tenant:validate`), and tenant bundle build complete (`npm run tenant:build -- the upstream install-preview`).
+- Deployed preview Worker version `<redacted>` live on `the upstream preview install`.
 ---
 
 ## Ads Signal Audit — 2026-08-14
 
-Scope: `permatamall.shop` ad-conversion signal, scanned → validated → repaired → deployed.
+Scope: `that install` ad-conversion signal, scanned → validated → repaired → deployed.
 
 ### What was broken
 
@@ -1665,7 +1672,7 @@ Also confirmed live: `/`, `/produk`, `/produk/asahan-portable`, `/thanks`, `/sit
 
 ## Landing Page Builder & Admin UX Overhaul Audit — 2026-08-14
 
-Scope: `https://permatamall.shop/admin/landing-pages` & `https://permatamall.shop/admin/landing-pages/[id]/edit` UI/UX audit, bug fixes, fixed zero-wobble layout, product name resolution, and catalog table refactoring.
+Scope: `https://that install/admin/landing-pages` & `https://that install/admin/landing-pages/[id]/edit` UI/UX audit, bug fixes, fixed zero-wobble layout, product name resolution, and catalog table refactoring.
 
 ### Issues Audited & Fixed
 
@@ -1699,7 +1706,7 @@ Scope: `https://permatamall.shop/admin/landing-pages` & `https://permatamall.sho
 
 - `node --test src/lib/*.test.ts`: **166/166 Passed** (100% Lulus).
 - `npm run build`: Astro & Cloudflare server build completed cleanly in 4.28s.
-- `npx wrangler deploy`: Successfully deployed live to `permatamall.shop`.
+- `npx wrangler deploy`: Successfully deployed live to `that install`.
 
 ---
 
@@ -1727,7 +1734,7 @@ Scope: Manual product additions sorting (`created_at DESC`), embed status defaul
 +- `node --test src/lib/*.test.ts`: **166/166 Passed** (100% Lulus).
 +- `npm run check`: **0 errors** across 325 files.
 +- `npm run build`: Astro & Cloudflare build completed cleanly.
-+- `npx wrangler deploy`: Successfully deployed live to `permatamall.shop`.
++- `npx wrangler deploy`: Successfully deployed live to `that install`.
 
 ## Lead Traffic Source Attribution & Order Filter System — 2026-08-14
 
@@ -1756,7 +1763,7 @@ Scope: Automatic detection of Meta Ads, Google Ads, TikTok Ads, and Organic/Dire
 - `node --test src/lib/*.test.ts`: **179/179 Passed** (100% Lulus).
 - `npm run check`: **0 errors** across 328 files.
 - `npm run build`: Astro & Cloudflare build completed cleanly in 4.31s.
-- `npx wrangler deploy`: Successfully deployed live to `permatamall.shop` (Commit `be3add0`).
+- `npx wrangler deploy`: Successfully deployed live to `that install` (Commit `be3add0`).
 ## Automated Google & Meta Product Taxonomy Engine & Merchant Center XML Feeds — 2026-08-14
 
 Scope: Automated derivation of Google Product Category (`google_product_category` ID & string), Meta Product Category (`fb_product_category`), and Product Type without manual merchant product-by-product selection. Dynamic XML RSS 2.0 feed endpoints for Google Merchant Center & Meta Commerce Catalog.
@@ -1783,8 +1790,8 @@ Scope: Automated derivation of Google Product Category (`google_product_category
 - `node --test src/lib/*.test.ts`: **177/177 Passed** (100% Lulus).
 - `npm run check`: **0 errors** across 332 files.
 - `npm run build`: Astro & Cloudflare build completed cleanly.
-- `npx wrangler deploy`: Successfully deployed live to `permatamall.shop`.
-- Live Feed Proof: Both `https://permatamall.shop/feed/google-catalog.xml` and `https://permatamall.shop/feed/meta-catalog.xml` return `HTTP 200` XML payloads with automated GPC classification.
+- `npx wrangler deploy`: Successfully deployed live to `that install`.
+- Live Feed Proof: Both `https://that install/feed/google-catalog.xml` and `https://that install/feed/meta-catalog.xml` return `HTTP 200` XML payloads with automated GPC classification.
 ## Product Listing UI/UX Upgrade with shadcn UI — 2026-08-14
 
 Scope: Comprehensive UI/UX overhaul of the Admin Product Catalog (`ProductCatalog.tsx`) utilizing shadcn UI components (`Card`, `Table`, `Badge`, `Button`, `Dialog`, `DropdownMenu`, `Skeleton`, `Input`), responsive product cards, search icon, price range rendering, product thumbnails, and status filters.
@@ -1817,7 +1824,7 @@ Scope: Comprehensive UI/UX overhaul of the Admin Product Catalog (`ProductCatalo
 - `node --test src/lib/*.test.ts`: **177/177 Passed** (100% Lulus).
 - `npm run check`: **0 errors** across 332 files.
 - `npm run build`: Astro & Cloudflare build completed cleanly in 7.00s.
-- `npx wrangler deploy`: Successfully deployed live to `permatamall.shop` (Commit `5dc92eb`).
+- `npx wrangler deploy`: Successfully deployed live to `that install` (Commit `5dc92eb`).
 
 ## 11 Standardized CRM WhatsApp Templates & Thanks Page Customer-to-Admin Redirect System — 2026-08-14
 
@@ -1876,7 +1883,7 @@ Scope: Complete UI/UX redesign of `src/pages/admin/ads/google.astro` with 4-tab 
 - `node --test src/lib/*.test.ts`: **161/161 Passed** (100% Lulus).
 - `npx astro check`: **0 errors** across 320 files.
 - `npm run build`: Astro & Cloudflare build completed cleanly.
-- `npx wrangler deploy`: Deployed live to `https://permatamall.shop`.
+- `npx wrangler deploy`: Deployed live to `https://that install`.
 4. **D1 Database Performance Indexes**:
    - Added D1 indexes in `src/db/schema.ts`:
      - `product_variants`: `index("product_variants_product_id_idx").on(table.productId)`
@@ -1892,7 +1899,7 @@ Scope: Complete UI/UX redesign of `src/pages/admin/ads/google.astro` with 4-tab 
 - `node --test src/lib/*.test.ts`: **161/161 Passed** (100% Lulus).
 - `npx astro check`: **0 errors** across 320 files.
 - `npm run build`: Astro & Cloudflare build completed cleanly in 4.37s.
-- `npx wrangler deploy`: Deployed live to `https://permatamall.shop`.
+- `npx wrangler deploy`: Deployed live to `https://that install`.
 
 ---
 
@@ -1947,7 +1954,7 @@ Scope: Complete UI/UX redesign and operational enhancement of the verification t
 
 - `node --test src/lib/*.test.ts`: **162/162 Passed** (100% Lulus).
 - `npm run build`: Astro & Cloudflare build completed cleanly in 4.50s.
-- `npx wrangler deploy`: Deployed live to `https://permatamall.shop/admin/check`.
+- `npx wrangler deploy`: Deployed live to `https://that install/admin/check`.
 ## Admin Orders Table CRM Overhaul, Clean Invoice Column, Variant Names & Short Invoice Sequence — 2026-08-14
 
 Scope: Comprehensive UI/UX redesign and backend enhancement for `/admin/orders`, order schema, order persistence, and CRM action buttons.
@@ -1979,7 +1986,7 @@ Scope: Comprehensive UI/UX redesign and backend enhancement for `/admin/orders`,
 
 - `node --test src/lib/*.test.ts`: **162/162 Passed** (100% Lulus).
 - `npm run build`: Astro & Cloudflare build completed cleanly in 4.40s.
-- `npx wrangler deploy`: Deployed live to `https://permatamall.shop` (Worker commit `92f99d0`).
+- `npx wrangler deploy`: Deployed live to `https://that install` (Worker commit `92f99d0`).
 ## Admin Orders Page Blank Screen Fix (`isStepClicked` Missing Function & Query Refinement) — 2026-08-14
 
 ### Root Cause Analysis
@@ -1993,7 +2000,7 @@ Scope: Comprehensive UI/UX redesign and backend enhancement for `/admin/orders`,
 ### Verification & Production Deployment
 - `node --test src/lib/*.test.ts`: **162/162 Passed** (100% Lulus).
 - `npm run build`: Astro & Cloudflare build completed cleanly in 4.41s.
-- `npx wrangler deploy`: Deployed live to `https://permatamall.shop` (Worker commit `66df65c`).
+- `npx wrangler deploy`: Deployed live to `https://that install` (Worker commit `66df65c`).
 ## RTS Risk Scoring Status Audit & Order Detail Route Case Parity Fix - 2026-08-14
 
 ### Root Cause Analysis & RTS Status Findings
@@ -2009,7 +2016,7 @@ Scope: Comprehensive UI/UX redesign and backend enhancement for `/admin/orders`,
 ### Verification & Production Deployment
 - `node --test src/lib/*.test.ts`: **162/162 Passed** (100% Lulus).
 - `npm run build`: Astro & Cloudflare build completed cleanly in 4.41s.
-- `npx wrangler deploy`: Deployed live to `https://permatamall.shop` (Worker commit `eeefdf7`).
+- `npx wrangler deploy`: Deployed live to `https://that install` (Worker commit `eeefdf7`).
 ## Admin Orders Table Aksi Column Shadcn DropdownMenu Refactor — 2026-08-14
 
 ### UI/UX Refinement
@@ -2025,7 +2032,7 @@ Scope: Comprehensive UI/UX redesign and backend enhancement for `/admin/orders`,
 ### Verification & Production Deployment
 - `node --test src/lib/*.test.ts`: **162/162 Passed** (100% Lulus).
 - `npm run build`: Astro & Cloudflare build completed cleanly in 4.05s.
-- `npx wrangler deploy`: Deployed live to `https://permatamall.shop`.
+- `npx wrangler deploy`: Deployed live to `https://that install`.
 ## Manual Product Sorting (Newest First), Auto-Active Embed Default & Payment Methods API Error Boundary — 2026-08-14
 
 ### Key Improvements & Fixes
@@ -2044,8 +2051,8 @@ Scope: Comprehensive UI/UX redesign and backend enhancement for `/admin/orders`,
 ### Verification & Production Deployment
 - `node --test src/**/*.test.ts`: **178/178 Passed** (100% Lulus).
 - `npx astro build`: Build completed cleanly with zero errors.
-- `npx wrangler deploy`: Deployed live to `https://permatamall.shop` (`commit 6aa825a`).
-- `curl -s -i "https://permatamall.shop/api/payment-methods"`: Confirmed **HTTP 200 OK** on live Workers production.
+- `npx wrangler deploy`: Deployed live to `https://that install` (`commit 6aa825a`).
+- `curl -s -i "https://that install/api/payment-methods"`: Confirmed **HTTP 200 OK** on live Workers production.
 
 ### Entry 68: Complete Security, Money, Tracking, Type & Accessibility System Hardening (v1.2.0)
 
@@ -2148,7 +2155,7 @@ Scope: Comprehensive UI/UX redesign and backend enhancement for `/admin/orders`,
   - `npx tsc --noEmit`: **0 errors, 0 warnings**.
   - `npx astro check`: **0 errors, 0 warnings**.
 
-### Entry 75: Wave 1–6 Zanobyshop Audit Repairs, Storefront 22-Product Content, Realistic Compare Prices & Full SEO Schema Compliance
+### Entry 75: Wave 1–6 Sibling-Install Audit Repairs, Storefront 22-Product Content, Realistic Compare Prices & Full SEO Schema Compliance
 - **Wave 1–6 Full Repository Audit Repairs**:
   - Resolved P0 Security vulnerabilities: added API key validation to `/api/v1/*` in `headless-api.ts`, sanitized `phone` & `order_id` XSS sinks in `thanks.astro`, protected landing page draft previews, imported `AutoLarisClient` in `settings.ts`, fixed TDZ errors (`nextCustomerPhone` in `orders/[id].ts` & `qrPayload` in `payment.astro`), fixed single order deletion SQL column name (`reference_id`), and rotated admin seed credentials.
   - Resolved P1 Order & Money logic: minted `submit_token` during initial session load for client-side idempotency retries, standardized phone normalization to `628` format, fixed COD excluded area province code mapping (`PA` vs `papua`), and enforced server-side rate quotation verification in headless checkout.
@@ -2163,7 +2170,7 @@ Scope: Comprehensive UI/UX redesign and backend enhancement for `/admin/orders`,
   - `npx tsc --noEmit`: **0 errors, 0 warnings**.
   - `npx astro check`: **0 errors, 0 warnings**.
   - `npm run build`: **Complete!** (Server built in 4.15s).
-  - `npx wrangler deploy`: **Live 200 OK** (`permatamall.shop`).
+  - `npx wrangler deploy`: **Live 200 OK** (`that install`).
 
 ### Entry 76: 5-Digit Minimum Product Content-ID Pattern Lock & Auto-Taxonomy Feed Synchronization
 - **Pattern Lock Validation (`meta-event-contract.ts`)**: Enforced `/^[A-Za-z0-9_./-]{5,128}$/` minimum 5-character/digit product content IDs for Meta Pixel, CAPI, GTM, and Google Ads events outbox validation.
@@ -2174,7 +2181,7 @@ Scope: Comprehensive UI/UX redesign and backend enhancement for `/admin/orders`,
   - `npx tsc --noEmit`: **0 errors, 0 warnings**.
   - `npx astro check`: **0 errors, 0 warnings**.
   - `npm run build`: **Complete!** (Server built in 4.28s).
-  - `npx wrangler deploy`: **Live 200 OK** (`https://permatamall.shop/`).
+  - `npx wrangler deploy`: **Live 200 OK** (`https://that install/`).
 ### Entry 78: Full Catalog, SEO & Signal Audit, 5-Digit Content ID Admin Display & Luxury Minimalist Payment/Thanks Refactor
 - **Catalog XML & SEO Validation**: Verified `google-catalog.xml`, `meta-catalog.xml`, `sitemap.xml`, `robots.txt`, and OpenGraph/JSON-LD schemas. Validated Google Merchant Product Category `6551` mapping and 5-digit Content ID alignment.
 - **Admin Content ID Integration**: Updated `ProductCatalog.tsx` (table view, card view, search filter, and copy-action dropdown) and `ProductForm.tsx` (product summary box) to display normalized 5-digit Content IDs (`formatContentId`).
@@ -2184,7 +2191,7 @@ Scope: Comprehensive UI/UX redesign and backend enhancement for `/admin/orders`,
   - `npx tsc --noEmit`: **0 errors, 0 warnings**.
   - `npx astro check`: **0 errors, 272 warnings**.
   - `npm run build`: **Complete!** (Server built in 4.17s).
-  - `npx wrangler deploy`: **Live 200 OK** (`https://permatamall.shop/`).
+  - `npx wrangler deploy`: **Live 200 OK** (`https://that install/`).
 ### Entry 79: Full Product Catalog Load More Pagination & End-to-End System Audit
 - **PLP Catalog Page Overhaul (`src/pages/produk/index.astro`)**: Eliminated hardcoded `slice(0, 15)` truncation. Replaced with full storefront product loading, progressive disclosure (10 products per batch), real-time counter (`Menampilkan X dari Y produk`), and a responsive "Muat Lebih Banyak" button.
 - **End-to-End System & Integration Audit**:
@@ -2197,7 +2204,7 @@ Scope: Comprehensive UI/UX redesign and backend enhancement for `/admin/orders`,
   - `npx tsc --noEmit`: **0 errors, 0 warnings**.
   - `npx astro check`: **0 errors, 272 warnings**.
   - `npm run build`: **Complete!** (Server built in 4.30s).
-  - `npx wrangler deploy`: **Live 200 OK** (`https://permatamall.shop/`).
+  - `npx wrangler deploy`: **Live 200 OK** (`https://that install/`).
 ### Entry 80: Google PageSpeed Insights & Handbag Catalog Mobile Optimization
 - **LCP & Preloader Optimization (`src/layouts/BaseLayout.astro`)**: Added `rel="preconnect"` for `connect.facebook.net` and `www.googletagmanager.com` with `crossorigin`. Ensured `<head>` image preloading delivers `as="image"` with `fetchpriority="high"`.
 - **Product Hero Image & CLS Guard (`ProductImageSlider.tsx`)**: Configured explicit `width={480}` `height={640}` dimensions and `fetchPriority="high"` on the main product hero slider image. Added `width={64}` `height={85}` to thumbnail buttons to lock image layout ratios and eliminate CLS.
@@ -2207,7 +2214,7 @@ Scope: Comprehensive UI/UX redesign and backend enhancement for `/admin/orders`,
   - `npx tsc --noEmit`: **0 errors, 0 warnings**.
   - `npx astro check`: **0 errors, 272 warnings**.
   - `npm run build`: **Complete!** (Server built in 4.20s).
-  - `npx wrangler deploy`: **Live 200 OK** (`https://permatamall.shop/`).
+  - `npx wrangler deploy`: **Live 200 OK** (`https://that install/`).
 ### Entry 81: PageSpeed Diagnostic Refinement & Render-Blocking CSS Elimination
 - **Render-Blocking CSS Elimination (`src/pages/produk/[slug].astro`, `src/pages/[slug].astro`)**: Removed duplicate `import '../../styles/form-hybrid.css'` statements since `form-hybrid.css` is already bundled via `global.css`. Eliminated extra network roundtrips for CSS files.
 - **Font Streamlining (`src/layouts/BaseLayout.astro`)**: Reduced font CSS imports from 7 down to 4 core weights (`inter/400.css`, `inter/600.css`, `inter/700.css`, `cinzel/600.css`), saving font parsing and woff2 download overhead.
@@ -2217,7 +2224,7 @@ Scope: Comprehensive UI/UX redesign and backend enhancement for `/admin/orders`,
   - `npx tsc --noEmit`: **0 errors, 0 warnings**.
   - `npx astro check`: **0 errors, 272 warnings**.
   - `npm run build`: **Complete!** (Server built in 4.19s).
-  - `npx wrangler deploy`: **Live 200 OK** (`https://permatamall.shop/`).
+  - `npx wrangler deploy`: **Live 200 OK** (`https://that install/`).
 ### Entry 82: Homepage SEO Optimization & ItemList JSON-LD Schema
 - **Homepage Meta Title & H1 (`src/pages/index.astro`, `HeroSection.astro`)**: Enhanced homepage `<title>` format to `${name} — ${tagline}` (`Permata Mall — Pusat Belanja Online Pilihan`). Added semantic `<h1 class="sr-only">` header anchor for search crawlers and AI search engines.
 - **ItemList JSON-LD Schema (`src/lib/json-ld.ts`, `JsonLdSchema.astro`)**: Added `buildItemListJsonLd` generator and updated `BaseLayout` to emit structured `ItemList` JSON-LD schema for catalog items on homepage `/`.
@@ -2226,7 +2233,7 @@ Scope: Comprehensive UI/UX redesign and backend enhancement for `/admin/orders`,
   - `npx tsc --noEmit`: **0 errors, 0 warnings**.
   - `npx astro check`: **0 errors, 272 warnings**.
   - `npm run build`: **Complete!** (Server built in 4.16s).
-  - `npx wrangler deploy`: **Live 200 OK** (`https://permatamall.shop/`).
+  - `npx wrangler deploy`: **Live 200 OK** (`https://that install/`).
 
 ### Entry 83: System-Wide Security, Correctness, Navigation, and UX Audit
 
@@ -2617,9 +2624,9 @@ failures. Screenshots: `/tmp/adsbook-dashboard-overview-{390,768,1280}.png`.
 
 ---
 
-## 2026-08-17 — Permatamall-derived correctness and installer hardening
+## 2026-08-17 — Sibling-install-derived correctness and installer hardening
 
-Audited Permatamall's canonical documents and matching source as evidence, not
+Audited a sibling install's canonical documents and matching source as evidence, not
 as a module source or a licence to copy tenant behaviour. AdsBookCMS adopted
 only product-generic contracts that were absent or weaker in the product:
 
@@ -3272,7 +3279,7 @@ mutation, commit, or push occurred.
 
 ### 2026-08-21 — Kecamatan search hit Mengantar on every keystroke; now it doesn't
 
-Prompted by comparing this store's Mengantar checkout against `petanisejahtera`'s
+Prompted by comparing this store's Mengantar checkout against `the upstream install`'s
 Scalev checkout, which resolves the same kind of kecamatan-to-provider-id
 problem and was suspected of doing it more tidily. It wasn't, structurally —
 the local district catalogue (`district-catalog.ts`, `indonesia-districts.ts`)
@@ -3293,9 +3300,9 @@ catalogue — always fires a fresh `level=resolve` call before a destination id
 is ever used, so typing-phase results were never the source of the submitted
 id and switching their source changes nothing on the path that matters.
 
-**The second gap: no cache at all.** `petanisejahtera`'s `runtime-cache.ts`
+**The second gap: no cache at all.** `the upstream install`'s `runtime-cache.ts`
 caches a Scalev location resolution for 24h and a free search for 10 minutes.
-`adsbookcms` had no caching module anywhere in `src/`. Copying
+`another install` had no caching module anywhere in `src/`. Copying
 `runtime-cache.ts`'s approach verbatim would have been wrong, not just
 incomplete: it is a module-level `Map`, and this repository's own
 `rate-limit.ts` already documents why that fails on Workers — every isolate
@@ -3623,7 +3630,7 @@ account were removed from the local database afterwards.
 
 ## 2026-08-22 — A-133: native Astro landing pages, recorded in the CMS
 
-Asked for as the petanisejahtera model: build a landing page in Astro, deploy
+Asked for as the the upstream install model: build a landing page in Astro, deploy
 it, and still have the CMS know about it — its link listed, and available to
 become a product's default page.
 
@@ -4192,23 +4199,22 @@ The title sink closed in 1.3.1 was live on every store, so the release was only
 half the work. All six installs were brought onto product `3971eaf` and
 deployed the same day.
 
-**Two adoption methods, one safety check.** `taniniaga`, `carukesi` and
-`skincarebpom` merge `product/main` onto their `install/*` branch;
-`zanobyshop`, `permatamall` and — as it turned out — `zvarashop` run
+**Two adoption methods, one safety check.** Three installs merge
+`product/main` onto their `install/*` branch; the other three run
 `scripts/sync-from-product.sh`, which replaces the tree because their history
 diverged. Before each merge the product's own diff was checked against
 `wrangler.jsonc`: if the product had touched install-owned config the update
 was to stop rather than clobber a store's D1 id or domain. It had not, except
-on `zvarashop`, where the guard fired — inspection showed the change was a
-comment, and the store syncs rather than merges anyway. The
+on one install where the guard fired — inspection showed the change was a
+comment, and that store syncs rather than merges anyway. The
 `sync-from-product.sh` runs left every store's `public/` digest byte-identical.
 
 **No database work.** All six already held 48 migrations, the same as the
 product. 1.3.1 is code only, which is why six production deploys carried no
 schema risk.
 
-**The GitHub deploy path is dead, and had been all day.** `zanobyshop` and
-`permatamall` carry a `deploy.yml` that fires on push to `main`. Both runs
+**The GitHub deploy path is dead, and had been all day.** `another install` and
+`another install` carry a `deploy.yml` that fires on push to `main`. Both runs
 failed in under four seconds with *"The job was not started because recent
 account payments have failed or your spending limit needs to be increased"* —
 as did the earlier sync at 05:21. The job never starts, so a green push proves
@@ -4216,23 +4222,22 @@ nothing. Both were deployed with `wrangler deploy` from a local build, the way
 the other four always are. Until the billing is settled, **a push to those two
 repositories does not deploy them.**
 
-**Verified live.** `taniniaga.shop`, `carukesi.com`, `skincarebpom.shop`,
-`zvara.shop` and `zanobyshop.shop` answer `200` on `/` and `/produk` and `401`
+**Verified live.** `that install`, `another install`, `that install`,
+`another install` and `that install` answer `200` on `/` and `/produk` and `401`
 on `/api/admin/health`. A real product page renders its title with no
-double-encoded entity. `permatamall.shop` redirects to `/install`: its rebuilt
+double-encoded entity. One install redirects to `/install`: its rebuilt
 database is empty, and the wizard is `INSTALL_TOKEN`-gated, so this is a store
 awaiting setup rather than an open door.
 
-**Three stale facts in `STATUS.md`, corrected.** `carukesi` and `skincarebpom`
-were recorded as having no git remote; both have an `origin` and were pushed.
-`zvara.shop` was recorded as adopting by `git merge`; it holds a sync script
-and its history has diverged. Its freeze was released by the owner for this
-release.
+**Three stale facts in `STATUS.md`, corrected.** Two installs were recorded as
+having no git remote; both have an `origin` and were pushed. A third was
+recorded as adopting by `git merge`; it holds a sync script and its history has
+diverged. Its freeze was released by the owner for this release.
 
 Per-install gates were run before every deploy: 530 passing, 1 skipped (the
 asset test that skips an install tree by design), 0 errors, build complete.
-`permatamall` reports one additional failure — `public/robots.txt` names
-`permatamall.shop`, which the brand-contamination test reads as reference-store
+One install reports an additional failure — its `public/robots.txt` names that
+store's own domain, which the brand-contamination test reads as reference-store
 branding. It has been there since the store's first commit: the product was
 extracted from this store, so the test's premise is inverted inside it.
 ## 2026-08-23 — MyBookCMS Malaysia local cutover validation
