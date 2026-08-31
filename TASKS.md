@@ -133,15 +133,17 @@ external consequence, so it is listed first and stops for the user.
       Dependencies: none
       Done when: no committed file outside git history carries a CGNAT-range address, and `npm test` still passes.
 
-- [ ] **A-202** — Surface the weight ceiling before the final checkout step.
-      `A-193` made the refusal honest — it now names the buyer's own weight and the real ceiling — but the buyer still only learns the limit at the last step, after filling the whole form. The ceiling is merchant data read from the active rate rules, so it must be resolved rather than hardcoded anywhere.
-      Risk: R2 — buyer-visible checkout behaviour; route to `designer` before the first visual edit.
-      Surface: `src/components/storefront/forms/MalaysiaCheckoutForm.astro`, `src/pages/api/shipping-rates.ts`, `src/lib/malaysia-shipping.ts`, `src/lib/*.test.ts`.
-      Non-scope: changing any rate value or band; editing the shipping policy copy to state a fixed kilogram figure, which would become false the moment an operator edits a band.
-      Primary requirement: REQ-205
+- [x] **A-202** — Surface the weight ceiling before the final checkout step. **Closed 2026-09-01 as not applicable. No code was written, on purpose.**
+      Checking the actual path before building it: the storefront has **no quantity control anywhere**, and `MalaysiaCheckoutForm.astro` hardcodes `quantity: 1` in the order payload. The heaviest variant in the catalog is 650 g against a 5000 g ceiling in every zone, so a buyer cannot construct a cart that reaches the limit. A warning about a limit nobody can hit is noise on the highest-value screen in the product.
+      The ceiling *is* reachable by a headless client, because `/api/v1/geo/shipping-rates` accepts a quantity. That path is already served: `A-193` made the refusal name the buyer's own weight and the real ceiling, both read from the active rules.
+      Reopen this the moment checkout gains a quantity control — at that point `REQ-205` becomes live and this task is the design note for it.
+      Risk: R2 if ever reopened — browser-visible checkout behaviour.
+      Surface: none. Closed without an edit.
+      Non-scope: adding a quantity control to justify the warning; that is a product decision, not a way to make a task apply.
+      Primary requirement: REQ-205 (withdrawn)
       Constraints: REQ-189, REQ-204
       Dependencies: A-193
-      Done when: the buyer sees the applicable limit before submitting rather than only at refusal, the figure is read from the active rules, and browser evidence at 390 and 1280 px shows it without layout overflow.
+      Done when: closed with the reason recorded, `REQ-205` marked withdrawn rather than silently dropped, and the condition that would revive it stated.
 
 - [x] **A-203** — Settle whether the privacy notice must be bilingual. **Researched 2026-09-01. Confirmed against the primary source; the change itself is now REQ-211/REQ-212 and is NOT accepted yet.**
       Verified against Laws of Malaysia **Act 709 s.7(3)**, read from the Act text rather than a summary: *"A notice under subsection (1) shall be in the national and English languages, and the individual shall be provided with a clear and readily accessible means to exercise his choice, where necessary, in the national and English languages."* It is `shall`, not a recommendation, and s.5(2) makes contravening a principle an offence carrying a fine up to RM300,000 and/or two years' imprisonment.
