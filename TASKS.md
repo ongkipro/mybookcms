@@ -115,15 +115,14 @@ external consequence, so it is listed first and stops for the user.
         4. Only then the repository visibility is changed, and `gh api repos/ongkipro/mybookcms --jq .visibility` reports `public`.
       Note for whoever runs this: making the repository public also makes `DEFAULT_ADMIN_PASSWORD_HASH` and the documented `admin`/`admin` first-run behaviour publicly readable. That is already mitigated by `LOGIN-3`, but it becomes trivially discoverable. It also unblocks GitHub Actions, which has never run here — see `A-204`.
 
-- [ ] **A-200** — A seeded local store cannot save its own settings.
-      `save-store` re-validates `site_url` on every submit and refuses anything that is not `https`. The local seed writes `http://<host>:8787` directly, bypassing that rule, so the settings form refuses to save *any* change — pickup address, tagline, logo — reporting `Alamat toko harus memakai https`, an error about a field the operator never touched. The validator is right for production; the seed is what violates it. Worked around during the 2026-09-01 demo by clearing the field, saving, and restoring the seeded value.
+- [x] **A-200** — A seeded local store cannot save its own settings. **Done 2026-09-01** — `save-store` re-validated `site_url` on every submit, but the local seed writes a plain-http address straight into the row, bypassing that rule. So the settings form refused *every* save — pickup address, tagline, logo — with `Alamat toko harus memakai https`, an error naming a field the operator had not touched. The decision moved out of the route into `resolveStoreSiteUrl`, which grandfathers a value identical to the stored one and applies the https rule the moment it actually changes, which is the only time it can be wrong on purpose.
       Risk: R1 — one validation path, no schema or auth change.
-      Surface: `src/pages/api/admin/settings.ts`, `scripts/seed-preview-local.sql`, `src/lib/*.test.ts`.
+      Surface: `src/pages/api/admin/settings.ts`, `src/lib/store-site-url.ts`, `src/lib/store-site-url.test.ts`.
       Non-scope: relaxing the https rule for production; touching any other `save-*` action.
       Primary requirement: REQ-209
       Constraints: REQ-182
       Dependencies: none
-      Done when: a store row whose stored `site_url` is already non-https can save an unrelated field without editing it, production still refuses a non-https value the operator actually submits, and a focused test covers both directions.
+      Done when: a store row whose stored `site_url` is already non-https can save an unrelated field without editing it, production still refuses a non-https value the operator actually submits, and a focused test covers both directions. Verified live in the admin against the built Worker, with the seeded `http://…:8787` left untouched: saving the pickup address returned `Profil store disimpan.` and resolved `Sungai Buloh, Selangor`; changing the address to `http://kedai.example` was still refused with `Alamat toko harus memakai https.`; and `https://kedai.example/produk?x=1` was accepted and stored as its origin.
 
 - [x] **A-201** — Remove developer-machine addresses from the repository. **Done 2026-09-01** — a Tailscale address for one specific machine was committed in `scripts/seed-preview-local.sql`, `src/lib/auth.test.ts`, and the inherited lineage. Not routable from the internet and not a credential, but a private detail of one developer's network that no installer needs. All now use `198.51.100.10` (RFC 5737 TEST-NET-3, reserved for documentation and routable nowhere), so a future reader cannot mistake it for a real host.
       Risk: R1 — fixture and seed data only.

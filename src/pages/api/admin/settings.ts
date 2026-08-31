@@ -5,6 +5,7 @@ import { parseEmbedAllowedOrigins, resolveEmbedAllowedOrigins } from "../../../l
 import { getEnvValue, getRuntimeEnv } from "../../../lib/env.ts";
 import { parseHeadlessAllowedOrigins } from "../../../lib/headless-api.ts";
 import { resolveStorePickup, validateStorePickup } from "../../../lib/store-pickup.ts";
+import { resolveStoreSiteUrl } from "../../../lib/store-site-url.ts";
 import {
   addStorefrontTemplate,
   listStorefrontTemplates,
@@ -179,17 +180,9 @@ export const PUT: APIRoute = async ({ request, locals }) => {
       const phone = normalizeMalaysiaPhone(body.support_whatsapp);
       if (!name) return jsonError("Nama store wajib diisi.", 400);
       if (!MALAYSIA_PHONE.test(phone)) return jsonError("Nomor WhatsApp Malaysia tidak valid.", 400);
-      const rawSiteUrl = clean(body.site_url, 200);
-      let siteUrl = "";
-      if (rawSiteUrl) {
-        try {
-          const parsed = new URL(rawSiteUrl);
-          if (parsed.protocol !== "https:") return jsonError("Alamat toko harus memakai https.", 400);
-          siteUrl = parsed.origin;
-        } catch {
-          return jsonError("Alamat toko tidak valid.", 400);
-        }
-      }
+      const resolvedSiteUrl = resolveStoreSiteUrl(clean(body.site_url, 200), current.site_url);
+      if (!resolvedSiteUrl.ok) return jsonError(resolvedSiteUrl.error, 400);
+      const siteUrl = resolvedSiteUrl.value;
       const templateId = clean(body.storefront_template, 40) || "compact-market";
       const resolution = await resolveStorefrontTemplate(database, templateId);
       if (resolution.state !== "ready") return jsonError("Template storefront tidak tersedia.", resolution.state === "unavailable" ? 503 : 400);
@@ -213,7 +206,7 @@ export const PUT: APIRoute = async ({ request, locals }) => {
       `).bind(
         name,
         phone,
-        siteUrl || null,
+        siteUrl,
         clean(body.store_description, 300) || null,
         clean(body.store_tagline, 120) || null,
         clean(body.store_logo, 300) || null,
