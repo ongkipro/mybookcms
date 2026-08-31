@@ -92,6 +92,7 @@ accepted and no task may implement it until it is.
 | REQ-206 | The seller bank list shall cover the retail banks a Malaysian merchant is likely to collect a manual transfer into. | Implemented locally |
 | REQ-207 | A buyer-facing surface shall not mix Indonesian into Malay copy. One rendered component carrying both languages is a defect regardless of whether each word is individually understood. | Implemented locally |
 | REQ-208 | A legal page the product cites in its own copy shall be reachable from the storefront, not only from `sitemap.xml`. | Implemented locally |
+| REQ-210 | The repository shall contain no host or network address belonging to one developer's machine. Seeds, fixtures and docs use documentation addresses. | Proposal |
 | REQ-209 | An authorized operator can record the merchant's own pickup address — contact name, Malaysian mobile, street address, and postcode — validated by the same rules the buyer's address uses. It is stored complete or not at all, and its city and state are resolved from the postcode directory rather than stored, so they cannot disagree with the postcode. This is operator reference data: nothing is transmitted to any logistics provider. | Implemented locally |
 
 ## Admin access

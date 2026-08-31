@@ -8,6 +8,15 @@
 > Delivered sections `A23`–`A25` are complete locally. Hosted CI, remote
 > migration, deployment, vendor verification, commit, and push remain
 > separately gated and are tracked in the Release gate section below.
+>
+> **Reading this queue in Goal Mode.** Work the `## Open queue` section only.
+> Every open task carries `Risk`, `Surface`, `Non-scope`, `Dependencies` and a
+> runnable `Done when`. Respect them literally: `Surface` is the complete set of
+> paths a task may edit, and touching anything outside it is scope expansion
+> that stops for the user, not a judgement call. A task marked
+> **`Approval: required`** must never be executed autonomously — prepare it,
+> report it, and stop. Tasks below `## Open queue` are delivered history or
+> quarantined lineage and are never work to pick up.
 
 ## A26 — Malaysia market corrections
 
@@ -88,12 +97,73 @@
       Dependencies: None
       Done when: the four fields validate as one unit, an unknown postcode is refused, city/state are resolved rather than stored, and a real admin save round-trips. Verified live: saving a real merchant pickup address through `/admin/settings/store` normalized its `(+60)…` mobile to the stored `60…` form and displayed `Sungai Buloh, Selangor` resolved from the directory for postcode `47000`. The operator's actual name, number, and street address live in the store database only — never in this repository.
 
-- [ ] **A-200** — A seeded local store cannot save its own settings. **Found 2026-09-01, not fixed.**
-      `save-store` re-validates `site_url` on every submit and refuses anything that is not `https`. The local seed writes `http://<host>:8787` directly, bypassing that rule, so the settings form refuses to save *any* change — pickup address, tagline, logo — with `Alamat toko harus memakai https`, an error about a field the operator never touched. The validator is right for production; the seed is what violates it. Worked around during the demo by clearing the field, saving, and restoring the seeded value.
+## Open queue
+
+Ordered. `G-1` blocks nothing technically but is the only task with a live
+external consequence, so it is listed first and stops for the user.
+
+- [ ] **G-1** — Publish the repository. **Approval: required — never run autonomously.**
+      The working tree and local history are clean, but `origin/malaysia-market-audit` still carries two commits (`b34770b`, `9be8c3f`) whose test fixtures held a real person's full name, live Malaysian mobile, and home address. Local history was rebuilt without them; the remote was deliberately left untouched because overwriting it needs the user's explicit word. Publishing before the remote is replaced would put that individual's personal data on the public internet, where it can be indexed and cached even if the repository is made private again.
+      Risk: R4 — outward-facing, effectively irreversible once indexed, and personal data is involved.
+      Surface: git remote state and GitHub repository settings only. No file edits.
+      Non-scope: merging to `main`; deploying anything to Cloudflare; changing `.github/workflows/ci.yml`.
+      Dependencies: none
+      Done when, in this order, each step confirmed before the next:
+        1. The user has explicitly approved a force-push for this branch.
+        2. `git push --force-with-lease origin malaysia-market-audit` succeeds.
+        3. `git grep -I 'Nur Lailatul' $(git rev-list --all)` returns nothing on the remote-tracking refs.
+        4. Only then the repository visibility is changed, and `gh api repos/ongkipro/mybookcms --jq .visibility` reports `public`.
+      Note for whoever runs this: making the repository public also makes `DEFAULT_ADMIN_PASSWORD_HASH` and the documented `admin`/`admin` first-run behaviour publicly readable. That is already mitigated by `LOGIN-3`, but it becomes trivially discoverable. It also unblocks GitHub Actions, which has never run here — see `A-204`.
+
+- [ ] **A-200** — A seeded local store cannot save its own settings.
+      `save-store` re-validates `site_url` on every submit and refuses anything that is not `https`. The local seed writes `http://<host>:8787` directly, bypassing that rule, so the settings form refuses to save *any* change — pickup address, tagline, logo — reporting `Alamat toko harus memakai https`, an error about a field the operator never touched. The validator is right for production; the seed is what violates it. Worked around during the 2026-09-01 demo by clearing the field, saving, and restoring the seeded value.
+      Risk: R1 — one validation path, no schema or auth change.
+      Surface: `src/pages/api/admin/settings.ts`, `scripts/seed-preview-local.sql`, `src/lib/*.test.ts`.
+      Non-scope: relaxing the https rule for production; touching any other `save-*` action.
       Primary requirement: REQ-209
-      Constraints: None
-      Dependencies: None
-      Done when: a store seeded for local development can save its settings without editing an unrelated field, and a focused test covers a non-https `site_url` already present in the row.
+      Constraints: REQ-182
+      Dependencies: none
+      Done when: a store row whose stored `site_url` is already non-https can save an unrelated field without editing it, production still refuses a non-https value the operator actually submits, and a focused test covers both directions.
+
+- [ ] **A-201** — Remove developer-machine addresses from the repository.
+      `100.127.67.86` — a Tailscale address for one specific machine — is committed in `scripts/seed-preview-local.sql`, `src/lib/auth.test.ts`, and `docs/lineage/inherited-tasks.md`. It is not routable from the internet and is not a credential, so this does not block `G-1`; it is simply a private detail of one developer's network that no installer needs. Use a documentation address instead, not another real host.
+      Risk: R1 — fixture and seed data only.
+      Surface: `scripts/seed-preview-local.sql`, `src/lib/auth.test.ts`, `docs/lineage/inherited-tasks.md`.
+      Non-scope: rewriting git history to purge it from old commits; that trade is the user's to make, not this task's.
+      Primary requirement: REQ-210
+      Constraints: none
+      Dependencies: none
+      Done when: `git grep -nE '100\.(6[4-9]|[7-9][0-9]|1[0-2][0-9])\.' -- . ':!docs/lineage'` returns nothing at `HEAD`, `npm test` still passes, and a focused test pins that the local seed uses a documentation host.
+
+- [ ] **A-202** — Surface the weight ceiling before the final checkout step.
+      `A-193` made the refusal honest — it now names the buyer's own weight and the real ceiling — but the buyer still only learns the limit at the last step, after filling the whole form. The ceiling is merchant data read from the active rate rules, so it must be resolved rather than hardcoded anywhere.
+      Risk: R2 — buyer-visible checkout behaviour; route to `designer` before the first visual edit.
+      Surface: `src/components/storefront/forms/MalaysiaCheckoutForm.astro`, `src/pages/api/shipping-rates.ts`, `src/lib/malaysia-shipping.ts`, `src/lib/*.test.ts`.
+      Non-scope: changing any rate value or band; editing the shipping policy copy to state a fixed kilogram figure, which would become false the moment an operator edits a band.
+      Primary requirement: REQ-205
+      Constraints: REQ-189, REQ-204
+      Dependencies: A-193
+      Done when: the buyer sees the applicable limit before submitting rather than only at refusal, the figure is read from the active rules, and browser evidence at 390 and 1280 px shows it without layout overflow.
+
+- [ ] **A-203** — Settle whether the privacy notice must be bilingual. **Research first; may end as a Proposal rather than a change.**
+      `REQ-185` deliberately removed every public language selector and ships one `ms-MY` document language. Malaysia's PDPA 2010 is understood to require a written privacy notice in both Bahasa Malaysia and English, which would conflict with that decision for `/dasar-privasi` specifically. This has **not** been verified against a primary source and must not be treated as settled.
+      Risk: R2 — a legal-conformance question, not a code change yet.
+      Surface: research output plus, if and only if the requirement is confirmed and accepted, `src/data/legal.ts` and `PRD.md`.
+      Non-scope: reintroducing a general public language selector; producing a legal conclusion. Report what the primary source says and let the user decide.
+      Primary requirement: REQ-185
+      Constraints: REQ-203
+      Dependencies: none
+      Done when: the actual statutory text is cited from a primary source, the conflict with `REQ-185` is stated plainly, and either a `Proposal` requirement is recorded or the question is closed as not applicable — with the reasoning either way.
+
+- [ ] **A-204** — Get hosted CI to actually run. **Blocked externally; not a code defect.**
+      Both CI runs on `main` failed in about four seconds with `The job was not started because recent account payments have failed or your spending limit needs to be increased`. No job has ever executed, so no green CI has ever existed for this repository and local verification is the only real evidence. Nothing in `ci.yml` is wrong; it is verification-only and deploys nothing.
+      Risk: R0 for the repository; the blocker is account billing and is the user's to clear.
+      Surface: `.github/workflows/ci.yml` only if a real defect is found after runs start.
+      Non-scope: adding a deploy step; moving CI to another provider; disabling checks to make the badge green.
+      Primary requirement: REQ-200
+      Constraints: none
+      Dependencies: none — but note `G-1` would resolve it incidentally, since public repositories get free Actions minutes.
+      Done when: one CI run completes on a real commit and its check/test/build steps are observed to pass or fail on their own merits rather than never starting.
 
 ## Demo run 2026-09-01 — local only
 
@@ -125,11 +195,15 @@ No remote call, no deployment, no commit.
 
 ## Release gate
 
-- [ ] **MYS-5** — Release readiness for a specific install.
-      Carried over from the retired `UNIMPLEMENTED_SPECS.md`. This is not a product gap: the product does not depend on any external courier or payment service, and a missing provider contract must never be converted into a blocker.
+- [ ] **MYS-5** — Release readiness for a specific install. **Approval: required — never run autonomously.**
+      Carried over from the retired `UNIMPLEMENTED_SPECS.md`. This is not a product gap: the product does not depend on any external courier or payment service, and a missing provider contract must never be converted into a blocker. Nothing has been deployed to Cloudflare; the local database is the only one that exists.
+      Risk: R4 — production deployment.
+      Surface: none. This task deploys; it does not edit.
+      Non-scope: any code change. If verification fails, that failure becomes its own task in the Open queue rather than a fix made under a release.
       Primary requirement: REQ-182
-      Dependencies: A23–A25 complete locally
-      Done when: local migrations apply cleanly from empty, the full test suite and build pass, and the install's owner has given explicit deployment approval.
+      Constraints: REQ-180
+      Dependencies: the Open queue is empty of anything the release depends on, and A23–A25 remain green locally
+      Done when: local migrations apply cleanly to an empty database, `npm run check`, `npm test` and `npm run build` all pass on the exact revision being released, and the install's owner has given explicit deployment approval for that revision.
 
 ## A25 — Persistence, upload, and delivery integrity
 

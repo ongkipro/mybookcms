@@ -26,6 +26,12 @@ D1-owned postcode/weight policy. The operator admin remains Indonesian.
   not contain, the task is wrong — stop and say so rather than implementing it.
 - A `PRD.md` row marked `Proposal` is not accepted. Do not implement it, and do
   not treat it as a gap to close.
+- Work only `TASKS.md` > `## Open queue`. Each task there states `Risk`,
+  `Surface`, `Non-scope`, `Dependencies` and a runnable `Done when`. `Surface`
+  is the complete set of paths that task may edit; going outside it is scope
+  expansion that stops for the user. A task marked **`Approval: required`** is
+  never executed autonomously — prepare it, report it, stop. Sections below the
+  Open queue are delivered history, and `docs/lineage/` is another product's.
 
 ## Required practice
 
