@@ -4,6 +4,7 @@ import { defaultCrmTemplates, parseCrmTemplates } from "../../../lib/crm-templat
 import { parseEmbedAllowedOrigins, resolveEmbedAllowedOrigins } from "../../../lib/embed-security.ts";
 import { getEnvValue, getRuntimeEnv } from "../../../lib/env.ts";
 import { parseHeadlessAllowedOrigins } from "../../../lib/headless-api.ts";
+import { resolveStorePickup, validateStorePickup } from "../../../lib/store-pickup.ts";
 import {
   addStorefrontTemplate,
   listStorefrontTemplates,
@@ -22,6 +23,10 @@ type Payload = {
   site_url?: unknown;
   store_description?: unknown;
   store_tagline?: unknown;
+  pickup_name?: unknown;
+  pickup_phone?: unknown;
+  pickup_address?: unknown;
+  pickup_postcode?: unknown;
   store_logo?: unknown;
   storefront_template?: unknown;
   storefront_template_definition?: unknown;
@@ -44,6 +49,10 @@ type StoreRow = {
   crm_templates: string | null;
   embed_allowed_origins: string | null;
   headless_allowed_origins: string | null;
+  pickup_name: string | null;
+  pickup_phone: string | null;
+  pickup_address: string | null;
+  pickup_postcode: string | null;
 };
 
 const clean = (value: unknown, limit: number) =>
@@ -65,7 +74,8 @@ const getDatabase = (locals: App.Locals) => {
 const getStore = (database: D1Database) => database.prepare(`
   SELECT id, name, support_whatsapp, site_url, description, tagline, logo, locale,
          storefront_template, crm_templates, embed_allowed_origins,
-         headless_allowed_origins
+         headless_allowed_origins, pickup_name, pickup_phone, pickup_address,
+         pickup_postcode
   FROM stores ORDER BY id LIMIT 1
 `).first<StoreRow>();
 
@@ -87,8 +97,17 @@ export const GET: APIRoute = async ({ locals }) => {
       getEnvValue("PUBLIC_EMBED_ALLOWED_ORIGINS", runtime),
     );
     const templates = await listStorefrontTemplates(database, row.id);
+    // Resolved, not stored: the city/state shown always belong to the postcode.
+    const storedPickup = validateStorePickup({
+      name: row.pickup_name, phone: row.pickup_phone,
+      address: row.pickup_address, postcode: row.pickup_postcode,
+    });
+    const pickup = storedPickup.ok && storedPickup.value
+      ? await resolveStorePickup(database, storedPickup.value)
+      : null;
     return jsonOk({
       data: {
+        pickup: pickup ?? null,
         store: {
           name: row.name,
           support_whatsapp: row.support_whatsapp ?? "",
@@ -174,9 +193,22 @@ export const PUT: APIRoute = async ({ request, locals }) => {
       const templateId = clean(body.storefront_template, 40) || "compact-market";
       const resolution = await resolveStorefrontTemplate(database, templateId);
       if (resolution.state !== "ready") return jsonError("Template storefront tidak tersedia.", resolution.state === "unavailable" ? 503 : 400);
+      // The pickup address is all-or-nothing: a half-filled one would print a
+      // parcel label that cannot be delivered or collected.
+      const pickup = validateStorePickup({
+        name: body.pickup_name,
+        phone: body.pickup_phone,
+        address: body.pickup_address,
+        postcode: body.pickup_postcode,
+      });
+      if (!pickup.ok) return jsonError(pickup.error, 400);
+      if (pickup.value && !(await resolveStorePickup(database, pickup.value))) {
+        return jsonError("Poskod alamat pickup tidak dikenali.", 400);
+      }
       await database.prepare(`
         UPDATE stores SET name = ?, support_whatsapp = ?, site_url = ?,
-          description = ?, tagline = ?, logo = ?, storefront_template = ?
+          description = ?, tagline = ?, logo = ?, storefront_template = ?,
+          pickup_name = ?, pickup_phone = ?, pickup_address = ?, pickup_postcode = ?
         WHERE id = ?
       `).bind(
         name,
@@ -186,6 +218,10 @@ export const PUT: APIRoute = async ({ request, locals }) => {
         clean(body.store_tagline, 120) || null,
         clean(body.store_logo, 300) || null,
         templateId,
+        pickup.value?.name ?? null,
+        pickup.value?.phone ?? null,
+        pickup.value?.address ?? null,
+        pickup.value?.postcode ?? null,
         current.id,
       ).run();
       return jsonOk({ message: "Profil store disimpan." });

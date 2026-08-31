@@ -68,6 +68,40 @@ export const prerender = false;
           </span>
         </div>
       </div>
+      <fieldset class="border-t border-slate-200 p-5 md:p-6">
+        <legend class="sr-only">Alamat pickup</legend>
+        <div class="mb-4">
+          <h2 class="text-sm font-black text-slate-900">Alamat pickup</h2>
+          <p class="mt-1 text-[11px] leading-5 text-slate-500">
+            Alamat penjemputan kurir dan alamat pengembalian barang. Hanya data acuan operator —
+            sistem tidak mengirim apa pun ke penyedia logistik. Isi keempatnya atau kosongkan semua.
+            Bandar dan negeri diambil otomatis dari kode pos.
+          </p>
+        </div>
+        <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+          <label class="block">
+            <span class="mb-1.5 block text-xs font-black text-slate-700">Nama kontak</span>
+            <input id="pickupName" maxlength="100" autocomplete="name" class="admin-input-flat h-11 text-base md:text-sm" />
+          </label>
+          <label class="block">
+            <span class="mb-1.5 block text-xs font-black text-slate-700">Nomor telepon</span>
+            <input id="pickupPhone" inputmode="tel" maxlength="20" autocomplete="tel" placeholder="0123456789" class="admin-input-flat h-11 font-mono text-base md:text-sm" />
+            <span class="mt-1.5 block text-[11px] text-slate-500">Nomor Malaysia. Disimpan sebagai 60…</span>
+          </label>
+          <label class="block md:col-span-2">
+            <span class="mb-1.5 block text-xs font-black text-slate-700">Alamat lengkap</span>
+            <input id="pickupAddress" maxlength="500" autocomplete="street-address" class="admin-input-flat h-11 text-base md:text-sm" />
+          </label>
+          <label class="block">
+            <span class="mb-1.5 block text-xs font-black text-slate-700">Kode pos</span>
+            <input id="pickupPostcode" inputmode="numeric" maxlength="5" pattern="[0-9]{5}" autocomplete="postal-code" placeholder="47000" class="admin-input-flat h-11 font-mono text-base md:text-sm" />
+          </label>
+          <div class="block">
+            <span class="mb-1.5 block text-xs font-black text-slate-700">Bandar &amp; negeri</span>
+            <p id="pickupArea" class="flex h-11 items-center text-sm text-slate-500" role="status" aria-live="polite" aria-atomic="true">—</p>
+          </div>
+        </div>
+      </fieldset>
       <div class="flex flex-col gap-3 border-t border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between">
         <p id="storeStatus" class="min-h-5 text-xs font-bold text-slate-500" role="status" aria-live="polite" aria-atomic="true">Perubahan belum ada.</p>
         <button id="saveStore" type="submit" class="btn-blue min-h-11 w-full px-6 text-xs sm:w-auto">Simpan profil store</button>
@@ -131,7 +165,22 @@ export const prerender = false;
     const description = document.getElementById('storeDescription') as HTMLInputElement | null;
     const logo = document.getElementById('storeLogo') as HTMLInputElement | null;
     const template = document.getElementById('storeTemplate') as HTMLSelectElement | null;
+    const pickupName = document.getElementById('pickupName') as HTMLInputElement | null;
+    const pickupPhone = document.getElementById('pickupPhone') as HTMLInputElement | null;
+    const pickupAddress = document.getElementById('pickupAddress') as HTMLInputElement | null;
+    const pickupPostcode = document.getElementById('pickupPostcode') as HTMLInputElement | null;
+    const pickupArea = document.getElementById('pickupArea');
     const save = document.getElementById('saveStore') as HTMLButtonElement | null;
+    type Pickup = { name: string; phone: string; address: string; postcode: string; city: string; state: string } | null;
+    const applyPickup = (pickup: Pickup) => {
+      if (pickupName) pickupName.value = pickup?.name || '';
+      if (pickupPhone) pickupPhone.value = pickup?.phone || '';
+      if (pickupAddress) pickupAddress.value = pickup?.address || '';
+      if (pickupPostcode) pickupPostcode.value = pickup?.postcode || '';
+      // Never echoed from an input: the area is whatever the postcode directory
+      // says it is, so it cannot drift from the postcode beside it.
+      if (pickupArea) pickupArea.textContent = pickup ? `${pickup.city}, ${pickup.state}` : '—';
+    };
     const status = document.getElementById('storeStatus');
     const loading = document.getElementById('storeLoading');
     const embedForm = document.getElementById('embedOriginsForm') as HTMLFormElement | null;
@@ -226,8 +275,10 @@ export const prerender = false;
     fetch('/api/admin/settings', { headers: { Accept: 'application/json' } }).then(async response => {
       const payload = await response.json().catch(() => ({}));
       if (!response.ok || !payload.success) throw new Error(payload.error || 'Gagal memuat profil store.');
-      return payload.data.store;
+      // Pickup lives beside `store` in the payload, not inside it.
+      return { ...payload.data.store, pickup: payload.data.pickup ?? null };
     }).then(data => {
+      applyPickup(data.pickup);
       if (name) name.value = data.name || '';
       if (phone) phone.value = data.support_whatsapp || '';
       if (siteUrl) siteUrl.value = data.site_url || '';
@@ -274,11 +325,19 @@ export const prerender = false;
             store_description: description?.value,
             store_logo: logo?.value,
             storefront_template: template?.value,
+            pickup_name: pickupName?.value,
+            pickup_phone: pickupPhone?.value,
+            pickup_address: pickupAddress?.value,
+            pickup_postcode: pickupPostcode?.value,
           }),
         });
         const payload = await response.json().catch(() => ({}));
         if (!response.ok || !payload.success) throw new Error(payload.error || 'Gagal menyimpan profil store.');
         show(payload.message || 'Profil store tersimpan.', 'success');
+        // Re-read so the resolved area reflects the postcode just saved.
+        const reread = await fetch('/api/admin/settings', { headers: { Accept: 'application/json' } })
+          .then(r => r.json()).catch(() => null);
+        if (reread?.success) applyPickup(reread.data?.pickup ?? null);
       } catch (error) {
         show(error instanceof Error ? error.message : 'Gagal menyimpan profil store.', 'error');
       } finally {

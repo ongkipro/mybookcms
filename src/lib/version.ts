@@ -10,10 +10,12 @@ export type CmsVersionInfo = {
 export const CMS_VERSION: CmsVersionInfo = {
   version: "1.4.0",
   channel: "production",
-  // Malaysia attribution recovery adds migration 0057; schemaVersion must
-  // match the ordered migration files that Worker boot applies.
+  // The store pickup address adds migration 0058; schemaVersion must match the
+  // ordered migration files that Worker boot applies. Getting this wrong is not
+  // cosmetic: boot refuses with SCHEMA_UPGRADE_CHAIN_INVALID and every route
+  // answers 503 until it agrees.
   releaseTag: "2026.08-landing",
   coreEngine: "Astro 7 SSR + Cloudflare Workers",
-  schemaVersion: 58,
-  lastUpdated: "2026-08-25",
+  schemaVersion: 59,
+  lastUpdated: "2026-09-01",
 };
