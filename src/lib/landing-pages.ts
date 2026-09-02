@@ -12,7 +12,6 @@ type D1Statement = ReturnType<D1Database["prepare"]>;
 export type LandingSectionType = "html" | "form";
 
 export type LandingFormConfig = {
-  mode?: "hybrid" | "middle" | "full";
   selected_variant_id?: string;
   section_title?: string;
   button_text?: string;
@@ -129,9 +128,7 @@ export function buildLandingPageDuplicateInput(
       sort_order: section.sort_order,
       type: section.type,
       content_html: section.content_html,
-      form_config: section.form_config
-        ? { ...section.form_config }
-        : null,
+      form_config: normalizeFormConfig(section.form_config),
     })),
   };
 }
@@ -168,14 +165,22 @@ function getDatabase(locals: App.Locals): D1Database {
   return database;
 }
 
+function normalizeFormConfig(value: unknown): LandingFormConfig | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const source = value as Record<string, unknown>;
+  const config: LandingFormConfig = {};
+  for (const key of ["selected_variant_id", "section_title", "button_text"] as const) {
+    if (typeof source[key] === "string" && source[key].trim()) config[key] = source[key].trim();
+  }
+  return Object.keys(config).length ? config : null;
+}
+
 function parseFormConfig(value: string | null): LandingFormConfig | null {
   if (!value) return null;
 
   try {
     const parsed = JSON.parse(value);
-    return parsed && typeof parsed === "object"
-      ? (parsed as LandingFormConfig)
-      : null;
+    return normalizeFormConfig(parsed);
   } catch {
     return null;
   }
@@ -207,7 +212,8 @@ function attachSections(
 }
 
 function serializeFormConfig(config: LandingFormConfig | null | undefined) {
-  return config ? JSON.stringify(config) : null;
+  const normalized = normalizeFormConfig(config);
+  return normalized ? JSON.stringify(normalized) : null;
 }
 
 function normalizeActive(value: boolean | number | undefined, fallback = 1) {

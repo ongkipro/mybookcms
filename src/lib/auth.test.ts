@@ -379,6 +379,7 @@ test('every admin role is confined to the routes it owns', () => {
   // admin: explicit operational allowlist, excluding operator management.
   assert.equal(canAccessAdminRoute('admin', '/admin/settings'), true);
   assert.equal(canAccessAdminRoute('admin', '/api/admin/orders'), true);
+  assert.equal(canAccessAdminRoute('admin', '/api/admin/payments'), true);
   assert.equal(canAccessAdminRoute('admin', '/api/admin/unknown-workspace'), false);
   assert.equal(canAccessAdminRoute('admin', '/api/admin/payment-reconciliation'), false);
   assert.equal(canAccessAdminRoute('admin', '/admin/settings/access'), false);
@@ -395,6 +396,7 @@ test('every admin role is confined to the routes it owns', () => {
   assert.equal(canAccessAdminRoute('advertiser', '/api/admin/landing-pages/12'), true);
   assert.equal(canAccessAdminRoute('advertiser', '/admin/orders'), false);
   assert.equal(canAccessAdminRoute('advertiser', '/api/admin/orders'), false);
+  assert.equal(canAccessAdminRoute('advertiser', '/api/admin/payments'), false);
   assert.equal(canAccessAdminRoute('advertiser', '/api/admin/unknown-workspace'), false);
   assert.equal(canAccessAdminRoute('advertiser', '/api/admin/payment-reconciliation'), false);
   assert.equal(canAccessAdminRoute('advertiser', '/admin/settings/access'), false);
@@ -408,6 +410,7 @@ test('every admin role is confined to the routes it owns', () => {
   assert.equal(canAccessAdminRoute('customer_service', '/api/admin/shipping/label'), true);
   assert.equal(canAccessAdminRoute('customer_service', '/admin/products'), false);
   assert.equal(canAccessAdminRoute('customer_service', '/api/admin/products'), false);
+  assert.equal(canAccessAdminRoute('customer_service', '/api/admin/payments'), false);
   assert.equal(canAccessAdminRoute('customer_service', '/admin/ads'), false);
   assert.equal(canAccessAdminRoute('customer_service', '/api/admin/access'), false);
 

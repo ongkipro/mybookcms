@@ -1,0 +1,213 @@
+---
+import {
+  exchangeDokuCallbackQuery,
+  loadDokuPaymentAccessFromCookie,
+  summarizeDokuPayment,
+  type PublicDokuPaymentStatus,
+} from "../../../lib/doku-payment-access.ts";
+import { getEnvValue, getRuntimeEnv } from "../../../lib/env.ts";
+
+export const prerender = false;
+
+const runtime = getRuntimeEnv(Astro.locals);
+const database = runtime?.OMS_DB as D1Database | undefined;
+const rootSecret = getEnvValue("AUTH_SECRET", runtime);
+const policyHeaders = {
+  "Cache-Control": "no-store",
+  "Referrer-Policy": "no-referrer",
+  "X-Robots-Tag": "noindex, nofollow",
+};
+for (const [name, value] of Object.entries(policyHeaders)) {
+  Astro.response.headers.set(name, value);
+}
+
+const exchange = await exchangeDokuCallbackQuery(database, rootSecret, Astro.url);
+if (exchange.type === "redirect") {
+  return new Response(null, { status: exchange.status, headers: exchange.headers });
+}
+
+const access = database?.prepare && rootSecret
+  ? await loadDokuPaymentAccessFromCookie(database, rootSecret, Astro.request.headers.get("Cookie"))
+  : null;
+const payment: PublicDokuPaymentStatus | null = access ? summarizeDokuPayment(access) : null;
+const stateCopy = {
+  paid: ["Pembayaran berjaya", "Pembayaran telah disahkan."],
+  failed: ["Pembayaran belum selesai", "Bayaran belum diterima. Anda boleh mencuba semula jika stok masih tersedia."],
+  expired: ["Pembayaran belum selesai", "Sesi pembayaran telah tamat. Anda boleh mencuba semula jika stok masih tersedia."],
+  attention_required: ["Pembayaran belum selesai", "Status pembayaran belum dapat disahkan. Jangan buat pembayaran baharu dahulu."],
+  created: ["Pembayaran belum selesai", "Anda telah kembali sebelum pembayaran disahkan."],
+  pending: ["Pembayaran belum selesai", "Anda telah kembali sebelum pembayaran disahkan."],
+} as const;
+const currentCopy = payment ? stateCopy[payment.local_status] : null;
+const pageTitle = currentCopy?.[0] || "Maklumat pembayaran tidak tersedia";
+const pageIntro = currentCopy?.[1] || "Pautan ini tidak dapat disahkan atau sudah tidak sah.";
+const statusText = pageTitle;
+const amountText = payment
+  ? new Intl.NumberFormat("ms-MY", { style: "currency", currency: "MYR" }).format(payment.total_amount / 100)
+  : "—";
+---
+
+<!doctype html>
+<html lang="ms">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>{pageTitle}</title>
+    <style>
+      :root { color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      body { margin: 0; background: #f5f5f5; color: #111; }
+      main { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; box-sizing: border-box; }
+      .card { width: min(100%, 440px); border: 1px solid #e5e5e5; background: #fff; }
+      .section { padding: 24px; border-top: 1px solid #e5e5e5; }
+      .section:first-child { border-top: 0; }
+      .eyebrow { margin: 0 0 10px; font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: #555; }
+      h1 { margin: 0; font-size: 28px; line-height: 1.08; letter-spacing: -.04em; }
+      p { margin: 10px 0 0; color: #555; line-height: 1.6; }
+      dl { margin: 0; display: grid; gap: 12px; }
+      div.row { display: flex; justify-content: space-between; gap: 16px; font-size: 14px; }
+      dt { color: #555; }
+      dd { margin: 0; text-align: right; font-weight: 650; }
+      .status { display: inline-flex; margin-top: 16px; padding: 8px 11px; border: 1px solid #e5e5e5; background: #f5f5f5; font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+      .actions { display: grid; gap: 10px; margin-top: 18px; }
+      button, a.button { min-height: 46px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #111; background: #111; color: #fff; padding: 0 16px; font: inherit; font-size: 14px; font-weight: 700; text-decoration: none; cursor: pointer; }
+      button.secondary, a.secondary { background: #fff; color: #111; }
+      button[disabled] { cursor: not-allowed; opacity: .45; }
+      .note { font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <article id="payment-card" class="card" aria-live="polite" aria-busy="false">
+        <section class="section">
+          <p class="eyebrow">DOKU Malaysia</p>
+          <h1 id="payment-heading" tabindex="-1">{pageTitle}</h1>
+          <p>{pageIntro}</p>
+          <span id="payment-badge" class="status">{statusText}</span>
+        </section>
+
+        {payment ? (
+          <section class="section">
+            <dl>
+              <div class="row"><dt>Nombor pesanan</dt><dd id="order-number">{payment.order_number}</dd></div>
+              <div class="row"><dt>Jumlah</dt><dd id="amount">{amountText}</dd></div>
+              <div class="row"><dt>Status pembayaran</dt><dd id="payment-status">{statusText}</dd></div>
+            </dl>
+            <p id="payment-message" class="note" role="status" tabindex="-1">{pageIntro}</p>
+            <div class="actions">
+              <button id="refresh-status" type="button" class="secondary" hidden={!payment.can_reconcile} disabled={!payment.can_reconcile}>Semak status DOKU</button>
+              <button id="retry-payment" type="button" hidden={!payment.can_retry} disabled={!payment.can_retry}>Cuba bayar semula</button>
+              <a class="button secondary" href="/jejak-pesanan">Semak pesanan</a>
+              <a class="button secondary" href="/produk">Lihat produk</a>
+            </div>
+          </section>
+        ) : (
+          <section class="section">
+            <p>Sesi pembayaran tidak ditemui atau sudah tamat. Semak semula menggunakan nombor pesanan anda.</p>
+            <div class="actions">
+              <a class="button" href="/jejak-pesanan">Semak pesanan</a>
+              <a class="button secondary" href="/produk">Lihat produk</a>
+            </div>
+          </section>
+        )}
+      </article>
+    </main>
+
+    <script>
+      import { navigateToDokuCheckout } from '../../../lib/checkout-navigation';
+      (window as typeof window & { __MYBOOK_DOKU_NAV__?: (url: string) => boolean }).__MYBOOK_DOKU_NAV__ = navigateToDokuCheckout;
+    </script>
+
+    {payment && (
+      <script is:inline define:vars={{ initialPayment: payment }}>
+        const money = (value) => new Intl.NumberFormat('ms-MY', { style: 'currency', currency: 'MYR' }).format(Math.round(Number(value || 0)) / 100);
+        const stateCopy = {
+          paid: ['Pembayaran berjaya', 'Pembayaran telah disahkan.'],
+          failed: ['Pembayaran belum selesai', 'Bayaran belum diterima. Anda boleh mencuba semula jika stok masih tersedia.'],
+          expired: ['Pembayaran belum selesai', 'Sesi pembayaran telah tamat. Anda boleh mencuba semula jika stok masih tersedia.'],
+          attention_required: ['Pembayaran belum selesai', 'Status pembayaran belum dapat disahkan. Jangan buat pembayaran baharu dahulu.'],
+          created: ['Pembayaran belum selesai', 'Anda telah kembali sebelum pembayaran disahkan.'],
+          pending: ['Pembayaran belum selesai', 'Anda telah kembali sebelum pembayaran disahkan.'],
+        };
+        let currentPayment = initialPayment;
+        const setText = (id, value) => {
+          const element = document.getElementById(id);
+          if (element) element.textContent = value || '—';
+        };
+        const setMessage = (value, isError = false) => {
+          const message = document.getElementById('payment-message');
+          if (!message) return;
+          message.textContent = value;
+          message.setAttribute('role', isError ? 'alert' : 'status');
+          if (isError) message.focus();
+        };
+        const setPayment = (payment) => {
+          currentPayment = payment;
+          const copy = stateCopy[payment.local_status] || stateCopy.attention_required;
+          setText('payment-heading', copy[0]);
+          setText('payment-badge', copy[0]);
+          setText('order-number', payment.order_number);
+          setText('amount', money(payment.total_amount));
+          setText('payment-status', copy[0]);
+          setMessage(copy[1]);
+          const refresh = document.getElementById('refresh-status');
+          const retry = document.getElementById('retry-payment');
+          if (refresh) { refresh.hidden = !payment.can_reconcile; refresh.disabled = !payment.can_reconcile; }
+          if (retry) { retry.hidden = !payment.can_retry; retry.disabled = !payment.can_retry; }
+        };
+        const postPayment = async (url) => {
+          const response = await fetch(url, {
+            method: 'POST',
+            credentials: 'same-origin',
+            cache: 'no-store',
+            referrerPolicy: 'no-referrer',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ order_number: initialPayment.order_number }),
+          });
+          return response.json();
+        };
+        document.getElementById('refresh-status')?.addEventListener('click', async () => {
+          const card = document.getElementById('payment-card');
+          const button = document.getElementById('refresh-status');
+          card?.setAttribute('aria-busy', 'true');
+          if (button) button.disabled = true;
+          setMessage('Sedang menyemak status DOKU...');
+          try {
+            const data = await postPayment('/api/payments/doku/status');
+            if (data?.success && data.payment) {
+              setPayment(data.payment);
+              setMessage('Status pembayaran telah dikemas kini.');
+            } else {
+              setMessage(data?.error || 'Status belum dapat disahkan.', true);
+            }
+          } catch {
+            setMessage('Status belum dapat disahkan.', true);
+          } finally {
+            card?.setAttribute('aria-busy', 'false');
+            if (button) button.disabled = !currentPayment.can_reconcile;
+          }
+        });
+        document.getElementById('retry-payment')?.addEventListener('click', async () => {
+          const card = document.getElementById('payment-card');
+          const button = document.getElementById('retry-payment');
+          card?.setAttribute('aria-busy', 'true');
+          if (button) button.disabled = true;
+          setMessage('Sedang menyediakan pembayaran semula...');
+          try {
+            const data = await postPayment('/api/payments/doku/retry');
+            if (data?.success && data.checkout_url && window.__MYBOOK_DOKU_NAV__?.(data.checkout_url)) {
+              return;
+            }
+            setMessage(data?.error || 'Pembayaran belum dapat dicuba semula.', true);
+          } catch {
+            setMessage('Pembayaran belum dapat dicuba semula.', true);
+          } finally {
+            card?.setAttribute('aria-busy', 'false');
+            if (button) button.disabled = !currentPayment.can_retry;
+          }
+        });
+        if (initialPayment.can_reconcile) document.getElementById('refresh-status')?.click();
+      </script>
+    )}
+  </body>
+</html>

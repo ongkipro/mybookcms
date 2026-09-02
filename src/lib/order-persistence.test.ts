@@ -79,6 +79,7 @@ const input: PersistOrderInput = {
   }),
   metaPurchase: {
     eventSourceUrl: "https://store.example/produk/jurnal-fokus-harian",
+    externalId: "0123456789abcdef0123456789abcdef",
     clientIp: "203.0.113.10",
     userAgent: "MyBookCMS test agent",
   },
@@ -111,6 +112,8 @@ test("accepted order and configured Meta Purchase share one D1 batch", async () 
   assert.equal(payload.data[0]?.custom_data.order_id, "INV-10001");
   assert.equal(payload.data[0]?.user_data.fbp, "fb.1.1720000000000.browser123");
   assert.equal(payload.data[0]?.user_data.fbc, "fb.1.1720000000000.click123");
+  assert.notEqual(payload.data[0]?.user_data.external_id, undefined);
+  assert.notEqual(payload.data[0]?.user_data.external_id, payload.data[0]?.user_data.ph);
 });
 
 test("order persistence omits Meta outbox without configured signal context", async () => {

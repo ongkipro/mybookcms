@@ -42,7 +42,6 @@ type Product = {
 };
 
 type FormConfig = {
-  mode?: "hybrid" | "middle" | "full";
   selected_variant_id?: string;
   section_title?: string;
   button_text?: string;
@@ -276,7 +275,7 @@ export default function LandingPageEditor({ landingPageId }: Props) {
     const newId = crypto.randomUUID();
     setSections([
       ...sections,
-      { id: newId, type: "form", form_config: { mode: "hybrid" } },
+      { id: newId, type: "form", form_config: {} },
     ]);
     setEditingSectionId(newId);
   };
@@ -743,28 +742,6 @@ export default function LandingPageEditor({ landingPageId }: Props) {
                             {isEditing ? (
                               <div className="space-y-2 text-xs">
                                 <div>
-                                  <label className="text-[11px] font-semibold text-slate-600">Layout Mode</label>
-                                  <Select
-                                    value={section.form_config?.mode || "hybrid"}
-                                    onValueChange={(value) => {
-                                      if (!value) return;
-                                      updateSection(section.id, {
-                                        form_config: { ...section.form_config, mode: value },
-                                      });
-                                    }}
-                                  >
-                                    <SelectTrigger className="h-8 text-xs bg-white">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="hybrid">Hybrid Malaysia (Full Checkout)</SelectItem>
-                                      <SelectItem value="middle">Middle (Form Ringkas + Konfirmasi CS)</SelectItem>
-                                      <SelectItem value="full">Full (Alamat + Ongkir + Pembayaran)</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-
-                                <div>
                                   <label className="text-[11px] font-semibold text-slate-600">Varian Default</label>
                                   <Select
                                     value={section.form_config?.selected_variant_id || "none"}
@@ -808,9 +785,9 @@ export default function LandingPageEditor({ landingPageId }: Props) {
                                 <div className="flex items-center gap-2">
                                   <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
                                   <div>
-                                    <span className="font-semibold">Native Form Checkout COD</span>
+                                    <span className="font-semibold">Checkout Malaysia lengkap</span>
                                     <div className="text-[10px] text-emerald-700">
-                                      Mode: {section.form_config?.mode || "hybrid"} • Anchor: #checkout-form
+                                      Alamat, poskod, ongkir, dan metode pembayaran
                                     </div>
                                   </div>
                                 </div>

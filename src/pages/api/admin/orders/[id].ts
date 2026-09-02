@@ -1,7 +1,8 @@
 import type { APIRoute } from "astro";
 import { z } from "zod";
 import { jsonError, jsonOk } from "../../../../lib/api.ts";
-import { getRuntimeEnv } from "../../../../lib/env.ts";
+import { getEnvValue, getRuntimeEnv } from "../../../../lib/env.ts";
+import type { AdminRole } from "../../../../lib/auth.ts";
 import { isValidMalaysiaPhone, normalizeMalaysiaPhone } from "../../../../lib/validation.ts";
 import {
   applyOrderLifecycleMutation,
@@ -14,6 +15,8 @@ import { defaultCrmTemplates, parseCrmTemplates } from "../../../../lib/crm-temp
 import { resolveAdminOrderDeliveryPatch } from "../../../../lib/admin-order-delivery.ts";
 import { MalaysiaLocationError } from "../../../../lib/malaysia-locations.ts";
 import { MalaysiaShippingError } from "../../../../lib/malaysia-shipping.ts";
+import { DokuReconciliationError, reconcileDokuOrder } from "../../../../lib/doku-reconciliation.ts";
+import { loadPaymentOperations, sanitizeAdminOrder } from "../../../../lib/payment-operations.ts";
 
 export const prerender = false;
 
@@ -26,6 +29,36 @@ const updateSchema = z.object({
   payment_status: z.enum(["unpaid", "pending", "paid", "failed", "refunded", "cancelled"]).optional(),
   shipping_status: z.enum(["pending", "processing", "shipped", "delivered", "returned", "cancelled"]).optional(),
 }).strict();
+
+async function readBoundedPaymentAction(request: Request) {
+  if (request.headers.get("Content-Type")?.split(";", 1)[0]?.trim().toLowerCase() !== "application/json") return null;
+  const reader = request.body?.getReader();
+  if (!reader) return null;
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.byteLength;
+    if (size > 1_024) {
+      await reader.cancel();
+      return null;
+    }
+    chunks.push(value);
+  }
+  const bytes = new Uint8Array(size);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  try {
+    const body = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
+    return body && typeof body === "object" && !Array.isArray(body) ? body as Record<string, unknown> : null;
+  } catch {
+    return null;
+  }
+}
 
 const databaseFrom = (locals: App.Locals) => {
   const database = getRuntimeEnv(locals)?.OMS_DB as D1Database | undefined;
@@ -50,8 +83,8 @@ async function loadOrder(database: D1Database, rawKey: string) {
   `).bind(key, key, key).first<Record<string, unknown>>();
 }
 
-async function responseData(database: D1Database, order: Record<string, unknown>) {
-  const [items, storeResult] = await database.batch([
+async function responseData(database: D1Database, order: Record<string, unknown>, role: AdminRole, rootSecret: string) {
+  const [items, storeResult, paymentOperations] = await Promise.all([
     database.prepare(`
       SELECT oi.id, oi.variant_id, oi.quantity, oi.unit_price,
         pv.title AS variant_title, pv.sku AS variant_sku,
@@ -60,19 +93,18 @@ async function responseData(database: D1Database, order: Record<string, unknown>
       INNER JOIN product_variants pv ON pv.id = oi.variant_id
       INNER JOIN products p ON p.id = pv.product_id
       WHERE oi.order_id = ? ORDER BY oi.id
-    `).bind(Number(order.id)),
-    database.prepare("SELECT name, crm_templates FROM stores WHERE id = ? LIMIT 1").bind(Number(order.store_id)),
+    `).bind(Number(order.id)).all(),
+    database.prepare("SELECT name, crm_templates FROM stores WHERE id = ? LIMIT 1")
+      .bind(Number(order.store_id)).first<{ name?: string; crm_templates?: string | null }>(),
+    loadPaymentOperations(database, Number(order.id), role, rootSecret),
   ]);
-  const store = (storeResult.results?.[0] || {}) as { name?: string; crm_templates?: string | null };
-  const publicOrder = { ...order };
-  delete publicOrder.courier_code;
-  delete publicOrder.courier_service;
-  delete publicOrder.cnote_no;
+  const store = storeResult || {};
   return {
-    ...publicOrder,
+    ...sanitizeAdminOrder(order),
     seller_name: store.name || "Kedai Kami",
     crm_templates: store.crm_templates ? parseCrmTemplates(store.crm_templates) : { ...defaultCrmTemplates },
     items: items.results ?? [],
+    payment_operations: paymentOperations,
   };
 }
 
@@ -81,7 +113,43 @@ export const GET: APIRoute = async ({ params, locals }) => {
   if (!database) return jsonError("Database order belum tersedia.", 503);
   const order = await loadOrder(database, String(params.id || ""));
   if (!order) return jsonError("Order tidak ditemukan.", 404);
-  return jsonOk({ data: await responseData(database, order) });
+  return jsonOk({ data: await responseData(database, order, locals.admin!.role, getEnvValue("AUTH_SECRET", getRuntimeEnv(locals))) });
+};
+
+export const POST: APIRoute = async ({ params, request, locals }) => {
+  const database = databaseFrom(locals);
+  if (!database) return jsonError("Database order belum tersedia.", 503);
+  if (locals.admin?.role !== "owner" && locals.admin?.role !== "admin") {
+    return jsonError("Pemeriksaan DOKU hanya dapat dijalankan Owner atau Admin.", 403);
+  }
+  const body = await readBoundedPaymentAction(request);
+  if (!body || body.action !== "reconcile_doku") return jsonError("Aksi pembayaran tidak valid.", 400);
+  const order = await loadOrder(database, String(params.id || ""));
+  if (!order) return jsonError("Order tidak ditemukan.", 404);
+  if (order.payment_method !== "doku") return jsonError("Order ini tidak menggunakan DOKU.", 409);
+  const runtime = getRuntimeEnv(locals);
+  const rootSecret = getEnvValue("AUTH_SECRET", runtime);
+  if (!rootSecret) return jsonError("Konfigurasi DOKU belum tersedia.", 503);
+  try {
+    await reconcileDokuOrder(database, rootSecret, Number(order.id));
+    const refreshed = await loadOrder(database, String(order.id));
+    return jsonOk({
+      message: "Status pembayaran DOKU telah diperiksa.",
+      data: refreshed ? await responseData(database, refreshed, locals.admin.role, rootSecret) : null,
+    });
+  } catch (error) {
+    if (error instanceof DokuReconciliationError) {
+      const message = error.code === "LEASED"
+        ? "Status sedang diperiksa oleh proses lain."
+        : error.code === "COOLDOWN"
+          ? "Jadwal pemeriksaan DOKU berikutnya belum tiba."
+        : error.code === "NOT_ELIGIBLE"
+          ? "Pembayaran ini tidak memenuhi syarat pemeriksaan."
+          : "Status DOKU belum dapat diperiksa.";
+      return jsonError(message, error.status);
+    }
+    return jsonError("Status DOKU belum dapat diperiksa.", 502);
+  }
 };
 
 export const PATCH: APIRoute = async ({ params, request, locals }) => {
@@ -93,6 +161,9 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
     const current = await loadOrder(database, String(params.id || ""));
     if (!current) return jsonError("Order tidak ditemukan.", 404);
     const body = parsed.data;
+    if (current.payment_method === "doku" && body.payment_status !== undefined) {
+      return jsonError("Status pembayaran DOKU hanya dapat berubah dari hasil provider terverifikasi.", 409);
+    }
     const normalizedPhone = body.customer_phone === undefined
       ? undefined
       : normalizeMalaysiaPhone(body.customer_phone);
@@ -147,7 +218,7 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
       });
     }
     const order = await loadOrder(database, String(current.id));
-    return jsonOk({ message: `Order ${current.order_number} diperbarui.`, data: order ? await responseData(database, order) : null });
+    return jsonOk({ message: `Order ${current.order_number} diperbarui.`, data: order ? await responseData(database, order, locals.admin!.role, getEnvValue("AUTH_SECRET", getRuntimeEnv(locals))) : null });
   } catch (error) {
     if (error instanceof OrderLifecycleError) return jsonError(error.message, error.status);
     if (error instanceof MalaysiaLocationError || error instanceof MalaysiaShippingError) {

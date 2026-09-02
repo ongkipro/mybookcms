@@ -80,9 +80,11 @@ export const GET: APIRoute = async ({ params, request, locals }) => {
             comment: r.comment,
             rating: r.rating,
           })),
+          form: {
+            render_url: `/full-form?product_id=${product.catalogId}`,
+            embed_url: `/embed/form?product_id=${product.catalogId}`,
+          },
           forms: {
-            hybrid_url: `/hybrid-form?product_id=${product.catalogId}`,
-            middle_url: `/middle-form?product_id=${product.catalogId}`,
             full_url: `/full-form?product_id=${product.catalogId}`,
           },
         },

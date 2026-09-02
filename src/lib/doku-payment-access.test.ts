@@ -1,0 +1,617 @@
+import assert from "node:assert/strict";
+import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import test, { after, before } from "node:test";
+import { getPlatformProxy, type PlatformProxy } from "wrangler";
+import {
+  buildDokuAccessCookie,
+  exchangeDokuCallbackQuery,
+  handleDokuRetryRequest,
+  handleDokuStatusRequest,
+  loadDokuPaymentAccessFromCookie,
+} from "./doku-payment-access.ts";
+import { createDokuReturnToken, createDokuHostedCheckout, type DokuCheckoutInput } from "./doku-checkout.ts";
+import { saveDokuConfigDraft } from "./doku-config.ts";
+import { applyDokuPaymentFact } from "./doku-payment-lifecycle.ts";
+import { createDokuGlobalResponseSignature } from "./doku-signature.ts";
+import { splitMigrationStatements } from "./schema-version.ts";
+import { ALL as retryMethodFallback } from "../pages/api/payments/doku/retry.ts";
+import { ALL as statusMethodFallback } from "../pages/api/payments/doku/status.ts";
+
+type TestEnv = { OMS_DB: D1Database };
+
+const ROOT_SECRET = "payment-access-test-auth-secret-at-least-32-chars";
+const CLIENT_ID = "BRN-001-0000001";
+const API_KEY = "doku_ak_test_example_123456";
+const SECRET_KEY = "doku_sk_test_example_654321";
+const NOW = new Date("2026-09-01T07:00:00.000Z");
+
+let platform: PlatformProxy<TestEnv>;
+let database: D1Database;
+let platformDirectory = "";
+
+before(async () => {
+  platformDirectory = mkdtempSync(join(tmpdir(), "mybookcms-doku-access-"));
+  const configPath = join(platformDirectory, "wrangler.jsonc");
+  writeFileSync(configPath, JSON.stringify({
+    name: "mybookcms-doku-access",
+    compatibility_date: "2026-08-01",
+    d1_databases: [{
+      binding: "OMS_DB",
+      database_name: "doku-access",
+      database_id: "00000000-0000-4000-8000-000000000004",
+    }],
+  }));
+  platform = await getPlatformProxy<TestEnv>({
+    configPath,
+    envFiles: [],
+    persist: false,
+    remoteBindings: false,
+  });
+  database = platform.env.OMS_DB;
+
+  const migrationsDirectory = new URL("../db/migrations/", import.meta.url);
+  for (const file of readdirSync(migrationsDirectory).sort()) {
+    if (!file.endsWith(".sql")) continue;
+    const sql = readFileSync(new URL(file, migrationsDirectory), "utf8");
+    await database.batch(
+      splitMigrationStatements(sql).map((statement) => database.prepare(statement)),
+    );
+  }
+  await database.batch([
+    database.prepare("INSERT INTO stores (id, name, slug, created_at) VALUES (?, ?, ?, ?)")
+      .bind(1, "DOKU Access Store", "doku-access", NOW.toISOString()),
+    database.prepare(`
+      INSERT INTO products (id, store_id, title, slug, is_active, created_at)
+      VALUES (?, ?, ?, ?, 1, ?)
+    `).bind(34000, 1, "Jurnal Akses", "jurnal-akses", NOW.toISOString()),
+  ]);
+  await saveDokuConfigDraft(database, ROOT_SECRET, {
+    environment: "sandbox",
+    clientId: CLIENT_ID,
+    apiKey: API_KEY,
+    secretKey: SECRET_KEY,
+    enabledChannels: ["INTERNET_BANKING_FPX", "EWALLET_TNG"],
+  });
+  await database.prepare("UPDATE payment_provider_configs SET is_enabled = 1").run();
+});
+
+after(async () => {
+  await platform?.dispose();
+  if (platformDirectory) rmSync(platformDirectory, { recursive: true, force: true });
+});
+
+async function seedVariant(id: number, stock = 3) {
+  await database.prepare(`
+    INSERT INTO product_variants
+      (id, product_id, sku, title, price, weight_grams, stock)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, 34000, `ACCESS-${id}`, `Varian ${id}`, 3290, 500, stock).run();
+}
+
+function checkoutInput(variantId: number, submitToken: string): DokuCheckoutInput {
+  return {
+    submitToken,
+    customerName: "Aina Rahman",
+    customerPhone: "60123456789",
+    customerEmail: "aina@example.com",
+    address: "12 Jalan Buku, Taman Fokus",
+    province: "Johor",
+    city: "Johor Bahru",
+    district: "Johor Bahru",
+    postalCode: "80000",
+    variantKey: String(variantId),
+    quantity: 1,
+    shippingCost: 800,
+    requestUrl: "https://shop.example/api/submit-order",
+    clientIp: "203.0.113.40",
+    userAgent: "MyBookCMS payment access test browser",
+  };
+}
+
+async function signedResponse(body: string, timestamp = new Date(NOW.getTime() + 1_000).toISOString()) {
+  return new Response(body, {
+    headers: {
+      "Client-Id": CLIENT_ID,
+      "Content-Type": "application/json",
+      "Response-Timestamp": timestamp,
+      Signature: await createDokuGlobalResponseSignature({
+        clientId: CLIENT_ID,
+        responseTimestamp: timestamp,
+        rawBody: body,
+        secretKey: SECRET_KEY,
+      }),
+    },
+  });
+}
+
+function decodeRequestBody(body: BodyInit | null | undefined): string {
+  if (typeof body === "string") return body;
+  if (body instanceof ArrayBuffer) return new TextDecoder().decode(body);
+  if (body instanceof Uint8Array) return new TextDecoder().decode(body);
+  return "";
+}
+
+function checkoutFetch(observe: (payload: Record<string, any>, headers: Headers) => Promise<void> | void = () => {}) {
+  return (async (_url: string | URL | Request, init?: RequestInit) => {
+    const payload = JSON.parse(decodeRequestBody(init?.body)) as Record<string, any>;
+    await observe(payload, new Headers(init?.headers));
+    return signedResponse(JSON.stringify({
+      id: payload.id,
+      order: {
+        amount: payload.order.amount,
+        invoice_number: payload.order.invoice_number,
+        currency: "MYR",
+        expired_at: payload.order.expired_at,
+      },
+      payment: {
+        checkout_url: `https://sandbox.doku.com/checkout-link-v3/${payload.id}`,
+        status: "PENDING",
+        state: "INIT",
+      },
+    }));
+  }) as typeof fetch;
+}
+
+async function createAttempt(variantId: number, token: string, stock = 3) {
+  await seedVariant(variantId, stock);
+  return createDokuHostedCheckout(database, ROOT_SECRET, checkoutInput(variantId, token), {
+    now: () => NOW,
+    fetch: checkoutFetch(),
+  });
+}
+
+type AttemptFacts = {
+  attempt_id: string;
+  provider_reference: string;
+  merchant_invoice: string;
+  amount_sen: number;
+  local_status: string;
+  order_id: number;
+  order_number: string;
+  payment_status: string;
+  stock_restored_at: string | null;
+  expires_at: string | null;
+};
+
+async function attemptFacts(token: string) {
+  const facts = await database.prepare(`
+    SELECT pa.id AS attempt_id, pa.provider_reference, pa.merchant_invoice,
+      pa.amount_sen, pa.local_status, o.id AS order_id, o.order_number,
+      o.payment_status, o.stock_restored_at, pa.expires_at
+    FROM payment_attempts pa JOIN orders o ON o.id = pa.order_id
+    WHERE o.submit_token = ?
+    ORDER BY pa.created_at DESC, pa.id DESC
+    LIMIT 1
+  `).bind(token).first<AttemptFacts>();
+  assert.ok(facts);
+  return facts;
+}
+
+async function attemptCount(token: string) {
+  return (await database.prepare(`
+    SELECT COUNT(*) AS count
+    FROM payment_attempts pa JOIN orders o ON o.id = pa.order_id
+    WHERE o.submit_token = ?
+  `).bind(token).first<{ count: number }>())?.count ?? 0;
+}
+
+async function eventCount(attemptId: string, source: string) {
+  return (await database.prepare(`
+    SELECT COUNT(*) AS count FROM payment_events
+    WHERE payment_attempt_id = ? AND source = ?
+  `).bind(attemptId, source).first<{ count: number }>())?.count ?? 0;
+}
+
+async function stock(variantId: number) {
+  return (await database.prepare("SELECT stock FROM product_variants WHERE id = ?")
+    .bind(variantId).first<{ stock: number }>())?.stock;
+}
+
+async function returnTokenFor(token: string) {
+  const facts = await attemptFacts(token);
+  return createDokuReturnToken(ROOT_SECRET, facts.attempt_id, facts.order_number);
+}
+
+async function expireAttempt(token: string) {
+  const facts = await attemptFacts(token);
+  await applyDokuPaymentFact(database, {
+    id: 1,
+    environment: "sandbox",
+    configRevision: 1,
+  }, {
+    providerReference: facts.provider_reference,
+    merchantInvoice: facts.merchant_invoice,
+    amountSen: facts.amount_sen,
+    channel: "INTERNET_BANKING_FPX",
+    providerStatus: "EXPIRED",
+    providerState: "EXPIRED",
+    eventKey: `expire:${facts.provider_reference}`,
+  }, "notification");
+}
+
+function signedStatusFetch(
+  facts: AttemptFacts,
+  status: string,
+  state: string,
+  overrides: Record<string, unknown> = {},
+) {
+  return (async (url: string | URL | Request, init?: RequestInit) => {
+    assert.match(String(url), new RegExp(`/v3/checkouts/${facts.provider_reference}$`));
+    assert.equal(init?.method, "GET");
+    assert.equal(init?.body, undefined);
+    const body = JSON.stringify({
+      id: facts.provider_reference,
+      order: {
+        amount: facts.amount_sen / 100,
+        invoice_number: facts.merchant_invoice,
+        currency: "MYR",
+        status: status === "SUCCESS" ? "ORDER_SUCCESS" : "ORDER_PENDING",
+      },
+      payment: {
+        amount: facts.amount_sen / 100,
+        currency: "MYR",
+        channel: "INTERNET_BANKING_FPX",
+        status,
+        state,
+      },
+      ...overrides,
+    });
+    return signedResponse(body);
+  }) as typeof fetch;
+}
+
+async function accessCookie(token: string) {
+  const facts = await attemptFacts(token);
+  const returnToken = await createDokuReturnToken(ROOT_SECRET, facts.attempt_id, facts.order_number);
+  return buildDokuAccessCookie(facts.order_number, returnToken);
+}
+
+function statusRequest(orderNumber: string, cookie: string | null) {
+  const headers = new Headers({ "Content-Type": "application/json" });
+  if (cookie) headers.set("Cookie", cookie);
+  return new Request("https://shop.example/api/payments/doku/status", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ order_number: orderNumber }),
+  });
+}
+
+function retryRequest(orderNumber: string, cookie: string | null) {
+  const headers = new Headers({
+    "Content-Type": "application/json",
+    "User-Agent": "payment-access-test",
+    "CF-Connecting-IP": "203.0.113.44",
+  });
+  if (cookie) headers.set("Cookie", cookie);
+  return new Request("https://shop.example/api/payments/doku/retry", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ order_number: orderNumber }),
+  });
+}
+
+test("callback query capability is exchanged for a bounded HttpOnly cookie without mutating payment state", async () => {
+  const variantId = 34001;
+  const token = "access-callback-token-34001";
+  await createAttempt(variantId, token);
+  const facts = await attemptFacts(token);
+  const returnToken = await returnTokenFor(token);
+
+  const exchange = await exchangeDokuCallbackQuery(
+    database,
+    ROOT_SECRET,
+    new URL(`https://shop.example/payment/doku/result?order_number=${facts.order_number}&return_token=${returnToken}&payment_status=SUCCESS`),
+  );
+  assert.equal(exchange.type, "redirect");
+  assert.equal(exchange.headers.get("Location"), "/payment/doku/result");
+  assert.equal(exchange.headers.get("Cache-Control"), "no-store");
+  assert.equal(exchange.headers.get("Referrer-Policy"), "no-referrer");
+  const cookie = exchange.headers.get("Set-Cookie") || "";
+  assert.match(cookie, /^__Host-mybook_doku_access=INV-\d+\.[a-f0-9]{64};/);
+  assert.match(cookie, /Max-Age=1800/);
+  assert.match(cookie, /HttpOnly/);
+  assert.match(cookie, /Secure/);
+  assert.match(cookie, /SameSite=Lax/);
+  assert.equal((await attemptFacts(token)).local_status, "pending");
+  assert.equal((await attemptFacts(token)).payment_status, "pending");
+
+  const invalid = await exchangeDokuCallbackQuery(
+    database,
+    ROOT_SECRET,
+    new URL(`https://shop.example/payment/doku/cancel?order_number=${facts.order_number}&return_token=${"0".repeat(64)}`),
+  );
+  assert.equal(invalid.type, "redirect");
+  assert.equal(invalid.headers.get("Location"), "/payment/doku/cancel");
+  assert.match(invalid.headers.get("Set-Cookie") || "", /^__Host-mybook_doku_access=; Max-Age=0;/);
+  assert.equal((await attemptFacts(token)).local_status, "pending");
+});
+
+test("status reconciliation requires the checkout capability and signed provider truth before mutation", async () => {
+  const variantId = 34002;
+  const token = "access-status-token-34002";
+  await createAttempt(variantId, token);
+  const facts = await attemptFacts(token);
+  const cookie = await accessCookie(token);
+  let calls = 0;
+
+  const denied = await handleDokuStatusRequest({
+    request: statusRequest(facts.order_number, null),
+    database,
+    rootSecret: ROOT_SECRET,
+    fetch: (async () => { calls += 1; throw new Error("must not call provider"); }) as typeof fetch,
+    now: () => NOW,
+  });
+  assert.equal(denied.status, 404);
+  assert.equal(calls, 0);
+
+  const wrongOrder = await handleDokuStatusRequest({
+    request: statusRequest("INV-WRONG", cookie),
+    database,
+    rootSecret: ROOT_SECRET,
+    fetch: (async () => { calls += 1; throw new Error("must not call provider"); }) as typeof fetch,
+    now: () => NOW,
+  });
+  assert.equal(wrongOrder.status, 404);
+  assert.equal(calls, 0);
+
+  const oversized = await handleDokuStatusRequest({
+    request: new Request("https://shop.example/api/payments/doku/status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Cookie: cookie },
+      body: JSON.stringify({ order_number: facts.order_number, padding: "x".repeat(5000) }),
+    }),
+    database,
+    rootSecret: ROOT_SECRET,
+    fetch: (async () => { calls += 1; throw new Error("must not call provider"); }) as typeof fetch,
+    now: () => NOW,
+  });
+  assert.equal(oversized.status, 404);
+  assert.equal(calls, 0);
+
+  const mismatched = await handleDokuStatusRequest({
+    request: statusRequest(facts.order_number, cookie),
+    database,
+    rootSecret: ROOT_SECRET,
+    fetch: signedStatusFetch(facts, "SUCCESS", "COMPLETED", {
+      order: {
+        amount: 999.99,
+        invoice_number: facts.merchant_invoice,
+        currency: "MYR",
+      },
+    }),
+    now: () => NOW,
+  });
+  assert.equal(mismatched.status, 502);
+  assert.equal((await attemptFacts(token)).local_status, "pending");
+  assert.equal(await eventCount(facts.attempt_id, "status"), 0);
+
+  const reconciled = await handleDokuStatusRequest({
+    request: statusRequest(facts.order_number, cookie),
+    database,
+    rootSecret: ROOT_SECRET,
+    fetch: signedStatusFetch(facts, "SUCCESS", "COMPLETED", { future_provider_field: { tolerated: true } }),
+    now: () => NOW,
+  });
+  assert.equal(reconciled.status, 200);
+  assert.equal(reconciled.headers.get("Cache-Control"), "no-store");
+  assert.equal(reconciled.headers.get("Referrer-Policy"), "no-referrer");
+  const payload = await reconciled.json() as { payment: Record<string, unknown> };
+  const body = JSON.stringify(payload);
+  assert.match(body, /"local_status":"paid"/);
+  assert.doesNotMatch(body, /return_token|status_token|aina@example|60123456789|Jalan Buku/i);
+  assert.equal("provider_status" in payload.payment, false);
+  assert.equal("provider_state" in payload.payment, false);
+  assert.equal("channel" in payload.payment, false);
+  assert.equal((await attemptFacts(token)).local_status, "paid");
+  assert.equal((await attemptFacts(token)).payment_status, "paid");
+  assert.equal(await eventCount(facts.attempt_id, "status"), 1);
+
+  let lateCalls = 0;
+  const duplicate = await handleDokuStatusRequest({
+    request: statusRequest(facts.order_number, cookie),
+    database,
+    rootSecret: ROOT_SECRET,
+    fetch: (async () => { lateCalls += 1; throw new Error("must not call after terminal"); }) as typeof fetch,
+    now: () => NOW,
+  });
+  assert.equal(duplicate.status, 200);
+  assert.equal(lateCalls, 0);
+  assert.equal(await eventCount(facts.attempt_id, "status"), 1);
+});
+
+test("retry reuses the same order, re-reserves restored stock once, and returns no capability or PII", async () => {
+  const variantId = 34003;
+  const token = "access-retry-token-34003";
+  await createAttempt(variantId, token);
+  await expireAttempt(token);
+  const expired = await attemptFacts(token);
+  const cookie = await accessCookie(token);
+  assert.equal(expired.local_status, "expired");
+  assert.equal(expired.payment_status, "failed");
+  assert.ok(expired.stock_restored_at);
+  assert.equal(await stock(variantId), 3);
+
+  let providerCalls = 0;
+  const response = await handleDokuRetryRequest({
+    request: retryRequest(expired.order_number, cookie),
+    database,
+    rootSecret: ROOT_SECRET,
+    clientIp: "203.0.113.44",
+    userAgent: "payment-access-test",
+    fetch: checkoutFetch((payload, headers) => {
+      providerCalls += 1;
+      assert.equal(payload.order.amount, 40.9);
+      assert.equal(payload.order.currency, "MYR");
+      assert.equal(payload.checkout_experience.language, "MS");
+      assert.match(payload.checkout_experience.callback_url, /^https:\/\/shop\.example\/payment\/doku\/return\?/);
+      const callback = new URL(payload.checkout_experience.callback_url);
+      assert.equal(callback.searchParams.get("order_number"), expired.order_number);
+      assert.match(callback.searchParams.get("return_token") || "", /^[a-f0-9]{64}$/);
+      assert.equal(callback.searchParams.has("status_token"), false);
+      assert.match(headers.get("Idempotency-Id") || "", /^retry_[a-f0-9]{64}$/);
+    }),
+    now: () => NOW,
+  });
+  const retryText = await response.text();
+  assert.equal(response.status, 200, retryText);
+  const retryPayload = JSON.stringify(JSON.parse(retryText));
+  const firstRetryUrl = JSON.parse(retryText).checkout_url as string;
+  assert.match(retryPayload, /"checkout_url":"https:\/\/sandbox\.doku\.com\/checkout-link-v3\/pay_[a-f0-9]{40}"/);
+  assert.doesNotMatch(retryPayload, /return_token|status_token|aina@example|60123456789|Jalan Buku/i);
+  assert.match(response.headers.get("Set-Cookie") || "", /^__Host-mybook_doku_access=INV-\d+\.[a-f0-9]{64};/);
+  assert.equal(providerCalls, 1);
+  assert.equal(await attemptCount(token), 2);
+  assert.equal(await stock(variantId), 2);
+  const active = await attemptFacts(token);
+  assert.equal(active.local_status, "pending");
+  assert.equal(active.payment_status, "pending");
+  assert.equal(active.stock_restored_at, null);
+  assert.equal((await loadDokuPaymentAccessFromCookie(
+    database,
+    ROOT_SECRET,
+    cookie,
+    expired.order_number,
+  ))?.attemptId, active.attempt_id);
+
+  const reused = await handleDokuRetryRequest({
+    request: retryRequest(expired.order_number, cookie),
+    database,
+    rootSecret: ROOT_SECRET,
+    clientIp: "203.0.113.44",
+    userAgent: "payment-access-test",
+    fetch: (async () => { providerCalls += 1; throw new Error("active attempt must be reused"); }) as typeof fetch,
+    now: () => NOW,
+  });
+  assert.equal(reused.status, 200);
+  assert.equal(providerCalls, 1);
+  assert.equal(await attemptCount(token), 2);
+  assert.equal(await stock(variantId), 2);
+
+  await database.prepare("UPDATE payment_attempts SET expires_at = ? WHERE id = ?")
+    .bind(new Date(NOW.getTime() - 1).toISOString(), active.attempt_id).run();
+  let statusCalls = 0;
+  let renewalCalls = 0;
+  const expiredActiveFetch = (async (url: string | URL | Request, init?: RequestInit) => {
+    if (init?.method === "GET") {
+      statusCalls += 1;
+      return signedStatusFetch(active, "EXPIRED", "EXPIRED")(url, init);
+    }
+    renewalCalls += 1;
+    return checkoutFetch()(url, init);
+  }) as typeof fetch;
+  const renewed = await handleDokuRetryRequest({
+    request: retryRequest(expired.order_number, cookie),
+    database,
+    rootSecret: ROOT_SECRET,
+    clientIp: "203.0.113.44",
+    userAgent: "payment-access-test",
+    fetch: expiredActiveFetch,
+    now: () => NOW,
+  });
+  const renewedText = await renewed.text();
+  assert.equal(renewed.status, 200, renewedText);
+  assert.notEqual(JSON.parse(renewedText).checkout_url, firstRetryUrl);
+  assert.equal(statusCalls, 1);
+  assert.equal(renewalCalls, 1);
+  assert.equal(await attemptCount(token), 3);
+  assert.equal(await stock(variantId), 2);
+});
+
+test("retry refuses unavailable stock and paid attempts before creating another attempt", async () => {
+  const stockVariantId = 34004;
+  const stockToken = "access-no-stock-token-34004";
+  await createAttempt(stockVariantId, stockToken, 1);
+  await expireAttempt(stockToken);
+  const stockFacts = await attemptFacts(stockToken);
+  await database.prepare("UPDATE product_variants SET stock = 0 WHERE id = ?").bind(stockVariantId).run();
+
+  const unavailable = await handleDokuRetryRequest({
+    request: retryRequest(stockFacts.order_number, await accessCookie(stockToken)),
+    database,
+    rootSecret: ROOT_SECRET,
+    clientIp: "203.0.113.45",
+    userAgent: "payment-access-test",
+    fetch: (async () => { throw new Error("must not call provider"); }) as typeof fetch,
+    now: () => NOW,
+  });
+  assert.equal(unavailable.status, 409);
+  assert.match(await unavailable.text(), /DOKU_STOCK_UNAVAILABLE/);
+  assert.equal(await attemptCount(stockToken), 1);
+  assert.equal((await attemptFacts(stockToken)).local_status, "expired");
+
+  const paidVariantId = 34005;
+  const paidToken = "access-paid-token-34005";
+  await createAttempt(paidVariantId, paidToken);
+  const paidFacts = await attemptFacts(paidToken);
+  await applyDokuPaymentFact(database, {
+    id: 1,
+    environment: "sandbox",
+    configRevision: 1,
+  }, {
+    providerReference: paidFacts.provider_reference,
+    merchantInvoice: paidFacts.merchant_invoice,
+    amountSen: paidFacts.amount_sen,
+    channel: "INTERNET_BANKING_FPX",
+    providerStatus: "SUCCESS",
+    providerState: "COMPLETED",
+    eventKey: `paid:${paidFacts.provider_reference}`,
+  }, "status");
+
+  const refused = await handleDokuRetryRequest({
+    request: retryRequest(paidFacts.order_number, await accessCookie(paidToken)),
+    database,
+    rootSecret: ROOT_SECRET,
+    clientIp: "203.0.113.46",
+    userAgent: "payment-access-test",
+    fetch: (async () => { throw new Error("must not call provider"); }) as typeof fetch,
+    now: () => NOW,
+  });
+  assert.equal(refused.status, 409);
+  assert.match(await refused.text(), /DOKU_RETRY_NOT_ALLOWED/);
+  assert.equal(await attemptCount(paidToken), 1);
+  assert.equal((await attemptFacts(paidToken)).local_status, "paid");
+});
+
+test("DOKU recovery pages keep capabilities out of analytics while result owns paid browser Purchase", () => {
+  for (const route of ["return", "cancel"]) {
+    const source = readFileSync(new URL(`../pages/payment/doku/${route}.astro`, import.meta.url), "utf8");
+    assert.doesNotMatch(source, /BaseLayout|AdsBase|__MYBOOK_TRACK__|__MYBOOK_GOOGLE_PURCHASE__/);
+    assert.doesNotMatch(source, /localStorage|sessionStorage/);
+    assert.doesNotMatch(source, /return_token|status_token|customerEmail|customerPhone|customerName/);
+  }
+
+  const result = readFileSync(new URL("../pages/payment/doku/result.astro", import.meta.url), "utf8");
+  assert.doesNotMatch(result, /BaseLayout|return_token|status_token|customerEmail|customerPhone|customerName/);
+  assert.match(result, /<AdsBase purchaseOnly\s*\/>/);
+  assert.match(result, /local_status\s*!==\s*'paid'/);
+  assert.match(result, /eventId:\s*`purchase:\$\{access\.orderNumber\}`/);
+  assert.match(result, /__MYBOOK_TRACK__\?\.\('Purchase'/);
+  assert.match(result, /__MYBOOK_GOOGLE_PURCHASE__\?\.\(/);
+
+  const adsBase = readFileSync(
+    new URL("../components/storefront/tracking/AdsBase.astro", import.meta.url),
+    "utf8",
+  );
+  assert.match(adsBase, /metaPixelId\s*&&\s*!purchaseOnly/);
+  assert.match(adsBase, /if \(metaPixelId\s*&&\s*!purchaseOnly\)/);
+
+  const middleware = readFileSync(new URL("../middleware.ts", import.meta.url), "utf8");
+  assert.match(
+    middleware,
+    /if \(!response\.headers\.has\(['"]Referrer-Policy['"]\)\)\s*\{\s*response\.headers\.set\(['"]Referrer-Policy['"], ['"]strict-origin-when-cross-origin['"]\);\s*\}/s,
+    "global middleware must preserve the stricter no-referrer policy owned by DOKU recovery routes",
+  );
+});
+
+test("unsupported DOKU recovery API methods fail closed with private headers", async () => {
+  for (const fallback of [statusMethodFallback, retryMethodFallback]) {
+    const response = await fallback({} as never);
+    assert.equal(response.status, 405);
+    assert.equal(response.headers.get("Allow"), "POST");
+    assert.equal(response.headers.get("Cache-Control"), "no-store");
+    assert.equal(response.headers.get("Referrer-Policy"), "no-referrer");
+    assert.equal(await response.text(), "");
+  }
+});

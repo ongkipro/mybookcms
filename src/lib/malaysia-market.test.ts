@@ -117,6 +117,75 @@ test("buyer-facing components do not mix Indonesian into Malay copy", () => {
   }
 });
 
+test("canonical checkout exposes one hosted DOKU choice without card fields or provider leakage", () => {
+  const checkout = read("src/components/storefront/forms/MalaysiaCheckoutForm.astro");
+  const legal = read("src/data/legal.ts");
+  const legalPage = read("src/components/storefront/shared/LegalPage.astro");
+  const styles = read("src/styles/form-hybrid.css");
+  const methods = read("src/pages/api/payment-methods.ts");
+  assert.match(checkout, /E-mel untuk pembayaran DOKU/);
+  assert.match(checkout, /DOKU menggunakan e-mel dan maklumat pesanan ini untuk menyediakan pembayaran dan resit/);
+  assert.match(checkout, /href="\/dasar-privasi#pembayaran-doku" target="_blank" rel="noopener"/);
+  assert.match(checkout, /Baca pendedahan privasi DOKU dalam Bahasa Melayu dan bahasa Inggeris \(dibuka dalam tab baharu\)/);
+  assert.match(checkout, /aria-describedby=\{`\$\{instanceId\}-doku-helper \$\{instanceId\}-doku-privacy \$\{instanceId\}-doku-disclosure`\}/);
+  assert.match(checkout, /meninggalkan kedai ini dan membuka halaman pembayaran DOKU/);
+  assert.match(checkout, /navigateToDokuCheckout/);
+  assert.match(checkout, /Sambungan ke DOKU tergendala/);
+  assert.ok(
+    checkout.indexOf("new FormData(form)") < checkout.indexOf("submitting = true; setSubmitState()"),
+    "DOKU email must be captured before submit-state disables payment controls",
+  );
+  assert.match(checkout, /input\.value === 'doku'.*doku-disclosure/s);
+  assert.match(legal, /id: 'pembayaran-doku'[\s\S]+title: 'Pembayaran melalui DOKU'[\s\S]+title: 'Payments through DOKU'/);
+  assert.match(legal, /Jika anda memilih pembayaran DOKU, \{\{store\}\} menghantar nama, nombor telefon, alamat e-mel, alamat penghantaran, butiran pesanan, jumlah dalam MYR/);
+  assert.match(legal, /Pembayaran diselesaikan pada halaman hos DOKU[\s\S]+tidak mengumpul atau menyimpan nombor kad, CVV atau kelayakan perbankan anda/);
+  assert.match(legal, /If you choose DOKU payment, \{\{store\}\} sends your name, phone number, email address, delivery address, order details, MYR amount/);
+  assert.match(legal, /Payment is completed on DOKU’s hosted page[\s\S]+does not collect or store your card number, CVV, or online-banking credentials/);
+  assert.match(legalPage, /id=\{section\.id\}/);
+  assert.match(styles, /\.doku-privacy-link[\s\S]+min-height: 44px/);
+  assert.match(styles, /\.doku-privacy-link:focus-visible/);
+  assert.doesNotMatch(checkout, /name=["'](?:pan|card_number|cvv|cvc)["']/i);
+  assert.match(methods, /getEnabledDokuConfig/);
+  assert.doesNotMatch(methods, /clientId|apiKey|secretKey|configRevision|environment/);
+
+  for (const route of ["result", "return", "cancel"]) {
+    const recovery = read(`src/pages/payment/doku/${route}.astro`);
+    assert.match(recovery, /navigateToDokuCheckout/);
+    assert.match(recovery, /hidden=\{!payment\.can_reconcile\}/);
+    assert.match(recovery, /hidden=\{!payment\.can_retry\}/);
+  }
+});
+
+test("canonical documents distinguish local DOKU delivery from sandbox and production", () => {
+  const prd = read("PRD.md");
+  const plan = read("PLAN.md");
+  const architecture = read("ARCHITECTURE.md");
+  const installation = read("INSTALLATION.md");
+  const observability = read("OBSERVABILITY.md");
+  const release = read("RELEASE.md");
+
+  assert.match(prd, /conditionally offers DOKU Malaysia hosted Checkout/);
+  assert.match(prd, /REQ-220[^\n]+Verified locally 2026-09-01/);
+  assert.match(prd, /REQ-226[^\n]+Verified locally 2026-09-02; A-221 sandbox evidence pending/);
+  assert.doesNotMatch(prd, /accepted next phase adds optional DOKU/i);
+  assert.doesNotMatch(prd, /Partially verified locally through create\/notification/);
+
+  assert.match(plan, /Delivered locally: authoritative DOKU success owns/);
+  assert.match(plan, /A-221 owns provider sandbox evidence/);
+  assert.match(plan, /Delivered locally: A-220 links the operator-accepted bilingual DOKU/);
+  assert.doesNotMatch(plan, /DOKU disclosure pending operator acceptance/);
+  assert.doesNotMatch(plan, /## Planned DOKU Malaysia architecture/);
+
+  assert.match(architecture, /`\/full-form` is the only executable checkout/);
+  assert.doesNotMatch(architecture, /`\/middle-form` is the short form confirmed by CS/);
+  assert.match(installation, /https:\/\/<store-domain>\/api\/payments\/doku\/notifications/);
+  assert.match(observability, /currently has no alert endpoint or pager integration/);
+  assert.match(release, /### DOKU evidence matrix/);
+  assert.match(release, /A local\s+mock PASS cannot fill a sandbox cell/);
+  assert.match(release, /linked beside the conditional DOKU email field/);
+  assert.match(release, /does\s+not accept proposed REQ-211\/REQ-212/);
+});
+
 test("no public API route answers a buyer in Indonesian", () => {
   for (const file of ["shipping-rates.ts", "submit-order.ts", "locations.ts"]) {
     assert.doesNotMatch(

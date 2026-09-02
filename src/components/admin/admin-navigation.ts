@@ -115,9 +115,9 @@ export const adminNavGroups: AdminNavGroup[] = [
         href: "/admin/payments",
         label: "Pembayaran",
         shortLabel: "Pembayaran",
-        description: "COD dan rekening transfer manual",
+        description: "COD, transfer manual, dan DOKU Malaysia",
         icon: CreditCard,
-        keywords: "payments cod transfer bank manual rekening",
+        keywords: "payments cod transfer bank manual rekening doku fpx ewallet",
       },
       {
         id: "settings",

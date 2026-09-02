@@ -177,3 +177,18 @@ test("dashboard overview leads with truthful role-safe analytics", () => {
   assert.match(analytics, /hiddenPresets=\{DASHBOARD_HIDDEN_PRESETS\}/);
   assert.match(analytics, /showPaymentsLink &&/);
 });
+
+test("DOKU settings keep secret and responsive interaction contracts in source", () => {
+  const settings = readFileSync("src/components/admin/DokuPaymentSettings.tsx", "utf8");
+  const page = readFileSync("src/pages/admin/payments.astro", "utf8");
+
+  assert.match(settings, /type="password"/);
+  assert.match(settings, /autoComplete="new-password"/);
+  assert.doesNotMatch(settings, /localStorage|sessionStorage|showPassword|reveal/i);
+  assert.match(settings, /expected_revision/);
+  assert.match(settings, /status\.source === "database" && status\.health !== "missing"/);
+  assert.match(settings, /sm:grid-cols-2/);
+  assert.match(settings, /w-full sm:w-auto/);
+  assert.match(page, /DokuPaymentSettings client:load/);
+  assert.match(page, /SellerBankAccounts client:load/);
+});

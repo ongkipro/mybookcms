@@ -74,10 +74,19 @@ test("OpenAPI 3.1 document covers every authenticated route operation with resol
 test("documented journey schemas expose the canonical producer and consumer identities", () => {
   const schemas = headlessOpenApiDocument.components.schemas;
   assert.ok("products" in schemas.CatalogEnvelope.properties);
+  assert.ok("form" in schemas.ProductSummary.properties);
+  assert.ok("urls" in schemas.ProductSummary.properties);
+  assert.deepEqual(schemas.ProductSummary.properties.urls.required, ["product", "form_render"]);
+  const detailExtension = schemas.ProductDetail.allOf[1];
+  assert.deepEqual(detailExtension.properties.forms.required, ["full_url"]);
   assert.ok("rates" in schemas.ShippingQuoteEnvelope.properties);
   assert.ok("order_number" in schemas.CheckoutOrder.properties);
   assert.ok("public_status_token" in schemas.CheckoutOrder.properties);
   assert.ok("shipping_amount" in schemas.CheckoutOrder.properties);
+  assert.deepEqual(schemas.CheckoutRequest.properties.payment_method.enum, ["cod", "manual_transfer", "doku"]);
+  assert.ok("payment" in schemas.CheckoutEnvelope.properties);
+  assert.equal(schemas.DokuCheckoutPayment.properties.provider.const, "doku");
+  assert.ok("checkout_url" in schemas.DokuCheckoutPayment.properties);
   assert.equal("unit_price" in schemas.CheckoutOrder.properties, false);
   assert.ok("bank_code" in schemas.PaymentStatus.properties);
   assert.equal("channel_code" in schemas.PaymentStatus.properties, false);

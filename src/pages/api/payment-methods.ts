@@ -1,6 +1,8 @@
 import type { APIRoute } from "astro";
 import { getRuntimeEnv } from "../../lib/env";
-import { paymentBrandAsset, paymentBrandLabel } from "../../lib/payment-brand";
+import { getEnvValue } from "../../lib/env";
+import { getEnabledDokuConfig } from "../../lib/doku-config";
+import { buildDokuPaymentMethod, paymentBrandAsset, paymentBrandLabel } from "../../lib/payment-brand";
 
 export const prerender = false;
 
@@ -15,6 +17,7 @@ export const GET: APIRoute = async ({ locals }) => {
       account_number: string;
       is_active: number;
     }> = [];
+    let dokuPaymentMethod: ReturnType<typeof buildDokuPaymentMethod> = null;
     if (database?.prepare) {
       try {
         const [store, bankAccounts] = await Promise.all([
@@ -40,6 +43,13 @@ export const GET: APIRoute = async ({ locals }) => {
         sellerBankAccounts = bankAccounts.results || [];
       } catch (error) {
         console.error("payment-methods-config", error);
+      }
+      try {
+        const rootSecret = getEnvValue("AUTH_SECRET", getRuntimeEnv(locals));
+        const config = rootSecret ? await getEnabledDokuConfig(database, rootSecret) : null;
+        dokuPaymentMethod = buildDokuPaymentMethod(config?.enabledChannels || []);
+      } catch {
+        dokuPaymentMethod = null;
       }
     }
 
@@ -69,6 +79,7 @@ export const GET: APIRoute = async ({ locals }) => {
           description: `a.n. ${account.account_holder}`,
           is_active: Boolean(account.is_active),
         })),
+        ...(dokuPaymentMethod ? [dokuPaymentMethod] : []),
       ],
     }),
     {

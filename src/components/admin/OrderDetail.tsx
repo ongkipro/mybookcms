@@ -29,6 +29,52 @@ type Item = {
   unit_price: number;
 };
 
+type PaymentEvent = {
+  id: number;
+  source: "checkout" | "return" | "notification" | "status" | "reconciliation" | "retry";
+  provider_status: string | null;
+  provider_state: string | null;
+  resulting_status: string;
+  received_at: string;
+};
+
+type PaymentAttempt = {
+  correlation_id: string;
+  environment: "sandbox" | "production";
+  config_revision: number;
+  provider_reference_masked: string | null;
+  amount_sen: number;
+  channel: string | null;
+  provider_status: string | null;
+  provider_state: string | null;
+  local_status: string;
+  error_class: string | null;
+  reconcile_attempts: number;
+  created_at: string;
+  initiated_at: string | null;
+  expires_at: string | null;
+  updated_at: string;
+  paid_at: string | null;
+  terminal_at: string | null;
+  stock_released_at: string | null;
+  last_automatic_check_at: string | null;
+  last_manual_check_at: string | null;
+  next_reconcile_at: string | null;
+  automatic_check_running_until: string | null;
+  events: PaymentEvent[];
+};
+
+type PaymentOperations = {
+  provider: "DOKU";
+  config_health: "ready" | "disabled" | "changed" | "problem";
+  environment: "sandbox" | "production" | null;
+  can_view_payment_operations: boolean;
+  reconcile_action_visible: boolean;
+  can_reconcile: boolean;
+  reconcile_block_reason: string | null;
+  attempts: PaymentAttempt[];
+};
+
 type Order = {
   id: number;
   order_number: string;
@@ -43,7 +89,7 @@ type Order = {
   total_amount: number;
   shipping_cost: number;
   shipping_zone: string | null;
-  payment_method: "cod" | "manual_transfer";
+  payment_method: "cod" | "manual_transfer" | "doku";
   payment_status: string;
   shipping_status: string;
   stock_restored_at: string | null;
@@ -54,6 +100,7 @@ type Order = {
   crm_templates: Record<string, string>;
   created_at: string;
   items: Item[];
+  payment_operations: PaymentOperations | null;
 };
 
 type CustomerDraft = { customer_name: string; customer_phone: string; address: string; location_id: number | null; location_label: string };
@@ -71,6 +118,154 @@ const paymentLabels: Record<string, string> = {
 };
 const stockReleasingPaymentStatuses = new Set(["failed", "refunded", "cancelled"]);
 const stockReleasingShippingStatuses = new Set(["returned", "cancelled"]);
+const dokuStatusLabels: Record<string, string> = {
+  created: "Dibuat", pending: "Menunggu konfirmasi", paid: "Lunas",
+  failed: "Gagal", expired: "Kedaluwarsa", attention_required: "Perlu diperiksa",
+};
+const dokuSourceLabels: Record<PaymentEvent["source"], string> = {
+  checkout: "Checkout dibuat", return: "Buyer kembali", notification: "Notifikasi DOKU",
+  status: "Pemeriksaan manual", reconciliation: "Pemeriksaan otomatis", retry: "Percobaan pembayaran baru",
+};
+const dokuHealthLabels: Record<PaymentOperations["config_health"], string> = {
+  ready: "Siap", disabled: "Dinonaktifkan", changed: "Konfigurasi berubah", problem: "Bermasalah",
+};
+const dokuErrorLabels: Record<string, string> = {
+  configuration: "Konfigurasi DOKU", authentication: "Autentikasi DOKU",
+  signature: "Verifikasi signature", timeout: "Batas waktu DOKU",
+  provider: "Respons DOKU", local_transition: "Transisi pembayaran lokal",
+};
+
+function DokuPaymentOperations({
+  order,
+  onUpdated,
+  copy,
+  copied,
+}: {
+  order: Order;
+  onUpdated: (order: Order) => void;
+  copy: (key: string, value: string, label: string) => Promise<void>;
+  copied: string;
+}) {
+  const operations = order.payment_operations;
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const errorRef = useRef<HTMLDivElement>(null);
+  if (!operations) return null;
+  const latest = operations.attempts[0];
+
+  const reconcile = async () => {
+    setBusy(true);
+    setError("");
+    try {
+      const response = await fetch(`/api/admin/orders/${encodeURIComponent(order.order_number)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "reconcile_doku" }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || !payload.success || !payload.data) {
+        throw new Error(payload.error || "Status DOKU belum dapat diperiksa.");
+      }
+      onUpdated(payload.data as Order);
+      setConfirmOpen(false);
+      toast.success(payload.message || "Status pembayaran DOKU telah diperiksa.");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Status DOKU belum dapat diperiksa.");
+      window.setTimeout(() => errorRef.current?.focus(), 0);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Card className="gap-0 rounded-2xl py-0 shadow-xs" aria-busy={busy}>
+      <CardHeader className="border-b bg-slate-50/50 p-4 sm:px-6">
+        <CardTitle as="h2" className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-slate-500"><CreditCard className="size-4" />Operasional pembayaran DOKU</CardTitle>
+        <CardDescription>Riwayat terverifikasi dan tindakan pemeriksaan yang tidak menampilkan kredensial atau payload provider.</CardDescription>
+        <CardAction className="flex gap-2">
+          <Badge variant="outline">{operations.environment === "production" ? "Production" : operations.environment === "sandbox" ? "Sandbox" : "Belum tersedia"}</Badge>
+          <Badge variant="outline">{dokuHealthLabels[operations.config_health]}</Badge>
+        </CardAction>
+      </CardHeader>
+      <CardContent className="space-y-5 p-5 sm:p-6">
+        {latest ? (
+          <>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Info label="Status lokal" value={dokuStatusLabels[latest.local_status] || latest.local_status} />
+              <Info label="Referensi provider" value={latest.provider_reference_masked || "Belum tersedia"} mono />
+              <Info label="Channel" value={latest.channel || "Belum tersedia"} />
+              <Info label="Jumlah" value={formatMyr(latest.amount_sen)} />
+              <Info label="Terakhir dicek otomatis" value={latest.last_automatic_check_at ? formatAdminDateTime(latest.last_automatic_check_at) : "Belum pernah"} />
+              <Info label="Terakhir dicek manual" value={latest.last_manual_check_at ? formatAdminDateTime(latest.last_manual_check_at) : "Belum pernah"} />
+              <Info
+                label="Pemeriksaan berikutnya"
+                value={latest.next_reconcile_at
+                  ? `${Date.parse(latest.next_reconcile_at) <= Date.now() ? "Lewat jadwal · " : ""}${formatAdminDateTime(latest.next_reconcile_at)}`
+                  : "Tidak dijadwalkan lagi"}
+              />
+              <Info label="Klasifikasi kendala" value={latest.error_class ? dokuErrorLabels[latest.error_class] || "Respons DOKU" : "Tidak ada"} />
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">ID korelasi</p>
+                  <p className="mt-1 break-all font-mono text-sm font-bold text-slate-900">{latest.correlation_id}</p>
+                </div>
+                <Button variant="outline" size="sm" className="min-h-11" onClick={() => void copy("doku-attempt", latest.correlation_id, "ID korelasi")}>
+                  {copied === "doku-attempt" ? <Check /> : <Clipboard />}{copied === "doku-attempt" ? "Tersalin" : "Salin ID korelasi"}
+                </Button>
+              </div>
+              {latest.automatic_check_running_until && <p className="mt-3 text-xs font-bold text-amber-800">Pemeriksaan otomatis sedang berjalan hingga {formatAdminDateTime(latest.automatic_check_running_until)}.</p>}
+            </div>
+            <div aria-live="polite">
+              <p className="text-sm font-semibold text-slate-600">{operations.reconcile_block_reason || "Pemeriksaan manual tersedia untuk memastikan status terbaru dari DOKU."}</p>
+              {operations.reconcile_action_visible && !operations.can_reconcile && (
+                <Button className="mt-3 min-h-11 w-full sm:w-auto" disabled><RefreshCw />Cek status ke DOKU</Button>
+              )}
+              {operations.reconcile_action_visible && operations.can_reconcile && (
+                <Dialog open={confirmOpen} onOpenChange={(open) => !busy && setConfirmOpen(open)}>
+                  <DialogTrigger asChild><Button className="mt-3 min-h-11 w-full sm:w-auto"><RefreshCw />Cek status ke DOKU</Button></DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Cek status pembayaran ke DOKU?</DialogTitle>
+                      <DialogDescription>Hasil terverifikasi dapat menandai pesanan sebagai lunas atau gagal dan dapat mengembalikan stok sesuai lifecycle pembayaran.</DialogDescription>
+                    </DialogHeader>
+                    {error && <div ref={errorRef} tabIndex={-1} role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-bold text-rose-800">{error}</div>}
+                    <DialogFooter>
+                      <Button variant="outline" className="min-h-11" onClick={() => setConfirmOpen(false)} disabled={busy}>Batal</Button>
+                      <Button className="min-h-11" onClick={() => void reconcile()} disabled={busy}>{busy ? <LoaderCircle className="animate-spin" /> : <RefreshCw />}{busy ? "Memeriksa…" : "Cek status sekarang"}</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              )}
+            </div>
+            <details className="border-t border-slate-100 pt-4">
+              <summary className="min-h-11 cursor-pointer py-3 text-sm font-black text-slate-900">Riwayat percobaan & peristiwa ({operations.attempts.length})</summary>
+              <div className="space-y-5 pt-2">
+                {operations.attempts.map((attempt, index) => (
+                  <section key={attempt.correlation_id} aria-labelledby={`attempt-${index}`} className="rounded-xl border border-slate-200 p-4">
+                    <h3 id={`attempt-${index}`} className="break-all font-mono text-sm font-black text-slate-950">{attempt.correlation_id}</h3>
+                    <p className="mt-1 text-xs font-semibold text-slate-500">{dokuStatusLabels[attempt.local_status] || attempt.local_status} · dibuat {formatAdminDateTime(attempt.created_at)} · {attempt.reconcile_attempts} pemeriksaan</p>
+                    <ol className="mt-4 space-y-3 border-l border-slate-200 pl-4">
+                      {attempt.events.map((event) => (
+                        <li key={event.id} className="text-sm">
+                          <p className="font-bold text-slate-900">{dokuSourceLabels[event.source]} · {dokuStatusLabels[event.resulting_status] || event.resulting_status}</p>
+                          <p className="mt-0.5 text-xs text-slate-500">{formatAdminDateTime(event.received_at)}{event.provider_status ? ` · ${event.provider_status}` : ""}</p>
+                        </li>
+                      ))}
+                      {attempt.events.length === 0 && <li className="text-sm text-slate-500">Belum ada peristiwa tercatat.</li>}
+                    </ol>
+                  </section>
+                ))}
+              </div>
+            </details>
+          </>
+        ) : <p className="text-sm font-semibold text-slate-500">Belum ada percobaan pembayaran DOKU.</p>}
+      </CardContent>
+    </Card>
+  );
+}
 
 
 function customerDraft(order: Order): CustomerDraft {
@@ -449,6 +644,10 @@ export function OrderDetail({ invoice }: { invoice: string }) {
             </CardContent>
           </Card>
 
+          {order.payment_method === "doku" && (
+            <DokuPaymentOperations order={order} onUpdated={syncOrder} copy={copy} copied={copied} />
+          )}
+
           <Card className="gap-0 rounded-2xl py-0 shadow-xs">
             <CardHeader className="border-b bg-slate-50/50 p-4 sm:px-6">
               <CardTitle as="h2" className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-slate-500"><Truck className="size-4" />Pengiriman</CardTitle>
@@ -480,17 +679,27 @@ export function OrderDetail({ invoice }: { invoice: string }) {
             </CardHeader>
             <CardContent className="space-y-4 p-5 sm:p-6">
               {paymentError && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-bold text-rose-800">{paymentError}</div>}
-              <div className="flex items-center justify-between gap-3 text-sm"><span className="text-slate-500">Metode</span><strong>{order.payment_method === "cod" ? "COD" : "Transfer bank manual"}</strong></div>
-              <Field label="Status pembayaran"><select className="admin-input-flat" value={paymentDraft} onChange={(event) => setPaymentDraft(event.target.value)} disabled={savingPayment}>{paymentStatuses.map((status) => <option key={status} value={status} disabled={stockReleased && !stockReleasingPaymentStatuses.has(status)}>{paymentLabels[status]}</option>)}</select></Field>
+              <div className="flex items-center justify-between gap-3 text-sm"><span className="text-slate-500">Metode</span><strong>{order.payment_method === "cod" ? "COD" : order.payment_method === "doku" ? "DOKU" : "Transfer bank manual"}</strong></div>
+              {order.payment_method === "doku" ? (
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Status pembayaran</p>
+                  <p className="mt-1 font-black text-slate-950">{paymentLabels[order.payment_status] || order.payment_status}</p>
+                  <p className="mt-2 text-xs leading-relaxed text-slate-600">Status DOKU hanya berubah dari notifikasi atau pemeriksaan provider yang terverifikasi.</p>
+                </div>
+              ) : (
+                <Field label="Status pembayaran"><select className="admin-input-flat" value={paymentDraft} onChange={(event) => setPaymentDraft(event.target.value)} disabled={savingPayment}>{paymentStatuses.map((status) => <option key={status} value={status} disabled={stockReleased && !stockReleasingPaymentStatuses.has(status)}>{paymentLabels[status]}</option>)}</select></Field>
+              )}
               {order.payment_method === "manual_transfer" && <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-600"><p className="font-black text-slate-900">{order.seller_bank_name || "Bank"}</p><p className="mt-1 font-mono">{order.seller_account_number || "Nomor rekening belum tersimpan"}</p><p className="mt-1">a.n. {order.seller_account_holder || "-"}</p></div>}
               <dl className="space-y-2 border-t border-slate-100 pt-4 text-sm">
                 <div className="flex justify-between gap-4"><dt className="text-slate-500">Subtotal produk</dt><dd className="font-bold tabular-nums">{formatMyr(productSubtotal)}</dd></div>
                 <div className="flex justify-between gap-4"><dt className="text-slate-500">Biaya pengiriman</dt><dd className="font-bold tabular-nums">{formatMyr(order.shipping_cost)}</dd></div>
                 <div className="flex items-end justify-between gap-4 border-t-2 border-slate-900 pt-3"><dt className="font-black text-slate-950">Total tagihan</dt><dd className="text-xl font-black tabular-nums text-emerald-700">{formatMyr(order.total_amount)}</dd></div>
               </dl>
-              <Button className="w-full" size="lg" onClick={() => void savePayment()} disabled={savingPayment || paymentDraft === order.payment_status}>
-                {savingPayment ? <LoaderCircle className="animate-spin" /> : <Save />}{savingPayment ? "Menyimpan…" : paymentDraft === order.payment_status ? "Tidak ada perubahan" : "Simpan pembayaran"}
-              </Button>
+              {order.payment_method !== "doku" && (
+                <Button className="w-full" size="lg" onClick={() => void savePayment()} disabled={savingPayment || paymentDraft === order.payment_status}>
+                  {savingPayment ? <LoaderCircle className="animate-spin" /> : <Save />}{savingPayment ? "Menyimpan…" : paymentDraft === order.payment_status ? "Tidak ada perubahan" : "Simpan pembayaran"}
+                </Button>
+              )}
             </CardContent>
           </Card>
 

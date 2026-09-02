@@ -218,12 +218,12 @@ export default function SellerBankAccounts({
     <section className="mt-4 space-y-4" aria-labelledby="seller-bank-accounts-heading">
       {/* The panel had no heading at all, so a screen reader could not reach it
           by outline — it sits under the page h2 on /admin/payments. */}
-      <h4
+      <h3
         id="seller-bank-accounts-heading"
         className="text-base leading-snug font-semibold text-slate-900"
       >
         Rekening tujuan transfer
-      </h4>
+      </h3>
       <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs leading-5 text-amber-950">
         <strong className="block font-bold">Cek ulang sebelum menyimpan</strong>
         Pastikan pilihan bank, nama penerima, dan nomor rekening sama persis dengan

@@ -1,7 +1,5 @@
-/* Every checkout route renders one of these two roots, with or without the
-   GeoIpResolvedForm wrapper, so palette rules anchored here reach all of them. */
-[data-hybrid-form-root],
-[data-middle-form-root] {
+/* Every checkout surface uses the one canonical Malaysia checkout root. */
+[data-malaysia-checkout] {
   color: #1a1a1a;
   /* Shopify-checkout palette: white fields with a visible hairline, a light
      blue-grey for filled panels, and a single interactive blue that carries
@@ -80,7 +78,15 @@
   cursor: pointer;
 }
 .variant-option input {
-  display: none;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 .variant-copy {
   display: flex;
@@ -118,6 +124,10 @@
   border-color: var(--sf-accent);
   background: var(--sf-accent-soft);
   box-shadow: none;
+}
+.variant-option input:focus-visible + .variant-copy {
+  outline: 3px solid var(--sf-accent-ring);
+  outline-offset: 2px;
 }
 .simple-variant-option input:checked + .simple-variant-copy {
   border-color: var(--sf-accent);
@@ -619,7 +629,15 @@
   cursor: pointer;
 }
 .payment-option input {
-  display: none;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 .payment-option-copy {
   display: flex;
@@ -695,10 +713,78 @@
   line-height: 1.4;
   color: #555555;
 }
+.doku-channel-heading {
+  margin: 0.45rem 0 0;
+  color: #333333;
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+.doku-channel-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.75rem;
+  margin: 0.3rem 0 0;
+  padding: 0;
+  list-style: none;
+  color: #555555;
+  font-size: 0.6875rem;
+  line-height: 1.45;
+}
+.doku-channel-list li::before {
+  content: '✓';
+  margin-right: 0.3rem;
+  color: var(--sf-accent-strong);
+  font-weight: 700;
+}
+.payment-option input:not(:checked) + .payment-option-copy .doku-channel-heading,
+.payment-option input:not(:checked) + .payment-option-copy .doku-channel-list {
+  display: none;
+}
+[data-doku-details] {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.85rem;
+  border: 1px solid var(--sf-line);
+  border-radius: 0.6rem;
+  background: var(--sf-surface-alt);
+}
+[data-doku-details][hidden] {
+  display: none;
+}
+.doku-helper,
+.doku-disclosure {
+  margin: 0;
+  color: #555555;
+  font-size: 0.75rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+.doku-disclosure {
+  padding-top: 0.55rem;
+  border-top: 1px solid var(--sf-line);
+}
+.doku-privacy-link {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  min-height: 44px;
+  color: var(--sf-accent);
+  font-size: 0.75rem;
+  line-height: 1.55;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+  overflow-wrap: anywhere;
+}
+.doku-privacy-link:focus-visible {
+  border-radius: 0.25rem;
+  outline: 3px solid var(--sf-accent-ring);
+  outline-offset: 2px;
+}
 .payment-option:hover .payment-option-copy,
 .payment-option input:focus-visible + .payment-option-copy {
   background: var(--sf-surface-alt);
-  box-shadow: none;
+  box-shadow: inset 0 0 0 3px var(--sf-accent-ring);
 }
 .payment-option input:checked + .payment-option-copy {
   background: var(--sf-accent-soft);

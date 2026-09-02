@@ -60,7 +60,9 @@ test("outward-facing tasks are marked so they are never run autonomously", () =>
 });
 
 test("the quarantined lineage is never presented as work", () => {
-  const start = HEADING.exec(tasks).index;
+  const heading = HEADING.exec(tasks);
+  assert.ok(heading, "TASKS.md must have an `## Open queue` section");
+  const start = heading.index;
   assert.doesNotMatch(
     tasks.slice(0, start),
     /^- \[ \]/m,

@@ -1,6 +1,6 @@
 # MyBookCMS Product Requirements
 
-> Verified against disk: 2026-08-31 @ MyBookCMS working tree
+> Verified against disk: 2026-09-01 @ MyBookCMS working tree
 >
 > The single requirements source for this product. `TASKS.md` is the single
 > execution queue and holds acceptance evidence. Inherited AdsBookCMS
@@ -9,8 +9,9 @@
 
 ## Goal
 
-Provide a single-store direct-commerce system for Malaysia that a merchant can
-operate without external courier or payment service dependencies.
+Provide a single-store direct-commerce system for Malaysia with deterministic
+local fulfilment, optional secure Malaysia online payments, and merchant-owned
+operations that remain usable when an external payment channel is disabled.
 
 ## Market contract
 
@@ -36,9 +37,12 @@ is a deliberate split, not drift.
 **Money.** Every stored amount is MYR integer sen. Formatting happens at the
 presentation boundary through `Intl`, never in storage or arithmetic.
 
-**Payment.** COD and manual bank transfer only. Manual transfer presents one
-active seller bank account and requires operator confirmation before an order
-is paid. No automatic settlement exists.
+**Payment.** The current runtime keeps COD and manual bank transfer independent
+and conditionally offers DOKU Malaysia hosted Checkout only for a healthy,
+enabled configuration. This is locally verified behavior, not sandbox or live
+provider evidence. senangPay merchants use the migrated DOKU platform and the
+same DOKU Global API boundary; MyBookCMS does not maintain a second legacy
+senangPay adapter.
 
 **Fulfilment.** Manual, operator-driven. `shipping_queued_at` alone decides
 Pengiriman queue membership; `shipping_status` is an independent marker. Neither
@@ -59,11 +63,11 @@ accepted and no task may implement it until it is.
 | REQ-173 | Store and calculate monetary values as MYR integer sen; format public values with Malaysia conventions. | Implemented locally |
 | REQ-174 | Superseded by REQ-185. | Superseded |
 | REQ-175 | Superseded by REQ-185. | Superseded |
-| REQ-176 | Checkout offers only COD and manual bank transfer; no automatic payment settlement is performed. | Implemented locally |
+| REQ-176 | Superseded by REQ-216. The current implementation remains COD/manual transfer until the DOKU phase is delivered. | Superseded |
 | REQ-177 | A clean migration chain provisions the active canonical Malaysia zones, complete official postcode coverage, 16 state/WP first-kilogram rules, and five broad fallback weight bands per zone. A valid five-digit postcode and cart weight resolve one active D1-owned zone/rate rule, including explicit Labuan and Kalabakan policy; the accepted quote is snapshotted with the order. | Verified locally |
 | REQ-178 | Invalid/unmapped postcode, missing band, or active overlap refuses checkout before order persistence. | Implemented locally |
 | REQ-179 | Authorized operators can maintain postcode zones and MYR weight-rate bands with validation against active gaps and overlaps. | Implemented locally |
-| REQ-180 | The runtime has no external logistics or payment-provider dependency. | Implemented locally |
+| REQ-180 | The runtime has no external logistics dependency. Its former payment-provider prohibition is superseded by REQ-216; shipping and fulfilment remain local and manual. | Implemented locally; payment clause superseded |
 | REQ-181 | Superseded by REQ-192. | Superseded |
 | REQ-182 | Conversion preserves catalog, stock, authentication, authorization, and privacy safeguards. | Verified locally |
 | REQ-183 | When a buyer searches a Malaysian city, state, or postcode, checkout shall offer a selectable local directory result, populate the destination fields, and calculate the D1-owned shipping quote without an external runtime dependency. | Implemented locally |
@@ -96,6 +100,22 @@ accepted and no task may implement it until it is.
 | REQ-212 | The notice shall be reachable at the point the buyer is first asked for personal data, not only from the footer, per PDPA 2010 s.7(2)(a). | Proposal |
 | REQ-210 | The repository shall contain no host or network address belonging to one developer's machine. Seeds, fixtures and docs use documentation addresses. | Implemented locally |
 | REQ-209 | An authorized operator can record the merchant's own pickup address — contact name, Malaysian mobile, street address, and postcode — validated by the same rules the buyer's address uses. It is stored complete or not at all, and its city and state are resolved from the postcode directory rather than stored, so they cannot disagree with the postcode. This is operator reference data: nothing is transmitted to any logistics provider. | Implemented locally |
+| REQ-213 | Advertising attribution shall preserve the most recent paid-click identity across later UTM-only visits, replace it only when a new paid click arrives, and use one random first-party Meta visitor identity across browser Pixel and server CAPI events. Google tags shall initialize regional Consent Mode before either GTM or direct Ads configuration, and a verified Purchase shall provide Malaysia-normalized first-party matching data to the direct Google Ads conversion without changing the accepted-order Purchase taxonomy, canonical transaction ID, MYR merchandise value, or single-owner rule for each Google Ads conversion action. | Verified locally 2026-09-01 |
+| REQ-214 | Buyer checkout shall use one canonical `full` Malaysia form. `middle` and `hybrid` shall not remain selectable or independently executable buyer modes; retired public form URLs and embed mode requests shall converge on the full-form contract without dropping query attribution. This supersedes only the three-mode clause of REQ-186; the established checkout hierarchy and interaction baseline remain unchanged. | Verified locally 2026-09-01 |
+| REQ-215 | The repository shall ship only MyBookCMS product artifacts. Named Indonesia-only provider/runtime references, stale upstream operating procedures, and empty placeholders shall be removed; forward-only migration history and explicit `docs/lineage/` provenance shall remain intact. Malaysia's established hybrid language voice is product copy and is not a checkout mode or foreign artifact. | Verified locally 2026-09-01 |
+| REQ-216 | Where an operator enables online payment, checkout shall create one DOKU Malaysia hosted Checkout session through `POST /v3/checkouts`; COD and manual transfer shall remain independently configurable fallbacks. senangPay's migrated DOKU platform shall use this same adapter and state model, not a parallel legacy senangPay integration. Direct Payment, Cards-only APIs, tokenisation, recurring billing, split settlement, payout, and BNPL are outside the first release. | Verified locally 2026-09-01; sandbox remains A-221 |
+| REQ-217 | Only owner/admin roles shall configure the DOKU environment, Client ID, API Key, encrypted Secret Key, and enabled channels. Secrets shall remain server-only, masked and non-revealable, bound to the DOKU provider context at rest, absent from logs and responses, and fail closed when incomplete, plaintext, or undecryptable. Sandbox and production credentials shall never be interchangeable. | Verified locally 2026-09-01; no production credential used |
+| REQ-218 | When a buyer chooses DOKU, the system shall persist the authoritative order, stock reservation, and one payment attempt before calling DOKU; create Checkout from D1-owned MYR totals and normalized Malaysia customer data; use a unique bounded invoice/reference and idempotency identity; validate the provider response under REQ-219 and the narrow Checkout compatibility profile in REQ-227; and store only the provider identifiers, checkout URL, expiry, channel/status facts, and sanitized failure classification required to resume safely. | Verified locally 2026-09-02; A-221R passed sandbox transport re-smoke and broader sandbox lifecycle remains A-221 |
+| REQ-219 | Every outbound DOKU Global request and every inbound Payment Notification shall use the documented HMAC-SHA256 Global signature over the exact raw body bytes, timestamp, client identity, and request target. Create/Retrieve Checkout responses shall verify the same signature whenever DOKU supplies it and otherwise may be accepted only under REQ-227. The system shall reject an invalid present signature, stale timestamp, mismatched target, wrong environment, non-MYR amount, or re-serialized digest before any payment or order transition. The Cards-only signature scheme shall not be accepted. | Verified locally 2026-09-02; response exception implemented by A-221R |
+| REQ-220 | D1 shall own an append-auditable payment-attempt lifecycle linked to exactly one order. Provider reference, merchant invoice, and idempotency identity shall be unique; repeated create, return, notification, status retrieval, or scheduled reconciliation shall converge on one monotonic local result without duplicating an order, decrementing stock twice, or reviving a terminal payment. | Verified locally 2026-09-01 |
+| REQ-221 | When a valid DOKU Payment Notification is received, the system shall acknowledge only after an idempotent local transition. `SUCCESS`/completed shall mark the online order paid once; failed or expired terminal outcomes shall release still-reserved stock once; unknown or contradictory states shall remain inspectable and shall not be coerced to paid. Browser redirects shall never constitute payment evidence. | Verified locally 2026-09-01 |
+| REQ-222 | DOKU return, result, and cancel routes shall preserve the checkout-issued order capability, expose no customer or credential data, and resolve display state from the local payment record plus a strictly validated and correlated server-to-server status retrieval under REQ-219/REQ-227 when reconciliation is needed. A callback capability in the query string shall be validated server-side, exchanged for a bounded Secure HttpOnly SameSite cookie, and removed by redirect before any page shell, advertising tag, analytics code, referrer, DOM, or browser storage can observe it. A buyer shall be able to retry an eligible failed/expired initiation without creating a second order or losing attribution; if the prior terminal attempt released stock, retry shall atomically revalidate and reserve the same order items or refuse when stock is no longer available. | Verified locally 2026-09-01; capability transport clarified 2026-09-01 and response profile amended by REQ-227 |
+| REQ-223 | The canonical full checkout shall present COD, manual transfer, and only the DOKU channels enabled for that install; explain the redirect before leaving the store; preserve accessible loading, failure, cancel, pending, and recovery states; and render one consistent Malay checkout/confirmation hierarchy at 390 px and 1280 px. This work requires the repository's designer/vision handoff and depends on REQ-214. | Verified locally 2026-09-01; sandbox remains A-221 |
+| REQ-224 | The operator shall be able to inspect redacted DOKU configuration health and payment attempts, reconcile a pending attempt, and distinguish configuration, authentication, signature, timeout, provider, and local-transition failures without seeing secrets or raw customer payloads. Scheduled reconciliation shall be bounded, idempotent, and limited to eligible non-terminal attempts. | Verified locally 2026-09-01 |
+| REQ-225 | A DOKU order shall emit the existing canonical Meta/Google Purchase exactly once only after server-authoritative online payment success. COD/manual-transfer Purchase timing remains unchanged. All channels retain the same order transaction ID, canonical product identity, MYR merchandise value, click attribution, and browser/server deduplication contract. | Verified locally 2026-09-01; no live Ads request used |
+| REQ-226 | Before a DOKU-enabled install accepts live traffic, its operator shall receive an exact webhook URL and sandbox-to-production checklist; the privacy/payment copy shall disclose DOKU processing in Malay and English where legally required; and release evidence shall cover signed notifications, duplicate delivery, pending reconciliation, success, failure, expiry, cancel/return, stock safety, Ads deduplication, and secret-redacted logs. | Verified locally 2026-09-02; A-221 sandbox evidence pending |
+| REQ-227 | DOKU Checkout Create/Retrieve responses that omit `Signature` may be accepted only from the fixed HTTPS DOKU Checkout origin after strict transport-envelope validation: exact configured Client ID, exact requested API version, fresh canonical response timestamp, JSON media type, bounded body, absence of Cards-only `Request-Id`, and exact checkout ID, merchant invoice where present in the request, MYR amount, and D1-owned attempt correlation. A present signature remains mandatory to verify and an invalid or malformed signature shall never fall back to the unsigned profile. This exception shall not apply to requests, Payment Notifications, redirects, other DOKU API families, or arbitrary hosts; redirects remain non-authoritative and payment transitions require the existing D1 correlations and monotonic lifecycle. | Verified locally and against sandbox create/retrieve transport 2026-09-02 |
+| REQ-228 | When an Owner or Admin manages Malaysia shipping policy, the admin shall present state/WP tariff overrides, zone/postcode coverage, and fallback weight bands as separate URL-addressable task panels. Switching panels or collapsing a zone shall not save, refetch, or discard a valid unsaved tariff draft; the existing D1 policy, role boundary, and immediate/explicit mutation semantics shall remain unchanged. | Accepted; planned |
 
 ## Admin access
 
@@ -171,9 +191,11 @@ request URL, so `//admin/...` never reached the gate. Fixed 2026-08-17
 
 ## Non-goals
 
-- Cross-border delivery, tax calculation, real-time provider quotation, external
-  dispatch, automatic payment settlement, automated translation, or a public
-  multi-language selector.
+- Cross-border delivery, tax calculation, real-time courier quotation, external
+  dispatch, automated translation, or a public multi-language selector.
+- A parallel legacy senangPay adapter, direct card handling, card tokenisation,
+  subscriptions/recurring billing, split settlement, payout, BNPL, or storing
+  PAN/CVV. The first online-payment release uses DOKU hosted Checkout only.
 - Multi-tenant runtime routing or shared merchant data.
 - A redesign of the inherited AdsBookCMS admin, PDP, checkout, or WhatsApp CRM
   interaction model.

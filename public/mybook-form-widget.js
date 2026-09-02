@@ -9,7 +9,7 @@
       return "";
     }
   })();
-  const snippetVersion = "3";
+  const snippetVersion = "4";
 
   class MyBookFormWidget extends HTMLElement {
     static observedAttributes = ["base-url", "product-id", "variant-id", "title"];
@@ -78,7 +78,11 @@
     #checkoutTarget(value) {
       try {
         const target = new URL(String(value || ""), this.#baseOrigin());
-        return target.origin === this.#baseOrigin() && ["/payment", "/thanks"].includes(target.pathname) ? target.toString() : "";
+        const localCompletion = target.origin === this.#baseOrigin() &&
+          (target.pathname === "/thanks" || target.pathname === "/payment" || target.pathname.startsWith("/payment/"));
+        const dokuHosted = target.protocol === "https:" && !target.username && !target.password &&
+          (target.hostname === "doku.com" || target.hostname.endsWith(".doku.com"));
+        return localCompletion || dokuHosted ? target.toString() : "";
       } catch {
         return "";
       }

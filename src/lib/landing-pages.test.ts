@@ -151,7 +151,7 @@ test("landing page CRUD persists pages and ordered, parsed sections", async () =
           mode: "hybrid",
           selected_variant_id: "20001",
           button_text: "Pesan Sekarang",
-        },
+        } as never,
       },
       {
         type: "html",
@@ -168,7 +168,6 @@ test("landing page CRUD persists pages and ordered, parsed sections", async () =
     ["html", "form"],
   );
   assert.deepEqual(created.sections[1]?.form_config, {
-    mode: "hybrid",
     selected_variant_id: "20001",
     button_text: "Pesan Sekarang",
   });
@@ -185,7 +184,7 @@ test("landing page CRUD persists pages and ordered, parsed sections", async () =
     sections: [
       {
         type: "form",
-        form_config: { mode: "full", section_title: "Form Pemesanan" },
+        form_config: { mode: "full", section_title: "Form Pemesanan" } as never,
       },
     ],
   });
@@ -195,7 +194,6 @@ test("landing page CRUD persists pages and ordered, parsed sections", async () =
   assert.equal(updated?.is_active, 0);
   assert.equal(updated?.sections.length, 1);
   assert.deepEqual(updated?.sections[0]?.form_config, {
-    mode: "full",
     section_title: "Form Pemesanan",
   });
   assert.equal(await getLandingPageBySlug(locals, "promo-asahan"), null);

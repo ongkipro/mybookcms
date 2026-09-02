@@ -1,6 +1,18 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { navigateAfterCheckout } from './checkout-navigation.ts';
+import { isSafeDokuCheckoutUrl, navigateAfterCheckout } from './checkout-navigation.ts';
+
+test('DOKU hosted navigation accepts only credential-free HTTPS DOKU hosts', () => {
+  assert.equal(isSafeDokuCheckoutUrl('https://checkout.doku.com/session/abc'), true);
+  assert.equal(isSafeDokuCheckoutUrl('https://doku.com/pay'), true);
+  for (const unsafe of [
+    'http://checkout.doku.com/session/abc',
+    'https://doku.com.evil.example/pay',
+    'https://evil-doku.com/pay',
+    'https://user:pass@checkout.doku.com/pay',
+    'javascript:alert(1)',
+  ]) assert.equal(isSafeDokuCheckoutUrl(unsafe), false, unsafe);
+});
 
 test('navigateAfterCheckout strips PII from completion URLs', () => {
   const assigned: string[] = [];

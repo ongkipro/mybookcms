@@ -68,10 +68,13 @@ export const GET: APIRoute = async ({ request, locals }) => {
             price: v.price,
             compare_price: v.comparePrice ?? v.price,
           })),
+          form: {
+            render_url: `/full-form?product_id=${product.catalogId}`,
+            embed_url: `/embed/form?product_id=${product.catalogId}`,
+          },
           urls: {
             product: `/produk/${product.slug}`,
-            checkout_hybrid: `/hybrid-form?product_id=${product.catalogId}`,
-            form_render: `/hybrid-form?product_id=${product.catalogId}`,
+            form_render: `/full-form?product_id=${product.catalogId}`,
           },
         })),
       },

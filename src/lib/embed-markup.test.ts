@@ -10,19 +10,18 @@ import {
 const markup = buildEmbedMarkup({
   origin: "https://forms.example",
   embedUrl:
-    "https://forms.example/embed/form?mode=hybrid&product_id=10001&variant_id=20002",
+    "https://forms.example/embed/form?product_id=10001&variant_id=20002",
   elementId: "mybook-order-form-10001",
   title: 'Form pemesanan Alpha "Sample"',
   productId: "10001",
   variantId: "20002",
-  mode: "hybrid",
 });
 
 test("widget keeps a usable iframe fallback and canonical form identity", () => {
   assert.match(markup.widget, /^<mybook-form-widget /);
   assert.match(markup.widget, /product-id="10001"/);
   assert.match(markup.widget, /variant-id="20002"/);
-  assert.match(markup.widget, /mode=hybrid/);
+  assert.doesNotMatch(markup.widget, /[?&]mode=/);
   assert.match(markup.widget, /<iframe [^>]*loading="eager"/);
   assert.match(markup.widget, /src="https:\/\/forms\.example\/embed\/form\?/);
   assert.match(markup.widget, /Form pemesanan Alpha &quot;Sample&quot;/);
@@ -55,11 +54,10 @@ test("every generated snippet stamps the current version into the frame URL", ()
   // Re-stamping must replace, never append a second marker.
   const restamped = buildEmbedMarkup({
     origin: "https://forms.example",
-    embedUrl: "https://forms.example/embed/form?mode=hybrid&product_id=10001&v=1",
+    embedUrl: "https://forms.example/embed/form?product_id=10001&v=1",
     elementId: "mybook-order-form-10001",
     title: "Form",
     productId: "10001",
-    mode: "hybrid",
   });
   assert.equal(restamped.plainIframe.match(/v=/g)?.length, 1);
   assert.ok(restamped.plainIframe.includes(version));
@@ -236,7 +234,6 @@ async function mountWidget(): Promise<WidgetRun> {
   const element = new (ElementClass as new () => Record<string, any>)();
   element.setAttribute("base-url", "https://forms.example");
   element.setAttribute("product-id", "10001");
-  element.setAttribute("mode", "hybrid");
   element.connectedCallback();
   await new Promise((resolve) => setTimeout(resolve, 5));
 
@@ -291,12 +288,15 @@ test("the widget never reports a Purchase, however the frame asks", async () => 
   assert.deepEqual(run.navigations, ["https://forms.example/thanks"]);
 });
 
-test("the widget navigates only to a store-origin completion page", async () => {
+test("the widget navigates only to store completion or credential-free HTTPS DOKU", async () => {
   const run = await mountWidget();
 
   run.post({ type: "mybook:checkout-redirect", url: "https://evil.example/thanks" });
   run.post({ type: "mybook:checkout-redirect", url: "https://forms.example/admin/orders" });
   run.post({ type: "mybook:checkout-redirect", url: "javascript:alert(1)" });
+  run.post({ type: "mybook:checkout-redirect", url: "http://checkout.doku.com/pay" });
+  run.post({ type: "mybook:checkout-redirect", url: "https://doku.com.evil.example/pay" });
+  run.post({ type: "mybook:checkout-redirect", url: "https://user:pass@checkout.doku.com/pay" });
   assert.deepEqual(run.navigations, []);
 
   run.post(
@@ -310,5 +310,9 @@ test("the widget navigates only to a store-origin completion page", async () => 
   assert.deepEqual(run.navigations, [], "only the widget's own frame may drive navigation");
 
   run.post({ type: "mybook:checkout-redirect", url: "/payment" });
-  assert.deepEqual(run.navigations, ["https://forms.example/payment"]);
+  run.post({ type: "mybook:checkout-redirect", url: "https://checkout.doku.com/session/abc" });
+  assert.deepEqual(run.navigations, [
+    "https://forms.example/payment",
+    "https://checkout.doku.com/session/abc",
+  ]);
 });

@@ -1,8 +1,11 @@
 ---
 import { getStoreAdsConfig, GOOGLE_ADS_ID_PATTERN, GOOGLE_ADS_LABEL_PATTERN, GOOGLE_TAG_MANAGER_ID_PATTERN, META_PIXEL_ID_PATTERN } from '../../../lib/ads-config';
+import { META_EXTERNAL_ID_COOKIE } from '../../../lib/click-ids';
+type Props = { purchaseOnly?: boolean };
+const { purchaseOnly = false } = Astro.props;
 const config = await getStoreAdsConfig(Astro.locals);
 const metaPixelId = META_PIXEL_ID_PATTERN.test(config.metaPixelId) ? config.metaPixelId : '';
-const gtmId = GOOGLE_TAG_MANAGER_ID_PATTERN.test(config.googleTagManagerId) ? config.googleTagManagerId : '';
+const gtmId = !purchaseOnly && GOOGLE_TAG_MANAGER_ID_PATTERN.test(config.googleTagManagerId) ? config.googleTagManagerId : '';
 const googleAdsId = GOOGLE_ADS_ID_PATTERN.test(config.googleAdsConversionId) ? config.googleAdsConversionId : '';
 const googleAdsLabel = GOOGLE_ADS_LABEL_PATTERN.test(config.googleAdsConversionLabel) ? config.googleAdsConversionLabel : '';
 const hasGoogleAds = Boolean(googleAdsId && googleAdsLabel);
@@ -10,6 +13,30 @@ const hasGoogleAds = Boolean(googleAdsId && googleAdsLabel);
 
 {(gtmId || hasGoogleAds) && <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin />}
 {metaPixelId && <link rel="preconnect" href="https://connect.facebook.net" crossorigin />}
+
+{(gtmId || hasGoogleAds) && <script is:inline>
+  (() => {
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = window.gtag || function () { window.dataLayer.push(arguments); };
+    window.gtag('consent', 'default', {
+      ad_storage: 'denied',
+      ad_user_data: 'denied',
+      ad_personalization: 'denied',
+      analytics_storage: 'denied',
+      region: [
+        'AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IS','IE','IT',
+        'LV','LI','LT','LU','MT','NL','NO','PL','PT','RO','SK','SI','ES','SE','GB','CH',
+      ],
+      wait_for_update: 500,
+    });
+    window.gtag('consent', 'default', {
+      ad_storage: 'granted',
+      ad_user_data: 'granted',
+      ad_personalization: 'granted',
+      analytics_storage: 'granted',
+    });
+  })();
+</script>}
 
 {gtmId && <script is:inline define:vars={{ gtmId }}>
   (() => {
@@ -32,8 +59,9 @@ const hasGoogleAds = Boolean(googleAdsId && googleAdsLabel);
     script.async = true;
     script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(googleAdsId)}`;
     document.head.appendChild(script);
-    window.__MYBOOK_GOOGLE_PURCHASE__ = (value, transactionId) => {
+    window.__MYBOOK_GOOGLE_PURCHASE__ = (value, transactionId, userData) => {
       if (!transactionId) return;
+      if (userData) window.gtag('set', 'user_data', userData);
       window.gtag('event', 'conversion', {
         send_to: `${googleAdsId}/${googleAdsLabel}`,
         value: Number(value || 0),
@@ -44,7 +72,7 @@ const hasGoogleAds = Boolean(googleAdsId && googleAdsLabel);
   })();
 </script>}
 
-{metaPixelId && <script is:inline define:vars={{ metaPixelId }}>
+{metaPixelId && <script is:inline define:vars={{ metaPixelId, metaExternalIdCookie: META_EXTERNAL_ID_COOKIE }}>
   (() => {
     if (!window.fbq) {
       const fbq = window.fbq = function () {
@@ -60,11 +88,27 @@ const hasGoogleAds = Boolean(googleAdsId && googleAdsLabel);
       script.src = 'https://connect.facebook.net/en_US/fbevents.js';
       document.head.appendChild(script);
     }
-    window.fbq('init', metaPixelId);
+    window.__MYBOOK_META_READY__ = (async () => {
+      const readCookie = (name) => document.cookie
+        .split('; ')
+        .find((row) => row.startsWith(`${name}=`))
+        ?.slice(name.length + 1) || '';
+      let externalId = readCookie(metaExternalIdCookie);
+      if (!/^[a-f0-9]{32}$/.test(externalId)) {
+        externalId = Array.from(crypto.getRandomValues(new Uint8Array(16)), (byte) =>
+          byte.toString(16).padStart(2, '0')).join('');
+        const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+        document.cookie = `${metaExternalIdCookie}=${externalId}; Path=/; Max-Age=${90 * 24 * 60 * 60}; SameSite=Lax${secure}`;
+      }
+      const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(externalId));
+      const externalIdHash = Array.from(new Uint8Array(digest), (byte) =>
+        byte.toString(16).padStart(2, '0')).join('');
+      window.fbq('init', metaPixelId, { external_id: externalIdHash });
+    })().catch(() => window.fbq('init', metaPixelId));
   })();
 </script>}
 
-{(metaPixelId || gtmId || hasGoogleAds) && <script is:inline define:vars={{ metaPixelId }}>
+{(metaPixelId || gtmId || hasGoogleAds) && <script is:inline define:vars={{ metaPixelId, purchaseOnly }}>
   (() => {
     const createEventId = (prefix) => {
       const random = typeof crypto.randomUUID === 'function'
@@ -73,7 +117,7 @@ const hasGoogleAds = Boolean(googleAdsId && googleAdsLabel);
             byte.toString(16).padStart(2, '0')).join('');
       return `${prefix}:${random}`;
     };
-    const post = (payload) => metaPixelId
+    const post = (payload) => metaPixelId && !purchaseOnly
       ? fetch('/api/meta-event', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -92,7 +136,11 @@ const hasGoogleAds = Boolean(googleAdsId && googleAdsLabel);
         ...(contentIds.length ? { content_ids: contentIds, content_type: 'product' } : {}),
         ...(hasValue ? { value: Number(payload.value), currency: 'MYR' } : {}),
       };
-      if (window.fbq) window.fbq('track', eventName, pixelData, { eventID: eventId });
+      if (window.fbq) {
+        const firePixel = () => window.fbq('track', eventName, pixelData, { eventID: eventId });
+        if (window.__MYBOOK_META_READY__) void window.__MYBOOK_META_READY__.then(firePixel);
+        else firePixel();
+      }
       void post({
         event_name: eventName,
         event_id: eventId,
@@ -132,7 +180,7 @@ const hasGoogleAds = Boolean(googleAdsId && googleAdsLabel);
       });
       return eventId;
     };
-    if (metaPixelId) {
+    if (metaPixelId && !purchaseOnly) {
       window.__MYBOOK_TRACK__('PageView', {
         event_id: createEventId('pageview'),
         content_name: document.title,

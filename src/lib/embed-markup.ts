@@ -7,7 +7,7 @@
  * Treat an absent marker as version 1 so old pasted snippets can be detected
  * without collecting visitor telemetry.
  */
-export const EMBED_SNIPPET_VERSION = 3;
+export const EMBED_SNIPPET_VERSION = 4;
 
 const VERSION_PARAM = "v";
 
@@ -18,7 +18,6 @@ export type EmbedMarkupInput = {
   title: string;
   productId: string;
   variantId?: string;
-  mode: "middle" | "full" | "hybrid";
 };
 
 function escapeHtmlAttribute(value: string) {

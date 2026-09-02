@@ -165,7 +165,7 @@ const productSchemaJson = JSON.stringify(productSchema).replace(/</g, '\\u003c')
       const formConfig = section.form_config ?? {};
       return (
         <div id={section.id === firstFormSectionId ? 'checkout-form' : `checkout-form-${section.id}`} class="scroll-mt-8">
-          <GeoIpResolvedForm mode={formConfig.mode ?? 'hybrid'} productSlug={product.slug} embedded={true} selectedVariantId={formConfig.selected_variant_id} />
+          <GeoIpResolvedForm productSlug={product.slug} embedded={true} selectedVariantId={formConfig.selected_variant_id} />
         </div>
       );
     })

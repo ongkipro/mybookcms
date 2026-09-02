@@ -12,21 +12,19 @@ import {
 } from '../../../lib/validation';
 
 interface Props {
-  mode?: 'middle' | 'full' | 'hybrid';
   productSlug?: string;
   selectedVariantId?: string;
   embedded?: boolean;
   bannerImage?: string;
 }
 
-const { mode = 'hybrid', productSlug = 'asahan-portable', selectedVariantId, bannerImage } = Astro.props;
-const isMiddle = mode === 'middle';
+const { productSlug = 'asahan-portable', selectedVariantId, bannerImage } = Astro.props;
 const product = await getStorefrontProduct(Astro.locals, productSlug);
 if (!product) throw new Error(`Product ${productSlug} not found`);
 const selectedVariant = resolveFormVariant(product, selectedVariantId) || product.variants[0];
 const locale = resolveStorefrontLocale(Astro.locals.tenant.locale);
 const t = {
-      variant: 'Pilih varian', recipient: 'Maklumat penghantaran', name: 'Nama penuh', phone: 'Nombor telefon Malaysia', address: 'Alamat jalan lengkap', addressPlaceholder: 'Nombor rumah/unit, jalan dan tanda berdekatan', location: 'Cari bandar atau poskod', locationPlaceholder: 'Contoh: Kuala Lumpur atau 50450', locationHint: 'Taip sekurang-kurangnya 3 huruf atau poskod tepat 5 digit.', searching: 'Mencari lokasi…', found: 'lokasi ditemui', empty: 'Tiada lokasi sepadan. Cuba bandar, negeri atau poskod 5 digit.', searchFailed: 'Lokasi gagal dicari.', retry: 'Cuba lagi', deliverTo: 'Hantar ke', change: 'Ubah', addressPending: 'Lengkapkan alamat jalan di atas.', payment: 'Kaedah bayaran', summary: 'Ringkasan pesanan', shipping: 'Penghantaran', total: 'Jumlah', quote: 'Pilih lokasi penghantaran', submit: 'Buat Pesanan Sekarang', loading: 'Mengira penghantaran…', unavailable: 'Penghantaran belum tersedia untuk lokasi ini.', quoteFailed: 'Kadar penghantaran gagal dikira.', quoteChanged: 'Kadar penghantaran berubah. Semak jumlah baharu dan hantar semula.', selectFromList: 'Cari dan pilih bandar atau poskod daripada senarai.', submitting: 'Membuat pesanan…', completeName: 'Lengkapkan nama dahulu', completePhone: 'Lengkapkan nombor WhatsApp dahulu', completeAddress: 'Lengkapkan alamat dahulu', chooseLocation: 'Pilih lokasi penghantaran', loadingPayment: 'Memuatkan kaedah bayaran…', choosePayment: 'Pilih kaedah bayaran', nameEmpty: 'Nama penuh belum diisi.', nameShort: 'Nama penuh terlalu pendek (minimum 2 aksara).', nameInvalid: 'Nama penuh mengandungi aksara yang tidak dibenarkan.', phoneEmpty: 'Nombor WhatsApp belum diisi.', phoneInvalid: 'Masukkan nombor mudah alih Malaysia yang sah. Contoh: 0123456789.', addressEmpty: 'Alamat lengkap belum diisi.', addressShort: 'Alamat lengkap terlalu pendek (minimum 10 aksara).', addressInvalid: 'Alamat lengkap mesti mengandungi nama jalan atau kawasan.', paymentRequired: 'Pilih kaedah bayaran.', bankRequired: 'Pilih akaun bank penerima.', paymentFailed: 'Kaedah bayaran gagal dimuatkan.', fixFields: 'Semak ruangan yang ditandakan sebelum membuat pesanan.',
+      variant: 'Pilih varian', recipient: 'Maklumat penghantaran', name: 'Nama penuh', phone: 'Nombor telefon Malaysia', address: 'Alamat jalan lengkap', addressPlaceholder: 'Nombor rumah/unit, jalan dan tanda berdekatan', location: 'Cari bandar atau poskod', locationPlaceholder: 'Contoh: Kuala Lumpur atau 50450', locationHint: 'Taip sekurang-kurangnya 3 huruf atau poskod tepat 5 digit.', searching: 'Mencari lokasi…', found: 'lokasi ditemui', empty: 'Tiada lokasi sepadan. Cuba bandar, negeri atau poskod 5 digit.', searchFailed: 'Lokasi gagal dicari.', retry: 'Cuba lagi', deliverTo: 'Hantar ke', change: 'Ubah', addressPending: 'Lengkapkan alamat jalan di atas.', payment: 'Kaedah bayaran', summary: 'Ringkasan pesanan', shipping: 'Penghantaran', total: 'Jumlah', quote: 'Pilih lokasi penghantaran', submit: 'Buat Pesanan Sekarang', dokuSubmit: 'Teruskan ke DOKU', dokuRetry: 'Cuba buka DOKU semula', loading: 'Mengira penghantaran…', unavailable: 'Penghantaran belum tersedia untuk lokasi ini.', quoteFailed: 'Kadar penghantaran gagal dikira.', quoteChanged: 'Kadar penghantaran berubah. Semak jumlah baharu dan hantar semula.', selectFromList: 'Cari dan pilih bandar atau poskod daripada senarai.', submitting: 'Membuat pesanan…', dokuSubmitting: 'Menyediakan pembayaran…', dokuRetrying: 'Sedang menyediakan pembayaran semula…', completeName: 'Lengkapkan nama dahulu', completePhone: 'Lengkapkan nombor WhatsApp dahulu', completeAddress: 'Lengkapkan alamat dahulu', completeEmail: 'Lengkapkan e-mel dahulu', chooseLocation: 'Pilih lokasi penghantaran', loadingPayment: 'Memuatkan kaedah bayaran…', choosePayment: 'Pilih kaedah bayaran', nameEmpty: 'Nama penuh belum diisi.', nameShort: 'Nama penuh terlalu pendek (minimum 2 aksara).', nameInvalid: 'Nama penuh mengandungi aksara yang tidak dibenarkan.', phoneEmpty: 'Nombor WhatsApp belum diisi.', phoneInvalid: 'Masukkan nombor mudah alih Malaysia yang sah. Contoh: 0123456789.', addressEmpty: 'Alamat lengkap belum diisi.', addressShort: 'Alamat lengkap terlalu pendek (minimum 10 aksara).', addressInvalid: 'Alamat lengkap mesti mengandungi nama jalan atau kawasan.', emailInvalid: 'Masukkan alamat e-mel yang sah untuk meneruskan ke DOKU.', paymentRequired: 'Pilih kaedah bayaran.', bankRequired: 'Pilih akaun bank penerima.', paymentFailed: 'Kaedah bayaran gagal dimuatkan.', fixFields: 'Semak ruangan yang ditandakan sebelum membuat pesanan.',
     };
 const instanceId = `my-checkout-${crypto.randomUUID()}`;
 const searchId = `${instanceId}-location-search`;
@@ -35,7 +33,7 @@ const locationStatusId = `${instanceId}-location-status`;
 const formatPrice = (amountSen: number) => formatMyr(amountSen, locale);
 ---
 
-<section class="bg-white" data-malaysia-checkout data-hybrid-form-root data-instance-id={instanceId} data-product-id={product.catalogId} data-product-name={product.productName} data-form-mode={mode}>
+<section class="bg-white" data-malaysia-checkout data-instance-id={instanceId} data-product-id={product.catalogId} data-product-name={product.productName}>
   <section class="pb-8 pt-0">
     <form class="grid gap-5 pt-4" novalidate>
       <div class="absolute left-[-10000px] top-auto size-px overflow-hidden" aria-hidden="true"><label>Jangan isi kolom ini<input type="text" name="website" tabindex="-1" autocomplete="off" /></label></div>
@@ -57,15 +55,15 @@ const formatPrice = (amountSen: number) => formatMyr(amountSen, locale);
             <div class="form-field form-field-full"><input id={`${instanceId}-name`} required name="customer_name" minlength={MIN_CUSTOMER_NAME_LENGTH} maxlength={MAX_CUSTOMER_NAME_LENGTH} autocomplete="name" placeholder=" " /><label for={`${instanceId}-name`}>Nama penuh</label></div>
             <div class="form-field form-field-full"><input id={`${instanceId}-phone`} required name="customer_phone" type="tel" inputmode="numeric" autocomplete="tel" placeholder=" " /><label for={`${instanceId}-phone`}>Nombor WhatsApp Malaysia</label></div>
             <div class="form-field form-field-full"><textarea id={`${instanceId}-address`} required name="address" rows="2" minlength={MIN_DELIVERY_ADDRESS_LENGTH} maxlength={MAX_DELIVERY_ADDRESS_LENGTH} autocomplete="street-address" placeholder=" "></textarea><label for={`${instanceId}-address`}>Alamat lengkap &amp; panduan lokasi</label></div>
-            {!isMiddle && <div class="form-field form-field-full"><div data-location-search-container class="form-field"><input id={searchId} data-location-search required type="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls={listId} aria-describedby={locationStatusId} autocomplete="off" enterkeyhint="search" placeholder=" " /><label for={searchId}>Cari bandar atau poskod</label></div><div id={listId} data-location-list class="district-list" role="listbox" aria-label={t.location} hidden></div><div data-location-picked class="shipping-address-summary" aria-live="polite" hidden><div class="shipping-address-summary-head"><strong>Hantar ke</strong><button type="button" data-location-change class="district-edit-button">Ubah</button></div><p data-selected-address class="shipping-address-line">{t.addressPending}</p><p data-selected-location class="district-picked-subtitle">-</p></div><div class="location-help-row"><small id={locationStatusId} data-location-status class="district-help" role="status" aria-live="polite">{t.locationHint}</small><button type="button" data-location-retry class="district-edit-button district-retry-button" hidden>{t.retry}</button></div><input type="hidden" name="location_id" data-location-id /><input type="hidden" name="district" data-district /><input type="hidden" name="city" data-city /><input type="hidden" name="province" data-province /><input type="hidden" name="postal_code" data-postcode /></div>}
+            <div class="form-field form-field-full"><div data-location-search-container class="form-field"><input id={searchId} data-location-search required type="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls={listId} aria-describedby={locationStatusId} autocomplete="off" enterkeyhint="search" placeholder=" " /><label for={searchId}>Cari bandar atau poskod</label></div><div id={listId} data-location-list class="district-list" role="listbox" aria-label={t.location} hidden></div><div data-location-picked class="shipping-address-summary" aria-live="polite" hidden><div class="shipping-address-summary-head"><strong>Hantar ke</strong><button type="button" data-location-change class="district-edit-button">Ubah</button></div><p data-selected-address class="shipping-address-line">{t.addressPending}</p><p data-selected-location class="district-picked-subtitle">-</p></div><div class="location-help-row"><small id={locationStatusId} data-location-status class="district-help" role="status" aria-live="polite">{t.locationHint}</small><button type="button" data-location-retry class="district-edit-button district-retry-button" hidden>{t.retry}</button></div><input type="hidden" name="location_id" data-location-id /><input type="hidden" name="district" data-district /><input type="hidden" name="city" data-city /><input type="hidden" name="province" data-province /><input type="hidden" name="postal_code" data-postcode /></div>
           </div>
         </section>
 
-        {!isMiddle && <section class="form-block"><div class="inner-card"><div class="space-y-3 payment-block"><div class="payment-block-anchor" aria-hidden="true"><span></span><small>Pilih cara bayar</small><span></span></div><div data-payment-options class="payment-options" aria-busy="true"><p class="text-sm text-[#555555]">{t.loadingPayment}</p></div><small id={`${instanceId}-payment-feedback`} data-payment-feedback class="field-feedback" role="alert" hidden></small><button type="button" data-payment-retry class="district-edit-button" hidden>{t.retry}</button></div></div></section>}
+        <section class="form-block"><div class="inner-card"><div class="space-y-3 payment-block"><div class="payment-block-anchor" aria-hidden="true"><span></span><small>Pilih cara bayar</small><span></span></div><div data-payment-options class="payment-options" role="radiogroup" aria-label="Kaedah bayaran" aria-busy="true"><p class="text-sm text-[#555555]">{t.loadingPayment}</p></div><div data-doku-details hidden><div class="form-field form-field-full"><input id={`${instanceId}-email`} name="customer_email" type="email" inputmode="email" autocomplete="email" maxlength="160" aria-describedby={`${instanceId}-doku-helper ${instanceId}-doku-privacy ${instanceId}-doku-disclosure`} placeholder=" " disabled /><label for={`${instanceId}-email`}>E-mel untuk pembayaran DOKU</label></div><small id={`${instanceId}-doku-helper`} class="doku-helper">DOKU menggunakan e-mel dan maklumat pesanan ini untuk menyediakan pembayaran dan resit.</small><a id={`${instanceId}-doku-privacy`} class="doku-privacy-link" href="/dasar-privasi#pembayaran-doku" target="_blank" rel="noopener">Baca pendedahan privasi DOKU dalam Bahasa Melayu dan bahasa Inggeris (dibuka dalam tab baharu).</a><p id={`${instanceId}-doku-disclosure`} class="doku-disclosure">Apabila anda meneruskan, anda akan meninggalkan kedai ini dan membuka halaman pembayaran DOKU. Pesanan hanya dianggap dibayar selepas pengesahan diterima.</p></div><small id={`${instanceId}-payment-feedback`} data-payment-feedback class="field-feedback" role="alert" hidden></small><button type="button" data-payment-retry class="district-edit-button" hidden>{t.retry}</button></div></div></section>
 
         <section class="form-block summary-block">
           <div class="form-block-head"><h2 class="section-title">Ringkasan Pesanan</h2><p class="section-lead">Semak butiran pesanan sebelum meneruskan.</p></div>
-          <div class="summary-card" aria-live="polite"><div class="summary-row summary-row-product"><strong class="summary-product-name">{product.productName}</strong><div class="summary-price"><span data-summary-label class="summary-variant">{selectedVariant.label}</span><span class="summary-price-figures"><span data-summary-compare class="summary-compare-wrap" hidden={(selectedVariant.comparePrice ?? selectedVariant.price) <= selectedVariant.price}>{formatPrice(selectedVariant.comparePrice ?? selectedVariant.price)}</span><strong data-product-total>{formatPrice(selectedVariant.price)}</strong></span></div></div><div class="summary-row"><span>Penghantaran</span><strong data-shipping>{isMiddle ? 'Disahkan oleh CS' : t.quote}</strong><button type="button" data-quote-retry class="district-edit-button" hidden>{t.retry}</button></div><div class="total-box"><div><p>Jumlah Bayaran</p><small>{isMiddle ? 'Penghantaran disahkan melalui WhatsApp' : 'Termasuk produk + penghantaran'}</small></div><div class="total-box-side"><strong data-total>{formatPrice(selectedVariant.price)}</strong></div></div></div>
+          <div class="summary-card" aria-live="polite"><div class="summary-row summary-row-product"><strong class="summary-product-name">{product.productName}</strong><div class="summary-price"><span data-summary-label class="summary-variant">{selectedVariant.label}</span><span class="summary-price-figures"><span data-summary-compare class="summary-compare-wrap" hidden={(selectedVariant.comparePrice ?? selectedVariant.price) <= selectedVariant.price}>{formatPrice(selectedVariant.comparePrice ?? selectedVariant.price)}</span><strong data-product-total>{formatPrice(selectedVariant.price)}</strong></span></div></div><div class="summary-row"><span>Penghantaran</span><strong data-shipping>{t.quote}</strong><button type="button" data-quote-retry class="district-edit-button" hidden>{t.retry}</button></div><div class="total-box"><div><p>Jumlah Bayaran</p><small>Termasuk produk + penghantaran</small></div><div class="total-box-side"><strong data-total>{formatPrice(selectedVariant.price)}</strong></div></div></div>
           <div class="info-box"><span>Harga dan stok disahkan semula semasa pesanan diproses. Pastikan nombor WhatsApp aktif.</span></div>
           <div class="submit-panel"><div class="cta-row"><button type="submit" class="submit-main" data-state="disabled" disabled><span class="submit-main-label" data-submit-label>{t.completeName}</span><span class="submit-main-icon" aria-hidden="true">→</span></button></div><div class="trust-strip" aria-label="Maklumat pesanan"><span><b aria-hidden="true">✓</b><i>Data pesanan</i></span><span><b aria-hidden="true">✓</b><i>Harga disahkan</i></span><span><b aria-hidden="true">✓</b><i>Pengesahan admin</i></span></div>{bannerImage && <div class="mt-4 overflow-hidden border-t border-[#E5E5E5]"><img src={bannerImage} alt={`Maklumat promosi ${product.productName}`} class="mx-auto block h-auto w-full object-contain" loading="lazy" decoding="async" /></div>}<p data-checkout-error class="form-error" role="alert" tabindex="-1" hidden></p></div>
         </section>
@@ -74,7 +72,12 @@ const formatPrice = (amountSen: number) => formatMyr(amountSen, locale);
   </section>
 </section>
 
-<script is:inline define:vars={{ instanceId, t, locale, isMiddle, customerNamePattern: MALAYSIA_CUSTOMER_NAME_REGEX.source, malaysiaMobilePattern: MALAYSIA_MOBILE_REGEX.source, minNameLength: MIN_CUSTOMER_NAME_LENGTH, maxNameLength: MAX_CUSTOMER_NAME_LENGTH, minAddressLength: MIN_DELIVERY_ADDRESS_LENGTH, maxAddressLength: MAX_DELIVERY_ADDRESS_LENGTH }}>
+<script>
+  import { navigateToDokuCheckout } from '../../../lib/checkout-navigation';
+  (window as typeof window & { __MYBOOK_DOKU_NAV__?: (url: string) => boolean }).__MYBOOK_DOKU_NAV__ = navigateToDokuCheckout;
+</script>
+
+<script is:inline define:vars={{ instanceId, t, locale, customerNamePattern: MALAYSIA_CUSTOMER_NAME_REGEX.source, malaysiaMobilePattern: MALAYSIA_MOBILE_REGEX.source, minNameLength: MIN_CUSTOMER_NAME_LENGTH, maxNameLength: MAX_CUSTOMER_NAME_LENGTH, minAddressLength: MIN_DELIVERY_ADDRESS_LENGTH, maxAddressLength: MAX_DELIVERY_ADDRESS_LENGTH }}>
   const root = document.querySelector(`[data-instance-id="${instanceId}"]`);
   const form = root?.querySelector('form');
   const money = (value) => new Intl.NumberFormat(locale, { style: 'currency', currency: 'MYR' }).format(Math.round(Number(value || 0)) / 100);
@@ -85,6 +88,8 @@ const formatPrice = (amountSen: number) => formatMyr(amountSen, locale);
   const paymentOptions = root?.querySelector('[data-payment-options]');
   const paymentFeedback = root?.querySelector('[data-payment-feedback]');
   const paymentRetry = root?.querySelector('[data-payment-retry]');
+  const dokuDetails = root?.querySelector('[data-doku-details]');
+  const emailInput = form?.querySelector('[name="customer_email"]');
   const submit = form?.querySelector('button[type="submit"]');
   const submitLabel = root?.querySelector('[data-submit-label]');
   const summaryLabel = root?.querySelector('[data-summary-label]');
@@ -118,10 +123,13 @@ const formatPrice = (amountSen: number) => formatMyr(amountSen, locale);
   let quoteSequence = 0;
   let quoteController = null;
   let quoteKey = '';
-  let paymentMethodsLoading = !isMiddle;
-  let paymentMethodsLoaded = isMiddle;
+  let paymentMethodsLoading = true;
+  let paymentMethodsLoaded = false;
   let paymentMethodsFailed = false;
   let submitting = false;
+  let dokuRetry = false;
+  const submitToken = crypto.randomUUID();
+  let checkoutSignalSent = false;
 
   const normalizeName = (value) => String(value || '').replace(/\s+/gu, ' ').trim();
   const normalizeAddress = (value) => String(value || '').replace(/\s+/gu, ' ').trim();
@@ -143,7 +151,7 @@ const formatPrice = (amountSen: number) => formatMyr(amountSen, locale);
     const value = normalizeAddress(addressInput?.value);
     return value.length >= minAddressLength && value.length <= maxAddressLength && /\p{L}/u.test(value);
   };
-  const validLocation = () => isMiddle || Boolean(
+  const validLocation = () => Boolean(
     selectedLocation && Number(fields.id?.value) > 0 && /^\d{5}$/.test(fields.postcode?.value || ''),
   );
   const currentQuoteKey = () => {
@@ -151,10 +159,11 @@ const formatPrice = (amountSen: number) => formatMyr(amountSen, locale);
     return selectedLocation && variantId ? `${selectedLocation.location_id}:${variantId}` : '';
   };
   const selectedPayment = () => form?.querySelector('input[name="payment_method"]:checked');
+  const dokuSelected = () => selectedPayment()?.value === 'doku';
+  const validEmail = () => !dokuSelected() || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(emailInput?.value || '').trim());
   const validPayment = () => {
-    if (isMiddle) return true;
     const method = selectedPayment();
-    if (!method || !['cod', 'manual_transfer'].includes(method.value)) return false;
+    if (!method || !['cod', 'manual_transfer', 'doku'].includes(method.value)) return false;
     return method.value !== 'manual_transfer' || Number(method.dataset.bankId) > 0;
   };
   const ensureFeedback = (input) => {
@@ -211,7 +220,6 @@ const formatPrice = (amountSen: number) => formatMyr(amountSen, locale);
     return !message;
   };
   const validateLocation = (showError = false) => {
-    if (isMiddle) return true;
     const valid = validLocation();
     setFieldState(searchInput, showError && !valid ? t.selectFromList : '', valid);
     return valid;
@@ -222,27 +230,45 @@ const formatPrice = (amountSen: number) => formatMyr(amountSen, locale);
     paymentFeedback.hidden = !message;
     paymentOptions?.querySelectorAll('input[name="payment_method"]').forEach((input) => {
       input.setAttribute('aria-invalid', String(Boolean(message)));
-      if (paymentFeedback.id) input.setAttribute('aria-describedby', paymentFeedback.id);
+      const describedBy = new Set(paymentFeedback.id ? [paymentFeedback.id] : []);
+      if (input.value === 'doku') {
+        describedBy.add(`${instanceId}-doku-privacy`);
+        describedBy.add(`${instanceId}-doku-disclosure`);
+      }
+      input.setAttribute('aria-describedby', [...describedBy].join(' '));
     });
   };
   const validatePayment = (showError = false) => {
-    if (isMiddle) return true;
     const method = selectedPayment();
     const message = !method ? t.paymentRequired : method.value === 'manual_transfer' && Number(method.dataset.bankId) <= 0 ? t.bankRequired : '';
     setPaymentError(showError ? message : '');
     return !message;
   };
+  const validateEmail = (showError = false) => {
+    const valid = validEmail();
+    setFieldState(emailInput, showError && !valid ? t.emailInvalid : '', valid && dokuSelected());
+    return valid;
+  };
+  const syncDokuDetails = () => {
+    const selected = dokuSelected();
+    if (dokuDetails) dokuDetails.hidden = !selected;
+    if (emailInput) {
+      emailInput.disabled = !selected;
+      emailInput.required = selected;
+    }
+    validateEmail(false);
+  };
   const getSubmitStatus = () => {
     if (!form?.querySelector('input[name="variant_id"]:checked') || !validName()) return { ready: false, label: t.completeName };
     if (!validPhone()) return { ready: false, label: t.completePhone };
     if (!validAddress()) return { ready: false, label: t.completeAddress };
-    if (isMiddle) return { ready: true, label: t.submit };
     if (locationLoading) return { ready: false, label: t.searching };
     if (!validLocation()) return { ready: false, label: t.chooseLocation };
     if (quoteLoading || !Number.isInteger(shippingCost) || quoteKey !== currentQuoteKey()) return { ready: false, label: t.loading };
     if (paymentMethodsLoading) return { ready: false, label: t.loadingPayment };
     if (!paymentMethodsLoaded || paymentMethodsFailed || !validPayment()) return { ready: false, label: t.choosePayment };
-    return { ready: true, label: t.submit };
+    if (!validEmail()) return { ready: false, label: t.completeEmail };
+    return { ready: true, label: dokuSelected() ? (dokuRetry ? t.dokuRetry : t.dokuSubmit) : t.submit };
   };
   const setSubmitState = () => {
     if (!submit) return;
@@ -250,7 +276,11 @@ const formatPrice = (amountSen: number) => formatMyr(amountSen, locale);
     submit.disabled = submitting || !status.ready;
     submit.dataset.state = submitting ? 'loading' : status.ready ? 'ready' : 'disabled';
     submit.setAttribute('aria-disabled', String(submit.disabled));
-    if (submitLabel) submitLabel.textContent = submitting ? t.submitting : status.label;
+    form?.setAttribute('aria-busy', String(submitting));
+    paymentOptions?.setAttribute('aria-busy', String(submitting || paymentMethodsLoading));
+    paymentOptions?.querySelectorAll('input[name="payment_method"]').forEach((input) => { input.disabled = submitting; });
+    if (emailInput) emailInput.disabled = submitting || !dokuSelected();
+    if (submitLabel) submitLabel.textContent = submitting ? (dokuSelected() ? (dokuRetry ? t.dokuRetrying : t.dokuSubmitting) : t.submitting) : status.label;
   };
   const updateTotal = () => {
     const variant = form?.querySelector('input[name="variant_id"]:checked');
@@ -262,11 +292,10 @@ const formatPrice = (amountSen: number) => formatMyr(amountSen, locale);
       summaryCompare.textContent = money(compare);
       summaryCompare.hidden = compare <= price;
     }
-    if (totalEl) totalEl.textContent = money(price + (isMiddle ? 0 : (shippingCost || 0)));
+    if (totalEl) totalEl.textContent = money(price + (shippingCost || 0));
     setSubmitState();
   };
   const resetQuote = (message = t.quote) => {
-    if (isMiddle) return updateTotal();
     shippingCost = null;
     quoteKey = '';
     if (shippingEl) shippingEl.textContent = message;
@@ -523,7 +552,7 @@ const formatPrice = (amountSen: number) => formatMyr(amountSen, locale);
   quoteRetry?.addEventListener('click', quote);
 
   const loadPaymentMethods = async () => {
-    if (isMiddle || !paymentOptions) return;
+    if (!paymentOptions) return;
     paymentMethodsLoading = true;
     paymentMethodsLoaded = false;
     paymentMethodsFailed = false;
@@ -547,8 +576,10 @@ const formatPrice = (amountSen: number) => formatMyr(amountSen, locale);
         input.value = String(method.payment_method || '');
         input.checked = index === 0;
         input.dataset.bankId = String(method.seller_bank_account_id || '');
+        input.dataset.hostedRedirect = String(Boolean(method.hosted_redirect));
         input.setAttribute('aria-describedby', paymentFeedback?.id || '');
         input.addEventListener('change', () => {
+          syncDokuDetails();
           validatePayment(false);
           setSubmitState();
         });
@@ -557,9 +588,18 @@ const formatPrice = (amountSen: number) => formatMyr(amountSen, locale);
         const main = document.createElement('div'); main.className = 'payment-option-main';
         const name = document.createElement('p'); name.className = 'payment-option-label'; name.textContent = String(method.name || '');
         const description = document.createElement('p'); description.className = 'payment-option-desc'; description.textContent = String(method.description || '');
-        main.append(name, description); copy.append(radio, main); label.append(input, copy); paymentOptions.append(label);
+        main.append(name, description);
+        if (method.payment_method === 'doku' && Array.isArray(method.channels)) {
+          const heading = document.createElement('p'); heading.className = 'doku-channel-heading'; heading.textContent = 'Kaedah tersedia di DOKU:';
+          const list = document.createElement('ul'); list.className = 'doku-channel-list';
+          method.channels.forEach((channel) => { const item = document.createElement('li'); item.textContent = String(channel.label || ''); if (item.textContent) list.append(item); });
+          main.append(heading, list);
+          input.setAttribute('aria-describedby', `${paymentFeedback?.id || ''} ${instanceId}-doku-privacy ${instanceId}-doku-disclosure`.trim());
+        }
+        copy.append(radio, main); label.append(input, copy); paymentOptions.append(label);
       });
       paymentMethodsLoaded = true;
+      syncDokuDetails();
     } catch {
       paymentMethodsFailed = true;
       paymentOptions.innerHTML = `<p class="text-sm text-[#555555]">${t.paymentFailed}</p>`;
@@ -572,20 +612,22 @@ const formatPrice = (amountSen: number) => formatMyr(amountSen, locale);
     }
   };
   paymentRetry?.addEventListener('click', loadPaymentMethods);
-  if (!isMiddle) loadPaymentMethods();
+  loadPaymentMethods();
 
   form?.addEventListener('submit', async (event) => {
     event.preventDefault();
+    if (submitting) return;
     if (errorEl) errorEl.hidden = true;
     const nameValid = validateName(true);
     const phoneValid = validatePhone(true);
     const addressValid = validateAddress(true);
     const locationValid = validateLocation(true);
     const paymentValid = validatePayment(true);
-    const quoteValid = isMiddle || (
+    const emailValid = validateEmail(true);
+    const quoteValid = (
       Number.isInteger(shippingCost) && quoteKey === currentQuoteKey() && !quoteLoading
     );
-    if (!nameValid || !phoneValid || !addressValid || !locationValid || !paymentValid || !quoteValid) {
+    if (!nameValid || !phoneValid || !addressValid || !locationValid || !paymentValid || !emailValid || !quoteValid) {
       const firstInvalid = form.querySelector('.field-invalid, input[name="payment_method"][aria-invalid="true"]');
       firstInvalid?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       firstInvalid?.focus({ preventScroll: true });
@@ -599,15 +641,18 @@ const formatPrice = (amountSen: number) => formatMyr(amountSen, locale);
     nameInput.value = normalizeName(nameInput.value);
     phoneInput.value = normalizePhone(phoneInput.value);
     addressInput.value = normalizeAddress(addressInput.value);
-    submitting = true; setSubmitState();
     const data = Object.fromEntries(new FormData(form));
     const method = form.querySelector('input[name="payment_method"]:checked');
-    const payload = { ...data, payment_method: isMiddle ? 'cod' : (method?.value || 'cod'), seller_bank_account_id: isMiddle ? undefined : (method?.dataset.bankId || undefined), quantity: 1, shipping_cost: isMiddle ? 0 : shippingCost, submit_token: crypto.randomUUID() };
+    submitting = true; setSubmitState();
+    const payload = { ...data, payment_method: method?.value || 'cod', seller_bank_account_id: method?.dataset.bankId || undefined, quantity: 1, shipping_cost: shippingCost, submit_token: submitToken };
     const selectedVariantForSignal = form.querySelector('input[name="variant_id"]:checked');
     const signalContentId = root?.dataset.productId && selectedVariantForSignal?.value ? `p${root.dataset.productId}-v${selectedVariantForSignal.value}` : '';
-    window.__MYBOOK_TRACK__?.('InitiateCheckout', { event_id: `checkout:${crypto.randomUUID()}`, content_id: signalContentId, content_name: root?.dataset.productName || '', value: Number(selectedVariantForSignal?.dataset.price || 0) / 100 });
+    if (!checkoutSignalSent) {
+      checkoutSignalSent = true;
+      window.__MYBOOK_TRACK__?.('InitiateCheckout', { event_id: `checkout:${submitToken}`, content_id: signalContentId, content_name: root?.dataset.productName || '', value: Number(selectedVariantForSignal?.dataset.price || 0) / 100 });
+    }
     try {
-      const response = await fetch(isMiddle ? '/api/submit-middle-order' : '/api/submit-order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const response = await fetch('/api/submit-order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const body = await response.json();
       if (!response.ok || !body?.success) {
         if (response.status === 409 && body?.code === 'SHIPPING_QUOTE_CHANGED' && Number.isInteger(Number(body.shipping_cost))) {
@@ -616,18 +661,36 @@ const formatPrice = (amountSen: number) => formatMyr(amountSen, locale);
           updateTotal();
           throw new Error(t.quoteChanged);
         }
-        throw new Error(body?.error || 'Unable to place the order.');
+        if (body?.code === 'DOKU_CONFLICT') { dokuRetry = false; throw new Error('Pembayaran ini tidak dapat disambung dengan selamat. Semak pesanan atau hubungi admin sebelum mencuba lagi.'); }
+        if (method?.value === 'doku' && body?.code !== 'DOKU_UNAVAILABLE') { dokuRetry = true; throw new Error('Halaman pembayaran DOKU belum dapat dibuka. Cuba semula tanpa membuat pesanan baharu.'); }
+        throw new Error(body?.error || 'Pesanan belum dapat dihantar. Cuba semula.');
+      }
+      if (method?.value === 'doku') {
+        const checkoutUrl = String(body?.payment?.checkout_url || '');
+        if (submitLabel) submitLabel.textContent = 'Membuka halaman DOKU…';
+        if (!window.__MYBOOK_DOKU_NAV__?.(checkoutUrl)) { dokuRetry = true; throw new Error('Halaman pembayaran DOKU belum dapat dibuka. Cuba semula tanpa membuat pesanan baharu.'); }
+        return;
       }
       const variant = form.querySelector('input[name="variant_id"]:checked');
-      sessionStorage.setItem('thanks_state', JSON.stringify({ order_pk: body.order.id, order_id: body.order.order_number, status_token: body.order.status_token, payment_method: body.order.payment_method, payment_status: body.order.payment_status, total_payment: body.order.total_payment, shipping_cost: isMiddle ? 0 : shippingCost, product_value_sen: Number(body.order.product_value_sen || 0), payment: body.payment || null, name: data.customer_name, phone: data.customer_phone, address: data.address, district: data.district, province: data.province, postal_code: data.postal_code, product_id: root?.dataset.productId || '', variant_unique_id: variant?.value, content_id: body.order.content_id || '', variant_label: variant?.dataset.label || '', product_name: root?.dataset.productName || '' }));
+      sessionStorage.setItem('thanks_state', JSON.stringify({ order_pk: body.order.id, order_id: body.order.order_number, status_token: body.order.status_token, payment_method: body.order.payment_method, payment_status: body.order.payment_status, total_payment: body.order.total_payment, shipping_cost: shippingCost, product_value_sen: Number(body.order.product_value_sen || 0), payment: body.payment || null, name: data.customer_name, phone: data.customer_phone, address: data.address, district: data.district, province: data.province, postal_code: data.postal_code, product_id: root?.dataset.productId || '', variant_unique_id: variant?.value, content_id: body.order.content_id || '', variant_label: variant?.dataset.label || '', product_name: root?.dataset.productName || '' }));
       window.location.assign('/thanks');
     } catch (error) {
-      if (errorEl) { errorEl.textContent = error instanceof Error ? error.message : 'Unable to place the order.'; errorEl.hidden = false; errorEl.focus(); }
+      if (method?.value === 'doku' && (error instanceof TypeError || error?.name === 'AbortError')) dokuRetry = true;
+      const transportFailed = error instanceof TypeError || error?.name === 'AbortError';
+      const message = transportFailed
+        ? method?.value === 'doku'
+          ? 'Sambungan ke DOKU tergendala. Cuba semula tanpa membuat pesanan baharu.'
+          : 'Pesanan belum dapat dihantar. Cuba semula.'
+        : error instanceof Error ? error.message : 'Pesanan belum dapat dihantar. Cuba semula.';
+      if (errorEl) { errorEl.textContent = message; errorEl.hidden = false; errorEl.focus(); }
     } finally { submitting = false; setSubmitState(); }
   });
   ensureFeedback(nameInput);
   ensureFeedback(phoneInput);
   ensureFeedback(addressInput);
-  if (!isMiddle) ensureFeedback(searchInput);
+  ensureFeedback(searchInput);
+  ensureFeedback(emailInput);
+  emailInput?.addEventListener('input', () => { validateEmail(emailInput.classList.contains('field-invalid')); setSubmitState(); });
+  emailInput?.addEventListener('blur', () => { validateEmail(true); setSubmitState(); });
   updateTotal();
 </script>

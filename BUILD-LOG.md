@@ -7,6 +7,403 @@
 > product's infrastructure and mean nothing to a reader of this repository.
 > The engineering narrative is unchanged.
 
+## 2026-09-02 — Expedition workspace refinement planned
+
+- Accepted REQ-228 and queued A-224 after a read-only operator UX/design
+  review of `/admin/expeditions`. The current page flattens state/WP tariff
+  overrides, zone activation, postcode coverage, and fallback-band maintenance
+  into one long document.
+- The accepted direction is one compact summary plus URL-addressable shadcn
+  task panels, per-zone progressive disclosure, and contextual Sheets for
+  postcode/fallback forms. It preserves the single Malaysia install, existing
+  D1 policy, API, role boundary, and mutation semantics.
+- No UI, API, schema, credentials, sandbox resources, deployment, commit, or
+  push was performed by this planning record. A-224 remains open pending its
+  own implementation and real-browser evidence.
+
+## 2026-09-02 — A-221 hosted sandbox reachability remains incomplete
+
+- After A-221R passed, one additional fictional FPX-only sandbox Checkout
+  returned an allowlisted hosted URL. Headless Chrome reached a non-error DOKU
+  document shell, but it rendered no payment control or channel label. A second
+  bounded attempt with additional virtual render time timed out without a DOM.
+- This proves only URL reachability, not that FPX rendered or that a payment can
+  complete. No buyer interaction, payment outcome, callback, notification,
+  local D1 state, Ads event, dashboard/webhook mutation, production action,
+  credential/PII disclosure, commit, or push occurred.
+- A-221 remains open pending DOKU Dashboard access for channel/webhook setup and
+  an operator-observable sandbox payment flow. Delivery run:
+  `RUN-20260902T071030Z-d8fbc3e3`.
+
+## 2026-09-02 — A-221R DOKU Checkout response profile implemented and sandbox-smoked
+
+- The operator accepted REQ-227 and ADR-022. Outbound requests and Payment
+  Notifications remain Global-HMAC signed; a present response signature must
+  verify and can never fall back. Only fixed DOKU Checkout create/retrieve
+  responses may omit it, after exact client/API-version/fresh-timestamp/JSON,
+  bounded-body, non-Cards shape, ID/invoice, MYR, and D1 correlation checks.
+- Workerd D1 tests prove one strictly correlated signature-absent create stores
+  one pending attempt and safe hosted URL, rejected envelopes store no URL, and
+  signature-absent retrieve can settle only the matching attempt; terminal
+  repeats converge. Existing notification and recovery fixtures retain signed
+  behavior without source changes.
+- The observed retrieve body carries a complete MYR amount on `order` and a
+  currency-only secondary `payment` fact. The parser now requires at least one
+  complete exact MYR fact and rejects every contradictory currency or amount
+  that appears instead of inventing a missing value.
+- Focused payment/task tests passed 39/39; the deterministic serial suite passed
+  416/416; `npm run check` reported zero diagnostics across 350 files; the
+  Cloudflare build and diff check passed. Independent correctness review found
+  and closed overclaimed “authenticated” wording; re-review passed. Independent
+  security review passed with no exploitable finding.
+- A credential-injected, redacted sandbox re-smoke through the production
+  client returned `200` for signed fictional FPX-only MYR 2.00 create and
+  retrieve. Both signature-absent envelopes satisfied REQ-227, identities and
+  MYR matched, and create returned an allowlisted DOKU-hosted URL shape. No
+  credential, signature, provider identifier, full URL, or PII was printed or
+  retained. No local/remote D1 mutation, hosted browser payment, webhook,
+  deployment, production action, commit, or push occurred.
+- A-221 remains open for dashboard channel/webhook setup and hosted payment,
+  notification/resend, retry, stock, diagnostics, Ads, and browser evidence.
+  Delivery run: `RUN-20260902T064733Z-5cd321b4`.
+
+## 2026-09-02 — A-221 resumed; MYR accepted but successful responses are unsigned
+
+- After the operator replaced the managed sandbox credential set, a bounded
+  child received it through `secrets-env`; no credential value, request
+  signature, provider identifier, or hosted URL was printed or persisted.
+- The updated account accepted signed fictional FPX-only Checkout requests in
+  MYR. Sandbox reported a MYR 2.00 minimum. At that amount, create and immediate
+  retrieve both returned `200` with matching ID, MYR amount, and pending state;
+  create also returned an allowlisted DOKU-hosted checkout URL shape.
+- Both successful responses included Client ID, response timestamp, and API
+  version but omitted `Signature`. The shared adapter consequently failed closed
+  as `DOKU_RESPONSE_HEADERS` before a checkout URL or state could reach the
+  application. A separate sandbox response-header inventory found no alternate
+  signature header. The current endpoint OpenAPI models empty response headers
+  and DOKU's Malaysia Postman Checkout requests contain no response-signature
+  assertion, while its generic Global integrity guide says responses are signed.
+  This is incompatible with accepted REQ-218/REQ-219 and the A-221 signed-response
+  release gate; no integrity downgrade or source change was made under A-221's
+  evidence-only repository surface.
+- No local D1 order/attempt, hosted browser navigation, payment completion,
+  notification, reconciliation, stock transition, Ads event, webhook,
+  deployment, production resource, real customer data, commit, or push occurred.
+  A-221 remains open pending an explicit provider-contract decision. Delivery
+  run: `RUN-20260902T063031Z-5e83e283`.
+
+## 2026-09-02 — A-221 DOKU Malaysia sandbox attempt blocked by account capability
+
+- The operator explicitly approved A-221 sandbox credentials and vendor
+  traffic. `secrets-env` injected the existing managed Client ID, Secret Key,
+  and API Key into a bounded child process; no value was printed, persisted,
+  passed as a shell argument, or added to repository evidence.
+- Rechecked the current DOKU Malaysia source before traffic: sandbox remains
+  `https://api-sandbox.doku.com`, hosted Checkout is `POST /v3/checkouts`, and
+  Checkout/Retrieve advertise `arabica.2025-12-01`. A documentation/runtime
+  discrepancy was observed: the OpenAPI advertises language `MY`, which sandbox
+  rejected; the implemented `MS` value progressed to currency validation.
+- A signed FPX-only create request used MYR 1.00 and wholly fictional customer,
+  item, address, and callback data. DOKU rejected the supplied sandbox account
+  with `currency_not_support`. The error response had timestamp and Client ID
+  headers but no Signature; the shared adapter therefore refused it as
+  `DOKU_RESPONSE_HEADERS` instead of trusting or persisting an unsigned body.
+- No checkout existed to retrieve or open, and no dashboard credential was
+  available to enable Malaysia channels or register a notification endpoint.
+  Consequently hosted redirect, notification/resend, payment-state, retry,
+  reconciliation, stock, Ads, and desktop/mobile recovery cells remain
+  unproven. A-221 stays open until a sandbox account accepts MYR and
+  operator-owned dashboard access is available. No D1 mutation,
+  webhook, deployment, production resource, charge, real customer data,
+  commit, or push occurred. Delivery run:
+  `RUN-20260902T035022Z-7c69d7ae`.
+
+## 2026-09-02 — DOKU release controls A-220 completed locally
+
+- Corrected the A-220 task boundary so accepted `REQ-226` links the bilingual
+  DOKU disclosure beside the conditional DOKU email field. This does not accept
+  proposed `REQ-211`/`REQ-212` or add a general checkout consent step.
+- Reconciled the architecture with the implemented one-full-form checkout and
+  A-210–A-219 local DOKU boundary. The installation guide now records separate
+  sandbox/production credentials, the exact
+  `https://<store-domain>/api/payments/doku/notifications` shape, and the current
+  Malaysia Dashboard webhook/log/resend procedure from official DOKU docs.
+- Reconciled the PRD implementation-status cells, plan workstream state, and
+  ADR-021 historical context with current A-205/A-210–A-219 evidence. Requirement
+  text and the accepted architecture decision are unchanged; local verification
+  remains explicitly distinct from A-221 sandbox and A-222/A-223 production.
+- Added a redacted operator decision table without claiming an alert endpoint,
+  metric, SLO, retention policy, or hosted evidence that does not exist. The
+  release guide now separates local, sandbox, and production proof for
+  signature, duplicate, success, pending, failure, expiry/cancel, retry, stock,
+  Ads, browser/privacy, and operations behavior.
+- Focused Malaysia market tests pass 15/15, including the new cross-document
+  local/sandbox/production guard; the full suite passes 410/410; `npm run check`
+  reports zero diagnostics across 350 files; the Cloudflare server build and
+  `git diff --check` pass. No credential was read, no provider endpoint was
+  called, and no webhook, remote migration, deployment, commit, or push
+  occurred.
+- The operator accepted the exact Malay/English disclosure. The privacy page now
+  renders the Malay anchored section immediately before its English equivalent;
+  the conditional DOKU email block links it before the redirect disclosure and
+  associates helper, link, disclosure, and validation feedback accessibly.
+- Real local Chromium at 390/1280 px and the canonical embed proved a 44 px link,
+  visible keyboard focus, zero overflow, preserved entered values across the new
+  privacy tab, COD hiding the block, and zero console/network failures. The
+  provider method response was intercepted locally; no credential or DOKU
+  endpoint was used. Focused tests pass 15/15, the full suite passes 410/410,
+  `npm run check` reports zero diagnostics across 350 files, and the Cloudflare
+  build and diff checks pass. A-221 remains separately gated by sandbox access
+  and vendor traffic approval.
+- Independent correctness/UX and security/privacy reviews both passed with no
+  A-220 finding. Delivery run: `RUN-20260902T032428Z-6e69b432`; security reviewer
+  gpt-5, provider OpenAI Codex, high reasoning.
+
+## 2026-09-01 — Canonical hosted DOKU buyer checkout A-218 verified
+
+- Added one hosted DOKU radio to the canonical full checkout only when the
+  encrypted configuration is healthy, enabled, and has recognized Malaysia
+  channels. COD and active manual-transfer accounts remain independent. The
+  buyer sees safe channel labels, a conditional email field, and the redirect
+  disclosure; the checkout never renders PAN/CVV or provider configuration.
+- Added a credential-free HTTPS `doku.com` host allowlist to direct and embedded
+  top-level navigation, and bumped the generated widget contract. The hosted
+  URL stays ephemeral and is absent from DOM, query parameters, storage,
+  analytics, and DOKU-incompatible thanks state. Return/result/cancel retries
+  use the same navigation guard and expose only state-eligible actions.
+- One rendered form owns one submit token and one InitiateCheckout signal.
+  Submission locks the payment region and controls, captures DOKU email before
+  disabling them, preserves the disclosure association for assistive
+  technology, and provides focused Malay refusal, timeout, and same-attempt
+  retry states. Defensive thanks rendering cannot present DOKU as COD.
+- Focused checkout/navigation/widget tests passed 29/29; the deterministic
+  serial suite passed 409/409; type checking reported zero diagnostics across
+  350 files; build and diff checks passed. Real Chromium at 390/1280 px proved
+  the configured success path with one request/redirect and zero PAN/CVV,
+  thanks state, overflow, or runtime errors. A 390 px refusal/timeout pass
+  proved stable-token retry, preserved email payload, one Ads initiation,
+  focused Malay feedback, and announced busy states. The real disabled local
+  configuration omitted DOKU while retaining COD/manual transfer. Provider
+  responses were mocked; no credential, vendor call, remote mutation,
+  deployment, commit, or push occurred.
+
+Independent review caught email capture after control disabling and loss of the
+DOKU disclosure association during validation. Both were fixed and pinned
+before final re-review. Delivery run: `RUN-20260901T160907Z-79fa2dd8`;
+reviewer gpt-5.4, provider openai, reasoning default.
+
+## 2026-09-01 — Canonical Malaysia full-form cutover A-206 verified
+
+- Accepted the checkout designer handoff and collapsed PDP, CMS landing,
+  direct, embed, public form configuration, Headless product, and OpenAPI
+  producers onto one mode-less `/full-form` contract. Operator mode selectors
+  and serialized form-mode defaults were removed; legacy stored/query values
+  are ignored rather than branching buyer behavior.
+- All six retired route names now issue exactly one query-preserving permanent
+  redirect. `/api/submit-middle-order` is an inert `410 no-store` tombstone and
+  imports no persistence or runtime binding. The canonical buyer form always
+  requires recipient details, a D1-backed Malaysia location, a fresh shipping
+  quote, and an enabled payment method before `/api/submit-order`.
+- Replaced keyboard-inaccessible hidden radios with visually hidden focusable
+  controls and a visible focus ring without redesigning the accepted checkout.
+  Focused tests passed 33/33; the complete suite passed 405/405; type checking
+  reported zero diagnostics across 350 files; and the Cloudflare build passed.
+  Built-Worker and real Chromium checks at 390/1280 px proved attribution and
+  duplicate-query preservation, inert legacy embed mode, zero overflow, visible
+  keyboard focus, full checkout completion through `/thanks`, and zero browser
+  runtime errors. No vendor call, remote mutation, deployment, commit, or push
+  occurred.
+
+Independent review first identified an unnecessary Headless v1 compatibility
+break. The final response retains `urls.product`, canonical `urls.form_render`,
+and `forms.full_url` aliases while removing only the retired middle/hybrid
+identities; OpenAPI and regression tests pin those aliases. Final independent
+re-review passed. Delivery run: `RUN-20260901T154726Z-63734206`; reviewer
+gpt-5.4, provider openai, reasoning default.
+
+## 2026-09-01 — DOKU Malaysia configuration workspace A-217 verified
+
+- Extended the Indonesian Payments workspace with one single-store DOKU
+  Malaysia configuration card while preserving COD and manual bank management.
+  Owner/Admin see explicit environment, activation, health, revision, supported
+  channel, masked credential, and canonical webhook states; scoped operators
+  remain denied by both middleware and API checks.
+- Full credential replacement always writes provider/environment-bound
+  ciphertext and returns to disabled. Activation/deactivation is explicit,
+  idempotent, revision-bound, and makes no vendor request. Atomic replacement
+  and deletion refuse stale revisions or a current-revision `created`,
+  `pending`, or `attention_required` attempt; deletion preserves row/revision
+  identity. Invalid ciphertext fails closed while retaining safe replace/delete
+  recovery and never exposes a stored value.
+- Focused configuration/navigation/layout tests passed 17/17; the deterministic
+  serial suite passed 404/404; type checking reported zero diagnostics across
+  349 files; build and diff checks passed. Authenticated HTTPS Chromium at 390
+  and 1280 px exercised sandbox and production draft/activation states with
+  local fixtures only: zero overflow, console error, browser storage, raw-secret
+  DOM, or DOKU/senangPay request; validation focus and the single-H1 page
+  hierarchy passed. Independent review's invalid-row recovery finding was fixed
+  before final re-review. No remote mutation, deployment, commit, or push
+  occurred.
+
+Delivery run: `RUN-20260901T151951Z-8cb7588c`. Independent review: gpt-5.4,
+provider openai, reasoning default.
+
+## 2026-09-01 — DOKU paid Ads ownership A-219 verified
+
+- Moved DOKU online-order Purchase ownership to the signed authoritative
+  settlement boundary. The payment attempt, order paid state, payment event,
+  and one `INSERT OR IGNORE` Meta outbox row now commit through one D1 batch;
+  pending, failed, expired, retry, duplicate notification, and reconciliation
+  paths cannot create another Purchase.
+- The outbox payload is rebuilt from D1 order items, canonical
+  `p{productId}-v{variantId}` identities, merchandise-only subtotal, MYR, buyer
+  Malaysia matching, and persisted attribution. A random first-party Meta
+  external ID is stored with the order without ever being accepted from a URL;
+  `_fbp` and `_fbc` now fail closed unless they match Meta's browser-ID shape.
+  `external_id` is omitted rather than invented from the buyer phone.
+- `/api/meta-event` refuses a DOKU Purchase until the order is paid. The normal
+  thanks page applies the same guard before consuming its local dedup key, so
+  COD/manual timing remains unchanged.
+- Independent review exposed that DOKU actually returns to
+  `/payment/doku/result`, not `/thanks`. The result route now loads canonical
+  content/value from D1 and emits one browser-only Meta event plus one direct
+  Google conversion after `paid`, sharing `purchase:{order_number}` with the
+  server event. Its restricted Ads loader neither emits PageView nor posts CAPI,
+  so the HttpOnly recovery cookie is not sent to an analytics endpoint.
+- Focused workerd/payment/Ads tests passed 29/29. The final serial suite passed
+  400/400, `npm run check` reported zero diagnostics across 348 files, and the
+  Cloudflare server build completed. Real HTTPS Chromium followed the actual
+  query-capability exchange to a clean result URL at 390 px; it emitted exactly
+  one canonical MYR 32.90 Meta/Google Purchase, then emitted none on a 1280 px
+  reload. Both widths had zero overflow and no runtime error; the capability was
+  absent from URL, DOM, script-visible cookies, and browser storage. Page
+  inspection captured the intended Meta and Google calls through injected test
+  sinks while observing no same-origin CAPI request or live Ads vendor request. No remote
+  mutation, provider call, deployment, commit, or push occurred.
+
+Verification run: `RUN-20260901T151739Z-6dc4bad8`. Independent review: gpt-5.4,
+provider openai, reasoning default; first review findings were fixed before the
+final review.
+
+## 2026-09-01 — DOKU Malaysia reconciliation and payment operations A-216 verified
+
+- Reused the one-minute Worker schedule for a separately isolated DOKU job that
+  leases at most ten due attempts, validates signed status responses, applies
+  bounded backoff, stops exhausted attempts at attention-required, and expires
+  abandoned uninitiated attempts through the shared exactly-once stock path.
+- Added redacted payment operations to Order Detail: safe config/environment
+  health, newest-first attempts, chronological events, automatic/manual
+  freshness, masked provider reference, safe failure classes, and correlation
+  identity without raw provider, credential, capability, customer, or Ads data.
+- Owner/Admin can request one confirmed check under the same lease/cooldown
+  rules; temporarily unavailable actions remain visible and disabled with the
+  reason. Customer Service remains read-only. Direct DOKU payment-status PATCH
+  is refused and COD/manual controls are unchanged.
+- Corrected two review/audit edges: configuration health now validates the
+  encrypted record instead of trusting row presence, and local lifecycle
+  failures retain the distinct `local_transition` classification. Lease and
+  cooldown conflicts also return different safe operator messages.
+- Evidence: focused tests 8/8; deterministic serial suite 395/395; type check 0
+  diagnostics across 348 files; build PASS; independent review PASS; Chromium
+  390/1280 px PASS with 44 px controls, zero overflow, no console errors, no
+  sensitive DOM/network data, and no vendor request. Delivery run
+  `RUN-20260901T132047Z-0b52c6ac`. No remote mutation, deployment, commit, or
+  push occurred.
+
+## 2026-09-01 — DOKU Malaysia buyer recovery A-215 verified
+
+- Added capability-protected DOKU return, result, cancel, status, and same-order
+  retry paths. The query capability is exchanged server-side for a bounded
+  Secure HttpOnly SameSite cookie and removed before any page shell, tracking,
+  DOM, link, referrer, log, or browser-storage exposure.
+- Kept provider redirects informational. Signed server-to-server status uses the
+  same monotonic lifecycle as notifications; eligible retry atomically
+  re-reserves released stock and retains the original order and attribution.
+- Added route-owned `no-store` and `Referrer-Policy: no-referrer` handling,
+  explicit `405` responses for unsupported API methods, bounded request bodies,
+  minimized public responses, and accessible Malay recovery states.
+- Fixed a review-found recovery edge: an older bounded order capability now
+  resolves the newest attempt, retry refreshes that cookie, and an expired
+  active checkout is reconciled with signed provider truth before it can be
+  reused or replaced.
+- Final evidence: focused tests 6/6; deterministic serial full suite 387/387;
+  `npm run check` 0 diagnostics across 344 files; build PASS; built-Worker
+  method/header and Chromium 390/1280 px checks PASS. The default concurrent
+  test runner exposed an existing Wrangler dev-port race. No credential, vendor
+  request, remote mutation, deployment, commit, or push occurred.
+
+## 2026-09-01 — DOKU Malaysia local foundation A-210–A-214 verified
+
+- Added forward-only migration `0059` for encrypted provider configuration,
+  order-linked payment attempts, unique provider/invoice/idempotency identities,
+  monotonic terminal state, and append-only deduplicated events.
+- Implemented exact raw-byte DOKU Global request/response/notification signing,
+  endpoint/freshness/MYR validation, bounded transport, encrypted disabled
+  configuration, authoritative idempotent hosted-Checkout creation, and one
+  batched notification lifecycle using shared exactly-once stock restoration.
+- Corrected the next task contract after designer review: A-215 now includes the
+  missing `/payment/doku/return` route and requires server-side capability
+  exchange to a bounded Secure HttpOnly SameSite cookie followed by a clean URL
+  before BaseLayout, Ads, analytics, DOM, referrers, or browser storage render.
+- Extended the execution queue through A-223 so sandbox validation, explicit
+  production activation, and bounded post-activation observation are distinct
+  approval-gated tasks.
+- Evidence after A-214: focused notification tests 7/7, independent lifecycle
+  review 13/13, full suite 381/381, `npm run check` 0 errors/warnings/hints
+  across 337 files, and build PASS. Delivery runs A-210 through A-214 each
+  finished PASS. No credential, vendor request, webhook registration, remote
+  migration, deployment, commit, or push occurred.
+
+## 2026-09-01 — DOKU Malaysia continuation planned; superseded by local A-210–A-214 delivery above
+
+- Reconciled the requested DOKU/senangPay direction with current official
+  senangPay guidance, which routes migrated merchants to DOKU APIs. ADR-021 and
+  REQ-216 through REQ-226 therefore define one DOKU Malaysia Global API adapter
+  using hosted Checkout, not parallel legacy senangPay and DOKU clients.
+- Extended `PLAN.md` with order/attempt ownership, signed request-response-
+  notification flow, D1 records, failure/stock policy, reconciliation, Ads
+  timing, deferred scope, and external approval gates.
+- Added A-210 through A-221 as ordered implementation, UX, legal, verification,
+  and sandbox tasks. Browser-visible tasks remain blocked on designer/vision;
+  legal acceptance and all sandbox/live vendor actions remain explicit gates.
+- This entry is planning evidence only. Current runtime still accepts COD and
+  manual transfer only. No schema, provider code, account, secret, vendor call,
+  remote migration, deployment, commit, or push was created or performed.
+
+## 2026-09-01 — Malaysia signal hardening and repository cleanup complete locally
+
+- Adapted only the reusable signal-integrity patterns from PermataMall. A
+  UTM-only return visit now retains the stored paid-click identity, while a new
+  paid click remains last-touch and replaces it.
+- Added a random 128-bit first-party Meta visitor identity. The Pixel hashes it
+  before its single `init`; server ingress reads the same cookie and CAPI hashes
+  the same raw value for PageView, catalog, and accepted-order events. A malformed
+  or phone-shaped value fails closed, retaining the historical phone fallback
+  only when the advertiser-issued cookie is unavailable.
+- Initialized regional Consent Mode before GTM/direct Google configuration and
+  added Malaysia-normalized, SHA-256 enhanced-conversion matching to the existing
+  direct Purchase. Currency remains MYR, value remains authoritative merchandise
+  subtotal, and `transaction_id` remains the persisted order number.
+- Rejected the Indonesia offline-conversion outbox as an automatic port: MyBookCMS
+  explicitly reports accepted COD/manual-transfer Purchase, so adding a second
+  delivered/paid Google upload would double-count unless the product taxonomy is
+  changed first.
+- Narrowed the required `TASKS.md` open-queue heading before reading its match
+  index, restoring the repository-wide TypeScript gate without changing queue
+  semantics.
+- Deleted the stale archived AdsBookCMS install procedure and redundant
+  `public/.gitkeep`. Added an active-source guard against named retired Indonesia
+  providers while preserving forward migrations and `docs/lineage/` as required
+  schema history and provenance.
+- Evidence: focused Ads/persistence tests pass 11/11; focused Ads, cleanup, and
+  queue tests pass 18/18; the full suite passes 341/341; `npm run check` reports
+  zero diagnostics across 320 files; and `npm run build` completes. No secret was
+  read, no vendor endpoint was called, and no remote mutation, deployment,
+  commit, or push occurred.
+- The requested full-form-only cutover is accepted as REQ-214/A-206 but no
+  checkout UX file was edited because the mandatory designer/vision handoff was
+  unavailable in this session.
+
 ## 2026-08-24 — Pengiriman membership/status decoupled; evidence fields retired
 
 - Made `shipping_queued_at` the only Pengiriman membership fact. Aksi and bulk

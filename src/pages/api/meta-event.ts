@@ -3,10 +3,9 @@ import { z } from "zod";
 import { getStoreAdsConfig } from "../../lib/ads-config.ts";
 import { deliverCapiEvent, drainCapiOutbox, enqueueCapiEvent } from "../../lib/capi-outbox.ts";
 import { parseCatalogOfferId } from "../../lib/catalog-id.ts";
-import { parseClickIds, readMetaBrowserIds } from "../../lib/click-ids.ts";
+import { parseOrderAttribution, readMetaBrowserIds } from "../../lib/click-ids.ts";
 import { getRuntimeEnv } from "../../lib/env.ts";
 import { myrMajorFromSen } from "../../lib/ads-signal-policy.ts";
-import { malaysiaPhoneDigits } from "../../lib/meta-identity.ts";
 import { prepareMetaCapiPayload } from "../../lib/meta-capi.ts";
 import { checkRateLimit, getClientIp } from "../../lib/rate-limit.ts";
 
@@ -40,6 +39,8 @@ type OrderSignalRow = {
   content_name: string;
   content_ids: string;
   ad_click_ids: string | null;
+  payment_method: string;
+  payment_status: string;
 };
 
 type CatalogSignalRow = {
@@ -87,10 +88,17 @@ export const POST: APIRoute = async ({ request, locals }) => {
           COALESCE((SELECT SUM(oi.unit_price * oi.quantity) FROM order_items oi WHERE oi.order_id = o.id), 0) AS product_value_sen,
           COALESCE((SELECT GROUP_CONCAT(DISTINCT p.title) FROM order_items oi INNER JOIN product_variants pv ON pv.id = oi.variant_id INNER JOIN products p ON p.id = pv.product_id WHERE oi.order_id = o.id), '') AS content_name,
           COALESCE((SELECT GROUP_CONCAT('p' || pv.product_id || '-v' || pv.id) FROM order_items oi INNER JOIN product_variants pv ON pv.id = oi.variant_id WHERE oi.order_id = o.id), '') AS content_ids,
-          o.ad_click_ids
+          o.ad_click_ids, o.payment_method, o.payment_status
         FROM orders o WHERE o.order_number = ? AND o.public_status_token = ? LIMIT 1
       `).bind(input.order_number, input.status_token).first<OrderSignalRow>();
       if (!order) return json({ success: false, error: "Order tidak ditemukan." }, 404);
+      if (
+        input.event_name === "Purchase" &&
+        order.payment_method === "doku" &&
+        !["paid", "settled", "success"].includes(order.payment_status.toLowerCase())
+      ) {
+        return json({ success: false, error: "Purchase DOKU menunggu pembayaran sah." }, 409);
+      }
     }
     if (input.event_name === "ViewContent" || input.event_name === "InitiateCheckout") {
       const offer = parseCatalogOfferId(input.content_id || "");
@@ -106,7 +114,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       if (!catalogItem) return json({ success: false, error: "Produk aktif untuk event tidak ditemukan." }, 404);
     }
     const requestBrowserIds = readMetaBrowserIds(request);
-    const storedIds = order ? parseClickIds(order.ad_click_ids) : {};
+    const storedIds = order ? parseOrderAttribution(order.ad_click_ids) : {};
     const browserIds = order ? {
       fbp: storedIds._fbp || requestBrowserIds.fbp,
       fbc: storedIds._fbc || requestBrowserIds.fbc,
@@ -128,11 +136,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
         city: order.city,
         state: order.province,
         postcode: order.postal_code || undefined,
-        externalId: malaysiaPhoneDigits(order.customer_phone),
+        externalId: storedIds.meta_external_id || requestBrowserIds.externalId,
         ...browserIds,
         clientIp: getClientIp(request.headers),
         userAgent: request.headers.get("user-agent") || undefined,
       } : {
+        externalId: requestBrowserIds.externalId,
         ...browserIds,
         clientIp: getClientIp(request.headers),
         userAgent: request.headers.get("user-agent") || undefined,

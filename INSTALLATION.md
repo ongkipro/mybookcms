@@ -1,6 +1,6 @@
 # Installing MyBookCMS
 
-> Verified against disk: 2026-08-25 @ MyBookCMS working tree
+> Verified against disk: 2026-09-01 @ MyBookCMS working tree
 
 Each installation is a new Malaysia store. Create resources owned by that store:
 one Cloudflare Worker, D1 database, KV namespace, R2 bucket, domain, and a
@@ -50,9 +50,54 @@ The preview seed is idempotent fictional data and must never be run with
    postcode coverage, every state/WP rate, and all fallback weight bands before
    accepting checkout traffic.
 
-The store uses MYR integer sen, one Malaysia-market hybrid public voice, COD/manual bank
-transfer, and internal postcode shipping. It requires no external courier or
-payment provider configuration.
+The buyer-facing store uses MYR integer sen, one Malaysia-market hybrid public
+voice, one full checkout, and internal postcode shipping. COD and manual bank
+transfer remain independent of provider configuration. DOKU appears only when a
+healthy configuration is explicitly enabled for that install.
+
+## DOKU Malaysia setup — sandbox approval required
+
+A-210 through A-219 implement the local schema, Global transport, encrypted
+configuration, hosted Checkout, signed notification lifecycle, recovery,
+reconciliation, operator/buyer UI, and Ads settlement boundary. This does not
+prove provider interoperability. A-220 release controls and A-221 approved
+sandbox evidence must pass before production preparation. senangPay merchants
+use this same migrated DOKU Malaysia adapter; there is no second legacy adapter.
+
+After explicit A-221 approval, prepare sandbox without exposing credentials:
+
+1. Use a separate DOKU sandbox business account and sandbox Client ID, API Key,
+   and Secret Key. Enter them only in **Admin > Pembayaran > DOKU Malaysia**.
+   Saving creates a disabled revision; the browser can read only masks and
+   health. Never put a value in this file, `wrangler.jsonc`, Git, logs,
+   screenshots, shell history, or chat.
+2. Confirm the store `site_url` is its exact public HTTPS origin. Copy the
+   read-only URL shown in the DOKU workspace. Its required shape is
+   `https://<store-domain>/api/payments/doku/notifications`; do not add query
+   parameters, another path, or a sandbox/production suffix.
+3. In the Malaysia DOKU Dashboard, open **Settings > Payment Settings >
+   Webhook**, create a webhook, enter a non-sensitive description and the copied
+   endpoint, select only the channels enabled for this install, then choose
+   **Create**. One webhook may cover several selected channels; a channel already
+   assigned to another webhook cannot be reused. An inactive, deleted, or
+   unconfigured webhook sends no notification.
+4. Activate only the sandbox revision and channels named by the approved test
+   plan. Activation itself performs no DOKU request. Run every A-221 case in
+   `RELEASE.md`; a rendered choice or successful redirect alone is insufficient.
+5. Inspect delivery in **Settings > Notifications > HTTP Notifications**. DOKU
+   documents an eight-day view and a resend action. The MyBookCMS endpoint must
+   return a successful 2xx only after its signed idempotent transition commits.
+   Record redacted invoice/correlation evidence, never raw bodies or headers.
+
+Official procedure: [Webhook / Payment Notification](https://docs.doku.com/get-started/manage-business/set-up-integration/webhook-payment-notification)
+and [Manage Operations](https://docs.doku.com/get-started/manage-business/manage-operations).
+
+A-222 owns one explicitly approved production activation; A-223 owns its bounded
+observation and keep-enabled/disable decision. Sandbox completion does not
+authorize either task. Create a separate production revision using production
+credentials, repeat notification registration for the production account, and
+enable only sandbox-proven channels. No credential, configuration row, webhook,
+payment state, or D1 data is promoted between environments.
 
 ## Approval boundary
 

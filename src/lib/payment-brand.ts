@@ -17,6 +17,36 @@ export const SELLER_BANK_OPTIONS = [
 
 export type SellerBankCode = (typeof SELLER_BANK_OPTIONS)[number]["code"];
 
+export const DOKU_CHANNEL_LABELS = {
+  INTERNET_BANKING_FPX: "Perbankan dalam talian FPX",
+  EWALLET_TNG: "Touch 'n Go eWallet",
+  EWALLET_GRABPAY: "GrabPay",
+  EWALLET_SHOPEEPAY: "ShopeePay",
+  CREDIT_CARD: "Kad kredit/debit",
+} as const;
+
+export function dokuChannelLabel(channel: string) {
+  return DOKU_CHANNEL_LABELS[channel as keyof typeof DOKU_CHANNEL_LABELS] || "";
+}
+
+export function buildDokuPaymentMethod(channels: readonly string[]) {
+  const publicChannels = channels
+    .map((code) => ({ code, label: dokuChannelLabel(code) }))
+    .filter((channel) => channel.label);
+  if (!publicChannels.length) return null;
+  return {
+    code: "DOKU",
+    payment_method: "doku",
+    name: "Bayar dalam talian melalui DOKU",
+    logo_url: "",
+    description: "Pilih kaedah bayaran pada halaman selamat DOKU.",
+    is_active: true,
+    requires_email: true,
+    hosted_redirect: true,
+    channels: publicChannels,
+  } as const;
+}
+
 const PAYMENT_ASSETS: Record<string, string> = Object.fromEntries([
   ...SELLER_BANK_OPTIONS.map(({ code, asset }) => [code, asset]),
   ["COD", "/images/payment/cod.webp"],

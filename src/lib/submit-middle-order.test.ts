@@ -2,31 +2,21 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { POST } from "../pages/api/submit-middle-order.ts";
 
-function request(body: Record<string, unknown>) {
-  return {
-    locals: { runtimeEnv: {} },
+test("retired middle checkout is a no-store tombstone and never needs runtime bindings", async () => {
+  const response = await POST({
+    locals: {},
     request: new Request("https://store.example/api/submit-middle-order", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify(body),
+      body: JSON.stringify({ submit_token: "legacy-token-must-not-write" }),
     }),
-  } as never;
-}
+  } as never);
 
-test("middle checkout refuses a non-Malaysia phone before any database write", async () => {
-  const response = await POST(request({
-    submit_token: "middle-form-token-12345",
-    customer_name: "Aina Rahman",
-    customer_phone: "08123456789",
-    address: "Alamat akan disahkan oleh CS melalui WhatsApp",
-    variant_id: "10003",
-  }));
-
-  assert.equal(response.status, 422);
+  assert.equal(response.status, 410);
+  assert.equal(response.headers.get("cache-control"), "no-store");
   assert.deepEqual(await response.json(), {
     success: false,
-    error: "Nombor telefon Malaysia tidak sah. Contoh: 0123456789",
-    code: "VALIDATION_ERROR",
+    code: "LEGACY_CHECKOUT_REMOVED",
+    error: "Checkout ringkas sudah ditamatkan. Gunakan borang pesanan lengkap.",
   });
 });
-

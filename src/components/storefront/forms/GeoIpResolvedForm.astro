@@ -3,7 +3,6 @@ import MalaysiaCheckoutForm from './MalaysiaCheckoutForm.astro';
 import '../../../styles/form-hybrid.css';
 
 interface Props {
-  mode?: 'middle' | 'full' | 'hybrid';
   province?: string;
   bannerImage?: string;
   productSlug?: string;
@@ -11,10 +10,9 @@ interface Props {
   embedded?: boolean;
 }
 
-const { mode = 'hybrid', productSlug = 'asahan-portable', selectedVariantId, embedded = false, bannerImage } = Astro.props;
-const resolvedMode = mode === 'middle' ? 'middle' : 'full';
+const { productSlug = 'asahan-portable', selectedVariantId, embedded = false, bannerImage } = Astro.props;
 ---
 
-<div class="mx-auto w-full max-w-[480px] bg-white" data-canonical-order-form data-requested-mode={mode} data-resolved-mode={resolvedMode}>
-  <MalaysiaCheckoutForm mode={mode} productSlug={productSlug} selectedVariantId={selectedVariantId} embedded={embedded} bannerImage={bannerImage} />
+<div class="mx-auto w-full max-w-[480px] bg-white" data-canonical-order-form>
+  <MalaysiaCheckoutForm productSlug={productSlug} selectedVariantId={selectedVariantId} embedded={embedded} bannerImage={bannerImage} />
 </div>

@@ -3,7 +3,7 @@ type LegalPageTemplate = {
   badge: string;
   title: string;
   description: string;
-  sections: Array<{ title: string; paragraphs: string[] }>;
+  sections: Array<{ id?: string; title: string; paragraphs: string[] }>;
 };
 
 export const legalPages: Record<LegalPageKey, LegalPageTemplate> = {
@@ -38,6 +38,21 @@ export const legalPages: Record<LegalPageKey, LegalPageTemplate> = {
         paragraphs: [
           'Data yang diperlukan boleh diberikan kepada pihak penghantaran, customer service atau bank penerima hanya untuk menjalankan pesanan anda.',
           'Setiap penyedia memproses data mengikut terma dan dasar privasinya sendiri.',
+        ],
+      },
+      {
+        id: 'pembayaran-doku',
+        title: 'Pembayaran melalui DOKU',
+        paragraphs: [
+          'Jika anda memilih pembayaran DOKU, {{store}} menghantar nama, nombor telefon, alamat e-mel, alamat penghantaran, butiran pesanan, jumlah dalam MYR serta maklumat teknikal yang diperlukan untuk menyediakan pembayaran, mencegah penyalahgunaan dan menyemak status transaksi.',
+          'Pembayaran diselesaikan pada halaman hos DOKU. DOKU memproses data tersebut mengikut dasar privasi dan terma perkhidmatannya sendiri. {{store}} tidak mengumpul atau menyimpan nombor kad, CVV atau kelayakan perbankan anda. Status bayaran hanya dikemas kini selepas pengesahan pelayan diterima.',
+        ],
+      },
+      {
+        title: 'Payments through DOKU',
+        paragraphs: [
+          'If you choose DOKU payment, {{store}} sends your name, phone number, email address, delivery address, order details, MYR amount, and technical information required to prepare the payment, prevent misuse, and check transaction status.',
+          'Payment is completed on DOKU’s hosted page. DOKU processes this data under its own privacy policy and service terms. {{store}} does not collect or store your card number, CVV, or online-banking credentials. Payment status is updated only after server confirmation is received.',
         ],
       },
       {

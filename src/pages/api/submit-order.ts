@@ -2,7 +2,11 @@ import type { APIRoute } from "astro";
 import { resolveAcceptedOrderMetaContext } from "../../lib/accepted-order-meta.ts";
 import { hasClickId, readOrderAttribution, serializeClickIds } from "../../lib/click-ids.ts";
 import { orderSubmitSchema } from "../../lib/order-schema";
-import { getRuntimeEnv } from "../../lib/env";
+import { getEnvValue, getRuntimeEnv } from "../../lib/env";
+import {
+  DokuCheckoutError,
+  createDokuHostedCheckout,
+} from "../../lib/doku-checkout.ts";
 import {
   checkRateLimit,
   getClientIp,
@@ -168,7 +172,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     );
   }
   try {
-    const order = await persistOrder(database, {
+    const orderInput = {
       submitToken: data.submit_token,
       customerName: data.customer_name.trim(),
       customerPhone,
@@ -191,6 +195,50 @@ export const POST: APIRoute = async ({ request, locals }) => {
       shippingRateRuleId: quote.rateRuleId,
       shippingAmountSen: quote.amountSen,
       adClickIds: hasClickId(clickIds) ? serializeClickIds(clickIds) : undefined,
+    };
+    if (data.payment_method === "doku") {
+      const checkout = await createDokuHostedCheckout(
+        database,
+        getEnvValue("AUTH_SECRET", getRuntimeEnv(locals)),
+        {
+          ...orderInput,
+          customerEmail: data.customer_email || "",
+          requestUrl: request.url,
+          clientIp,
+          userAgent: request.headers.get("User-Agent") || "unknown",
+        },
+      );
+      return json({
+        success: true,
+        order: {
+          id: checkout.order.id,
+          order_id: checkout.order.orderNumber,
+          order_number: checkout.order.orderNumber,
+          status_token: checkout.order.publicStatusToken,
+          payment_method: "doku",
+          payment_status: "pending",
+          status: "pending",
+          content_id: checkout.order.contentId,
+          total_payment: checkout.order.totalAmount,
+          product_value_sen: checkout.order.productValue,
+          shipping_cost: quote.amountSen,
+          seller_bank_account_id: null,
+        },
+        payment: {
+          provider: "doku",
+          checkout_url: checkout.payment.checkoutUrl,
+          expires_at: checkout.payment.expiresAt,
+          status: checkout.payment.status,
+          state: checkout.payment.state,
+          amount: checkout.order.totalAmount,
+          total_amount: checkout.order.totalAmount,
+        },
+      });
+    }
+    const order = await persistOrder(database, {
+      ...orderInput,
+      paymentMethod: data.payment_method,
+      sellerBankAccountId: data.seller_bank_account_id,
       metaPurchase: await resolveAcceptedOrderMetaContext(request, locals),
     });
 
@@ -226,6 +274,22 @@ export const POST: APIRoute = async ({ request, locals }) => {
           : null,
     });
   } catch (error) {
+    if (error instanceof DokuCheckoutError) {
+      const unavailable = error.code === "DOKU_UNAVAILABLE";
+      const conflict = error.code === "DOKU_CONFLICT";
+      return json(
+        {
+          success: false,
+          error: unavailable
+            ? "Pembayaran DOKU belum tersedia. Pilih kaedah lain."
+            : conflict
+              ? "Permintaan pembayaran tidak sepadan dengan pesanan asal."
+              : "Sesi pembayaran DOKU gagal dibuat. Cuba lagi.",
+          code: error.code,
+        },
+        unavailable || conflict ? 409 : 502,
+      );
+    }
     if (error instanceof DuplicateSubmissionError) {
       return json(
         { success: false, error: error.message, code: "DUPLICATE_SUBMIT" },

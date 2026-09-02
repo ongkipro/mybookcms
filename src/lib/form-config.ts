@@ -1,70 +1,33 @@
 import type { Product, ProductVariant } from "../data/products";
-export type FormMode = "middle" | "full" | "hybrid";
-
-const FORM_PATHS: Record<FormMode, string> = {
-  middle: "/middle-form",
-  full: "/full-form",
-  hybrid: "/hybrid-form",
-};
-
-export function parseFormMode(value: unknown): FormMode | null {
-  if (value === "middle" || value === "full" || value === "hybrid") {
-    return value;
-  }
-  return null;
-}
 
 export function resolveFormVariant(
   product: Product,
   key?: string,
 ): ProductVariant | undefined {
   if (!key) return product.variants[0];
-
   const normalized = key.trim();
   return product.variants.find((variant) => variant.id === normalized);
 }
 
-export function buildFormUrl(
-  mode: FormMode,
+function formParams(
   product: Pick<Product, "productId">,
   variant?: Pick<ProductVariant, "id">,
 ) {
   const params = new URLSearchParams({ product_id: product.productId });
   if (variant) params.set("variant_id", variant.id);
-  return `${FORM_PATHS[mode]}?${params.toString()}`;
+  return params;
+}
+
+export function buildFormUrl(
+  product: Pick<Product, "productId">,
+  variant?: Pick<ProductVariant, "id">,
+) {
+  return `/full-form?${formParams(product, variant).toString()}`;
 }
 
 export function buildEmbedFormUrl(
-  mode: FormMode,
   product: Pick<Product, "productId">,
   variant?: Pick<ProductVariant, "id">,
 ) {
-  const params = new URLSearchParams({
-    mode,
-    product_id: product.productId,
-  });
-  if (variant) params.set("variant_id", variant.id);
-  return `/embed/form?${params.toString()}`;
-}
-
-export function buildFormUrls(
-  product: Pick<Product, "productId">,
-  variant?: Pick<ProductVariant, "id">,
-) {
-  return {
-    middle: buildFormUrl("middle", product, variant),
-    full: buildFormUrl("full", product, variant),
-    hybrid: buildFormUrl("hybrid", product, variant),
-  };
-}
-
-export function buildEmbedFormUrls(
-  product: Pick<Product, "productId">,
-  variant?: Pick<ProductVariant, "id">,
-) {
-  return {
-    middle: buildEmbedFormUrl("middle", product, variant),
-    full: buildEmbedFormUrl("full", product, variant),
-    hybrid: buildEmbedFormUrl("hybrid", product, variant),
-  };
+  return `/embed/form?${formParams(product, variant).toString()}`;
 }

@@ -26,3 +26,8 @@ test("plaintext database tokens fail closed instead of bypassing encryption", as
     /tidak terenkripsi/,
   );
 });
+
+test("the generalized helper decrypts ciphertext produced by the original Meta format", async () => {
+  const legacyCiphertext = "enc:v1:I6o+1E6+TMvOd77s:D/kVoXX2N7ISCfY5F75rzj16r06J6TDTvGiKQpERsWO0";
+  assert.equal(await decryptAdsSecret(legacyCiphertext, AUTH_SECRET), "legacy-meta-token");
+});

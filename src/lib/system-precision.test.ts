@@ -123,7 +123,7 @@ test("landing duplication generates a copy slug and independently clones section
           mode: "hybrid",
           selected_variant_id: "20001",
           button_text: "Pesan",
-        },
+        } as never,
         created_at: "2026-08-15T00:00:00.000Z",
         updated_at: "2026-08-15T00:00:00.000Z",
       },
@@ -158,7 +158,10 @@ test("landing duplication generates a copy slug and independently clones section
       sort_order: section.sort_order,
       type: section.type,
       content_html: section.content_html,
-      form_config: section.form_config,
+      form_config: section.form_config && {
+        selected_variant_id: section.form_config.selected_variant_id,
+        button_text: section.form_config.button_text,
+      },
     })),
   );
   assert.notStrictEqual(duplicateInput.sections, source.sections);

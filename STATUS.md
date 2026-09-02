@@ -1,11 +1,11 @@
 # MyBookCMS Status
 
-> Verified against disk: 2026-08-25 @ MyBookCMS working tree
+> Verified against disk: 2026-09-02 @ MyBookCMS working tree
 
 ## Current state
 
-The Malaysia cutover is locally integrated. Active runtime money is MYR integer
-sen; checkout supports COD/manual transfer; D1 owns Malaysia postcode/weight
+The Malaysia cutover is locally integrated. Active buyer-facing money is MYR
+integer sen; checkout exposes configured COD/manual transfer and hosted DOKU choices; D1 owns Malaysia postcode/weight
 shipping; Pengiriman is manual; the storefront uses one controlled Malaysia
 hybrid voice; and inherited external logistics, automatic payment, TikTok, and
 Indonesian address runtime paths are removed. Configured Meta Pixel/CAPI and
@@ -19,13 +19,112 @@ and Meta.
 No remote D1 migration or deployment has been performed for this install.
 Therefore no hosted or production behaviour is claimed.
 
+A-220 and A-221R are complete locally. The operator accepted the exact
+Malay/English DOKU disclosure and the endpoint-specific response profile in
+REQ-227/ADR-022. Every outbound DOKU request remains signed, every Payment
+Notification remains exact-raw-byte signed, and a present response signature
+must verify. Only fixed-origin Checkout create/retrieve responses may omit it;
+those responses must instead pass exact client, API version, fresh timestamp,
+JSON/body-bound, Cards-shape, checkout identity, invoice, MYR, and D1
+correlation checks. Independent correctness and security reviews passed after
+documentation stopped calling this non-HMAC path authenticated.
+
+The redacted sandbox transport re-smoke returned `200` for signed fictional
+FPX-only MYR 2.00 create and retrieve requests through the revised production
+client. Both signature-absent responses matched the required envelope, ID, and
+MYR facts, and create returned an allowlisted DOKU-hosted URL shape. No secret,
+signature, provider identifier, full URL, or PII was recorded. A-221 remains
+open because only FPX create/retrieve transport is proven: dashboard
+channel/webhook setup, hosted browser payment states, notification/resend,
+retry, stock, operator diagnostics, and Ads/browser evidence remain untested.
+A bounded headless Chrome check reached only the hosted document shell and
+rendered no payment controls; a longer attempt timed out, so it is not channel
+or payment evidence. Production remains disabled.
+
+REQ-228 and A-224 record the accepted next admin-workspace refinement only.
+`/admin/expeditions` will separate state/WP tariffs, zone/postcode coverage,
+and fallback weight bands into URL-addressable task panels with collapsible
+zone detail and contextual Sheets. The existing shipping policy/API/auth
+contract is unchanged until that queued R2 task is executed and browser-verified.
+
+The completed A-205 signal slice preserves a paid click across later
+UTM-only visits, replaces it on a new paid click, gives Meta browser/CAPI one
+random first-party visitor identity, initializes regional Google Consent Mode
+before tag configuration, and attaches Malaysia-normalized enhanced-conversion
+matching to the existing direct Google Purchase. It deliberately does not add
+Google offline uploads or change the accepted-order Purchase taxonomy.
+
+The repository-purity pass removed a stale AdsBookCMS install procedure and an
+unneeded public-directory placeholder. Active source now has a regression guard
+against named retired Indonesia providers. Forward-only migrations and
+`docs/lineage/` remain because they are schema history and explicit provenance,
+not executable product contamination. The TypeScript task-queue diagnostic was
+also fixed without weakening its assertions.
+
+REQ-214 is now runtime truth. PDP, CMS landing, direct, embed, public form
+configuration, Headless product, and OpenAPI surfaces expose one mode-less full
+Malaysia checkout. Operator mode selectors and stored defaults are gone;
+legacy stored or query-string mode values are inert. Six retired public routes
+perform one query-preserving `308` to `/full-form`, and the retired middle
+submission API is a `410 no-store` tombstone with no persistence path.
+Headless v1 retains the non-retired `urls.product`, canonical
+`urls.form_render`, and `forms.full_url` aliases for existing consumers while
+removing only the independently executable middle/hybrid identities.
+
+REQ-216 through REQ-226 and ADR-021 define the accepted DOKU Malaysia roadmap.
+A-210 through A-219 are now implemented and verified locally: migration `0059`
+adds encrypted configuration, order-linked attempts, and append-only events;
+the Global transport verifies signed raw bytes; the disabled configuration API
+stores provider-bound ciphertext; authoritative checkout creation is
+idempotent; and the public notification route applies one monotonic payment,
+order, and stock transition before `204`. Capability-protected result, return,
+cancel, status, and same-order retry paths now remove the recovery capability
+before rendering and reuse that lifecycle without trusting redirect data. A
+bounded capability remains valid for the order's newest attempt, while an
+expired active checkout is reconciled with strictly validated provider truth before reuse
+or replacement. The one-minute Worker schedule now leases a bounded due set,
+verifies provider status through the same lifecycle, backs off without overlap,
+and restores stock once for abandoned uninitiated attempts. Order Detail exposes
+redacted attempt/event diagnostics; Owner/Admin receives a confirmed manual
+check while Customer Service remains read-only, and generic DOKU status edits
+are refused. The canonical full buyer form now adds one hosted DOKU choice only
+for a healthy enabled configuration, lists only its enabled Malaysia channels,
+collects the required email with redirect disclosure, and reuses one stable
+submit identity across safe retry. The top-level navigation boundary accepts
+only credential-free HTTPS `doku.com` hosts, including the embed widget; no
+provider URL enters DOM/storage/analytics. Signed DOKU success now queues one canonical Meta server Purchase
+inside the payment transition, and the real DOKU result callback emits the
+same browser event ID plus one direct Google Purchase only after `paid`.
+Persisted `_fbp`, `_fbc`, and random first-party Meta identity are validated
+before reuse; result-page tracking is browser-only, so its recovery cookie is
+never forwarded to the same-origin CAPI endpoint. This buyer path is exposed
+only when an operator enables a healthy configuration; that locally verified
+behavior is not evidence of sandbox or production readiness. Owner/Admin can
+now save a complete encrypted DOKU draft, select only
+the five supported Malaysia channels, activate/deactivate an eligible revision,
+replace or delete it without reveal, and copy the canonical HTTPS notification
+URL. Replacement/deletion is revision-bound and atomically refused while a
+current-revision payment remains nonterminal; invalid ciphertext still exposes
+safe replacement/deletion recovery while activation fails closed. DOKU buyer
+integration and A-220 legal/release controls are complete locally, but A-221
+sandbox evidence remains open, so no live availability is claimed. Official senangPay guidance routes
+migrated merchants to this one DOKU adapter, not a second legacy integration.
+Before A-221 approval, no credential or vendor endpoint had been used. The
+approved A-221 attempt injected managed credentials without revealing their
+values and sent fictional data only; it created no checkout, order, payment,
+webhook, D1 mutation, remote migration, deployment, or production change.
+A-222/A-223 continue to make production activation and observation explicit
+post-sandbox approval gates rather than an implied continuation.
+
 ## Verified local evidence
 
-- Local D1 is at schema version 58 with 2,931 official Malaysia postcode rows,
+- The clean isolated D1 chain is at schema version 60 with 2,931 official Malaysia postcode rows,
   four active zones/ranges, complete directory coverage including Kalabakan
   `91400`, 16 active state/WP first-kilogram reference rates, five contiguous
   fallback bands in each zone, and the restored `orders.ad_click_ids` column.
-  Obsolete provider/payment tables are absent.
+  Obsolete Indonesia provider tables are absent; the new DOKU configuration,
+  payment-attempt, and payment-event tables contain no plaintext-secret or raw-
+  payload column.
 - Preview data contains three fictional products with one published hybrid
   Malaysia presentation, one fictional Maybank account, editable reference
   rates, two COD orders, and one manual-transfer order.
@@ -35,9 +134,53 @@ Therefore no hosted or production behaviour is claimed.
   and RM15/26/39/48/60 in Sabah, Sarawak, and Labuan.
 - Dashboard data contains three active orders worth RM94.70; unfiltered order
   listing returns `200` and uses MYR metadata.
-- `npm test`: 309 tests, 308 passed, 0 failed, 1 intentionally skipped.
-- `npm run check`: 307 files, 0 errors, 0 warnings, 0 hints.
+- `npm test`: 410 tests, 410 passed, 0 failed, 0 skipped after the A-220
+  cross-document local/sandbox/production guard.
+- `npm run check`: 350 files, 0 errors, 0 warnings, 0 hints after A-220.
 - `npm run build`: Cloudflare server build completed.
+- Real local Chromium at 390 and 1280 px rendered the accepted bilingual DOKU
+  privacy link after its email helper and before redirect disclosure. Keyboard
+  Tab focus produced a visible 3 px outline, the target measured 44 px, and the
+  Malay anchor opened in a new tab immediately before the English section while
+  preserving all entered checkout values. COD hid the block; the real embed
+  route repeated the contract; root overflow, console errors, and failed
+  requests were zero. Payment methods were intercepted locally; no DOKU vendor
+  request or credential was used.
+- Real Chromium at 390 and 1280 px completed the canonical full checkout through
+  location selection, shipping quotation, payment selection, and `/thanks` with
+  zero overflow or runtime errors. Keyboard focus remained visible on the
+  visually hidden variant control. Built-Worker requests proved all six legacy
+  routes preserve attribution and duplicate query keys through one `308`, the
+  embed ignores legacy mode, and the retired submit API returns `410 no-store`.
+- Real Chromium at 390 and 1280 px exercised the configured DOKU checkout with
+  mocked provider responses: one hosted choice, enabled-channel labels,
+  conditional email/disclosure, keyboard-focusable radios, disabled/busy
+  controls during submission, one stable-token request, one InitiateCheckout,
+  safe top-level navigation, no DOKU thanks state, and zero PAN/CVV, overflow,
+  or runtime errors. A 390 px refusal/timeout retry retained the same token and
+  email payload, kept the advertising initiation single, focused the Malay
+  alert, and announced retry loading. The real disabled configuration omitted
+  DOKU without suppressing COD/manual transfer; no vendor endpoint was called.
+- Real HTTPS Chromium exercised the actual DOKU result capability exchange at
+  390 px and its clean-URL reload at 1280 px. Authoritative paid state emitted
+  exactly one `purchase:{order_number}` Meta browser event and one Google
+  conversion using the D1 merchandise subtotal; reload emitted none. Root
+  overflow was zero, no runtime error occurred, the HttpOnly recovery
+  capability was absent from the clean URL, DOM, script-visible cookies, and
+  browser storage. Injected browser test sinks captured the intended Meta and
+  Google calls; no same-origin CAPI request or live Ads vendor request occurred.
+- Authenticated built-Worker Chromium at 390 and 1280 px rendered the DOKU
+  operations card with ready config, redacted history, explicit automatic/manual
+  freshness, an overdue marker, and a confirmed Owner action. Controls were 44
+  px, root overflow was zero, the console was empty, and DOM/network inspection
+  found no secret, capability, checkout URL, advertising identity, or vendor call.
+- Authenticated HTTPS Chromium exercised the Payments workspace from an empty
+  DOKU state through sandbox draft/activation and production replacement/
+  confirmation using local fixture credentials. The canonical webhook URL was
+  exact; only masked values survived; inputs cleared after save; validation
+  moved focus to its error summary; COD/manual management remained present;
+  browser storage, vendor requests, console errors, and overflow stayed empty at
+  390 and 1280 px.
 - Public locale code, cookies, query overrides, Headless locale parameters, and
   admin language selectors are absent. The storefront document language is
   fixed to `ms-MY`; dormant bilingual columns from migration `0051` are not read

@@ -51,6 +51,7 @@ const ADMIN_API_ROUTES = [
   '/api/admin/content',
   '/api/admin/shipping',
   '/api/admin/expeditions',
+  '/api/admin/payments',
   '/api/admin/settings/developer',
   '/api/admin/ads',
   '/api/admin/media',

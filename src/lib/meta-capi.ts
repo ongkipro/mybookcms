@@ -66,7 +66,7 @@ export async function prepareMetaCapiPayload(input: MetaSignalInput): Promise<Pr
   const name = metaNameParts(identity.name);
   const phone = malaysiaPhoneDigits(identity.phone);
   const email = clean(identity.email)?.toLowerCase();
-  const normalizedExternalId = normalizeMetaText(identity.externalId || phone);
+  const normalizedExternalId = normalizeMetaText(identity.externalId);
   const contentName = clean(input.customData?.contentName);
   const contentIds = input.customData?.contentIds?.filter(Boolean) || [];
   const orderNumber = clean(input.customData?.orderNumber);

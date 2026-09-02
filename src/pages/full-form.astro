@@ -16,5 +16,5 @@ if (!selectedVariant) return Astro.redirect(`/produk/${product.slug}`);
 ---
 
 <BaseLayout title={`Form Full ${product.productName} - ${Astro.locals.tenant.name}`} description={`Borang pesanan lengkap ${product.productName} dengan alamat, kadar penghantaran, COD dan pindahan bank.`} image={product.heroImage} hideHeader={true} hideFooter={true}>
-  <div class="mx-auto max-w-[480px] bg-white py-4"><GeoIpResolvedForm mode="full" productSlug={product.slug} selectedVariantId={selectedVariant.id} /></div>
+  <div class="mx-auto max-w-[480px] bg-white py-4"><GeoIpResolvedForm productSlug={product.slug} selectedVariantId={selectedVariant.id} /></div>
 </BaseLayout>

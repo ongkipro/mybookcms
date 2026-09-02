@@ -38,6 +38,7 @@ const SCANNED_EXTENSIONS = new Set([
 // appeared. The literal name has to stay here for the guard to work — this
 // test exists precisely to fail if that brand reaches a MyBookCMS asset.
 const CONTAMINATION = /permatamall|permata[\s_-]*mall/i;
+const RETIRED_INDONESIA_RUNTIME = /autolaris|mengantar|qris|tiktok/i;
 
 function walk(dir: string): string[] {
   const out: string[] = [];
@@ -74,6 +75,37 @@ test("product code carries no reference-store branding", () => {
     "The demo store's brand belongs in the database, not in code that every " +
       "install ships. Resolve it from `Astro.locals.tenant` (server) or " +
       "`window.location.origin` (client island):\n  " + offenders.join("\n  "),
+  );
+});
+
+test("active runtime carries no retired Indonesia provider integration", () => {
+  const offenders: string[] = [];
+
+  for (const root of ROOTS) {
+    for (const file of walk(root)) {
+      if (
+        file.endsWith(".test.ts") ||
+        file.endsWith(".test.tsx") ||
+        file.startsWith("src/db/migrations/")
+      ) {
+        continue;
+      }
+
+      const lines = readFileSync(file, "utf8").split("\n");
+      lines.forEach((line, index) => {
+        if (RETIRED_INDONESIA_RUNTIME.test(line)) {
+          offenders.push(`${file}:${index + 1} → ${line.trim().slice(0, 100)}`);
+        }
+      });
+    }
+  }
+
+  assert.deepEqual(
+    offenders,
+    [],
+    "Retired Indonesia providers belong only in forward migration history and " +
+      "explicit lineage, never in the active MyBookCMS runtime:\n  " +
+      offenders.join("\n  "),
   );
 });
 

@@ -1,5 +1,5 @@
 import { defineMiddleware } from 'astro:middleware';
-import { CLICK_ID_COOKIE, hasClickId, parseClickIdsFromUrl, serializeClickIds } from './lib/click-ids';
+import { CLICK_ID_COOKIE, hasClickId, mergeClickIds, parseClickIdsFromUrl, readClickIdCookie, serializeClickIds } from './lib/click-ids';
 import {
   canAccessAdminRoute,
   getDefaultAdminRoute,
@@ -52,7 +52,9 @@ function applySecurityHeaders(
   // keep. No preload either - that one is close to irreversible. A store that
   // wants both can turn on zone-level HSTS in Cloudflare.
   response.headers.set('Strict-Transport-Security', 'max-age=31536000');
-  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  if (!response.headers.has('Referrer-Policy')) {
+    response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  }
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   if (isPrivate) response.headers.set('Cache-Control', 'no-store');
   return response;
@@ -456,8 +458,9 @@ export function createMiddleware(
   );
 
   if (!isPrivate) {
-    const clickIds = parseClickIdsFromUrl(url);
-    if (hasClickId(clickIds)) {
+    const incomingClickIds = parseClickIdsFromUrl(url);
+    if (hasClickId(incomingClickIds)) {
+      const clickIds = mergeClickIds(readClickIdCookie(context.request), incomingClickIds);
       const secure = url.protocol === 'https:' ? ' Secure;' : '';
       response.headers.append('Set-Cookie', `${CLICK_ID_COOKIE}=${encodeURIComponent(serializeClickIds(clickIds))}; Path=/; Max-Age=${90 * 24 * 60 * 60}; HttpOnly; SameSite=Lax;${secure}`);
       if (clickIds._fbc) response.headers.append('Set-Cookie', `_fbc=${encodeURIComponent(clickIds._fbc)}; Path=/; Max-Age=${90 * 24 * 60 * 60}; SameSite=Lax;${secure}`);

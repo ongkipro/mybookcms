@@ -70,7 +70,6 @@ export type Product = {
   variants: ProductVariant[];
 };
 
-type FormMode = "middle" | "full" | "hybrid";
 type EmbedConfig = {
   variants: Array<{
     id: number | string;
@@ -79,12 +78,6 @@ type EmbedConfig = {
   selected_variant: {
     id: number | string;
   };
-};
-
-const FORM_PATHS: Record<FormMode, string> = {
-  middle: "/middle-form",
-  full: "/full-form",
-  hybrid: "/hybrid-form",
 };
 
 function getProductPriceRange(variants: ProductVariant[]): string | null {
@@ -184,7 +177,6 @@ export function ProductCatalog({
   );
   const [embedTarget, setEmbedTarget] = useState<Product | null>(null);
   const [embedConfig, setEmbedConfig] = useState<EmbedConfig | null>(null);
-  const [embedMode, setEmbedMode] = useState<FormMode>("hybrid");
   const [embedVariantId, setEmbedVariantId] = useState("");
   const [embedLoading, setEmbedLoading] = useState(false);
   const [embedError, setEmbedError] = useState("");
@@ -239,7 +231,6 @@ export function ProductCatalog({
     setEmbedLoading(true);
     setEmbedError("");
     setEmbedConfig(null);
-    setEmbedMode("hybrid");
 
     void fetch(
       `/api/form-config?product_id=${encodeURIComponent(String(embedTarget.id))}&form=hybrid`,
@@ -427,17 +418,16 @@ export function ProductCatalog({
   const embedOrigin =
     typeof window === "undefined" ? "" : window.location.origin;
   const selectedVariant = embedVariantId || undefined;
-  const buildIntegrationUrl = (path: string, includeMode = false) => {
+  const buildIntegrationUrl = (path: string) => {
     if (!embedTarget || !embedOrigin) return "";
     const params = new URLSearchParams({
-      ...(includeMode ? { mode: embedMode } : {}),
       product_id: String(embedTarget.id),
     });
     if (selectedVariant) params.set("variant_id", selectedVariant);
     return `${embedOrigin}${path}?${params.toString()}`;
   };
-  const standaloneUrl = buildIntegrationUrl(FORM_PATHS[embedMode]);
-  const embedUrl = buildIntegrationUrl("/embed/form", true);
+  const standaloneUrl = buildIntegrationUrl("/full-form");
+  const embedUrl = buildIntegrationUrl("/embed/form");
   const embedId = `mybook-order-form-${String(embedTarget?.id || "").replace(/[^a-z0-9_-]/gi, "-")}`;
   const embedMarkup = embedUrl
     ? buildEmbedMarkup({
@@ -447,7 +437,6 @@ export function ProductCatalog({
         title: `Form pemesanan ${embedTarget?.title || "produk"}`,
         productId: String(embedTarget?.id || ""),
         variantId: selectedVariant,
-        mode: embedMode,
       })
     : null;
   const iframeHtml = embedMarkup?.plainIframe || "";
@@ -1041,7 +1030,7 @@ export function ProductCatalog({
               <span>Embed Checkout Form - {embedTarget?.title}</span>
             </DialogTitle>
             <DialogDescription>
-              Pilih alur dan varian awal. Snippet embed selalu menggunakan ID produk dan varian canonical dari MyBookCMS.
+              Pilih varian awal. Snippet embed selalu menggunakan full checkout Malaysia dan ID canonical dari MyBookCMS.
             </DialogDescription>
           </DialogHeader>
 
@@ -1061,23 +1050,7 @@ export function ProductCatalog({
             </section>
           ) : embedConfig ? (
             <div className="space-y-4">
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <label className="block">
-                  <span className="mb-1.5 block text-xs font-bold text-slate-700">
-                    Mode Form Checkout
-                  </span>
-                  <select
-                    value={embedMode}
-                    onChange={(event) =>
-                      setEmbedMode(event.target.value as FormMode)
-                    }
-                    className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-950 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 font-medium"
-                  >
-                    <option value="hybrid">Hybrid · Otomatis menyesuaikan wilayah</option>
-                    <option value="full">Malaysia · alamat & tarif poskod</option>
-                    <option value="middle">Middle · Form singkat (Nama & HP)</option>
-                  </select>
-                </label>
+              <div className="grid grid-cols-1 gap-3">
                 <label className="block">
                   <span className="mb-1.5 block text-xs font-bold text-slate-700">
                     Varian Awal (Default)

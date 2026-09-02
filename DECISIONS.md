@@ -1,6 +1,6 @@
 # MyBookCMS Decisions
 
-> Verified against disk: 2026-08-24 @ MyBookCMS working tree
+> Verified against disk: 2026-09-01 @ MyBookCMS working tree
 
 ## ADR-001 — One install is one store
 
@@ -25,6 +25,9 @@ Checkout fails closed on invalid/unmapped postcode, overlap, or missing rate.
 only at the public/admin/event boundary.
 
 ## ADR-004 — COD and manual bank transfer
+
+**Status:** Superseded for the online-payment boundary by ADR-021. COD and
+manual transfer remain supported fallbacks.
 
 **Decision:** Checkout offers COD and merchant-selected manual bank transfer.
 
@@ -130,3 +133,95 @@ fabricate missing merchant identifiers.
 
 Historical decisions and implementation evidence are preserved only in
 `BUILD-LOG.md` and `TASKS.md`.
+
+## ADR-021 — One DOKU Malaysia hosted-payment boundary
+
+- **Status:** Accepted
+- **Date:** 2026-09-01
+- **Deciders:** MyBookCMS product owner
+- **Supersedes:** ADR-004 only where it prohibited online settlement; ADR-011
+  only for the Purchase timing of DOKU-paid orders
+
+### Context
+
+At this decision's acceptance, MyBookCMS accepted COD and operator-verified
+manual transfer and needed automated payment without restoring AutoLaris or an
+Indonesia payment taxonomy. The official
+[senangPay DOKU integration guide](https://guide.senangpay.com/doku-api-integration-guide)
+states that merchants have migrated to the DOKU platform and directs custom
+integrations to the DOKU Malaysia API.
+
+The viable choices were a legacy senangPay adapter, DOKU's direct Payment/Card
+APIs, or DOKU hosted Checkout. Parallel senangPay and DOKU adapters would create
+two credential, signature, webhook, and status models for the same provider
+group. Direct APIs would make MyBookCMS own channel-specific bank/e-wallet/card
+interaction and materially enlarge its PCI and failure surface.
+
+### Decision
+
+Use one optional DOKU Malaysia Global API adapter based on hosted
+`POST /v3/checkouts`. Treat senangPay as the merchant/onboarding route to that
+same DOKU platform, not as a second runtime adapter. D1 remains authoritative
+for orders, stock, payment attempts, lifecycle, and advertising identity. DOKU
+is authoritative only for its payment outcome. Browser return parameters are
+never payment evidence; signed notifications and signed server-to-server status
+retrieval drive reconciliation.
+
+The first release supports only merchant-enabled FPX, Touch 'n Go, GrabPay,
+ShopeePay, and Credit Card channels exposed by hosted Checkout. BNPL, legacy
+Cards-only APIs, tokenisation, recurring billing, refunds, payout, and split
+settlement require separate accepted requirements.
+
+### Consequences
+
+- **Positive:** one payment state machine, one Global signature scheme, hosted
+  channel UX, retained COD/manual fallbacks, and no PAN/CVV handling in
+  MyBookCMS.
+- **Negative:** checkout and payment reconciliation now depend on DOKU
+  availability; encrypted credentials, idempotent attempts, webhook replay
+  protection, expiry handling, and an operator recovery surface become
+  mandatory.
+- **Neutral:** production credentials, DOKU Back Office webhook registration,
+  remote migration, sandbox/vendor tests, and deployment remain explicit
+  install-owner approval gates.
+
+## ADR-022 — Narrow DOKU Checkout response-envelope compatibility
+
+- **Status:** Accepted
+- **Date:** 2026-09-02
+- **Deciders:** MyBookCMS product owner
+- **Amends:** ADR-021 response authentication only
+
+### Context
+
+Approved A-221 sandbox traffic proved that DOKU accepted signed Malaysia
+Checkout create and retrieve requests and returned matching successful JSON,
+but both responses omitted `Signature`. The current official Checkout OpenAPI
+models no response headers and DOKU Malaysia's published Checkout collection
+does not assert a response signature, while the generic Global integrity guide
+states that responses are signed. Requiring a missing header makes hosted
+Checkout unusable; accepting arbitrary unsigned JSON would make a payment
+boundary unauthenticated.
+
+### Decision
+
+Keep all outbound requests and Payment Notifications under the existing Global
+HMAC contract. For only the fixed HTTPS DOKU Checkout create/retrieve endpoints,
+verify `Signature` whenever it is present. If and only if it is absent, accept
+the response after exact Client ID and API version checks, a fresh canonical
+response timestamp, JSON media type, bounded raw body, rejection of Cards-only
+`Request-Id`, and exact checkout ID, invoice, MYR amount, and D1 attempt
+correlation. A malformed or invalid present signature fails closed and never
+enters the compatibility path. Browser redirects remain non-authoritative.
+
+### Consequences
+
+- **Positive:** the adapter interoperates with the observed DOKU Malaysia
+  Checkout contract without weakening notification authenticity or local
+  payment-state invariants.
+- **Negative:** an unsigned Checkout response has transport-origin and strict
+  correlation assurance rather than response-body HMAC assurance, so this
+  exception must stay endpoint-specific and observable.
+- **Neutral:** Direct Payment, Cards-only APIs, BNPL, refunds, channel changes,
+  production activation, webhook registration, and deployment remain outside
+  this decision.

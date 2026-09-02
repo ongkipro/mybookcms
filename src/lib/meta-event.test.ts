@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { POST } from "../pages/api/meta-event.ts";
 
-test("a capability-verified pending order records Purchase from the thanks flow", async () => {
+test("a capability-verified paid DOKU order records canonical Purchase from the thanks flow", async () => {
   const outboxRows: unknown[][] = [];
   const database = {
     prepare(query: string) {
@@ -36,6 +36,8 @@ test("a capability-verified pending order records Purchase from the thanks flow"
               product_value_sen: 3290,
               content_name: "Everyday Planner",
               content_ids: "p10001-v10002",
+              payment_method: "doku",
+              payment_status: "paid",
               ad_click_ids: JSON.stringify({
                 _fbp: "fb.1.1700000000000.stored-browser",
                 _fbc: "fb.1.1700000000000.stored-click",

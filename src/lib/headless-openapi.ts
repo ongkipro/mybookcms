@@ -168,6 +168,7 @@ export const headlessOpenApiDocument = {
           "400": errorResponse("Request JSON is invalid"),
           "409": errorResponse("Submission token was already used"),
           "422": errorResponse("Checkout input or shipping selection is invalid"),
+          "502": errorResponse("DOKU Checkout could not be initiated"),
           "500": errorResponse("Checkout failed"),
           ...authenticatedErrors,
         },
@@ -260,7 +261,7 @@ export const headlessOpenApiDocument = {
       },
       ProductSummary: {
         type: "object",
-        required: ["id", "slug", "name", "price", "variants"],
+        required: ["id", "slug", "name", "price", "variants", "form"],
         properties: {
           id: { type: ["string", "integer"] },
           slug: { type: "string" },
@@ -276,7 +277,17 @@ export const headlessOpenApiDocument = {
           review_count: { type: "integer" },
           sold_count: { type: "integer" },
           variants: { type: "array", items: { $ref: "#/components/schemas/ProductVariant" } },
-          urls: { type: "object" },
+          form: { $ref: "#/components/schemas/CheckoutForm" },
+          urls: {
+            type: "object",
+            description: "Backward-compatible non-mode aliases for v1 clients.",
+            required: ["product", "form_render"],
+            properties: {
+              product: { type: "string" },
+              form_render: { type: "string", description: "Alias of form.render_url." },
+            },
+            additionalProperties: false,
+          },
         },
       },
       CatalogEnvelope: {
@@ -326,16 +337,25 @@ export const headlessOpenApiDocument = {
               },
               forms: {
                 type: "object",
-                required: ["hybrid_url", "middle_url", "full_url"],
+                description: "Backward-compatible full-checkout alias for v1 clients.",
+                required: ["full_url"],
                 properties: {
-                  hybrid_url: { type: "string" },
-                  middle_url: { type: "string" },
-                  full_url: { type: "string" },
+                  full_url: { type: "string", description: "Alias of form.render_url." },
                 },
+                additionalProperties: false,
               },
             },
           },
         ],
+      },
+      CheckoutForm: {
+        type: "object",
+        required: ["render_url", "embed_url"],
+        properties: {
+          render_url: { type: "string" },
+          embed_url: { type: "string" },
+        },
+        additionalProperties: false,
       },
       RelatedProduct: {
         type: "object",
@@ -426,7 +446,7 @@ export const headlessOpenApiDocument = {
           district: { type: "string", minLength: 2, maxLength: 120 },
           province: { type: "string", minLength: 2, maxLength: 120 },
           postal_code: { type: "string", pattern: "^[0-9]{5}$" },
-          payment_method: { type: "string", enum: ["cod", "manual_transfer"] },
+          payment_method: { type: "string", enum: ["cod", "manual_transfer", "doku"] },
           seller_bank_account_id: { type: "integer", minimum: 1 },
           variant_id: { type: ["string", "integer"] },
           quantity: { type: "integer", minimum: 1, maximum: 100 },
@@ -456,6 +476,19 @@ export const headlessOpenApiDocument = {
           success: { const: true },
           timestamp: { type: "string", format: "date-time" },
           order: { $ref: "#/components/schemas/CheckoutOrder" },
+          payment: { $ref: "#/components/schemas/DokuCheckoutPayment" },
+        },
+      },
+      DokuCheckoutPayment: {
+        type: "object",
+        additionalProperties: false,
+        required: ["provider", "checkout_url", "expires_at", "status", "state"],
+        properties: {
+          provider: { const: "doku" },
+          checkout_url: { type: "string", format: "uri", pattern: "^https://[^/]*doku\\.com/" },
+          expires_at: { type: "string", format: "date-time" },
+          status: { type: "string" },
+          state: { type: "string" },
         },
       },
       OrderStatusRequest: {

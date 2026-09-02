@@ -41,7 +41,7 @@ export const orderSubmitSchema = z.object({
   province: z.string().trim().min(2, 'Negeri mesti diisi').max(120),
   postal_code: z.string().trim().regex(/^\d{5}$/, 'Poskod mesti mengandungi 5 digit'),
   location_id: z.coerce.number().int().positive().optional(),
-  payment_method: z.enum(['cod', 'manual_transfer']).default('cod'),
+  payment_method: z.enum(['cod', 'manual_transfer', 'doku']).default('cod'),
   seller_bank_account_id: z.coerce.number().int().positive().optional(),
   variant_id: z.union([z.string(), z.number().transform(String)]).pipe(
     z.string().trim().min(1, 'Varian produk harus dipilih').max(120),
@@ -60,6 +60,13 @@ export const orderSubmitSchema = z.object({
       });
     }
     return;
+  }
+  if (input.payment_method === 'doku' && !input.customer_email) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['customer_email'],
+      message: 'E-mel diperlukan untuk pembayaran DOKU',
+    });
   }
 });
 

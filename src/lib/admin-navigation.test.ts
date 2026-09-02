@@ -68,3 +68,19 @@ test("navigation active matching keeps required query filters and accepts pagina
     false,
   );
 });
+
+test("payments navigation names DOKU Malaysia only for privileged roles", () => {
+  for (const role of ["owner", "admin"] as const) {
+    const payments = getVisibleNavGroups(role)
+      .flatMap((group) => group.items)
+      .find((item) => item.id === "payments");
+    assert.match(payments?.description ?? "", /DOKU Malaysia/);
+    assert.match(payments?.keywords ?? "", /doku fpx ewallet/);
+  }
+  for (const role of ["advertiser", "customer_service"] as const) {
+    assert.equal(
+      getVisibleNavGroups(role).flatMap((group) => group.items).some((item) => item.id === "payments"),
+      false,
+    );
+  }
+});

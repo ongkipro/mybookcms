@@ -18,13 +18,23 @@ export type PersistOrderInput = {
   variantKey: string;
   quantity: number;
   shippingCost: number;
-  paymentMethod: "cod" | "manual_transfer";
+  paymentMethod: "cod" | "manual_transfer" | "doku";
   sellerBankAccountId?: number;
   shippingZoneCode?: string;
   shippingRateRuleId?: number;
   shippingAmountSen?: number;
   adClickIds?: string;
   metaPurchase?: AcceptedOrderMetaContext;
+  dokuPaymentAttempt?: {
+    id: string;
+    providerConfigId: number;
+    environment: "sandbox" | "production";
+    configRevision: number;
+    merchantInvoice: string;
+    idempotencyKey: string;
+    requestFingerprint: string;
+    expiresAt: string;
+  };
 };
 export type PersistedOrder = { id: number; orderNumber: string; publicStatusToken: string; contentId: string; totalAmount: number; productValue: number; unitPrice: number; sellerBankAccountId?: number; sellerBankCode?: string; sellerBankName?: string; sellerAccountHolder?: string; sellerAccountNumber?: string };
 export class DuplicateSubmissionError extends Error {}
@@ -38,6 +48,9 @@ export async function allocateOrderNumber(database: D1Database): Promise<string>
 }
 
 export async function persistOrder(database: D1Database, input: PersistOrderInput): Promise<PersistedOrder> {
+  if ((input.paymentMethod === "doku") !== Boolean(input.dokuPaymentAttempt)) {
+    throw new OrderInputError("Konfigurasi pembayaran DOKU tidak lengkap.");
+  }
   const variant = await database.prepare(`SELECT pv.id, pv.product_id, pv.price, pv.stock, p.title FROM product_variants pv INNER JOIN products p ON p.id = pv.product_id WHERE (CAST(pv.id AS TEXT) = ? OR pv.sku = ?) AND p.is_active = 1 LIMIT 1`).bind(input.variantKey, input.variantKey).first<{ id: number; product_id: number; price: number; stock: number | null; title: string }>();
   if (!variant) throw new OrderInputError("Varian produk tidak ditemukan.");
   if (variant.stock !== null && variant.stock < input.quantity) throw new OrderInputError("Stok produk tidak mencukupi.");
@@ -55,7 +68,7 @@ export async function persistOrder(database: D1Database, input: PersistOrderInpu
   const eventId = `purchase:${orderNumber}`;
   const nowIso = new Date().toISOString();
   let metaPayload: PreparedMetaPayload | null = null;
-  if (input.metaPurchase) {
+  if (input.metaPurchase && input.paymentMethod !== "doku") {
     try {
       const attribution = parseClickIds(input.adClickIds);
       metaPayload = await prepareMetaCapiPayload({
@@ -69,7 +82,7 @@ export async function persistOrder(database: D1Database, input: PersistOrderInpu
           city: input.city,
           state: input.province,
           postcode: input.postalCode,
-          externalId: input.customerPhone,
+          externalId: input.metaPurchase.externalId || input.customerPhone,
           fbp: attribution._fbp,
           fbc: attribution._fbc,
           clientIp: input.metaPurchase.clientIp,
@@ -97,6 +110,40 @@ export async function persistOrder(database: D1Database, input: PersistOrderInpu
       database.prepare(`INSERT INTO order_items (order_id, variant_id, quantity, unit_price) SELECT id, ?, ?, ? FROM orders WHERE order_number = ? AND submit_token = ?`).bind(variant.id, input.quantity, unitPrice, ...identity),
       database.prepare(`UPDATE product_variants SET stock = stock - ? WHERE id = ? AND stock IS NOT NULL AND EXISTS (SELECT 1 FROM orders WHERE order_number = ? AND submit_token = ?)`).bind(input.quantity, variant.id, ...identity),
     ];
+    if (input.dokuPaymentAttempt) {
+      const attempt = input.dokuPaymentAttempt;
+      statements.push(
+        database.prepare(`
+          INSERT INTO payment_attempts (
+            id, order_id, provider_config_id, provider, environment,
+            config_revision, merchant_invoice, idempotency_key,
+            request_fingerprint, amount_sen, currency, expires_at,
+            local_status, created_at, updated_at
+          )
+          SELECT ?, id, ?, 'doku', ?, ?, ?, ?, ?, ?, 'MYR', ?, 'created', ?, ?
+          FROM orders WHERE order_number = ? AND submit_token = ?
+        `).bind(
+          attempt.id,
+          attempt.providerConfigId,
+          attempt.environment,
+          attempt.configRevision,
+          attempt.merchantInvoice,
+          attempt.idempotencyKey,
+          attempt.requestFingerprint,
+          totalAmount,
+          attempt.expiresAt,
+          nowIso,
+          nowIso,
+          ...identity,
+        ),
+        database.prepare(`
+          INSERT INTO payment_events (
+            payment_attempt_id, source, event_key, resulting_status, received_at
+          ) SELECT id, 'checkout', 'local-created', 'created', ?
+          FROM payment_attempts WHERE id = ?
+        `).bind(nowIso, attempt.id),
+      );
+    }
     if (metaPayload) {
       statements.push(database.prepare(`
         INSERT INTO capi_event_outbox

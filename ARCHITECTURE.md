@@ -1,6 +1,6 @@
 # MyBookCMS Architecture
 
-> Verified against disk: 2026-08-25 @ MyBookCMS working tree
+> Verified against disk: 2026-09-01 @ MyBookCMS working tree
 
 MyBookCMS is a single-store commerce CMS for Malaysia. One install owns one
 Cloudflare Worker, D1 database, KV namespace, R2 bucket, domain, and operator
@@ -30,8 +30,49 @@ team. The repository is the product template; it does not deploy a store.
 - The admin remains Indonesian, with English technical labels where useful.
 - Monetary values are stored as MYR integer sen. Formatting is performed at the
   presentation or event boundary with `Intl`.
-- Checkout accepts only COD and manual bank transfer. Manual transfer requires
-  a selected active seller bank account.
+- Buyer checkout has one mode-less full form. COD and manual bank transfer stay
+  independently available; manual transfer requires a selected active seller
+  bank account. A healthy enabled DOKU configuration adds one hosted DOKU choice
+  containing only its allowlisted Malaysia channels. Local implementation is
+  complete through buyer recovery, exactly-once Ads settlement, and the accepted
+  bilingual disclosure/release controls. A-221 sandbox evidence still prevents
+  any live availability claim.
+
+## DOKU payment boundary — locally implemented
+
+- Migration `0059` adds one DOKU configuration per install, one or more
+  order-linked attempts, and deduplicated append-only events. Secrets are
+  provider/environment-bound AES-GCM ciphertext; monetary facts are integer MYR
+  sen; terminal attempt state is monotonic.
+- `doku-signature.ts` and `doku-client.ts` own exact raw-byte Global HMAC,
+  freshness/target checks, Basic API-Key transport, per-endpoint versions,
+  bounded responses, and MYR verification. Checkout create/retrieve verifies a
+  response signature whenever present; when DOKU omits it, only the fixed
+  origin's exact client/version/timestamp/JSON envelope plus request and D1
+  correlations may pass. A malformed or invalid present signature never falls
+  back. Cards-specific signatures are outside this boundary.
+- `doku-checkout.ts` persists the order, stock reservation, and attempt before
+  provider transport. Stable submit intent converges; unauthenticated,
+  mismatched, or malformed provider results expose no checkout URL.
+- `/api/payments/doku/notifications` authenticates the raw request before JSON
+  parsing and commits attempt, order, stock restoration, and deduplicated event
+  changes in one D1 batch before acknowledgement.
+- Capability-protected return/result/cancel routes exchange the query capability
+  for an HttpOnly cookie before rendering, then resolve state from D1 or an
+  strictly validated and correlated retrieve response. The admin Payments
+  workspace stores only encrypted,
+  environment-bound credentials and masked health. Bounded scheduled/manual
+  reconciliation reuses the notification lifecycle and exposes redacted attempt
+  history without permitting generic DOKU status edits.
+- The canonical checkout submits one stable intent, sends the D1-owned order and
+  MYR amount to hosted DOKU Checkout, and accepts only credential-free HTTPS
+  `doku.com` navigation. No PAN, CVV, or online-banking credential crosses the
+  storefront boundary. Authoritative paid settlement owns the single DOKU Ads
+  Purchase; initiation, pending, failure, expiry, and retry do not emit it.
+- Local reachability is not provider readiness. A-220 locally delivers the
+  operator-accepted bilingual DOKU disclosure and release controls; A-221 owns
+  sandbox proof. Production activation and observation remain
+  A-222/A-223 with separate live approvals.
 
 ## Shipping and fulfilment
 
@@ -185,10 +226,10 @@ CRM template actions.
 
 Public PDP and checkout retain the inherited product gallery, variant card,
 floating-field form, destination result states, payment card, order summary,
-primary CTA, and trust strip. `/middle-form` is the short form confirmed by CS;
-`/full-form` and `/hybrid-form` render the complete Malaysia address, quote, and
-payment flow. Embeds and landing pages pass the configured mode through rather
-than coercing every entry point to one route.
+primary CTA, and trust strip. `/full-form` is the only executable checkout.
+Legacy middle/hybrid routes preserve query parameters through one `308` to that
+form, landing pages and embeds render the same component, and the retired middle
+submission endpoint is a `410 no-store` tombstone.
 
 ## Security and data invariants
 
@@ -214,3 +255,10 @@ than coercing every entry point to one route.
 The Malaysia cutover is validated only against the isolated local D1 and local
 Worker runtime. Remote migration, deployment, and production behaviour are not
 claimed. Historical implementation details belong only in `BUILD-LOG.md`.
+ADR-021 and `PLAN.md` own the complete DOKU Malaysia design. A-210 through A-219
+are verified local architecture: schema, encrypted configuration, Global
+transport, idempotent hosted Checkout initiation, signed monotonic notification,
+capability-safe recovery, reconciliation, admin/buyer surfaces, and Ads
+settlement ownership, plus the A-220 accepted bilingual disclosure and release
+controls. A-221 sandbox proof remains open; A-222/A-223 are separately approved
+production activation and observation.

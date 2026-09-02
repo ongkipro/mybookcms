@@ -50,6 +50,14 @@ The admin uses the semantic variables and Tailwind bridge in
 Do not introduce a second component library, a separate color vocabulary, or a
 provider brand as a system accent.
 
+Payment settings keep DOKU configuration and manual-payment management in
+separate vertically stacked cards. Secret fields never provide a reveal
+control or prefill stored values; stored credentials appear only as masks.
+Environment, activation, health, and configuration revision are named with
+text rather than colour alone. Production activation and destructive actions
+require explicit confirmation, while the manual-payment workflow remains
+available independently.
+
 ## Images
 
 Product images use a square crop on catalogue cards and the native scroll-snap

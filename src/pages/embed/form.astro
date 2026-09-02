@@ -3,7 +3,7 @@ import GeoIpResolvedForm from '../../components/storefront/forms/GeoIpResolvedFo
 import EmbedLayout from '../../layouts/EmbedLayout.astro';
 import { getStorefrontProduct } from '../../lib/catalog';
 import { detectStaleEmbedSnippet } from '../../lib/embed-markup';
-import { parseFormMode, resolveFormVariant } from '../../lib/form-config';
+import { resolveFormVariant } from '../../lib/form-config';
 
 export const prerender = false;
 
@@ -23,7 +23,6 @@ if (staleSnippet) {
 }
 
 const productKey = Astro.url.searchParams.get('product_id')?.trim() ?? '';
-const mode = parseFormMode(Astro.url.searchParams.get('mode')?.trim().toLowerCase()) ?? null;
 const variantKey = Astro.url.searchParams.get('variant_id')?.trim();
 const product = productKey
   ? await getStorefrontProduct(Astro.locals, productKey)
@@ -36,9 +35,6 @@ let errorMessage = '';
 if (!productKey) {
   Astro.response.status = 400;
   errorMessage = 'Product ID diperlukan.';
-} else if (!mode) {
-  Astro.response.status = 400;
-  errorMessage = 'Mode borang mesti middle, full, atau hybrid.';
 } else if (!product) {
   Astro.response.status = 404;
   errorMessage = 'Produk tidak aktif atau belum tersedia untuk checkout.';
@@ -54,7 +50,7 @@ const title = product
 
 <EmbedLayout title={title}>
   {
-    errorMessage || !product || !selectedVariant || !mode ? (
+    errorMessage || !product || !selectedVariant ? (
       <main class="flex min-h-72 items-center justify-center p-6">
         <section class="w-full rounded-xl border border-amber-200 bg-amber-50 p-5 text-center" role="alert">
           <h1 class="text-base font-bold text-slate-950">Borang belum tersedia</h1>
@@ -62,7 +58,7 @@ const title = product
         </section>
       </main>
     ) : (
-      <GeoIpResolvedForm mode={mode} productSlug={product.slug} selectedVariantId={selectedVariant.id} />
+      <GeoIpResolvedForm productSlug={product.slug} selectedVariantId={selectedVariant.id} />
     )
   }
 

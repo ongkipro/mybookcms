@@ -2,10 +2,7 @@ import type { APIRoute } from "astro";
 import { jsonError, jsonOk } from "../../lib/api";
 import {
   buildEmbedFormUrl,
-  buildEmbedFormUrls,
   buildFormUrl,
-  buildFormUrls,
-  parseFormMode,
   resolveFormVariant,
 } from "../../lib/form-config";
 import { getStorefrontProduct } from "../../lib/catalog";
@@ -19,21 +16,12 @@ export const GET: APIRoute = async ({ request, locals }) => {
   const url = new URL(request.url);
   const productKey = String(url.searchParams.get("product_id") || "").trim();
   const variantKey = String(url.searchParams.get("variant_id") || "").trim();
-  const requestedMode = parseFormMode(
-    String(url.searchParams.get("form") || "hybrid").toLowerCase(),
-  );
 
   if (!productKey) {
     return jsonError("product_id wajib diisi.", 400, {
       code: "PRODUCT_ID_REQUIRED",
     });
   }
-  if (!requestedMode) {
-    return jsonError("form harus middle, full, atau hybrid.", 400, {
-      code: "FORM_MODE_INVALID",
-    });
-  }
-
   const product = await getStorefrontProduct(locals, productKey);
   if (!product) {
     return jsonError("Produk aktif tidak ditemukan.", 404, {
@@ -47,9 +35,6 @@ export const GET: APIRoute = async ({ request, locals }) => {
       code: "VARIANT_NOT_FOUND",
     });
   }
-
-  const formUrls = buildFormUrls(product, selectedVariant);
-  const embedUrls = buildEmbedFormUrls(product, selectedVariant);
 
   return jsonOk(
     {
@@ -74,13 +59,9 @@ export const GET: APIRoute = async ({ request, locals }) => {
         compare_price: selectedVariant.comparePrice ?? selectedVariant.price,
       },
       form: {
-        requested_mode: requestedMode,
-        resolved_mode: requestedMode === "middle" ? "middle" : "full",
         market: "MY",
-        render_url: buildFormUrl(requestedMode, product, selectedVariant),
-        urls: formUrls,
-        embed_url: buildEmbedFormUrl(requestedMode, product, selectedVariant),
-        embed_urls: embedUrls,
+        render_url: buildFormUrl(product, selectedVariant),
+        embed_url: buildEmbedFormUrl(product, selectedVariant),
       },
     },
     200,

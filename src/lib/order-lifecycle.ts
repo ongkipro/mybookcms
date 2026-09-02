@@ -141,7 +141,7 @@ function selectedOrdersCte(orderIds: readonly number[]) {
   return `WITH selected(order_id) AS (VALUES ${orderIds.map(() => "(?)").join(", ")})`;
 }
 
-function buildStockRestorationStatements(
+export function buildStockRestorationStatements(
   database: D1Database,
   orderIds: readonly number[],
   requireReleasedState: boolean,

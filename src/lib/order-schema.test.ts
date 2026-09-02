@@ -37,7 +37,12 @@ test('order schema requires a stable submit token and bounded integer quantity',
   assert.equal(orderSubmitSchema.safeParse({ ...validOrder, quantity: 101 }).success, false);
 });
 
-test('checkout accepts only COD and manual bank transfer', () => {
+test('checkout accepts only the three Malaysia payment families', () => {
+  assert.equal(orderSubmitSchema.safeParse({
+    ...validOrder,
+    payment_method: 'doku',
+    customer_email: 'aisyah@example.com',
+  }).success, true);
   assert.equal(orderSubmitSchema.safeParse({
     ...validOrder,
     payment_method: 'card',
@@ -45,6 +50,13 @@ test('checkout accepts only COD and manual bank transfer', () => {
   assert.equal(orderSubmitSchema.safeParse({
     ...validOrder,
     payment_method: 'crypto',
+  }).success, false);
+});
+
+test('DOKU requires a valid customer email', () => {
+  assert.equal(orderSubmitSchema.safeParse({
+    ...validOrder,
+    payment_method: 'doku',
   }).success, false);
 });
 
