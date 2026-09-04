@@ -36,6 +36,7 @@ import {
   type AdminOrderStatus,
 } from "../../lib/admin-order-status";
 import { formatMyr } from "../../lib/storefront-locale";
+import type { AdminRole } from "../../lib/auth";
 import { formatAdminDateTime } from "../../lib/admin-date-filter";
 
 type OrderRow = {
@@ -167,7 +168,10 @@ function OrderStatusBadge({ order }: { order: OrderRow }) {
   </div>;
 }
 
-export function OrdersTable() {
+export function OrdersTable({ adminRole = "customer_service" }: { adminRole?: AdminRole } = {}) {
+  // Mirrors the server rule. Deleting an order is permanent and restores stock,
+  // so it stays with the roles that answer for the store's books.
+  const mayDeleteOrders = adminRole === "owner" || adminRole === "admin";
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -410,7 +414,7 @@ export function OrdersTable() {
         }} aria-label="Ubah status pesanan terpilih">
           <option value="">Ubah status</option>{bulkStatusActions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </select>
-        <Button variant="destructive" disabled={mutating} onClick={() => void deleteOrders(selectedIds)}><Trash2 />Hapus</Button>
+        {mayDeleteOrders && <Button variant="destructive" disabled={mutating} onClick={() => void deleteOrders(selectedIds)}><Trash2 />Hapus</Button>}
       </div>
     </section> : null}
 
@@ -436,14 +440,14 @@ export function OrdersTable() {
           <div className="mt-4 border-t border-slate-100 pt-4"><p className="font-black text-slate-900">{order.customer_name}</p><p className="mt-1 font-mono text-xs text-slate-500">{order.customer_phone}</p><p className="mt-1 text-xs text-slate-500">{[order.city, order.province, order.postal_code].filter(Boolean).join(", ")}</p></div>
           <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-slate-50 p-3 text-xs"><div><p className="text-slate-500">Produk & total</p><p className="mt-1 truncate font-semibold text-slate-900">{order.product_name}</p><p className="truncate text-[11px] text-slate-500">{order.variant_name}</p><p className="mt-1 text-sm font-black text-slate-950">{formatMyr(order.total_amount)}</p></div><div><p className="mb-1 text-slate-500">Status</p><OrderStatusBadge order={order} /></div></div>
           <div className="mt-4"><p className="mb-2 text-[10px] font-black uppercase tracking-wider text-slate-400">Tindak lanjut WhatsApp</p>{renderCrmActions(order)}</div>
-          <div className="mt-4 flex items-center justify-between gap-2 border-t border-slate-100 pt-3"><label className="flex min-h-11 items-center gap-2 text-xs font-bold text-slate-700"><Checkbox checked={selectedIds.includes(order.id)} onCheckedChange={(checked) => setSelectedIds((current) => checked ? [...new Set([...current, order.id])] : current.filter((id) => id !== order.id))} aria-label={`Pilih pesanan ${order.order_number}`} />Pilih</label><OrderMenu order={order} disabled={mutating} queuePending={queuePendingIds.includes(order.id)} onQueue={(queued) => void setShippingQueue([order.id], queued)} onStatus={(status) => void updateStatuses([order.id], status)} onDelete={() => void deleteOrders([order.id])} /></div>
+          <div className="mt-4 flex items-center justify-between gap-2 border-t border-slate-100 pt-3"><label className="flex min-h-11 items-center gap-2 text-xs font-bold text-slate-700"><Checkbox checked={selectedIds.includes(order.id)} onCheckedChange={(checked) => setSelectedIds((current) => checked ? [...new Set([...current, order.id])] : current.filter((id) => id !== order.id))} aria-label={`Pilih pesanan ${order.order_number}`} />Pilih</label><OrderMenu order={order} disabled={mutating} queuePending={queuePendingIds.includes(order.id)} canDelete={mayDeleteOrders} onQueue={(queued) => void setShippingQueue([order.id], queued)} onStatus={(status) => void updateStatuses([order.id], status)} onDelete={() => void deleteOrders([order.id])} /></div>
         </article>)}
       </div>
 
       <div className="hidden overflow-x-auto pb-16 lg:block" aria-label="Tabel pesanan desktop">
         <Table className="min-w-[1180px]">
           <TableHeader><TableRow className="bg-slate-50 text-[11px] font-black uppercase tracking-wider text-slate-500"><TableHead className="w-12 px-4"><Checkbox checked={allVisibleSelected ? true : selectedIds.some((id) => orders.some((order) => order.id === id)) ? "indeterminate" : false} onCheckedChange={(checked) => setSelectedIds((current) => checked ? [...new Set([...current, ...orders.map((order) => order.id)])] : current.filter((id) => !orders.some((order) => order.id === id)))} aria-label="Pilih semua pesanan di halaman ini" /></TableHead><TableHead className="w-44 border-r border-slate-200 px-5">Nomor pesanan</TableHead><TableHead className="w-52 px-4">Pemesan</TableHead><TableHead className="w-44 px-4">Status</TableHead><TableHead className="w-48 px-4">Pembayaran</TableHead><TableHead className="w-48 px-4 text-right">Produk & total</TableHead><TableHead className="w-56 px-4">Tindak lanjut WhatsApp</TableHead><TableHead className="w-24 px-4 text-right">Aksi</TableHead></TableRow></TableHeader>
-          <TableBody>{orders.map((order) => <TableRow key={order.id} className="align-top hover:bg-slate-50"><TableCell className="px-4 py-4"><Checkbox checked={selectedIds.includes(order.id)} onCheckedChange={(checked) => setSelectedIds((current) => checked ? [...new Set([...current, order.id])] : current.filter((id) => id !== order.id))} aria-label={`Pilih pesanan ${order.order_number}`} /></TableCell><TableCell className="border-r border-slate-200 px-5 py-4"><a className="whitespace-nowrap font-black text-slate-950 hover:text-blue-600 hover:underline" href={`/admin/orders/${encodeURIComponent(order.order_number)}`}>{order.order_number}</a><p className="mt-1 text-[11px] text-slate-400">{formatAdminDateTime(order.created_at)}</p></TableCell><TableCell className="max-w-[210px] px-4 py-4"><a className="block truncate font-black text-slate-900 hover:underline" href={`/admin/orders/${encodeURIComponent(order.order_number)}`}>{order.customer_name}</a><p className="mt-1 font-mono text-[11px] text-slate-500">{order.customer_phone}</p><p className="mt-1 truncate text-[11px] text-slate-400">{[order.city, order.province, order.postal_code].filter(Boolean).join(", ") || "Alamat belum lengkap"}</p></TableCell><TableCell className="px-4 py-4"><OrderStatusBadge order={order} /></TableCell><TableCell className="px-4 py-4"><PaymentBadge status={order.payment_status} /><p className="mt-2 text-[10px] font-bold text-slate-500">{paymentMethodLabels[order.payment_method] || order.payment_method}</p></TableCell><TableCell className="px-4 py-4 text-right"><p className="ml-auto max-w-[180px] truncate text-xs font-semibold text-slate-900">{order.product_name}</p><p className="ml-auto mt-0.5 max-w-[180px] truncate text-[11px] text-slate-500">{order.variant_name}</p><p className="mt-1 text-sm font-black text-slate-950">{formatMyr(order.total_amount)}</p><p className="mt-1 text-[10px] text-slate-500">Ongkir {formatMyr(order.shipping_cost)}</p></TableCell><TableCell className="px-4 py-4">{renderCrmActions(order)}</TableCell><TableCell className="px-4 py-4 text-right"><OrderMenu order={order} disabled={mutating} queuePending={queuePendingIds.includes(order.id)} onQueue={(queued) => void setShippingQueue([order.id], queued)} onStatus={(status) => void updateStatuses([order.id], status)} onDelete={() => void deleteOrders([order.id])} /></TableCell></TableRow>)}</TableBody>
+          <TableBody>{orders.map((order) => <TableRow key={order.id} className="align-top hover:bg-slate-50"><TableCell className="px-4 py-4"><Checkbox checked={selectedIds.includes(order.id)} onCheckedChange={(checked) => setSelectedIds((current) => checked ? [...new Set([...current, order.id])] : current.filter((id) => id !== order.id))} aria-label={`Pilih pesanan ${order.order_number}`} /></TableCell><TableCell className="border-r border-slate-200 px-5 py-4"><a className="whitespace-nowrap font-black text-slate-950 hover:text-blue-600 hover:underline" href={`/admin/orders/${encodeURIComponent(order.order_number)}`}>{order.order_number}</a><p className="mt-1 text-[11px] text-slate-400">{formatAdminDateTime(order.created_at)}</p></TableCell><TableCell className="max-w-[210px] px-4 py-4"><a className="block truncate font-black text-slate-900 hover:underline" href={`/admin/orders/${encodeURIComponent(order.order_number)}`}>{order.customer_name}</a><p className="mt-1 font-mono text-[11px] text-slate-500">{order.customer_phone}</p><p className="mt-1 truncate text-[11px] text-slate-400">{[order.city, order.province, order.postal_code].filter(Boolean).join(", ") || "Alamat belum lengkap"}</p></TableCell><TableCell className="px-4 py-4"><OrderStatusBadge order={order} /></TableCell><TableCell className="px-4 py-4"><PaymentBadge status={order.payment_status} /><p className="mt-2 text-[10px] font-bold text-slate-500">{paymentMethodLabels[order.payment_method] || order.payment_method}</p></TableCell><TableCell className="px-4 py-4 text-right"><p className="ml-auto max-w-[180px] truncate text-xs font-semibold text-slate-900">{order.product_name}</p><p className="ml-auto mt-0.5 max-w-[180px] truncate text-[11px] text-slate-500">{order.variant_name}</p><p className="mt-1 text-sm font-black text-slate-950">{formatMyr(order.total_amount)}</p><p className="mt-1 text-[10px] text-slate-500">Ongkir {formatMyr(order.shipping_cost)}</p></TableCell><TableCell className="px-4 py-4">{renderCrmActions(order)}</TableCell><TableCell className="px-4 py-4 text-right"><OrderMenu order={order} disabled={mutating} queuePending={queuePendingIds.includes(order.id)} canDelete={mayDeleteOrders} onQueue={(queued) => void setShippingQueue([order.id], queued)} onStatus={(status) => void updateStatuses([order.id], status)} onDelete={() => void deleteOrders([order.id])} /></TableCell></TableRow>)}</TableBody>
         </Table>
       </div>
 
@@ -477,7 +481,8 @@ function storedStatusActions(order: OrderRow): StoredStatusAction[] {
   return actions;
 }
 
-function OrderMenu({ order, disabled, queuePending, onQueue, onStatus, onDelete }: {
+function OrderMenu({ order, disabled, queuePending, canDelete, onQueue, onStatus, onDelete }: {
+  canDelete: boolean;
   order: OrderRow;
   disabled: boolean;
   queuePending: boolean;
@@ -512,7 +517,7 @@ function OrderMenu({ order, disabled, queuePending, onQueue, onStatus, onDelete 
         {statusActions.map((action) => <DropdownMenuItem key={action.value} onClick={() => runStatusAction(action)}>{action.label}</DropdownMenuItem>)}
       </> : null}
       <DropdownMenuSeparator />
-      <DropdownMenuItem variant="destructive" onClick={onDelete}><Trash2 />Hapus pesanan</DropdownMenuItem>
+      {canDelete && <DropdownMenuItem variant="destructive" onClick={onDelete}><Trash2 />Hapus pesanan</DropdownMenuItem>}
     </DropdownMenuContent>
   </DropdownMenu>;
 }

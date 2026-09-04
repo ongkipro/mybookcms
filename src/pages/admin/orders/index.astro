@@ -5,6 +5,10 @@ import AdminPageHeader from '../../../components/admin/AdminPageHeader.astro';
 
 export const prerender = false;
 
+// The server refuses the privileged order writes; this keeps the browser from
+// offering a control that would fail.
+const adminRole = Astro.locals.admin?.role ?? 'customer_service';
+
 ---
 
 <AdminLayout title="Manajemen Pesanan" activeMenu="orders">
@@ -19,6 +23,6 @@ export const prerender = false;
         <a href="/admin/shipping" class="btn-primary min-h-11 px-4 text-xs">Pengiriman</a>
       </div>
     </AdminPageHeader>
-    <OrdersTable client:load />
+    <OrdersTable adminRole={adminRole} client:load />
   </div>
 </AdminLayout>

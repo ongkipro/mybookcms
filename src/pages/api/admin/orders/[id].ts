@@ -2,7 +2,7 @@ import type { APIRoute } from "astro";
 import { z } from "zod";
 import { jsonError, jsonOk } from "../../../../lib/api.ts";
 import { getEnvValue, getRuntimeEnv } from "../../../../lib/env.ts";
-import type { AdminRole } from "../../../../lib/auth.ts";
+import { canDeleteOrders, forbiddenOrderFields, type AdminRole } from "../../../../lib/auth.ts";
 import { isValidMalaysiaPhone, normalizeMalaysiaPhone } from "../../../../lib/validation.ts";
 import {
   applyOrderLifecycleMutation,
@@ -157,6 +157,17 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
   if (!database) return jsonError("Database order belum tersedia.", 503);
   const parsed = updateSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success || Object.keys(parsed.data).length === 0) return jsonError("Perubahan order tidak valid.", 400);
+  // Route access alone is too coarse here. Customer service reaches this route
+  // to correct a name, a phone, an address, or a fulfilment status; it does not
+  // set a price or declare an order paid.
+  const forbidden = forbiddenOrderFields(locals.admin?.role, parsed.data);
+  if (forbidden.length > 0) {
+    return jsonError(
+      `Peran Anda tidak dapat mengubah ${forbidden.join(" dan ")}.`,
+      403,
+      { code: "PERMISSION_DENIED", fields: forbidden },
+    );
+  }
   try {
     const current = await loadOrder(database, String(params.id || ""));
     if (!current) return jsonError("Order tidak ditemukan.", 404);
@@ -230,6 +241,11 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
 };
 
 export const DELETE: APIRoute = async ({ params, locals }) => {
+  // Permanent, and it restores stock. Customer service cancels instead, which
+  // keeps the record.
+  if (!canDeleteOrders(locals.admin?.role)) {
+    return jsonError("Peran Anda tidak dapat menghapus pesanan.", 403, { code: "PERMISSION_DENIED" });
+  }
   const database = databaseFrom(locals);
   if (!database) return jsonError("Database order belum tersedia.", 503);
   const order = await loadOrder(database, String(params.id || ""));

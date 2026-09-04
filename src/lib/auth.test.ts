@@ -5,6 +5,10 @@ import test from 'node:test';
 import {
   ADMIN_ROLES,
   canAccessAdminRoute,
+  canDeleteOrders,
+  forbiddenOrderFields,
+  isPrivilegedOrderField,
+  PRIVILEGED_ORDER_FIELDS,
   getDefaultAdminRoute,
   getSessionCookie,
   isAdminRole,
@@ -360,6 +364,63 @@ test('the admin gate refuses requests without a usable session token', async () 
 
   const pageResponse = await runAdminRequest({ pathname: '/admin/products', token: null, stored, credential });
   assert.equal(pageResponse.headers.get('location'), '/hello');
+});
+
+test('order money and payment decisions are not customer service\'s to make', () => {
+  // Reproduced before this rule existed: a real customer_service session sent
+  // PATCH {"shipping_cost": 0} and the order moved from 800/3290 to 0/2490.
+  assert.deepEqual([...PRIVILEGED_ORDER_FIELDS], ['shipping_cost', 'payment_status']);
+  for (const field of PRIVILEGED_ORDER_FIELDS) assert.equal(isPrivilegedOrderField(field), true);
+
+  const money = { shipping_cost: 0 };
+  const payment = { payment_status: 'paid' };
+  for (const role of ['owner', 'admin'] as const) {
+    assert.deepEqual(forbiddenOrderFields(role, money), []);
+    assert.deepEqual(forbiddenOrderFields(role, payment), []);
+  }
+  for (const role of ['advertiser', 'customer_service'] as const) {
+    assert.deepEqual(forbiddenOrderFields(role, money), ['shipping_cost']);
+    assert.deepEqual(forbiddenOrderFields(role, payment), ['payment_status']);
+    assert.deepEqual(
+      forbiddenOrderFields(role, { ...money, ...payment }),
+      ['shipping_cost', 'payment_status'],
+    );
+  }
+  // An absent session is not a permitted one.
+  assert.deepEqual(forbiddenOrderFields(undefined, money), ['shipping_cost']);
+});
+
+test('the corrections customer service exists to make stay open to it', () => {
+  // Denying the whole route would have been the easy fix and the wrong one:
+  // a customer calls, the address was wrong, and CS is who fixes it.
+  const corrections = {
+    customer_name: 'Siti',
+    customer_phone: '60123456789',
+    address: '12 Jalan Contoh, Kuala Lumpur',
+    location_id: 1386,
+    shipping_status: 'shipped',
+  };
+  for (const role of ADMIN_ROLES) {
+    assert.deepEqual(
+      forbiddenOrderFields(role, corrections),
+      [],
+      `${role} should still be able to correct an order's contact, address and fulfilment`,
+    );
+  }
+  // Changing the address still re-quotes shipping server-side. That is the
+  // system recalculating, not an operator naming a price, so it stays allowed
+  // even though it moves the same column.
+  assert.deepEqual(forbiddenOrderFields('customer_service', { address: 'x', location_id: 2 }), []);
+});
+
+test('deleting an order stays with the roles that answer for the books', () => {
+  // The bulk form takes a list, so one call from the wrong role removed a
+  // hundred orders and restored their stock.
+  assert.equal(canDeleteOrders('owner'), true);
+  assert.equal(canDeleteOrders('admin'), true);
+  assert.equal(canDeleteOrders('advertiser'), false);
+  assert.equal(canDeleteOrders('customer_service'), false);
+  assert.equal(canDeleteOrders(undefined), false);
 });
 
 test('the system log is reachable by owner and admin only', () => {

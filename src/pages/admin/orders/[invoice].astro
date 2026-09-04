@@ -3,10 +3,14 @@ import { OrderDetail } from '../../../components/admin/OrderDetail';
 import AdminLayout from '../../../layouts/AdminLayout.astro';
 export const prerender = false;
 
+// The server refuses the privileged order writes; this keeps the browser from
+// offering a control that would fail.
+const adminRole = Astro.locals.admin?.role ?? 'customer_service';
+
 const invoice = (Astro.params.invoice || '').trim();
 if (!invoice) return Astro.redirect('/admin/orders', 302);
 ---
 
 <AdminLayout title={`Order ${invoice}`} activeMenu="orders">
-  <OrderDetail invoice={invoice} client:load />
+  <OrderDetail invoice={invoice} adminRole={adminRole} client:load />
 </AdminLayout>

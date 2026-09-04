@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { jsonError, jsonOk } from "../../../../lib/api.ts";
+import { canDeleteOrders } from "../../../../lib/auth.ts";
 import { parseAdminDateSelection } from "../../../../lib/admin-date-filter.ts";
 import { ADMIN_ORDER_STATUSES } from "../../../../lib/admin-order-status.ts";
 import { defaultCrmTemplates, parseCrmTemplates } from "../../../../lib/crm-template.ts";
@@ -255,6 +256,11 @@ export const POST: APIRoute = async ({ locals, request }) => {
 };
 
 export const DELETE: APIRoute = async ({ locals, request }) => {
+  // The bulk form takes a list, so one call from the wrong role removed a
+  // hundred orders and restored their stock. Same rule as the single delete.
+  if (!canDeleteOrders(locals.admin?.role)) {
+    return jsonError("Peran Anda tidak dapat menghapus pesanan.", 403, { code: "PERMISSION_DENIED" });
+  }
   const database = getRuntimeEnv(locals)?.OMS_DB as D1Database | undefined;
   if (!database?.prepare) return jsonError("Database pesanan belum tersedia.", 503);
   const body = await request.json().catch(() => null) as { ids?: unknown[] } | null;

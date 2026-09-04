@@ -101,6 +101,60 @@ const ROLE_API_ROUTES: Record<Exclude<AdminRole, 'owner' | 'admin'>, readonly st
   ],
 };
 
+/**
+ * Route access is not the whole authorization story for orders.
+ *
+ * `customer_service` reaches `/api/admin/orders` on purpose — working orders is
+ * the job. But route access is coarse, and under that one route sit a
+ * money-writing field, a payment decision, and a permanent delete. Until this
+ * was written, a CS operator could `PATCH` an order's `shipping_cost` to `0`
+ * and watch the total drop, then `DELETE` a list of order ids and have them
+ * gone with their stock restored. Reproduced against a real CS session, not
+ * inferred.
+ *
+ * The split below is by field and by verb rather than by route, because
+ * denying the route would take away the correction work CS exists to do:
+ * a customer calls, the address was wrong, someone fixes it.
+ */
+
+/**
+ * Order fields only owner and admin may write.
+ *
+ * `shipping_cost` is money. `payment_status` is the decision that an order has
+ * been paid for — on a COD order, that is somebody asserting cash was
+ * collected. Neither belongs to the role an operator hands out most freely.
+ *
+ * Deliberately absent: `customer_name`, `customer_phone`, `address` and
+ * `location_id`, which are the corrections CS makes daily, and
+ * `shipping_status`, which is CS moving an order through fulfilment. Note that
+ * changing `address` or `location_id` still re-quotes shipping server-side —
+ * that is the system recalculating, not an operator naming a price.
+ */
+export const PRIVILEGED_ORDER_FIELDS = ['shipping_cost', 'payment_status'] as const;
+export type PrivilegedOrderField = (typeof PRIVILEGED_ORDER_FIELDS)[number];
+
+export function isPrivilegedOrderField(field: string): field is PrivilegedOrderField {
+  return (PRIVILEGED_ORDER_FIELDS as readonly string[]).includes(field);
+}
+
+/** The fields in this update that `role` is not allowed to write. */
+export function forbiddenOrderFields(
+  role: AdminRole | undefined,
+  update: Record<string, unknown>,
+): PrivilegedOrderField[] {
+  if (role === 'owner' || role === 'admin') return [];
+  return PRIVILEGED_ORDER_FIELDS.filter((field) => update[field] !== undefined);
+}
+
+/**
+ * Deleting an order is permanent and restores its stock, so it stays with the
+ * roles that answer for the store's books. CS cancels an order instead, which
+ * keeps the record.
+ */
+export function canDeleteOrders(role: AdminRole | undefined) {
+  return role === 'owner' || role === 'admin';
+}
+
 function matchesRoute(pathname: string, route: string) {
   return pathname === route || pathname.startsWith(`${route}/`);
 }

@@ -18,6 +18,7 @@ import { CrmActionGroup } from "./CrmActionGroup";
 import { CRM_STEPS, type CrmStepKey } from "./CrmActionButton";
 import { buildWaUrl, defaultCrmTemplates, renderCrmMessage } from "../../lib/crm-template";
 import { formatMyr } from "../../lib/storefront-locale";
+import type { AdminRole } from "../../lib/auth";
 import { formatAdminDateTime } from "../../lib/admin-date-filter";
 
 type Item = {
@@ -321,7 +322,14 @@ function LoadingState() {
   );
 }
 
-export function OrderDetail({ invoice }: { invoice: string }) {
+export function OrderDetail({
+  invoice,
+  adminRole = "customer_service",
+}: { invoice: string; adminRole?: AdminRole }) {
+  // The server refuses these to anyone but owner and admin. Hiding them here is
+  // not the boundary — it is so an operator is never offered a control that
+  // will fail, which reads as a broken page rather than a permission.
+  const mayWriteOrderMoney = adminRole === "owner" || adminRole === "admin";
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -468,7 +476,9 @@ export function OrderDetail({ invoice }: { invoice: string }) {
     try {
       await patchOrder({
         shipping_status: fulfilment.shipping_status,
-        shipping_cost: Math.round(Number(fulfilment.shipping_cost_myr) * 100),
+        ...(mayWriteOrderMoney
+          ? { shipping_cost: Math.round(Number(fulfilment.shipping_cost_myr) * 100) }
+          : {}),
       }, "Pengiriman diperbarui.");
     } catch (cause) {
       setFulfilmentError(cause instanceof Error ? cause.message : "Pengiriman gagal disimpan.");
@@ -580,9 +590,11 @@ export function OrderDetail({ invoice }: { invoice: string }) {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
-              <Button variant="destructive" size="lg" onClick={() => void deleteOrder()} disabled={deleting}>
-                {deleting ? <LoaderCircle className="animate-spin" /> : <Trash2 />}{deleting ? "Menghapus…" : "Hapus"}
-              </Button>
+              {mayWriteOrderMoney && (
+                <Button variant="destructive" size="lg" onClick={() => void deleteOrder()} disabled={deleting}>
+                  {deleting ? <LoaderCircle className="animate-spin" /> : <Trash2 />}{deleting ? "Menghapus…" : "Hapus"}
+                </Button>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -657,7 +669,15 @@ export function OrderDetail({ invoice }: { invoice: string }) {
               {fulfilmentError && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-bold text-rose-800">{fulfilmentError}</div>}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Field label="Status pengiriman"><select className="admin-input-flat" value={fulfilment.shipping_status} onChange={(event) => setFulfilment((current) => ({ ...current, shipping_status: event.target.value }))} disabled={savingFulfilment}>{shippingStatuses.map((status) => <option key={status} value={status} disabled={(status === "pending" && order.shipping_status !== "pending") || (stockReleased && !stockReleasingShippingStatuses.has(status)) || (status === "delivered" && order.payment_method !== "cod" && order.payment_status !== "paid")}>{shippingLabels[status]}</option>)}</select></Field>
-                <Field label="Biaya pengiriman (RM)"><Input value={fulfilment.shipping_cost_myr} onChange={(event) => setFulfilment((current) => ({ ...current, shipping_cost_myr: event.target.value }))} inputMode="decimal" disabled={savingFulfilment} /></Field>
+                {mayWriteOrderMoney ? (
+                  <Field label="Biaya pengiriman (RM)"><Input value={fulfilment.shipping_cost_myr} onChange={(event) => setFulfilment((current) => ({ ...current, shipping_cost_myr: event.target.value }))} inputMode="decimal" disabled={savingFulfilment} /></Field>
+                ) : (
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Biaya pengiriman</p>
+                    <p className="mt-1 font-black text-slate-950">{formatMyr(order.shipping_cost)}</p>
+                    <p className="mt-1 text-xs leading-relaxed text-slate-600">Dihitung ulang otomatis ketika alamat diubah. Nilai manual hanya dapat diatur oleh owner atau admin.</p>
+                  </div>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs">
                 <Info label="Zona pengiriman" value={order.shipping_zone || "Belum ditentukan"} />
@@ -687,7 +707,15 @@ export function OrderDetail({ invoice }: { invoice: string }) {
                   <p className="mt-2 text-xs leading-relaxed text-slate-600">Status DOKU hanya berubah dari notifikasi atau pemeriksaan provider yang terverifikasi.</p>
                 </div>
               ) : (
-                <Field label="Status pembayaran"><select className="admin-input-flat" value={paymentDraft} onChange={(event) => setPaymentDraft(event.target.value)} disabled={savingPayment}>{paymentStatuses.map((status) => <option key={status} value={status} disabled={stockReleased && !stockReleasingPaymentStatuses.has(status)}>{paymentLabels[status]}</option>)}</select></Field>
+                mayWriteOrderMoney ? (
+                  <Field label="Status pembayaran"><select className="admin-input-flat" value={paymentDraft} onChange={(event) => setPaymentDraft(event.target.value)} disabled={savingPayment}>{paymentStatuses.map((status) => <option key={status} value={status} disabled={stockReleased && !stockReleasingPaymentStatuses.has(status)}>{paymentLabels[status]}</option>)}</select></Field>
+                ) : (
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Status pembayaran</p>
+                    <p className="mt-1 font-black text-slate-950">{paymentLabels[order.payment_status] || order.payment_status}</p>
+                    <p className="mt-2 text-xs leading-relaxed text-slate-600">Menandai pesanan lunas adalah keputusan owner atau admin.</p>
+                  </div>
+                )
               )}
               {order.payment_method === "manual_transfer" && <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-600"><p className="font-black text-slate-900">{order.seller_bank_name || "Bank"}</p><p className="mt-1 font-mono">{order.seller_account_number || "Nomor rekening belum tersimpan"}</p><p className="mt-1">a.n. {order.seller_account_holder || "-"}</p></div>}
               <dl className="space-y-2 border-t border-slate-100 pt-4 text-sm">
@@ -695,7 +723,7 @@ export function OrderDetail({ invoice }: { invoice: string }) {
                 <div className="flex justify-between gap-4"><dt className="text-slate-500">Biaya pengiriman</dt><dd className="font-bold tabular-nums">{formatMyr(order.shipping_cost)}</dd></div>
                 <div className="flex items-end justify-between gap-4 border-t-2 border-slate-900 pt-3"><dt className="font-black text-slate-950">Total tagihan</dt><dd className="text-xl font-black tabular-nums text-emerald-700">{formatMyr(order.total_amount)}</dd></div>
               </dl>
-              {order.payment_method !== "doku" && (
+              {order.payment_method !== "doku" && mayWriteOrderMoney && (
                 <Button className="w-full" size="lg" onClick={() => void savePayment()} disabled={savingPayment || paymentDraft === order.payment_status}>
                   {savingPayment ? <LoaderCircle className="animate-spin" /> : <Save />}{savingPayment ? "Menyimpan…" : paymentDraft === order.payment_status ? "Tidak ada perubahan" : "Simpan pembayaran"}
                 </Button>
