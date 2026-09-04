@@ -154,7 +154,7 @@ test("a draft counts as dirty by value, not by how it was spelled", async () => 
   // row was classified dirty forever — the amber banner never cleared and the
   // reload kept preferring a draft equal to the stored value. The browser
   // evidence had used `9.99`, the one shape that round-trips unchanged.
-  const { isDraftDirty } = await import("./tariff-draft.ts");
+  const { isDraftDirty, isDraftSavable } = await import("./tariff-draft.ts");
 
   // Same money, different spelling: not dirty.
   for (const spelling of ["10", "10.0", "10.00", " 10.00 "]) {
@@ -172,7 +172,29 @@ test("a draft counts as dirty by value, not by how it was spelled", async () => 
   // the operator typed that the store does not hold.
   assert.equal(isDraftDirty(undefined, 1000), false);
   assert.equal(isDraftDirty("abc", 1000), true);
+  assert.equal(isDraftDirty("Infinity", 1000), true);
+
+  // An emptied field is dirty even against a stored zero. `Number("")` is 0, so
+  // a value-only comparison would call a cleared input identical to a RM 0.00
+  // rate — the same mistake as "10" versus "10.00", the other way round.
   assert.equal(isDraftDirty("", 1000), true);
+  assert.equal(isDraftDirty("", 0), true);
+  assert.equal(isDraftDirty("   ", 0), true);
+  // While a real zero against a stored zero is clean.
+  assert.equal(isDraftDirty("0", 0), false);
+  assert.equal(isDraftDirty("0.00", 0), false);
+
+  // Dirty and savable are different questions, and conflating them let an empty
+  // box save RM 0.00 and make that band's shipping free.
+  assert.equal(isDraftSavable("", 800), false, "an empty box must never be savable");
+  assert.equal(isDraftSavable("   ", 800), false);
+  assert.equal(isDraftSavable(undefined, 800), false);
+  assert.equal(isDraftSavable("abc", 800), false);
+  assert.equal(isDraftSavable("-5", 800), false, "a negative tariff must never be savable");
+  assert.equal(isDraftSavable("10", 800), true);
+  // A real zero typed on purpose is savable; an emptied field is not.
+  assert.equal(isDraftSavable("0", 800), true);
+  assert.equal(isDraftSavable("8.00", 800), false, "an unchanged value is not a save");
 });
 
 test("postcode and fallback editing refuse to close over unsaved input", () => {

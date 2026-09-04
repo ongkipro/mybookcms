@@ -27,7 +27,7 @@ import {
 import { Switch } from "../ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { formatMyr } from "../../lib/storefront-locale";
-import { isDraftDirty, ringgitOf, toSen } from "../../lib/tariff-draft";
+import { isDraftDirty, isDraftSavable, ringgitOf, toSen } from "../../lib/tariff-draft";
 
 type Zone = { id: number; code: string; name: string; isActive: number };
 type StateOption = { code: string; name: string; zoneCode: string; zoneId: number | null };
@@ -569,8 +569,7 @@ export function ExpeditionSettings() {
             {zoneRates.map((rate) => {
               const amount = draftAmounts[rate.id] ?? ringgitOf(rate.amountSen);
               const amountSen = toSen(amount);
-              const changed =
-                isDraftDirty(amount, rate.amountSen) && Number.isSafeInteger(amountSen) && amountSen >= 0;
+              const changed = isDraftSavable(amount, rate.amountSen);
               return <li key={rate.id} className="rounded-lg border border-slate-200 p-3">
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto_auto_auto] md:items-center">
                   <div className="min-w-0">
@@ -682,7 +681,7 @@ export function ExpeditionSettings() {
                     {stateRates.map((rate) => {
                       const amount = draftAmounts[rate.id] ?? ringgitOf(rate.amountSen);
                       const amountSen = toSen(amount);
-                      const changed = amountSen !== rate.amountSen && Number.isSafeInteger(amountSen) && amountSen >= 0;
+                      const changed = isDraftSavable(amount, rate.amountSen);
                       return <li key={rate.id} className="grid grid-cols-1 gap-2 md:grid-cols-[1fr_auto_auto_auto] md:items-center">
                         <div className="min-w-0">
                           <p className="text-xs font-bold text-slate-700">{rate.minWeightGrams}–{rate.maxWeightGrams} g</p>

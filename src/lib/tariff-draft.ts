@@ -28,7 +28,28 @@ export const ringgitOf = (amountSen: number) => (amountSen / 100).toFixed(2);
  */
 export function isDraftDirty(draft: string | undefined, amountSen: number): boolean {
   if (draft === undefined) return false;
+  // An emptied field is dirty even against a stored zero. `Number("")` is 0, so
+  // a value comparison alone calls a cleared input identical to a RM 0.00 rate —
+  // the same shape of mistake as comparing "10" to "10.00", just the other way
+  // round. Clearing a field is something the operator did and should be told
+  // about, and there is nothing to save until they type a number.
+  if (draft.trim() === "") return true;
   const drafted = toSen(draft);
   if (!Number.isSafeInteger(drafted)) return true;
   return drafted !== amountSen;
+}
+
+/**
+ * Whether a draft is a value the store may actually be given.
+ *
+ * Separate from `isDraftDirty` because the two answer different questions and
+ * had been conflated. An emptied field is a change worth warning about, but it
+ * is not an amount: `Number("")` is `0`, so a save guarded only by "is this a
+ * safe non-negative integer" would quietly write RM 0.00 from an empty box and
+ * make that band's shipping free. It must be dirty and unsavable at once.
+ */
+export function isDraftSavable(draft: string | undefined, amountSen: number): boolean {
+  if (draft === undefined || draft.trim() === "") return false;
+  const drafted = toSen(draft);
+  return Number.isSafeInteger(drafted) && drafted >= 0 && drafted !== amountSen;
 }

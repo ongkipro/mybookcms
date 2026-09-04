@@ -36,6 +36,15 @@ tests written alongside each defect passed.
   because a source cannot be trusted to honour its own `LIMIT`, and the test now
   asserts the other four sources survive.
 
+Probing the new comparison for edge cases then turned up a hazard that predated
+all of it: an emptied tariff box was savable. `Number("")` is `0`, so a save
+guarded only by "safe non-negative integer" wrote RM 0.00 from a blank field and
+made that weight band's shipping free, silently. "Is this changed?" and "may
+this be saved?" are different questions and had been one expression;
+`isDraftSavable` now answers the second. A cleared box warns and is refused; a
+zero typed on purpose still saves. Verified in the browser: unchanged disables
+the button, cleared disables it while showing the banner, `0` enables it.
+
 Two lower findings were acted on and one was answered rather than changed. The
 sheet focus restore now falls back to the selected tab when the opener has been
 remounted, instead of dropping focus on `<body>` — the same failure the guard
