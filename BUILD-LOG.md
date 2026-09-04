@@ -7,6 +7,36 @@
 > product's infrastructure and mean nothing to a reader of this repository.
 > The engineering narrative is unchanged.
 
+## 2026-09-04 — The decisions this product cited but never held
+
+- A-233. `DECISIONS.md` ran ADR-001 to ADR-012 and then jumped to ADR-021. Git
+  showed the gap was never filled here: the file has two commits and neither
+  contained ADR-013 through ADR-020. The fork carried the citations across
+  without the decisions, so `wrangler.jsonc` explained a retired template, and a
+  navigation test explained a deliberately hidden route, by pointing at
+  documents no reader of this repository can open.
+- Dating settled the approach. The baseline is `78ac143` on 2026-08-25, and
+  every `BUILD-LOG.md` citation of those ids is dated 2026-08-17 or 2026-08-19,
+  so they are genuinely upstream. Three of the decisions are nonetheless still
+  in force here and had no record at all, so they were written rather than
+  erased: ADR-023 for classifying routes from Astro's normalized `context.url`
+  rather than the raw request, ADR-024 for the single `compact-market` template,
+  ADR-025 for `/admin/content` staying reachable while absent from the menu.
+- New numbers, not the upstream range. Reusing ADR-018 would make the historical
+  citations in this very file resolve to a different decision than the one they
+  were written about. A test forbids that reuse explicitly.
+- The sweep found a fourth live citation the audit had missed: `PRD.md`
+  `LOGIN-19` attributed the rate-limit ceiling change to ADR-014. There the id
+  was dropped rather than recorded, because the row already states the reason in
+  full — a pointer that adds nothing is not worth a decision record.
+- `src/lib/decision-records.test.ts` now scans code, configuration and normative
+  documents and fails on an id `DECISIONS.md` does not define, exempting the
+  narrative files and applied migrations for stated reasons. Reintroducing a
+  dangling id into `wrangler.jsonc` was proven to fail with the file named.
+- Migration `0044` keeps its comment naming the upstream id. An applied
+  migration is never edited; ADR-024 supersedes it in the record instead.
+- 439/439 tests, zero diagnostics, clean build.
+
 ## 2026-09-04 — One resolver for payment availability
 
 - A-231. `GET /api/v1/storefront` returned a literal

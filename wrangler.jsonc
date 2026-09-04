@@ -117,8 +117,9 @@
     // Drives <html lang> and the Open Graph locale.
     "PUBLIC_SITE_LOCALE": "ms-MY",
 
-    // compact-market. wide-catalog was retired in ADR-018 and migration 0044;
-    // an unknown value takes the home page to its unavailable state (503).
+    // compact-market. wide-catalog was retired by migration 0044; ADR-024
+    // records why. An unknown value takes the home page to its unavailable
+    // state (503) rather than guessing a layout.
     "PUBLIC_STOREFRONT_TEMPLATE": "compact-market"
   }
 }

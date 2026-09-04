@@ -27,7 +27,8 @@ test("scoped roles see their complete workspace without privileged settings", ()
   assert.deepEqual(
     advertiserItems.map((item) => item.id),
     // "content" is deliberately absent: the storefront content editor is
-    // reachable at /admin/content and left out of the menu (ADR-018).
+    // reachable at /admin/content and left out of the menu, entered from
+    // Pengaturan -> Toko & CS instead. ADR-025 records why.
     ["dashboard", "products", "ads"],
   );
   assert.equal(

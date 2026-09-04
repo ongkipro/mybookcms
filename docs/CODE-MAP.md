@@ -165,7 +165,7 @@ All use `AdminLayout` (sidebar from `components/admin/admin-navigation.ts`, shel
 | `/admin/landing-pages` | `pages/admin/landing-pages/index.astro` | `LandingPageCatalog` | `/api/admin/landing-pages` | owner, admin, advertiser |
 | `/admin/landing-pages/new` | `pages/admin/landing-pages/new.astro` | `LandingPageEditor` (`client:only`) | `/api/admin/landing-pages`, `/api/admin/products` | owner, admin, advertiser |
 | `/admin/landing-pages/[id]/edit` | `pages/admin/landing-pages/[id]/edit.astro` | `LandingPageEditor` (`client:only`) | `/api/admin/landing-pages/{id}` | owner, admin, advertiser |
-| `/admin/content` | `pages/admin/content.astro` | `ContentWorkbench` | `/api/admin/content`, `/api/admin/media` | owner, admin, advertiser. Not in the sidebar; linked from `/admin/settings/store`. |
+| `/admin/content` | `pages/admin/content.astro` | `ContentWorkbench` | `/api/admin/content`, `/api/admin/media` | owner, admin, advertiser. Deliberately absent from the sidebar and entered from `/admin/settings/store`; ADR-025 records why, and a navigation test pins it. |
 | `/admin/expeditions` | `pages/admin/expeditions.astro` | `ExpeditionSettings` | `/api/admin/expeditions` | owner, admin |
 | `/admin/ads` | `pages/admin/ads.astro` | inline script hub | `/api/admin/ads` | owner, admin, advertiser |
 | `/admin/ads/meta` | `pages/admin/ads/meta.astro` | inline form (`meta-admin-form`) | `/api/admin/ads` | owner, admin, advertiser |
@@ -269,7 +269,7 @@ Each module has a sibling `*.test.ts` unless marked (no test). Run all with `npm
 | Headless | `headless-api` (auth, scopes, CORS, audit), `headless-client` (SDK), `headless-openapi`, `developer-api-keys` |
 | Rendering helpers | `json-ld`, `json-script`, `html-escape`, `checkout-navigation`, `ui-variants` (no test), `cn` (no test), `api` (no test), `utils` (empty) |
 
-Test-only modules with no runtime sibling: `admin-analytics`, `admin-bootstrap`, `admin-navigation`, `admin-orders-list`, `brand-contamination`, `doku-schema`, `expedition-settings`, `full-form-cutover`, `legal-content`, `malaysia-market`, `meta-event`, `middleware-path-source`, `mobile-layout-guard`, `sample-product-removal`, `shipping-bootstrap`, `shipping-queue`, `submit-middle-order`, `system-precision`, `task-queue`.
+Test-only modules with no runtime sibling: `code-map` (guards this file), `decision-records` (guards ADR citations), `admin-analytics`, `admin-bootstrap`, `admin-navigation`, `admin-orders-list`, `brand-contamination`, `doku-schema`, `expedition-settings`, `full-form-cutover`, `legal-content`, `malaysia-market`, `meta-event`, `middleware-path-source`, `mobile-layout-guard`, `sample-product-removal`, `shipping-bootstrap`, `shipping-queue`, `submit-middle-order`, `system-precision`, `task-queue`.
 
 ## 10. Database (D1, 25 live tables)
 

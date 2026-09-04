@@ -175,7 +175,7 @@ Route `/hello`, deliberately not `/admin/login`, and disallowed in `robots.txt`.
 | LOGIN-16 | The screen shall be usable at 320 px wide without horizontal scrolling and shall respect `env(safe-area-inset-*)`. | Implemented — measured document width equalled viewport at 320/390/768/1280 |
 | LOGIN-17 | Submission shall be disabled while in flight and shall show that it is working, so a slow network does not produce a double submit. | Implemented — a `pageshow` handler resets the lock, which previously survived a back/forward-cache restore and locked the operator out |
 | LOGIN-18 | The screen shall carry no marketing, no third-party assets, and no imagery that cannot be shipped to a merchant's own customers. | Implemented 2026-08-16 — **recorded as done before it was.** The vendor advertisement had been replaced with the reference store's brand mark, which every install would have worn; the stage is now colour only. A Google Fonts stylesheet and two preconnects for an unapplied family were announcing every operator's address to a third party; removed |
-| LOGIN-19 | Repeated failures shall be rate-limited per identifier and per address, and no ceiling shall be reachable by someone who knows only the username. | Implemented — three buckets over a 15-minute window: `username\|ip` at 5 is the brake, the address at 20 absorbs mobile CGNAT, the identifier at 50 backstops a distributed attempt. Spent only on failure. The identifier ceiling was reachable and did lock operators out, so it now denies only an address that has itself failed for that account (ADR-014). Known ceiling: the KV counter is not atomic, so a parallel guesser is damped rather than braked |
+| LOGIN-19 | Repeated failures shall be rate-limited per identifier and per address, and no ceiling shall be reachable by someone who knows only the username. | Implemented — three buckets over a 15-minute window: `username\|ip` at 5 is the brake, the address at 20 absorbs mobile CGNAT, the identifier at 50 backstops a distributed attempt. Spent only on failure. The identifier ceiling was reachable and did lock operators out, so it now denies only an address that has itself failed for that account. Known ceiling: the KV counter is not atomic, so a parallel guesser is damped rather than braked |
 
 ### Session
 
@@ -189,8 +189,9 @@ Route `/hello`, deliberately not `/admin/login`, and disallowed in `robots.txt`.
 
 `LOGIN-3`'s rotation gate was once *unreachable rather than wrong*: it is a
 correct default-deny allowlist, but middleware classified paths from the raw
-request URL, so `//admin/...` never reached the gate. Fixed 2026-08-17
-(ADR-013); the gate itself needed no change.
+request URL, so `//admin/...` never reached the gate. Fixed 2026-08-17; the gate
+itself needed no change. `ADR-023` records why classification must read Astro's
+normalized `context.url`.
 
 ## Non-goals
 

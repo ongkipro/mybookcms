@@ -130,7 +130,13 @@ SDK type cannot express it (A-231). `stores.is_cod_enabled` is read only by
 `GET /api/payment-methods` and enforced on no submission path, which is latent
 only because no admin surface can currently write it (A-232). ADR-013 through
 ADR-020 are cited by `PRD.md`, `wrangler.jsonc`, migration `0044`, and a
-navigation test, but were never recorded in this repository (A-233).
+navigation test, but were never recorded in this repository. A-233 has since
+closed that: three of those decisions are still in force and are now written as
+this product's own ADR-023, ADR-024 and ADR-025, under new numbers so
+`BUILD-LOG.md`'s historical citations keep resolving to the upstream decisions
+they were written about. A fourth citation was dropped because the requirement
+row already stated its reason. `src/lib/decision-records.test.ts` fails on any
+ADR id cited as authority that `DECISIONS.md` does not define.
 
 Owner and admin now have one read-only `Log sistem` panel at
 `/admin/settings/log`, reachable from the shell header, the settings hub, and

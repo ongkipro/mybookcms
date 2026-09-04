@@ -225,3 +225,109 @@ enters the compatibility path. Browser redirects remain non-authoritative.
 - **Neutral:** Direct Payment, Cards-only APIs, BNPL, refunds, channel changes,
   production activation, webhook registration, and deployment remain outside
   this decision.
+
+## ADR-023 — Route classification reads Astro's normalized path, never the raw request
+
+- **Status:** Accepted
+- **Date:** 2026-09-04
+- **Deciders:** MyBookCMS product owner
+- **Supersedes:** the upstream AdsBookCMS record this repository never carried
+
+### Context
+
+The fix itself dates from 2026-08-17, before the MyBookCMS fork. `PRD.md`,
+`BUILD-LOG.md` and `src/middleware.ts` all describe it, and three of them
+attributed it to an `ADR-013` that exists only in the upstream product's
+decision record. A live security property was therefore explained by pointing at
+a document a reader of this repository cannot open.
+
+Astro routes on a normalized pathname: it decodes percent-escapes in a loop and
+collapses duplicate slashes, then exposes the result as `context.url` while
+leaving `context.request` at the raw bytes the client sent. Middleware that
+classified paths from the raw URL saw a different path than the one Astro was
+about to serve. `//api/admin/settings` and `/%61pi/admin/settings` were not
+"private", so the session check, the role check, the CSRF origin check and the
+rotation gate were all skipped while the handler ran anyway. Every admin surface
+was readable, and writable cross-site, with no session at all.
+
+### Decision
+
+Middleware classifies every request from `context.url`. The raw request URL is
+never the source of a path used for an authorization, CSRF, or rotation
+decision. `src/lib/middleware-path-source.test.ts` pins this.
+
+### Consequences
+
+- **Positive:** one normalization owns routing and access control, so no encoded
+  or doubled-slash spelling can reach a handler past a gate that did not see it.
+- **Negative:** a future contributor reading `context.request.url` will find it
+  populated and plausible; the guard is a test, not a type.
+- **Neutral:** the allowlist itself was correct throughout and needed no change.
+
+## ADR-024 — One storefront template; `wide-catalog` is retired
+
+- **Status:** Accepted
+- **Date:** 2026-09-04
+- **Deciders:** MyBookCMS product owner
+- **Supersedes:** the upstream AdsBookCMS record this repository never carried
+
+### Context
+
+Migration `0044_retire_wide_catalog.sql` and `wrangler.jsonc` both attribute the
+retirement of the `wide-catalog` storefront template to `ADR-018`, which this
+repository has never contained. The retirement is real and enforced —
+`compact-market` is the only built-in template, and an unknown id takes the home
+page to its unavailable state rather than guessing a layout.
+
+### Decision
+
+`compact-market` is the single built-in storefront template. `wide-catalog` is
+not offered, not selectable, and not restored. An unrecognised
+`PUBLIC_STOREFRONT_TEMPLATE` renders the unavailable state, because silently
+falling back would ship a store a layout its operator did not choose.
+
+### Consequences
+
+- **Positive:** one template to design, test, and keep accessible.
+- **Negative:** a store wanting a second layout needs a new accepted template
+  definition, not a configuration value.
+- **Neutral:** migration `0044` still names the upstream id in a comment.
+  Applied migrations are never edited, so this record supersedes that comment
+  rather than correcting it in place.
+
+## ADR-025 — The content workbench is reachable but not in the menu
+
+- **Status:** Accepted
+- **Date:** 2026-09-04
+- **Deciders:** MyBookCMS product owner
+- **Supersedes:** the upstream AdsBookCMS record this repository never carried
+
+### Context
+
+`/admin/content` has a role grant, an API, and a working editor, but no sidebar
+entry. `src/lib/admin-navigation.test.ts` asserts that absence deliberately and
+cited `ADR-018` for it — again a record this repository never held. Without a
+decision to point at, the omission reads as an oversight, and the next person to
+"fix" the navigation would be undoing something intentional.
+
+The workbench was removed from the menu on 2026-08-19 because storefront content
+is edited rarely, from the store's own settings, rather than as a standing
+operational workspace. A draft of that change also redirected the route itself;
+that redirect did not survive integration, and the route stayed reachable. The
+later content-door work made that deliberate by giving it an entry point from
+Pengaturan → Toko & CS.
+
+### Decision
+
+`/admin/content` remains a reachable, role-gated route with no sidebar entry.
+Its entry point is the link on `/admin/settings/store`. The navigation test
+asserting its absence is the guard.
+
+### Consequences
+
+- **Positive:** the sidebar stays a list of standing workspaces, and a rare task
+  is reached from the context that prompts it.
+- **Negative:** an operator who does not know the route exists will not discover
+  it from the menu.
+- **Neutral:** the role grants for `/admin/content` and `/api/admin/content` are
+  unchanged; owner, admin, and advertiser reach both.
