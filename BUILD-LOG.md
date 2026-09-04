@@ -7,6 +7,48 @@
 > product's infrastructure and mean nothing to a reader of this repository.
 > The engineering narrative is unchanged.
 
+## 2026-09-04 — Independent audit of the code this session did not touch
+
+The two earlier reviews only read work delivered in this session. A third
+independent pass audited the pre-existing payment, order and authorization core
+instead. It returned `PASS` overall — no high-severity defect, and nothing a
+buyer can exploit for money, stock, or a forged payment — with four medium
+findings, now A-237 through A-240.
+
+The sharpest is A-237, and it was reproduced rather than reasoned about.
+`customer_service` legitimately holds the `/api/admin/orders` subtree, but the
+destructive and money-writing handlers under it check nothing, while the DOKU
+reconcile `POST` in the same file explicitly demands owner or admin. Signed in
+as a real customer-service operator on a throwaway install:
+
+    PATCH /api/admin/orders/INV-10001  {"shipping_cost": 0}
+      -> 200; shipping_cost 800 -> 0, total_amount 3290 -> 2490
+    DELETE /api/admin/orders           {"ids":[1]}
+      -> 200 "1 pesanan dihapus"; the order was gone
+
+Bulk delete takes a list, so the same request removes a hundred orders and
+restores their stock. The other three: the buyer-facing DOKU status and retry
+endpoints spend a provider call each with no rate limit, while the endpoints
+beside them are limited and the scheduled reconciler leases and backs off
+(A-238); order deletion restores stock even for goods already delivered, which
+creates phantom inventory that then oversells (A-239); and the return capability
+token, which the audit confirmed is otherwise sound — 256-bit HMAC, constant-time
+comparison, stripped by a `303` before any script runs — never expires and cannot
+be revoked (A-240).
+
+What the audit found clean is worth recording too, because it is the part
+nobody would otherwise write down. Stock and order integrity hold under
+concurrency: the `check → batch → decrement` looks like a TOCTOU but migration
+`0003`'s `product_variants_stock_nonnegative` trigger aborts the second
+concurrent decrement of a last unit and rolls back the whole D1 batch, confirmed
+with a scratch script. `submit_token` carries a real unique index that survived
+the `0049` rebuild, so two identical concurrent submits resolve to one order.
+`shipping_cost` is genuinely server-derived on both checkout routes. No path
+reaches `paid` without authenticated provider evidence, terminal states cannot
+be revived, and replays are idempotent by both constraint and state. One
+Purchase per order, never for an unpaid DOKU order, and shipping and fees never
+contaminate merchandise value.
+
 ## 2026-09-04 — Auditing the guards themselves
 
 The two independent reviews taught one lesson worth generalising: a test written

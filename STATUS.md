@@ -184,6 +184,17 @@ after `33a29c7`, and it changes no code.
 This remains local evidence. No remote migration, deployment, or provider
 traffic is claimed by it.
 
+An independent audit of the pre-existing payment, order and authorization core
+returned PASS with four medium findings, now A-237 through A-240. A-237 is the
+one to read first and was reproduced rather than reasoned about: a
+`customer_service` operator rewrote an order's shipping cost to zero and then
+bulk-deleted the order, because the destructive and money-writing handlers under
+`/api/admin/orders` carry no role check while the DOKU reconcile beside them
+does. The others are unbounded buyer-facing DOKU status and retry endpoints,
+stock restored on the deletion of an already-delivered order, and a return
+capability token with no expiry. None is a buyer-exploitable path to money,
+stock, or a forged payment; the audit confirmed those boundaries hold.
+
 ## Verified local evidence
 
 - The clean isolated D1 chain is at schema version 60 with 2,931 official Malaysia postcode rows,

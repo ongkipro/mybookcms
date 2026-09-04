@@ -555,6 +555,51 @@ No remote call, no deployment, no commit.
       Dependencies: none.
       Done when: a wrong method on each named endpoint answers `405` with a JSON body and `no-store`, matching the shape `/api/payments/doku/status` already returns; the code map's Methods column lists the `ALL` handlers the way it notes them for the DOKU routes; a test covers one headless and one public endpoint; `npm run check`, `npm test` and `npm run build` pass.
 
+- [ ] **A-237** — Close the order-management authorization gap the lowest-trust role can reach today. **Demonstrated, not inferred.**
+      Found by an independent audit of code this session did not touch. `src/lib/auth.ts` grants `customer_service` the whole `/api/admin/orders` subtree, and that is deliberate — CS works orders. What is not deliberate is that the destructive and money-writing handlers under it check nothing. `POST /api/admin/orders/[id]` explicitly demands owner or admin for the DOKU reconcile, so the pattern exists in the same file; `PATCH /api/admin/orders/[id]`, `DELETE /api/admin/orders/[id]` and the bulk `DELETE /api/admin/orders` have no role check at all.
+      Reproduced end to end against a throwaway install, signed in as a real `customer_service` operator: `PATCH /api/admin/orders/INV-10001` with `{"shipping_cost": 0}` answered `200` and moved the order from `shipping_cost` 800 and `total_amount` 3290 to 0 and 2490 — the lowest-trust role rewriting a money field. Then `DELETE /api/admin/orders` with `{"ids":[1]}` answered `200 · 1 pesanan dihapus` and the order was gone. Bulk delete accepts a list, so the same request removes a hundred orders and restores their stock.
+      The fix is not to revoke the subtree — CS needs to read and work orders. It is to guard the three handlers the way the reconcile POST already is, and to decide deliberately which of them CS should keep.
+      Risk: R3 — authorization on a destructive and a money-writing path, reachable today by a role an operator hands out freely.
+      Surface: `PRD.md`, `TASKS.md`, `STATUS.md`, `BUILD-LOG.md`, `docs/CODE-MAP.md`, `src/lib/auth.ts`, `src/lib/auth.test.ts`, `src/pages/api/admin/orders/index.ts`, `src/pages/api/admin/orders/[id].ts`, `src/components/admin/OrdersTable.tsx`, `src/components/admin/OrderDetail.tsx`.
+      Non-scope: the advertiser role, which already cannot reach this subtree; changing what an order edit does when it is authorized; the lifecycle and stock rules themselves; `/api/admin/shipping`, which needs its own read before assuming the same answer.
+      Primary requirement: REQ-182
+      Constraints: REQ-186, REQ-191, LOGIN-3
+      Dependencies: none. The browser must also stop offering a control the server will refuse, so the two admin components are in Surface.
+      Done when: a `customer_service` session receives `403 PERMISSION_DENIED` from every handler the decision says it should not reach, proven in a browser rather than only in a unit test; `auth.test.ts` pins the grant for all four roles on each verb; the affected controls are absent from the CS view rather than present and failing; `npm run check`, `npm test` and `npm run build` pass.
+
+- [ ] **A-238** — Bound the buyer-facing DOKU capability endpoints, which each spend a provider call.
+      Found by the same audit. `POST /api/payments/doku/status` reaches `reconcileDokuPaymentStatus`, which calls `retrieveCheckout` against DOKU on every request. There is no `checkRateLimit`, no lease and no cooldown on that path, while `POST /api/submit-order` and `POST /api/v1/checkout` beside it are both limited, and the scheduled reconciler in `doku-reconciliation.ts` deliberately leases and backs off. `POST /api/payments/doku/retry` is unlimited in the same way.
+      A buyer holding their own valid capability cookie can loop either endpoint and turn one order into unbounded outbound calls on the merchant's DOKU credentials. Nothing is forged and no state is corrupted; the cost is provider quota and rate-limit standing, which is the merchant's to lose.
+      Risk: R2 — an outbound provider path reachable by any buyer with a legitimate cookie; no schema, credential or lifecycle change.
+      Surface: `TASKS.md`, `STATUS.md`, `BUILD-LOG.md`, `OBSERVABILITY.md`, `src/pages/api/payments/doku/status.ts`, `src/pages/api/payments/doku/retry.ts`, `src/lib/doku-payment-access.ts`, `src/lib/doku-payment-access.test.ts`.
+      Non-scope: `/api/payments/doku/notifications`, which is signature-gated and must stay reachable by the provider; the scheduled reconciler's existing lease and backoff; changing what a reconcile or retry does when it is allowed.
+      Primary requirement: REQ-224
+      Constraints: REQ-219, REQ-220, REQ-222
+      Dependencies: none.
+      Done when: both endpoints refuse beyond a bounded window per order and per address, returning the same shape the other rate-limited endpoints use; a buyer within the window is unaffected; a test proves the provider client is not called past the bound; `OBSERVABILITY.md` records the limit alongside the reconciler's lease.
+
+- [ ] **A-239** — Stop order deletion from restoring stock that has already left the building.
+      Found by the same audit. `applyOrderLifecycleMutation` builds its stock restoration for a deletion with `requireReleasedState = false`, so the only remaining guard is `stock_restored_at IS NULL`. The paid-order guard beside it blocks `paid`, `settled` and `success`, but nothing looks at fulfilment.
+      So: a COD order marked `delivered` whose operator never got round to marking it paid is deleted, and the delivered quantity is added back to `product_variants.stock`. The store then believes it holds goods that are in a customer's hands, and oversells them to someone else — a phantom-inventory bug whose first symptom is a legitimate order that cannot be fulfilled.
+      Risk: R2 — stock correctness on an operator-initiated deletion; uses the existing shared restoration path, no schema change.
+      Surface: `TASKS.md`, `STATUS.md`, `BUILD-LOG.md`, `ARCHITECTURE.md`, `src/lib/order-lifecycle.ts`, `src/lib/order-lifecycle.test.ts`.
+      Non-scope: the terminal-transition restoration path, which is correct; changing what deletion does to the order row; adding a soft-delete; the admin shipping-status vocabulary.
+      Primary requirement: REQ-198
+      Constraints: REQ-192, REQ-191
+      Dependencies: none. Whether a delivered order should be deletable at all is the prior question and is the user's to answer.
+      Done when: deleting an order whose shipping status says the goods have shipped either restores no stock or is refused, whichever the user chooses, with a workerd-backed D1 test covering delivered, in-transit and never-shipped; the existing terminal-restoration tests still pass unchanged.
+
+- [ ] **A-240** — Give the DOKU return capability an end.
+      Found by the same audit, which confirmed the token itself is sound: 256-bit HMAC-SHA256 over `attemptId:orderNumber`, compared in constant time, and exchanged for an `HttpOnly` cookie by a `303` before any HTML or script can observe it. What it has no end.
+      The token is a pure function of two immutable values, so it is valid forever, and the loader deliberately accepts any historical attempt's token and resolves the newest. The 30-minute cookie is not a bound: whoever holds the original URL re-mints it at will. Anyone who recovers that URL later — a shared device, browser history, a URL-logging middlebox — has permanent read access to the order's status and amount and can trigger retries. There is no rotation and no revocation.
+      Risk: R2 — a capability boundary on the buyer recovery path; latent, since it needs the URL to leak first.
+      Surface: `TASKS.md`, `STATUS.md`, `BUILD-LOG.md`, `ARCHITECTURE.md`, `PRD.md`, `src/lib/doku-checkout.ts`, `src/lib/doku-payment-access.ts`, `src/lib/doku-payment-access.test.ts`.
+      Non-scope: the signature scheme, the constant-time comparison, or the cookie exchange, all of which the audit found correct; the notification path; `/order-status`, whose token is a different mechanism and needs its own read.
+      Primary requirement: REQ-222
+      Constraints: REQ-219, REQ-220
+      Dependencies: none. A buyer must still be able to recover a payment they abandoned an hour ago, so the bound is a product decision before it is a code one.
+      Done when: a return capability stops being accepted after a bounded life the user has chosen, expiry is verified server-side rather than by the cookie alone, and a buyer inside the window is unaffected; a test proves an expired token is refused on status, retry and each of the three recovery routes.
+
 - [ ] **MYS-5** — Release readiness for a specific install. **Approval: required — never run autonomously.**
       Carried over from the retired `UNIMPLEMENTED_SPECS.md`. This is not a product gap: the product does not depend on any external courier or payment service, and a missing provider contract must never be converted into a blocker. Nothing has been deployed to Cloudflare; the local database is the only one that exists.
       Risk: R4 — production deployment.
