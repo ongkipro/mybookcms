@@ -528,6 +528,21 @@ No remote call, no deployment, no commit.
 
 ## Release gate
 
+- [ ] **A-235** — Index the columns the system log reads, before a busy store needs it.
+      Found by auditing A-225's own delivery rather than by a failure. `GET /api/admin/system-log` issues four reads per request, filtering and ordering each source on a timestamp. Measured with `EXPLAIN QUERY PLAN` against a clean migration chain, three of the four cannot use an index:
+        - `capi_event_outbox` filtered and ordered on `updated_at`: `SCAN capi_event_outbox` plus `USE TEMP B-TREE FOR ORDER BY`. Its indexes are `event_id` and `(status, next_retry_at)`; neither leads with `updated_at`.
+        - `notifications` on `created_at`: `SCAN notifications` plus a temp B-tree. Its only index is the unique `(type, order_id)`.
+        - `payment_events` on `received_at`: it does use `payment_events_attempt_received_idx`, but as a full `SCAN` because that index leads with `payment_attempt_id`, and it still needs a temp B-tree to order.
+        - `headless_api_audit_events` is the counter-example done right: `SEARCH ... USING INDEX headless_api_audit_events_created_idx (created_at>?)`, no sort.
+      This is latent, not broken. It costs nothing on a store with a hundred rows. It bites exactly when the panel matters most: `notifications` grows one row per order and is never pruned, `payment_events` grows several rows per DOKU attempt and is never pruned, and an owner opening the panel during an incident on a busy store pays three full scans. `capi_event_outbox` is the mildest, since its own retention prunes at seven and thirty days.
+      Risk: R2 — one forward migration adding indexes only. No column, table, constraint, or data change, and no runtime code has to move.
+      Surface: `TASKS.md`, `STATUS.md`, `BUILD-LOG.md`, `OBSERVABILITY.md`, `docs/CODE-MAP.md`, `src/db/migrations/0060_system_log_indexes.sql`, `src/lib/version.ts`, `src/lib/system-log.test.ts`.
+      Non-scope: changing what the panel reads or shows; adding retention or pruning to `notifications` or `payment_events`, which is a separate decision about how long an operator's history should live; touching any existing index; reordering an existing composite.
+      Primary requirement: REQ-182
+      Constraints: REQ-198, REQ-201
+      Dependencies: A-225 delivered. Note the ordering constraint with A-226, which also claims migration `0060`: whichever lands first takes that number and the other renumbers.
+      Done when: `EXPLAIN QUERY PLAN` for all four system-log reads shows an index search and no `USE TEMP B-TREE FOR ORDER BY`, captured against a clean chain in `BUILD-LOG.md`; `schemaVersion` is bumped with the new migration; the clean chain still yields the documented live-table count; `npm run check`, `npm test`, and `npm run build` pass.
+
 - [ ] **MYS-5** — Release readiness for a specific install. **Approval: required — never run autonomously.**
       Carried over from the retired `UNIMPLEMENTED_SPECS.md`. This is not a product gap: the product does not depend on any external courier or payment service, and a missing provider contract must never be converted into a blocker. Nothing has been deployed to Cloudflare; the local database is the only one that exists.
       Risk: R4 — production deployment.

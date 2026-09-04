@@ -117,8 +117,18 @@ a street address into those columns and fails if any reaches the response.
 
 A source that fails is skipped rather than fatal, logged as
 `system-log-source-failed` with a bounded `error_class`, so one missing table
-cannot blank the panel for an operator working an incident. Events that exist
-only as Worker logs are out of reach here; giving them a store is A-226.
+cannot blank the panel for an operator working an incident. Each source is also
+capped at its own share of the total, so a burst from one cannot push the others
+out of the merged result. Events that exist only as Worker logs are out of reach
+here; giving them a store is A-226.
+
+Three of the four reads currently cost a table scan, measured with
+`EXPLAIN QUERY PLAN`: `capi_event_outbox` and `notifications` have no index
+leading with the timestamp they are filtered and ordered on, and
+`payment_events` has one that leads with `payment_attempt_id` instead. Only
+`headless_api_audit_events` searches an index. It is free on a small store and
+bites on a busy one, which is when the panel is most wanted; A-235 adds the
+indexes.
 
 ## Alerting
 
