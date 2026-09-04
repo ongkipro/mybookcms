@@ -125,6 +125,10 @@ test("no secret, phone number, or address reaches the system log", async () => {
     ["CAPI token", SECRET_TOKEN],
     ["customer phone", CUSTOMER_PHONE],
     ["street address", CUSTOMER_ADDRESS],
+    // The module's own contract puts the DOKU environment out of bounds, and an
+    // earlier version selected and printed it anyway because this list did not
+    // name it. Seeding a value is not asserting about it.
+    ["DOKU environment", "sandbox"],
   ] as const) {
     assert.ok(
       !serialized.includes(forbidden),
@@ -192,7 +196,7 @@ test("one failing source does not take the whole panel down", async () => {
   );
 });
 
-test("the response is bounded even when a source is noisy", async () => {
+test("a noisy source is bounded and does not crowd out the others", async () => {
   const rows = seededRows();
   rows.api = Array.from({ length: 500 }, (_, index) => ({
     api_key_id: 7,
@@ -204,7 +208,19 @@ test("the response is bounded even when a source is noisy", async () => {
   }));
   const database = fakeDatabase(rows);
   const entries = await loadSystemLog(localsWith(database), database, NOW);
-  assert.equal(entries.length, SYSTEM_LOG_MAX_ENTRIES);
+
+  assert.ok(entries.length <= SYSTEM_LOG_MAX_ENTRIES, "the response is not bounded");
+
+  // The point of a per-source ceiling. An earlier version set it equal to the
+  // total, so 200 API rows filled the response and every schema, payment, order
+  // and advertising entry was dropped by the final slice — while this test,
+  // which only checked the total, still passed.
+  for (const source of ["schema", "ads", "payment", "order"]) {
+    assert.ok(
+      entries.some((entry) => entry.source === source),
+      `a burst of API events crowded out every "${source}" entry`,
+    );
+  }
 });
 
 test("the schema state is reported even with no database at all", async () => {

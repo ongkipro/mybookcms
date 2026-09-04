@@ -138,13 +138,41 @@ test("an unsaved tariff survives a reload caused by another row", () => {
   // mutation calls `load`. Editing row A then toggling row B discarded A.
   assert.match(workspace, /const dirty = new Set\(/);
   assert.match(workspace, /dirty\.has\(rate\.id\)/);
-  // Dirtiness is measured against the server value the draft was edited from,
-  // which is what the refs exist to make available inside `load`.
-  assert.match(workspace, /draft !== undefined && draft !== ringgitOf\(rate\.amountSen\)/);
   assert.match(workspace, /ratesRef\.current/);
   assert.match(workspace, /draftsRef\.current/);
   // And the operator is told, rather than left to notice.
   assert.match(workspace, /Berpindah panel tidak menghapusnya/);
+});
+
+test("a draft counts as dirty by value, not by how it was spelled", async () => {
+  // This one is a real unit, not a regex, because the first version of these
+  // tests asserted the exact expression that carried the bug and passed.
+  //
+  // The defect it now covers: dirtiness was compared as strings, and
+  // `ringgitOf` always renders two decimals. An operator who typed `10` and
+  // saved it left a draft of "10" against a server rendering of "10.00", so the
+  // row was classified dirty forever — the amber banner never cleared and the
+  // reload kept preferring a draft equal to the stored value. The browser
+  // evidence had used `9.99`, the one shape that round-trips unchanged.
+  const { isDraftDirty } = await import("./tariff-draft.ts");
+
+  // Same money, different spelling: not dirty.
+  for (const spelling of ["10", "10.0", "10.00", " 10.00 "]) {
+    assert.equal(isDraftDirty(spelling, 1000), false, `${JSON.stringify(spelling)} should be clean against 1000 sen`);
+  }
+  // Rounding to the same sen is also not dirty.
+  assert.equal(isDraftDirty("10.001", 1000), false);
+
+  // Genuinely different money is dirty.
+  assert.equal(isDraftDirty("10.01", 1000), true);
+  assert.equal(isDraftDirty("9.99", 1000), true);
+  assert.equal(isDraftDirty("0", 1000), true);
+
+  // No draft at all is not dirty; unparseable input is, because it is something
+  // the operator typed that the store does not hold.
+  assert.equal(isDraftDirty(undefined, 1000), false);
+  assert.equal(isDraftDirty("abc", 1000), true);
+  assert.equal(isDraftDirty("", 1000), true);
 });
 
 test("postcode and fallback editing refuse to close over unsaved input", () => {
@@ -181,9 +209,15 @@ test("closing a sheet puts focus back on the control that opened it", () => {
   assert.match(workspace, /const restoreOpenerFocus = \(\) => \{/);
   // Only refocus a control that is still in the document: saving a postcode
   // re-renders its row, and focusing a detached node silently does nothing.
-  assert.match(workspace, /if \(opener\.isConnected\) opener\.focus\(\)/);
+  assert.match(workspace, /if \(opener\.isConnected\) \{/);
+  // And a remounted opener falls back to the selected tab rather than <body>,
+  // which is the same failure the guard exists to prevent.
+  assert.match(workspace, /\[role="tab"\]\[aria-selected="true"\]/);
   // Two open paths: `openRangeEditor`, which both the add and edit postcode
-  // controls route through, and the add-weight-band button.
+  // controls route through, and the add-weight-band button. Counting call sites
+  // is a weak check — it passes if a restore is moved rather than removed — so
+  // it is here to catch a *new* sheet added without one, not to prove the
+  // behaviour. The behaviour itself was proven in a browser.
   assert.equal((workspace.match(/rememberOpener\(\)/g) ?? []).length, 2);
   // Restored on every close path: refuse-then-close, discard, and save, for
   // both sheets.

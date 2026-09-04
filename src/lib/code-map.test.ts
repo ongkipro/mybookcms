@@ -87,7 +87,7 @@ function documentedRoutes(): Set<string> {
     if (!line.startsWith("| `")) continue;
     const firstCell = line.split("|")[1] ?? "";
     for (const [, raw] of firstCell.matchAll(/`([^`]+)`/g)) {
-      const withoutMethod = raw.replace(/^(?:GET|POST|PUT|PATCH|DELETE|ALL)\s+/, "");
+      const withoutMethod = raw.replace(/^(?:GET|POST|PUT|PATCH|DELETE|OPTIONS|ALL)\s+/, "");
       if (!withoutMethod.startsWith("/")) continue;
       const route = withoutMethod.split("?")[0].replace(/\/$/, "");
       routes.add(route === "" ? "/" : route);
@@ -144,7 +144,7 @@ test("every HTTP method the code map lists for an endpoint is exported by it", (
     // `| Route | File | Methods | ...` — cells[0] is the empty pre-pipe string.
     const file = cells[2]?.replace(/`/g, "");
     if (!file?.startsWith("pages/api/")) continue;
-    const declared = [...(cells[3] ?? "").matchAll(/\b(GET|POST|PUT|PATCH|DELETE|ALL)\b/g)].map(
+    const declared = [...(cells[3] ?? "").matchAll(/\b(GET|POST|PUT|PATCH|DELETE|OPTIONS|ALL)\b/g)].map(
       (m) => m[1],
     );
     if (declared.length === 0) continue;
@@ -205,4 +205,55 @@ test("the code map's stated table count matches its own table list", () => {
     for (const name of row.split("|")[1].matchAll(/`([a-z_]+)`/g)) documented.add(name[1]);
   }
   assert.equal(documented.size, Number(heading[1]));
+});
+
+test("a row's route and its file cell describe the same file", () => {
+  // Without this, a row pairing `/admin/orders` with `pages/admin/products.astro`
+  // passes every other check here: the route exists, the file exists, and the
+  // methods match. The map would be internally consistent and still wrong.
+  const wrong: string[] = [];
+  for (const line of map.split("\n")) {
+    if (!line.startsWith("| `")) continue;
+    const cells = line.split("|").map((cell) => cell.trim());
+    const route = cells[1]?.replace(/`/g, "").replace(/^(?:GET|POST|PUT|PATCH|DELETE|OPTIONS|ALL)\s+/, "");
+    const file = cells[2]?.replace(/`/g, "");
+    if (!route?.startsWith("/") || !file?.startsWith("pages/")) continue;
+    const derived = routeForPageFile(file.slice("pages/".length));
+    const documented = route.split("?")[0].replace(/\/$/, "") || "/";
+    if (derived !== documented) wrong.push(`${documented} is paired with ${file}, which serves ${derived}`);
+  }
+  assert.deepEqual(wrong, [], `\n  ${wrong.join("\n  ")}`);
+});
+
+test("an endpoint exporting a method the map omits is caught", () => {
+  // The other direction. The method check only failed when a documented method
+  // was missing from the file, so adding `DELETE` to an existing endpoint was
+  // invisible: the map would keep describing a narrower contract than the one
+  // actually served, which is the more dangerous way round.
+  const documented = new Map<string, Set<string>>();
+  for (const line of map.split("\n")) {
+    if (!line.startsWith("| `")) continue;
+    const cells = line.split("|").map((cell) => cell.trim());
+    const file = cells[2]?.replace(/`/g, "");
+    if (!file?.startsWith("pages/api/")) continue;
+    const methods = [...(cells[3] ?? "").matchAll(/\b(GET|POST|PUT|PATCH|DELETE|OPTIONS|ALL)\b/g)].map((m) => m[1]);
+    if (methods.length === 0) continue;
+    documented.set(file, new Set(methods));
+  }
+  assert.ok(documented.size > 15, `expected many documented endpoints, found ${documented.size}`);
+
+  const undocumented: string[] = [];
+  for (const [file, methods] of documented) {
+    const source = readFileSync(new URL(`src/${file}`, repoRoot), "utf8");
+    const exported = [
+      ...source.matchAll(/^export\s+(?:const|async function|function)\s+([A-Z]+)\b/gm),
+    ].map((m) => m[1]);
+    for (const method of exported) {
+      // `ALL` is a catch-all handler the map describes in prose, not a verb the
+      // Methods column is expected to list.
+      if (method === "ALL") continue;
+      if (!methods.has(method)) undocumented.push(`${file} exports ${method}, which the map does not list`);
+    }
+  }
+  assert.deepEqual(undocumented, [], `\n  ${undocumented.join("\n  ")}`);
 });

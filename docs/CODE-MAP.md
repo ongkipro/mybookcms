@@ -136,18 +136,18 @@ All use `BaseLayout` unless noted. `GeoIpResolvedForm` is a thin wrapper around 
 
 ## 5. Headless API (`/api/v1`)
 
-Authenticated by `X-App-Key` or `Authorization: Bearer` (legacy `x-api-key`), scoped, rate-limited, audit-logged through `lib/headless-api.ts` (`validateHeadlessRequest`). CORS from `stores.headless_allowed_origins`. Client SDK and journey helper live in `lib/headless-client.ts`; the OpenAPI document in `lib/headless-openapi.ts`. Contract doc: `STOREFRONT_INTEGRATION.md`.
+Authenticated by `X-App-Key` or `Authorization: Bearer` (legacy `x-api-key`), scoped, rate-limited, audit-logged through `lib/headless-api.ts` (`validateHeadlessRequest`). CORS from `stores.headless_allowed_origins`; every endpoint answers the `OPTIONS` preflight through the shared `handleOptions`. Client SDK and journey helper live in `lib/headless-client.ts`; the OpenAPI document in `lib/headless-openapi.ts`. Contract doc: `STOREFRONT_INTEGRATION.md`.
 
 | Route | File | Methods | Backing lib |
 | --- | --- | --- | --- |
-| `/api/v1/openapi.json` | `pages/api/v1/openapi.json.ts` | GET | `headless-openapi` |
-| `/api/v1/storefront` | `pages/api/v1/storefront.ts` | GET | `tenant-content`, `payment-availability` |
-| `/api/v1/products` | `pages/api/v1/products/index.ts` | GET | `catalog` |
-| `/api/v1/products/[slug]` | `pages/api/v1/products/[slug].ts` | GET | `catalog` |
-| `/api/v1/geo/districts` | `pages/api/v1/geo/districts.ts` | GET | `malaysia-locations` |
-| `/api/v1/geo/shipping-rates` | `pages/api/v1/geo/shipping-rates.ts` | GET, POST | `malaysia-shipping` |
-| `/api/v1/checkout` | `pages/api/v1/checkout.ts` | POST | same stack as `/api/submit-order` |
-| `/api/v1/orders/status` | `pages/api/v1/orders/status.ts` | POST | `order-status` |
+| `/api/v1/openapi.json` | `pages/api/v1/openapi.json.ts` | GET, OPTIONS | `headless-openapi` |
+| `/api/v1/storefront` | `pages/api/v1/storefront.ts` | GET, OPTIONS | `tenant-content`, `payment-availability` |
+| `/api/v1/products` | `pages/api/v1/products/index.ts` | GET, OPTIONS | `catalog` |
+| `/api/v1/products/[slug]` | `pages/api/v1/products/[slug].ts` | GET, OPTIONS | `catalog` |
+| `/api/v1/geo/districts` | `pages/api/v1/geo/districts.ts` | GET, OPTIONS | `malaysia-locations` |
+| `/api/v1/geo/shipping-rates` | `pages/api/v1/geo/shipping-rates.ts` | GET, POST, OPTIONS | `malaysia-shipping` |
+| `/api/v1/checkout` | `pages/api/v1/checkout.ts` | POST, OPTIONS | same stack as `/api/submit-order` |
+| `/api/v1/orders/status` | `pages/api/v1/orders/status.ts` | POST, OPTIONS | `order-status` |
 
 ## 6. Admin pages
 
@@ -263,7 +263,7 @@ Each module has a sibling `*.test.ts` unless marked (no test). Run all with `npm
 | Tenant and install | `tenant` (store row -> `locals.tenant`), `tenant-contract` (no test), `tenant-content` (no test), `install`, `store-site-url`, `store-pickup`, `storefront-template`, `schema-version` (migration gate), `bundled-migrations` (no test), `version` (no test; `CMS_VERSION.schemaVersion` must match latest migration), `env` (no test) |
 | Catalog and content | `catalog` (no test; public projection), `catalog-data` (admin rows), `catalog-id` (no test; `p{id}-v{id}`), `product-mutation`, `storefront-content` (home/product published copy), `ai-content-instructions`, `storefront-locale` (`formatMyr`), `image-derivative`, `daily-rotation` |
 | Landing pages | `landing-pages` (CMS pages + shortcodes, 869 lines), `native-landing-pages` (register validation), `embed-markup` (snippet + version), `embed-security` (frame-ancestors), `form-config` |
-| Orders and shipping | `order-schema` (zod submit schema), `validation` (Malaysia phone/name rules), `order-persistence` (order number + one batch write), `order-lifecycle` (status transitions, stock restoration), `order-status` (public token read), `malaysia-locations`, `malaysia-shipping` (zone/weight quote), `malaysia-states` (no test), `crm-template` (WhatsApp messages), `public-store` (no test) |
+| Orders and shipping | `tariff-draft` (one money comparison shared by the shipping workspace), `order-schema` (zod submit schema), `validation` (Malaysia phone/name rules), `order-persistence` (order number + one batch write), `order-lifecycle` (status transitions, stock restoration), `order-status` (public token read), `malaysia-locations`, `malaysia-shipping` (zone/weight quote), `malaysia-states` (no test), `crm-template` (WhatsApp messages), `public-store` (no test) |
 | Payments | `payment-brand`, `payment-availability` (the one resolver both payment reads share), `seller-bank-account`, `payment-operations` (redacted admin view), `doku-config` (encrypted credentials), `doku-signature` (Global HMAC), `doku-client`, `doku-checkout` (hosted checkout create), `doku-notification`, `doku-payment-lifecycle`, `doku-payment-access` (buyer capability, 1165 lines), `doku-reconciliation` (cron), `encrypted-secret` (AES-GCM) |
 | Advertising | `ads-config`, `ads-secret`, `ads-signal-policy`, `click-ids` (cookie + UTM), `meta-capi` (Graph v26.0), `meta-identity` (no test; hashing inputs), `meta-admin-form`, `capi-outbox` (lease/retry/prune), `accepted-order-meta` (no test), `google-catalog` (feed XML) |
 | Headless | `headless-api` (auth, scopes, CORS, audit), `headless-client` (SDK), `headless-openapi`, `developer-api-keys` |

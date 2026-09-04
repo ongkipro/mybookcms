@@ -7,6 +7,53 @@
 > product's infrastructure and mean nothing to a reader of this repository.
 > The engineering narrative is unchanged.
 
+## 2026-09-04 — Independent review returned FAIL, and was right
+
+An independent reviewer read the cumulative diff from `a5bc700` to `a9087cd`
+without having written any of it. It returned `FAIL` on three medium findings.
+All three were real. Recorded here because the interesting part is that the
+tests written alongside each defect passed.
+
+- **A saved tariff reported itself unsaved forever.** Dirtiness was compared as
+  strings, and the display always renders two decimals. An operator who typed
+  `10` and saved it left a draft of `"10"` against a server rendering of
+  `"10.00"`, so the row stayed dirty on every reload: the amber banner never
+  cleared and the save button, which compared in sen, was correctly disabled —
+  which is what made it look inexplicable. The browser evidence had used `9.99`,
+  the one shape that round-trips through `toFixed(2)` unchanged. The comparison
+  now lives in `src/lib/tariff-draft.ts`, in sen, with a real unit test that was
+  proven to fail against the original string comparison.
+- **The system log printed the DOKU environment**, which its own docstring lists
+  as out of bounds. The redaction test seeded `environment: "sandbox"` and
+  asserted nothing about it, and the comment-stripping guard that does forbid
+  the literal was pointed at three other files. Column removed from the SELECT
+  and the label; the forbidden list now names it.
+- **The per-source ceiling did not exist.** It was set equal to the total, so a
+  burst of API-audit rows could fill the response and push every other source
+  out of the final slice — precisely the crowding the comment claimed to
+  prevent. The bounding test asserted only the total and passed. The ceiling is
+  now an eighth of the total and enforced in the module rather than only in SQL,
+  because a source cannot be trusted to honour its own `LIMIT`, and the test now
+  asserts the other four sources survive.
+
+Two lower findings were acted on and one was answered rather than changed. The
+sheet focus restore now falls back to the selected tab when the opener has been
+remounted, instead of dropping focus on `<body>` — the same failure the guard
+exists to prevent. The code-map check gained the two directions it was missing:
+a row whose route and file cell describe different files, and an endpoint that
+exports a method the map omits. That second one immediately found something:
+every `/api/v1` endpoint handles the CORS preflight through `OPTIONS` and the
+map documented none of them, which is exactly what a headless integrator needs
+to know. The reviewer also flagged that `GET /api/v1/storefront` now decrypts
+the DOKU secret on a public path; that decryption is load-bearing rather than
+incidental, because the health verdict that gates the offer cannot be reached
+without it, and offering DOKU on an install with an undecryptable secret would
+move the failure to the buyer. The reason is now written where it will be read.
+
+The reviewer's sharpest point was about the tests, not the code: several were
+regex over source, and one asserted the exact expression that carried the bug.
+That one is now a unit. 447/447 tests, zero diagnostics, clean build.
+
 ## 2026-09-04 — Shipping workspace split into jobs, and the draft it was losing
 
 - A-224. `/admin/expeditions` was one document: state tariffs, zone activation,
@@ -117,12 +164,16 @@
   because `notifications.body` carries the customer's name by design;
   `payload_json`, `checkout_url`, `idempotency_key`, `request_fingerprint` and
   `provider_reference` are excluded for the same reason.
-- One implementation detail worth keeping: `payment_events.received_at` holds
-  two shapes, the ISO string application code writes and the
-  `YYYY-MM-DD HH:MM:SS` that SQLite's `CURRENT_TIMESTAMP` default produces. A
-  space sorts before `T`, so an ISO bound in the `WHERE` clause silently drops
-  same-second default-written rows. The query binds the lexically-earlier shape,
-  which can only be over-inclusive, and an exact cutoff in JavaScript settles it.
+- One implementation detail worth keeping: `payment_events.received_at` *can*
+  hold two shapes — the ISO string application code writes, and the
+  `YYYY-MM-DD HH:MM:SS` that SQLite's `CURRENT_TIMESTAMP` column default
+  produces. A space sorts before `T`, so an ISO bound in the `WHERE` clause
+  would silently drop a same-second default-written row. The query binds the
+  lexically-earlier shape, which can only be over-inclusive, and an exact cutoff
+  in JavaScript settles it. **Corrected 2026-09-04 after review:** the original
+  entry stated this as observed. It is defensive. Every application write path
+  binds an explicit ISO string, so the second shape reaches the column only from
+  a manual D1 write.
 - A failing source is skipped and logged as `system-log-source-failed` rather
   than being fatal, so a missing table cannot blank the panel for an operator
   working an incident.

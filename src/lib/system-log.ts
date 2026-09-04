@@ -51,8 +51,15 @@ export const SYSTEM_LOG_MAX_ENTRIES = 200;
 /** Nothing older than this is listed, whatever its source retains. */
 export const SYSTEM_LOG_WINDOW_DAYS = 30;
 
-/** Per-source ceiling, so one noisy source cannot crowd out the rest. */
-const PER_SOURCE_LIMIT = SYSTEM_LOG_MAX_ENTRIES;
+/**
+ * Per-source ceiling. It has to be a real fraction of the total, not the total:
+ * with both set to 200, a burst of API-audit rows filled the response and every
+ * schema, payment, order and advertising entry was dropped by the final slice —
+ * exactly the crowding the comment claimed to prevent. Four database-backed
+ * sources, so an eighth each leaves room for all of them and still lets a busy
+ * source dominate what remains.
+ */
+const PER_SOURCE_LIMIT = Math.floor(SYSTEM_LOG_MAX_ENTRIES / 8);
 
 function windowStart(now: Date): string {
   return new Date(now.getTime() - SYSTEM_LOG_WINDOW_DAYS * 24 * 60 * 60_000).toISOString();
@@ -90,7 +97,11 @@ async function collect(
   read: () => Promise<SystemLogEntry[]>,
 ): Promise<SystemLogEntry[]> {
   try {
-    return await read();
+    // Capped here as well as in SQL. The `LIMIT` is the efficient bound; this is
+    // the one that actually holds the property, because it does not depend on
+    // the source honouring it. Without it a single noisy source can still fill
+    // the merged result and push every other source out of the final slice.
+    return (await read()).slice(0, PER_SOURCE_LIMIT);
   } catch (error) {
     console.error("system-log-source-failed", {
       source: label,
@@ -175,11 +186,14 @@ async function readPayments(database: D1Database, since: string): Promise<System
   // `checkout_url`, `idempotency_key`, `request_fingerprint` and
   // `provider_reference` are deliberately absent from this projection.
   //
-  // `received_at` holds two shapes: the ISO string application code writes and
-  // the `YYYY-MM-DD HH:MM:SS` that SQLite's CURRENT_TIMESTAMP default produces.
-  // A space sorts before `T`, so an ISO bound would silently drop same-second
-  // default-written rows. Bind the lexically-earlier shape, which can only be
-  // over-inclusive, and let the exact cutoff in `loadSystemLog` settle it.
+  // `received_at` can hold two shapes. Every application write path binds an ISO
+  // string, so in practice that is what is there; the column default is SQLite's
+  // `CURRENT_TIMESTAMP`, `YYYY-MM-DD HH:MM:SS`, which a manual D1 write would
+  // produce. A space sorts before `T`, so an ISO bound would silently drop such
+  // a row. Bind the lexically-earlier shape, which can only be over-inclusive,
+  // and let the exact cutoff in `loadSystemLog` settle it. The ordering below
+  // adds `id` for the same reason: text order across the two spellings is not
+  // chronological, and `id` is.
   const permissiveSince = since.replace("T", " ").slice(0, 19);
   const rows = await database
     .prepare(
@@ -187,7 +201,6 @@ async function readPayments(database: D1Database, since: string): Promise<System
               e.resulting_status AS resulting_status,
               e.received_at      AS received_at,
               e.payment_attempt_id AS attempt_id,
-              a.environment      AS environment,
               a.error_class      AS error_class,
               o.order_number     AS order_number
          FROM payment_events e
@@ -203,7 +216,6 @@ async function readPayments(database: D1Database, since: string): Promise<System
       resulting_status: string;
       received_at: string;
       attempt_id: string;
-      environment: string;
       error_class: string | null;
       order_number: string;
     }>();
@@ -217,7 +229,7 @@ async function readPayments(database: D1Database, since: string): Promise<System
     entries.push({
       source: "payment",
       severity: PAYMENT_SEVERITY[status] ?? "warning",
-      label: `DOKU ${safeToken(row.environment, 12)} — ${safeToken(row.event_source, 20)} menghasilkan status ${status}${reason}.`,
+      label: `DOKU — ${safeToken(row.event_source, 20)} menghasilkan status ${status}${reason}.`,
       occurred_at: occurred,
       correlation: safeToken(row.attempt_id, 64),
       href: `/admin/orders/${encodeURIComponent(row.order_number)}`,

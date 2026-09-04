@@ -27,6 +27,7 @@ import {
 import { Switch } from "../ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { formatMyr } from "../../lib/storefront-locale";
+import { isDraftDirty, ringgitOf, toSen } from "../../lib/tariff-draft";
 
 type Zone = { id: number; code: string; name: string; isActive: number };
 type StateOption = { code: string; name: string; zoneCode: string; zoneId: number | null };
@@ -76,8 +77,6 @@ function isPanel(value: string | null): value is Panel {
   return value !== null && (PANELS as readonly string[]).includes(value);
 }
 
-const toSen = (ringgit: string) => Math.round(Number(ringgit) * 100);
-const ringgitOf = (amountSen: number) => (amountSen / 100).toFixed(2);
 const isRetiredFlatReference = (rate: RateRule) =>
   Boolean(rate.isReference) && !Boolean(rate.isActive) &&
   rate.minWeightGrams === 1 && rate.maxWeightGrams === 5000 &&
@@ -138,7 +137,14 @@ export function ExpeditionSettings() {
     // After the unmount, and only if the control still exists: a saved postcode
     // re-renders its row, and focusing a detached node would do nothing.
     requestAnimationFrame(() => {
-      if (opener.isConnected) opener.focus();
+      if (opener.isConnected) {
+        opener.focus();
+        return;
+      }
+      // The row that held the trigger was re-rendered, so put focus on the
+      // selected job's tab instead of dropping it on <body>.
+      const fallback = document.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]');
+      fallback?.focus();
     });
   };
   useEffect(() => { ratesRef.current = rates; }, [rates]);
@@ -163,10 +169,7 @@ export function ExpeditionSettings() {
       const previousDrafts = draftsRef.current;
       const dirty = new Set(
         ratesRef.current
-          .filter((rate) => {
-            const draft = previousDrafts[rate.id];
-            return draft !== undefined && draft !== ringgitOf(rate.amountSen);
-          })
+          .filter((rate) => isDraftDirty(previousDrafts[rate.id], rate.amountSen))
           .map((rate) => rate.id),
       );
 
@@ -227,7 +230,7 @@ export function ExpeditionSettings() {
     [rates],
   );
   const dirtyDraftCount = useMemo(
-    () => visibleRates.filter((rate) => (draftAmounts[rate.id] ?? "") !== ringgitOf(rate.amountSen)).length,
+    () => visibleRates.filter((rate) => isDraftDirty(draftAmounts[rate.id], rate.amountSen)).length,
     [visibleRates, draftAmounts],
   );
   const newRuleValidation = useMemo(() => {
@@ -566,7 +569,8 @@ export function ExpeditionSettings() {
             {zoneRates.map((rate) => {
               const amount = draftAmounts[rate.id] ?? ringgitOf(rate.amountSen);
               const amountSen = toSen(amount);
-              const changed = amountSen !== rate.amountSen && Number.isSafeInteger(amountSen) && amountSen >= 0;
+              const changed =
+                isDraftDirty(amount, rate.amountSen) && Number.isSafeInteger(amountSen) && amountSen >= 0;
               return <li key={rate.id} className="rounded-lg border border-slate-200 p-3">
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto_auto_auto] md:items-center">
                   <div className="min-w-0">

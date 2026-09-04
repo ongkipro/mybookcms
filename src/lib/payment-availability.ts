@@ -97,6 +97,12 @@ export async function resolvePaymentAvailability(
     }
 
     try {
+      // The decryption here is load-bearing, not incidental. `enabled_channels_json`
+      // is a plain column and could be read without a secret, but the health
+      // verdict that gates the offer cannot: an undecryptable credential must
+      // make DOKU absent rather than advertised. Reading the channel list
+      // directly would offer DOKU on an install whose secret is corrupt, and the
+      // buyer would meet the failure at the provider instead of never seeing it.
       const rootSecret = getEnvValue("AUTH_SECRET", getRuntimeEnv(locals));
       const config = rootSecret ? await getEnabledDokuConfig(database, rootSecret) : null;
       doku = buildDokuPaymentMethod(config?.enabledChannels || []);
