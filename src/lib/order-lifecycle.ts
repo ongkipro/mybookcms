@@ -336,12 +336,18 @@ export async function deleteOrdersRestoringStock(
       .bind(...orderIds),
     database
       .prepare(
+        // The two pre-checks above are separate awaited reads, so an order that
+        // becomes paid or dispatched between them and this batch would still be
+        // deleted with its stock restored. Repeating both predicates here closes
+        // that window: the DELETE itself refuses, inside the transaction.
         `${cte}
         DELETE FROM orders
         WHERE id IN (SELECT order_id FROM selected)
+          AND payment_status NOT IN ('paid', 'settled', 'success')
+          AND shipping_status NOT IN (${DISPATCHED_SHIPPING_STATUSES.map(() => "?").join(", ")})
         RETURNING id, order_number`,
       )
-      .bind(...orderIds),
+      .bind(...orderIds, ...DISPATCHED_SHIPPING_STATUSES),
   ];
   const results = await database.batch(statements);
   return (results[3]?.results || []) as DeletedOrder[];

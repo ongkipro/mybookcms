@@ -193,6 +193,24 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
       shippingCostSen: body.shipping_cost,
       role: locals.admin?.role,
     });
+    // `forbiddenOrderFields` rejects the body before this runs today, so these
+    // are unreachable — deliberately. The rule is expressed in two places, and a
+    // future divergence would otherwise make this route silently drop a value
+    // and answer 200, which is the failure the shipping route has a comment
+    // about avoiding.
+    if (delivery.shippingCostRefused) {
+      return jsonError("Peran Anda tidak dapat mengubah shipping_cost.", 403, {
+        code: "PERMISSION_DENIED",
+        fields: ["shipping_cost"],
+      });
+    }
+    if (delivery.destinationChangeRefused) {
+      return jsonError(
+        "Destinasi pesanan yang sudah dikirim atau lunas hanya dapat diubah oleh owner atau admin.",
+        403,
+        { code: "PERMISSION_DENIED", fields: ["location_id"] },
+      );
+    }
     assignments.push(...delivery.assignments);
     values.push(...delivery.values);
     if (body.payment_status !== undefined) add("payment_status", body.payment_status);

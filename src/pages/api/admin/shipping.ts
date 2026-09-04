@@ -209,6 +209,13 @@ export const PATCH: APIRoute = async ({ locals, request }) => {
         fields: ["shipping_cost"],
       });
     }
+    if (delivery.destinationChangeRefused) {
+      return jsonError(
+        "Destinasi pesanan yang sudah dikirim atau lunas hanya dapat diubah oleh owner atau admin.",
+        403,
+        { code: "PERMISSION_DENIED", fields: ["location_id"] },
+      );
+    }
     const assignments = ["shipping_status = ?", ...delivery.assignments];
     const values = [body.shippingStatus, ...delivery.values];
     const mutation = database.prepare(`

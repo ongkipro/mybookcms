@@ -7,6 +7,57 @@
 > product's infrastructure and mean nothing to a reader of this repository.
 > The engineering narrative is unchanged.
 
+## 2026-09-04 — A-235 and A-238, and a second review of the authorization work
+
+**A-235.** Migration `0060` indexes the three system-log reads that could not
+use one. Re-measured against a clean chain: `capi_event_outbox` and
+`notifications` moved from `SCAN` plus `USE TEMP B-TREE FOR ORDER BY` to
+`SEARCH ... USING INDEX (col>?)`, and the `payment_events` join lost both its
+scan and its sort. Live tables still 25; `schemaVersion` 61.
+
+The check asserts query *plans*, not that a migration file exists, because an
+index that leads with the wrong column — what `payment_events` already had — is
+indistinguishable from a correct one in source. It joined
+`shipping-bootstrap.test.ts`, which now applies the chain once in a `before`
+hook: two tests each spawning wrangler cost 37 seconds and raced each other into
+an intermittent failure, while sharing costs 21 and is stable.
+
+**A-238.** Both buyer-facing DOKU capability endpoints are bounded, inside the
+shared handler path after the order is resolved and before any provider call, so
+a third caller inherits it. Per-order and per-address buckets, retry far tighter
+than status because it creates an attempt and reserves stock. A D1-backed test
+loops twenty polls and asserts the provider stops being *reached*, not merely
+that its answer is discarded; a second pins fail-open without KV.
+
+**The second review of A-237 returned PASS on the boundary and found something
+the fix's own reasoning had not covered.** It confirmed the authorization
+boundary is complete — two writers of the money columns in the whole tree, the
+rule at the choke point both routes share, enforced in the emitted SQL rather
+than in a flag a caller may ignore, no trigger or `total_amount` input offering
+a third path. Then it made the point that mattered: the "fraud by data entry,
+answer is an audit record" reasoning holds *before* dispatch and not after.
+
+A customer-service operator could collect a Sabah COD total, reopen the
+delivered order, move its destination to a peninsular postcode, and watch
+`total_amount` fall by the difference — with analytics reporting the lower
+figure as revenue. The books would agree with the operator. And the bounded
+control was already in hand from the same commit: the dispatched-status
+constant written for A-239. A destination change on an order whose goods have
+shipped or whose payment is verified is now refused for the roles that may not
+set an amount directly, while the free-text address correction stays open
+always, because fixing a typo in a street name is not a price change.
+
+Three smaller findings from the same review, all taken: the orders route now
+inspects the refusal flag too, so the rule expressed in two places cannot
+silently diverge into a `200` that drops a value; the delete statement carries
+both guard predicates in its own `WHERE`, closing the window between the
+read-then-write checks and the batch; and a test that taught a narrower
+invariant than the code holds — `assignments === []` is true only when no
+location accompanies a refused amount — now covers the combined case, which is
+the one a reader is most likely to reason about wrongly.
+
+461/461 tests, zero diagnostics across 361 files, clean build.
+
 ## 2026-09-04 — Two audit findings fixed, and a review that caught the first fix short
 
 A-237 and A-239, from the independent audit of pre-existing code.
