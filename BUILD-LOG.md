@@ -79,6 +79,20 @@ claims to protect. So the audit turned on the repository's own guards.
   lists and compare them; `shipping-bootstrap.test.ts` looks thin at one
   assertion but applies the real migration chain to a temporary database through
   wrangler and queries the result.
+- Measured accessibility, not asserted. A Lighthouse pass on
+  `/admin/settings/log` at mobile emulation scored **accessibility 96** and
+  **best practices 100**, with one real failure. It is narrower than it first
+  looks: `text-slate-500` is `#62748e`, which gives **4.76** on a white card and
+  passes, but **4.41** on the admin page background `#f5f6f8` and misses the 4.5
+  AA floor. So the 277 uses of that class across admin code are mostly fine —
+  only text sitting directly on the page background is not, and Lighthouse found
+  exactly two such nodes, both in `AdminPageHeader.astro`, which 20 admin pages
+  render. `slate-600` on the same background gives 7.01. Folded into A-234
+  rather than filed separately, because it is the same statement as the switch
+  target: the admin misses its own written bar, system-wide, and predating this
+  session. The same page's SEO score of 58 is not a finding — it fails
+  `is-crawlable` and `meta-description` because the admin layout sets
+  `noindex, nofollow` on purpose.
 - Runtime audit against the built Worker. Security headers are correct on every
   surface type: `nosniff`, `DENY` framing, HSTS, referrer and permissions policy
   everywhere; `no-store` added on private surfaces and the login screen; and on
