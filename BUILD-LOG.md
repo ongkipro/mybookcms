@@ -7,6 +7,32 @@
 > product's infrastructure and mean nothing to a reader of this repository.
 > The engineering narrative is unchanged.
 
+## 2026-09-04 — Release-readiness evidence at `33a29c7`
+
+A-229, the validation gate `MYS-5` needs so it can name one revision.
+
+- Clean migration chain against an empty database: 25 live tables, 60 applied
+  migrations, matching both `schemaVersion` and section 10 of the code map.
+- `npm run check`: 0 errors, 0 warnings, 0 hints across 361 files.
+  `npm test`: 447 of 447. `npm run build`: complete.
+- Output digests (sha256, first 16): check `7d8ed488de521a5d`,
+  test `10094fd39f52d1b5`, build `879826bf0584f573`.
+- One migration run failed first with wrangler's `bad port` while the local dev
+  server still held 8789. Infrastructure, not SQL — but the error names a
+  migration and reads exactly like a schema failure, so it is written down.
+- Browser evidence at 390 px and 1280 px for every surface edited since the
+  previous recorded run: zero page overflow, clean console. The load-bearing one
+  is the storefront product page, whose checkout consumes the payment endpoint
+  this range rewrote — with COD disabled and DOKU enabled on the probe install,
+  the buyer-facing form offered manual transfer and DOKU and not COD. That is
+  the shared resolver driving a real checkout, not an API assertion.
+- Two independent reviews. The first returned FAIL on three medium findings, all
+  real. The second, after remediation, returned PASS. Both are recorded above.
+
+The probe install used a separate `--persist-to` directory throughout. The
+repository's own local database was checked afterwards: 60 migrations already
+applied since 2026-09-01, and zero rows written on 2026-09-04.
+
 ## 2026-09-04 — Independent review returned FAIL, and was right
 
 An independent reviewer read the cumulative diff from `a5bc700` to `a9087cd`

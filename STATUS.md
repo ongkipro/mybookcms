@@ -171,6 +171,19 @@ landing on `<body>`. A separate finding, filed as A-234, is that the shared
 admin switch has a 33 px effective touch target against a 44 px design-system
 floor, which predates this work and affects every admin workspace.
 
+**Current verified revision: `33a29c7`.** At that commit the migration chain
+applies to an empty database and yields 25 live tables and 60 applied
+migrations; `npm run check` reports zero errors, warnings and hints across 361
+files; `npm test` passes 447 of 447; `npm run build` completes. Browser evidence
+at 390 px and 1280 px covers every surface edited since the previous recorded
+run, with zero page overflow and a clean console. Two independent reviews were
+taken: the first returned FAIL on three medium findings, all real; after
+remediation the second returned PASS. Only the record of that verification sits
+after `33a29c7`, and it changes no code.
+
+This remains local evidence. No remote migration, deployment, or provider
+traffic is claimed by it.
+
 ## Verified local evidence
 
 - The clean isolated D1 chain is at schema version 60 with 2,931 official Malaysia postcode rows,
