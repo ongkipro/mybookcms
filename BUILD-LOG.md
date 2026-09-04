@@ -7,6 +7,42 @@
 > product's infrastructure and mean nothing to a reader of this repository.
 > The engineering narrative is unchanged.
 
+## 2026-09-04 — Shipping workspace split into jobs, and the draft it was losing
+
+- A-224. `/admin/expeditions` was one document: state tariffs, zone activation,
+  postcode coverage and fallback bands stacked in a single scroll. It is now
+  three panels behind the shadcn Tabs primitive, addressed by `?panel=`, over a
+  compact non-clickable summary. Only the selected panel occupies page flow and
+  a reload lands on the same job.
+- The restructure was the visible half. The defect underneath: `load()` rebuilt
+  every draft amount from the server response, and every mutation calls
+  `load()`. Typing a tariff into one row and then touching any other row
+  discarded it silently. Dirtiness is now measured against the server value each
+  draft was edited from, read through refs so `load` is not re-created on every
+  keystroke. Proven in the browser: Johor set to 9.99, Kedah's switch toggled —
+  a real save and reload, active states fell 16 to 15 — and 9.99 survived, along
+  with the open zone, through that mutation and a full panel round-trip.
+- Postcode and fallback editing moved into sheets that refuse to close over
+  unsaved input, by Escape and by the close button, and keep the entered values
+  through a validation failure rather than making the operator retype.
+- Focus return had to be implemented, not inherited. Both sheets are
+  state-controlled with no `SheetTrigger`, and Radix's restore did not run:
+  focus landed on `<body>` and stayed there through eight polls, which would
+  drop a keyboard or screen-reader user at the top of the document after every
+  edit. The opener is now captured and refocused, guarded by `isConnected`
+  because a saved postcode re-renders its row.
+- The repository's own mobile-layout guard caught two grids in the new markup
+  whose implicit track would size to min-content — the failure mode that has
+  clipped admin controls off-screen three times before. Fixed before the
+  browser pass, by the check rather than by review.
+- Filed A-234 rather than fixing it here: the shared admin switch measures a
+  33 px by 53 px effective target with `elementFromPoint`, against the 44 px
+  minimum `DESIGN-SYSTEM.md` asks for. It predates this work and is inherited by
+  every admin workspace, so it is not a shipping-workspace decision to make.
+- Immediate switches, explicit amount saves, inactive-by-default new rules, D1
+  validation, role denial and the Malay/Indonesian copy are unchanged.
+  444/444 tests, zero diagnostics across 360 files, clean build.
+
 ## 2026-09-04 — The decisions this product cited but never held
 
 - A-233. `DECISIONS.md` ran ADR-001 to ADR-012 and then jumped to ADR-021. Git

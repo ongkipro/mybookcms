@@ -159,6 +159,18 @@ presentation-only end to end, latent in shipped installs only because no admin
 surface writes the column. Whether to enforce it or remove it is the user's
 call and remains open.
 
+The Malaysia shipping workspace is now three URL-addressable jobs rather than
+one long document, and the defect that restructure exposed is fixed: an unsaved
+tariff used to be discarded whenever any other row was saved, because every
+mutation reloads the dataset and the reload rebuilt every draft. Drafts now
+survive a mutation and a panel change, postcode and fallback editing happen in
+sheets that refuse to close over unsaved input and keep values through a server
+refusal, and focus returns to the control that opened each sheet. That last one
+had to be implemented rather than inherited; the Radix restore was measured
+landing on `<body>`. A separate finding, filed as A-234, is that the shared
+admin switch has a 33 px effective touch target against a 44 px design-system
+floor, which predates this work and affects every admin workspace.
+
 ## Verified local evidence
 
 - The clean isolated D1 chain is at schema version 60 with 2,931 official Malaysia postcode rows,

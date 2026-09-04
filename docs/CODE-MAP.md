@@ -47,7 +47,7 @@ src/
   components/
     admin/               21 React components + admin-navigation.ts (sidebar manifest) + AdminPageHeader.astro
     storefront/          Astro components: forms/, home/, shared/, seo/, tracking/, templates/
-    ui/                  21 shadcn primitives
+    ui/                  22 shadcn primitives
   lib/                   79 modules + 82 *.test.ts (see section 9)
   data/                  static content: legal pages, home copy, native landing register
   db/migrations/         0000-0059, forward-only, hand-authored
@@ -166,7 +166,7 @@ All use `AdminLayout` (sidebar from `components/admin/admin-navigation.ts`, shel
 | `/admin/landing-pages/new` | `pages/admin/landing-pages/new.astro` | `LandingPageEditor` (`client:only`) | `/api/admin/landing-pages`, `/api/admin/products` | owner, admin, advertiser |
 | `/admin/landing-pages/[id]/edit` | `pages/admin/landing-pages/[id]/edit.astro` | `LandingPageEditor` (`client:only`) | `/api/admin/landing-pages/{id}` | owner, admin, advertiser |
 | `/admin/content` | `pages/admin/content.astro` | `ContentWorkbench` | `/api/admin/content`, `/api/admin/media` | owner, admin, advertiser. Deliberately absent from the sidebar and entered from `/admin/settings/store`; ADR-025 records why, and a navigation test pins it. |
-| `/admin/expeditions` | `pages/admin/expeditions.astro` | `ExpeditionSettings` | `/api/admin/expeditions` | owner, admin |
+| `/admin/expeditions` | `pages/admin/expeditions.astro` | `ExpeditionSettings` | `/api/admin/expeditions` | owner, admin. `?panel=states\|zones\|fallback` selects the job. |
 | `/admin/ads` | `pages/admin/ads.astro` | inline script hub | `/api/admin/ads` | owner, admin, advertiser |
 | `/admin/ads/meta` | `pages/admin/ads/meta.astro` | inline form (`meta-admin-form`) | `/api/admin/ads` | owner, admin, advertiser |
 | `/admin/ads/google` | `pages/admin/ads/google.astro` | inline form + feed diagnostics | `/api/admin/ads`, `/api/admin/ads/google-catalog` | owner, admin, advertiser |
@@ -227,7 +227,7 @@ All under `/api/admin`, session-gated by middleware, CSRF-checked on unsafe meth
 | `LandingPageCatalog.tsx` | 968 | landing pages | `/api/admin/landing-pages` |
 | `LandingPageEditor.tsx` | 839 | landing page new/edit | `/api/admin/landing-pages/{id}`, `/api/admin/products` |
 | `ContentWorkbench.tsx` | 317 | content | `/api/admin/content`, `/api/admin/media` |
-| `ExpeditionSettings.tsx` | 692 | expeditions | `/api/admin/expeditions` |
+| `ExpeditionSettings.tsx` | 870 | expeditions | `/api/admin/expeditions`; three `?panel=` addressable jobs, sheets with dirty-close protection |
 | `SellerBankAccounts.tsx` | 449 | payments | `/api/admin/seller-bank-accounts`; `lib/payment-brand` |
 | `DokuPaymentSettings.tsx` | 482 | payments | `/api/admin/payments` |
 | `HeadlessApiManagement.tsx` | 536 | settings/developer | `/api/admin/settings/developer` |
@@ -251,7 +251,7 @@ All under `/api/admin`, session-gated by middleware, CSRF-checked on unsafe meth
 
 ### UI primitives (`src/components/ui/`)
 
-shadcn: badge, button, card, chart, checkbox, collapsible, command, dialog, dropdown-menu, input, pagination, select, separator, sheet, sidebar, skeleton, sonner, switch, table, textarea, tooltip. Astro pages use `lib/ui-variants.ts` + `lib/cn.ts` for the same classes without React.
+shadcn: badge, button, card, chart, checkbox, collapsible, command, dialog, dropdown-menu, input, pagination, select, separator, sheet, sidebar, skeleton, sonner, switch, table, tabs, textarea, tooltip. Astro pages use `lib/ui-variants.ts` + `lib/cn.ts` for the same classes without React.
 
 ## 9. Library modules by domain (`src/lib/`)
 
