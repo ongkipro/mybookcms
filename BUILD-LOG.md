@@ -7,6 +7,37 @@
 > product's infrastructure and mean nothing to a reader of this repository.
 > The engineering narrative is unchanged.
 
+## 2026-09-04 — Code map made self-checking; documentation re-verified
+
+- Added `docs/CODE-MAP.md`, a page-by-page navigation index, and pointed
+  `AGENTS.md` at it so an agent reads the map before searching for a file.
+- A-227 turned the map into a checked artifact. `src/lib/code-map.test.ts`
+  derives routes, paths, endpoint methods, and the live-table set from disk.
+  Four drift cases were each proven to fail. The first draft wrongly passed the
+  deleted-row case, because a route named only as another row's redirect target
+  still counted as documented; route recognition was narrowed to a row's own
+  first cell.
+- Writing that check surfaced A-230: `src/pages/landing/README.md` sat inside
+  the routed directory, so every install served an internal authoring note at
+  `/landing/README`. It also taught a convention the register cannot accept,
+  since `validateNativeLandingPages` rejects a slug containing `/`. Deleted;
+  the route is gone from the built worker entry.
+- A-228 re-verified all thirteen dated documents. Five contradictions were
+  corrected: three documents still described checkout as COD and manual
+  transfer only, one directed integrators at the retired `/order-status` slug,
+  one claimed a Cinzel weight that is not imported, and one gave a muted colour
+  absent from the codebase.
+- Three code findings were filed rather than fixed, being outside the
+  documentation Surface. A-231: `GET /api/v1/storefront` returns a hard-coded
+  payment set, so no headless consumer is ever told DOKU is enabled, and the
+  shipped SDK type cannot express it. A-232: `stores.is_cod_enabled` is read
+  only by `GET /api/payment-methods` and enforced on no submission path; it is
+  latent today only because no admin surface can write it. A-233: ADR-013
+  through ADR-020 are cited by `PRD.md`, `wrangler.jsonc`, migration `0044`,
+  and a navigation test, but were never recorded in this repository.
+- 421/421 tests, zero diagnostics across 351 files, clean build. No deployment,
+  remote migration, or provider traffic.
+
 ## 2026-09-02 — Expedition workspace refinement planned
 
 - Accepted REQ-228 and queued A-224 after a read-only operator UX/design

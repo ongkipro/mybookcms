@@ -1,6 +1,6 @@
 # MyBookCMS Storefront Integration
 
-> Verified against disk: 2026-08-24 @ MyBookCMS working tree
+> Verified against disk: 2026-09-04 @ MyBookCMS working tree
 
 This contract applies to a public storefront consuming one MyBookCMS install.
 
@@ -9,7 +9,14 @@ This contract applies to a public storefront consuming one MyBookCMS install.
 - Treat public presentation as one `ms-MY` Malaysia-market hybrid contract.
   Hosted pages and Headless reads do not accept a locale choice.
 - Treat monetary API values as integer MYR sen; format only for display.
-- Present only `cod` and `manual_transfer` payment methods.
+- Present the payment methods the install actually offers. `cod` and
+  `manual_transfer` are always candidates; a store with a healthy enabled DOKU
+  configuration also offers one hosted `doku` choice carrying only its
+  allowlisted Malaysia channels. `manual_transfer` requires an active seller
+  bank account and `doku` requires a customer e-mail, both enforced server-side.
+  Do not hard-code the set: `GET /api/v1/storefront` still returns a fixed
+  `payment.supported_methods` that omits `doku`, which `A-231` is open to fix,
+  so treat that field as incomplete and confirm against the install.
 - Search the local Malaysia directory, retain its location identifier, and
   request shipping with the selected five-digit postcode and cart weight.
   Display the returned D1-owned state/WP quote only for its validity window.
@@ -28,9 +35,11 @@ transfer returns the merchant’s selected bank-account instructions and remains
 pending until an authorized operator confirms payment.
 
 The hosted confirmation may hand the order identity and status capability to
-`/order-status` through same-tab session state or a URL fragment that is removed
-immediately. The status page is `noindex`/`no-store` and displays only the
-current order status. Courier and tracking evidence are communicated directly
+`/jejak-pesanan` through same-tab session state or a URL fragment that is removed
+immediately. The retired English slug `/order-status` answers one query-preserving
+`308` to it (REQ-203); `POST /api/order-status` is an API contract and keeps its
+name. The status page is `noindex`/`no-store` and displays only the current order
+status. Courier and tracking evidence are communicated directly
 through WhatsApp and are not part of the API contract.
 
 ## Privacy and security
@@ -44,4 +53,6 @@ tokens when retrying checkout.
 
 An integration is not complete until it proves the single hybrid public voice,
 invalid postcode refusal, COD, manual transfer, and accessible mobile checkout
-in a running local install.
+in a running local install. Where the install enables DOKU, also prove the
+hosted redirect, the cancel and failure paths, and that a browser return is
+never treated as payment evidence.

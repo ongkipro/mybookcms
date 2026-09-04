@@ -184,26 +184,26 @@ All under `/api/admin`, session-gated by middleware, CSRF-checked on unsafe meth
 
 | Route | File | Methods | Libs | Tables |
 | --- | --- | --- | --- | --- |
-| `/api/admin/analytics` | `analytics.ts` | GET | `admin-date-filter` | `orders` |
-| `/api/admin/orders` | `orders/index.ts` | GET, POST, DELETE | `admin-order-status`, `order-lifecycle`, `crm-template`, `admin-date-filter` | `orders`, `order_items`, `products`, `product_variants`, `stores` |
-| `/api/admin/orders/[id]` | `orders/[id].ts` | GET, POST, PATCH, DELETE | `order-lifecycle`, `admin-order-delivery`, `malaysia-locations`, `malaysia-shipping`, `payment-operations`, `doku-reconciliation`, `notifications`, `crm-template` | same + `malaysia_postcodes` |
-| `/api/admin/shipping` | `shipping.ts` | GET, PATCH | `admin-order-delivery`, `malaysia-shipping`, `order-lifecycle` | `orders`, `order_items`, `malaysia_postcodes` |
-| `/api/admin/products` | `products.ts` | GET, POST, PATCH, PUT, DELETE | `catalog-data`, `product-mutation` | `products`, `product_variants`, `order_items`, `stores` |
-| `/api/admin/media` | `media.ts` | POST | `admin-upload` | R2 only. Only image-upload boundary; 2 MB cap, KV hourly limit. |
-| `/api/admin/landing-pages` | `landing-pages/index.ts` | GET, POST | `landing-pages` | `landing_pages`, `landing_sections` |
-| `/api/admin/landing-pages/[id]` | `landing-pages/[id].ts` | GET, PUT, DELETE | `landing-pages` | same |
-| `/api/admin/content` | `content.ts` | GET, PUT | `storefront-content`, `ai-content-instructions` (Workers AI) | `storefront_content`, `products`, `product_variants`, `stores` |
-| `/api/admin/expeditions` | `expeditions.ts` | GET, POST, PATCH | `malaysia-states` | `shipping_zones`, `shipping_postcode_ranges`, `shipping_rate_rules` |
-| `/api/admin/ads` | `ads.ts` | GET, PUT | `ads-config`, `ads-secret`, `meta-capi`, `rate-limit` | `stores` |
-| `/api/admin/ads/google-catalog` | `ads/google-catalog.ts` | GET | `google-catalog`, `catalog` | read-only feed diagnostics |
-| `/api/admin/payments` | `payments.ts` | GET, PUT, PATCH, DELETE | `doku-config` | `stores`, `payment_provider_configs` |
-| `/api/admin/seller-bank-accounts` | `seller-bank-accounts.ts` | GET, POST, PUT, DELETE | `seller-bank-account` | `seller_bank_accounts`, `stores` |
-| `/api/admin/settings` | `settings.ts` | GET, PUT, POST | `store-site-url`, `store-pickup`, `embed-security`, `headless-api`, `crm-template`, `storefront-template` | `stores` |
-| `/api/admin/settings/developer` | `settings/developer.ts` | GET, POST, PATCH, DELETE | `developer-api-keys` | `developer_api_keys`, `headless_api_audit_events` |
-| `/api/admin/access` | `access.ts` | GET, POST, PATCH, DELETE | `admin-credentials`, `auth` | `admin_credentials` |
-| `/api/admin/profile` | `profile.ts` | GET, PUT | `admin-credentials`, `auth` | `admin_credentials` |
-| `/api/admin/notifications` | `notifications.ts` | GET, POST | `notifications` | `notifications`, `notification_reads` |
-| `/api/admin/logout` | `logout.ts` | POST | `auth` | KV session delete |
+| `/api/admin/analytics` | `pages/api/admin/analytics.ts` | GET | `admin-date-filter` | `orders` |
+| `/api/admin/orders` | `pages/api/admin/orders/index.ts` | GET, POST, DELETE | `admin-order-status`, `order-lifecycle`, `crm-template`, `admin-date-filter` | `orders`, `order_items`, `products`, `product_variants`, `stores` |
+| `/api/admin/orders/[id]` | `pages/api/admin/orders/[id].ts` | GET, POST, PATCH, DELETE | `order-lifecycle`, `admin-order-delivery`, `malaysia-locations`, `malaysia-shipping`, `payment-operations`, `doku-reconciliation`, `notifications`, `crm-template` | same + `malaysia_postcodes` |
+| `/api/admin/shipping` | `pages/api/admin/shipping.ts` | GET, PATCH | `admin-order-delivery`, `malaysia-shipping`, `order-lifecycle` | `orders`, `order_items`, `malaysia_postcodes` |
+| `/api/admin/products` | `pages/api/admin/products.ts` | GET, POST, PATCH, PUT, DELETE | `catalog-data`, `product-mutation` | `products`, `product_variants`, `order_items`, `stores` |
+| `/api/admin/media` | `pages/api/admin/media.ts` | POST | `admin-upload` | R2 only. Only image-upload boundary; 2 MB cap, KV hourly limit. |
+| `/api/admin/landing-pages` | `pages/api/admin/landing-pages/index.ts` | GET, POST | `landing-pages` | `landing_pages`, `landing_sections` |
+| `/api/admin/landing-pages/[id]` | `pages/api/admin/landing-pages/[id].ts` | GET, PUT, DELETE | `landing-pages` | same |
+| `/api/admin/content` | `pages/api/admin/content.ts` | GET, PUT | `storefront-content`, `ai-content-instructions` (Workers AI) | `storefront_content`, `products`, `product_variants`, `stores` |
+| `/api/admin/expeditions` | `pages/api/admin/expeditions.ts` | GET, POST, PATCH | `malaysia-states` | `shipping_zones`, `shipping_postcode_ranges`, `shipping_rate_rules` |
+| `/api/admin/ads` | `pages/api/admin/ads.ts` | GET, PUT | `ads-config`, `ads-secret`, `meta-capi`, `rate-limit` | `stores` |
+| `/api/admin/ads/google-catalog` | `pages/api/admin/ads/google-catalog.ts` | GET | `google-catalog`, `catalog` | read-only feed diagnostics |
+| `/api/admin/payments` | `pages/api/admin/payments.ts` | GET, PUT, PATCH, DELETE | `doku-config` | `stores`, `payment_provider_configs` |
+| `/api/admin/seller-bank-accounts` | `pages/api/admin/seller-bank-accounts.ts` | GET, POST, PUT, DELETE | `seller-bank-account` | `seller_bank_accounts`, `stores` |
+| `/api/admin/settings` | `pages/api/admin/settings.ts` | GET, PUT, POST | `store-site-url`, `store-pickup`, `embed-security`, `headless-api`, `crm-template`, `storefront-template` | `stores` |
+| `/api/admin/settings/developer` | `pages/api/admin/settings/developer.ts` | GET, POST, PATCH, DELETE | `developer-api-keys` | `developer_api_keys`, `headless_api_audit_events` |
+| `/api/admin/access` | `pages/api/admin/access.ts` | GET, POST, PATCH, DELETE | `admin-credentials`, `auth` | `admin_credentials` |
+| `/api/admin/profile` | `pages/api/admin/profile.ts` | GET, PUT | `admin-credentials`, `auth` | `admin_credentials` |
+| `/api/admin/notifications` | `pages/api/admin/notifications.ts` | GET, POST | `notifications` | `notifications`, `notification_reads` |
+| `/api/admin/logout` | `pages/api/admin/logout.ts` | POST | `auth` | KV session delete |
 
 ## 8. Components
 
@@ -236,14 +236,14 @@ All under `/api/admin`, session-gated by middleware, CSRF-checked on unsafe meth
 
 | Path | Role |
 | --- | --- |
-| `forms/MalaysiaCheckoutForm.astro` (696) | The checkout. Calls `/api/locations`, `/api/shipping-rates`, `/api/payment-methods`, `/api/submit-order`. Uses `lib/validation`, `form-config`, `checkout-navigation`, `catalog`. Styled by `styles/form-hybrid.css`. |
-| `forms/GeoIpResolvedForm.astro` | Wrapper every page imports; keep using this name. |
-| `templates/CompactMarketHome.astro` | Home composition, the only active storefront template. |
+| `components/storefront/forms/MalaysiaCheckoutForm.astro` (696) | The checkout. Calls `/api/locations`, `/api/shipping-rates`, `/api/payment-methods`, `/api/submit-order`. Uses `lib/validation`, `form-config`, `checkout-navigation`, `catalog`. Styled by `styles/form-hybrid.css`. |
+| `components/storefront/forms/GeoIpResolvedForm.astro` | Wrapper every page imports; keep using this name. |
+| `components/storefront/templates/CompactMarketHome.astro` | Home composition, the only active storefront template. |
 | `home/HeroSection`, `ProductsSection`, `LandingPagesSection` | Home sections. |
-| `ProductImageGallery.astro` | PDP gallery. |
+| `components/storefront/ProductImageGallery.astro` | PDP gallery. |
 | `shared/` | `SiteHeader`, `SiteFooter`, `SiteBrand`, `Breadcrumb`, `PageIntro`, `LegalPage`, `ProductListItem`, `RatingStars`, `Icon` (Iconify lucide). |
-| `seo/JsonLdSchema.astro` | JSON-LD from `lib/json-ld`. |
-| `tracking/AdsBase.astro` (190) | Single Meta Pixel / GTM / Google Ads loader; posts to `/api/meta-event`. Rendered by `BaseLayout` and the DOKU result page. |
+| `components/storefront/seo/JsonLdSchema.astro` | JSON-LD from `lib/json-ld`. |
+| `components/storefront/tracking/AdsBase.astro` (190) | Single Meta Pixel / GTM / Google Ads loader; posts to `/api/meta-event`. Rendered by `BaseLayout` and the DOKU result page. |
 | `landing-pages/` | Empty boundary reserved for native landing components (README only). |
 
 ### UI primitives (`src/components/ui/`)

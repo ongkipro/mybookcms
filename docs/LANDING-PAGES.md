@@ -1,6 +1,6 @@
 # Landing Page Authoring
 
-> Verified against disk: 2026-08-23 @ MyBookCMS working tree
+> Verified against disk: 2026-09-04 @ MyBookCMS working tree
 
 MyBookCMS supports two landing-page owners:
 
@@ -79,6 +79,7 @@ and route file in the same change.
 
 Run the repository checks, then open the route at approximately 390 px and
 1280 px. Confirm no page-level horizontal overflow, no console/request errors,
-the Malaysia postcode quote works, COD/manual transfer are the only payment
-methods, the order succeeds, and the canonical/sitemap behavior matches the
-page state.
+the Malaysia postcode quote works, the payment methods offered are exactly the
+ones the install has enabled — COD and manual transfer always, plus one hosted
+DOKU choice where a healthy DOKU configuration is enabled — the order succeeds,
+and the canonical/sitemap behavior matches the page state.

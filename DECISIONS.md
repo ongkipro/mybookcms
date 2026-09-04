@@ -1,6 +1,6 @@
 # MyBookCMS Decisions
 
-> Verified against disk: 2026-09-01 @ MyBookCMS working tree
+> Verified against disk: 2026-09-04 @ MyBookCMS working tree
 
 ## ADR-001 — One install is one store
 

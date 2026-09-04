@@ -1,6 +1,6 @@
 # MyBookCMS Design System
 
-> Verified against disk: 2026-08-23 @ MyBookCMS working tree
+> Verified against disk: 2026-09-04 @ MyBookCMS working tree
 
 ## Product surfaces
 
@@ -29,7 +29,9 @@ public primitives live in `src/styles/foundation.css` and
 | Error | `#B42318` |
 
 Inter is the primary UI face. Cinzel is reserved for the approved brand mark;
-it is not a body or admin font. Use the shipped weights 400, 600, and 700.
+it is not a body or admin font. `foundation.css` ships Inter 400, 600, and 700
+and Cinzel 700 only. Do not reference a weight that is not imported there: the
+browser will synthesise it and the mark will not match the brand.
 
 Public controls use square geometry, visible focus outlines, a minimum 44 px
 interactive height, semantic HTML, and reduced-motion-safe transitions. Prices

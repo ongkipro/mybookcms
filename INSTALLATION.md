@@ -1,6 +1,6 @@
 # Installing MyBookCMS
 
-> Verified against disk: 2026-09-01 @ MyBookCMS working tree
+> Verified against disk: 2026-09-04 @ MyBookCMS working tree
 
 Each installation is a new Malaysia store. Create resources owned by that store:
 one Cloudflare Worker, D1 database, KV namespace, R2 bucket, domain, and a

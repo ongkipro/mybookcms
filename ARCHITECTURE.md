@@ -1,6 +1,6 @@
 # MyBookCMS Architecture
 
-> Verified against disk: 2026-09-01 @ MyBookCMS working tree
+> Verified against disk: 2026-09-04 @ MyBookCMS working tree
 
 MyBookCMS is a single-store commerce CMS for Malaysia. One install owns one
 Cloudflare Worker, D1 database, KV namespace, R2 bucket, domain, and operator

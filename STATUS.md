@@ -1,6 +1,6 @@
 # MyBookCMS Status
 
-> Verified against disk: 2026-09-02 @ MyBookCMS working tree
+> Verified against disk: 2026-09-04 @ MyBookCMS working tree
 
 ## Current state
 
@@ -115,6 +115,22 @@ values and sent fictional data only; it created no checkout, order, payment,
 webhook, D1 mutation, remote migration, deployment, or production change.
 A-222/A-223 continue to make production activation and observation explicit
 post-sandbox approval gates rather than an implied continuation.
+
+Repository documentation is now self-checking where it can be. `docs/CODE-MAP.md`
+is the navigation index, and `src/lib/code-map.test.ts` fails when it drifts from
+`src/`: routes, file paths, endpoint methods, and the live-table set are all
+derived from disk rather than trusted. All thirteen dated documents were
+re-verified on 2026-09-04 and five contradictions corrected; three of them were
+variations of the same stale claim that checkout is COD and manual transfer only.
+
+That pass left three open code findings, none of them fixed under a
+documentation task. `GET /api/v1/storefront` returns a hard-coded payment set,
+so a headless storefront is never told an enabled DOKU exists and the shipped
+SDK type cannot express it (A-231). `stores.is_cod_enabled` is read only by
+`GET /api/payment-methods` and enforced on no submission path, which is latent
+only because no admin surface can currently write it (A-232). ADR-013 through
+ADR-020 are cited by `PRD.md`, `wrangler.jsonc`, migration `0044`, and a
+navigation test, but were never recorded in this repository (A-233).
 
 ## Verified local evidence
 

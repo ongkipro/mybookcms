@@ -1,12 +1,18 @@
 # MyBookCMS Working Agreement
 
-> Verified against disk: 2026-08-23 @ MyBookCMS working tree
+> Verified against disk: 2026-09-04 @ MyBookCMS working tree
 
 ## Product boundary
 
 MyBookCMS is one Malaysia store per install. Public surfaces use Malay/English,
-money is MYR integer sen, checkout is COD/manual transfer, and shipping is
-D1-owned postcode/weight policy. The operator admin remains Indonesian.
+money is MYR integer sen, and shipping is D1-owned postcode/weight policy. The
+operator admin remains Indonesian.
+
+Checkout offers COD and manual bank transfer, and — where an operator has
+enabled a healthy DOKU configuration — one hosted DOKU choice carrying only its
+allowlisted Malaysia channels. That path is implemented and verified locally
+only: `A-221` still owns sandbox proof, so no install may claim it works against
+the provider.
 
 ## Source of truth
 

@@ -1,6 +1,6 @@
 # MyBookCMS Observability
 
-> Verified against disk: 2026-09-01 @ MyBookCMS working tree
+> Verified against disk: 2026-09-04 @ MyBookCMS working tree
 
 Operational logs must help an operator decide whether a Malaysia store can
 accept, fulfil, or investigate an order without exposing customer data or

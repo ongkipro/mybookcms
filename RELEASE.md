@@ -1,6 +1,6 @@
 # MyBookCMS Release Guide
 
-> Verified against disk: 2026-09-01 @ MyBookCMS working tree
+> Verified against disk: 2026-09-04 @ MyBookCMS working tree
 
 This product repository has no deployment target. A release is a reviewed
 product revision that an individual install may adopt after its own approval.

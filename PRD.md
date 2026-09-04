@@ -1,6 +1,6 @@
 # MyBookCMS Product Requirements
 
-> Verified against disk: 2026-09-01 @ MyBookCMS working tree
+> Verified against disk: 2026-09-04 @ MyBookCMS working tree
 >
 > The single requirements source for this product. `TASKS.md` is the single
 > execution queue and holds acceptance evidence. Inherited AdsBookCMS
