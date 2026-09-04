@@ -7,6 +7,43 @@
 > product's infrastructure and mean nothing to a reader of this repository.
 > The engineering narrative is unchanged.
 
+## 2026-09-04 — A-236, and the contrast half of A-234
+
+**A-236.** Five endpoints had no handler for methods they do not implement, so
+Astro fell through to the storefront 404 route and an API client holding a valid
+key received a complete HTML page where it expected JSON. One shared
+`methodNotAllowed`, wired as an `ALL` export, now answers `405` with a bounded
+body and the `Allow` header RFC 9110 requires. Verified on the running Worker
+across all five, with the supported methods untouched.
+
+The handlers could not be imported in a test — they pull their whole dependency
+graph and the raw runner cannot resolve the extensionless imports inside it — so
+the helper is unit-tested and the code-map check enforces that each route
+exports `ALL`. That division is better than the alternative: the first version
+of that check only compared documented methods against exported ones in one
+direction and would not have noticed a dropped handler.
+
+**A-234, contrast half.** `slate-500` is `#62748e`: 4.76 against a white card,
+which passes, and 4.41 against the admin page background `#f5f6f8`, which misses
+the 4.5 AA floor. Only text sitting directly on that background was wrong, so
+`AdminPageHeader.astro` — rendered by 20 pages — and the three panel
+descriptions in `ExpeditionSettings.tsx` moved to `slate-600` at 7.01, while the
+large majority of that class's 277 uses, which are inside cards, are untouched.
+`DESIGN-SYSTEM.md` records both numbers, because the passing and failing pairs
+look identical in source and only a measurement separates them.
+
+Re-measured with Lighthouse at mobile emulation: `/admin/settings/log` went 96 →
+**100** and `/admin/expeditions` 97 → **100**, both with best practices 100. The
+two remaining items on each are `is-crawlable` and `meta-description`, which
+fail because the admin layout sets `noindex, nofollow` on purpose.
+
+The other half of A-234 stays open. The shared switch measures a 33 px effective
+target against the same document's 44 px floor, and widening it changes spacing
+on every admin list — a design decision rather than a measurement, so it waits
+for a designer.
+
+463/463 tests, zero diagnostics across 362 files, clean build.
+
 ## 2026-09-04 — A-235 and A-238, and a second review of the authorization work
 
 **A-235.** Migration `0060` indexes the three system-log reads that could not

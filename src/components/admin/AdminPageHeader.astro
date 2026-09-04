@@ -1,4 +1,14 @@
 ---
+/**
+ * Rendered by 20 admin pages, directly on the page background rather than
+ * inside a card — which is why its muted text is `slate-600` and not the
+ * `slate-500` used elsewhere in the admin.
+ *
+ * Measured, not chosen: `slate-500` is `#62748e`, which gives 4.76 against a
+ * white card and passes, but 4.41 against the page background `#f5f6f8` and
+ * misses the 4.5 AA floor `DESIGN-SYSTEM.md` requires. `slate-600` gives 7.01
+ * on the same ground. Lighthouse found exactly these nodes.
+ */
 interface Props {
   eyebrow: string;
   title: string;
@@ -14,13 +24,13 @@ const hasActions = Astro.slots.has('actions');
 <header class="flex flex-col gap-3 border-b border-slate-200/80 pb-4 sm:flex-row sm:items-end sm:justify-between sm:pb-5">
   <div class="min-w-0">
     {backHref && (
-      <a href={backHref} class="mb-1 -ml-1 inline-flex min-h-11 items-center px-1 text-xs font-bold text-slate-500 transition hover:text-slate-950">
+      <a href={backHref} class="mb-1 -ml-1 inline-flex min-h-11 items-center px-1 text-xs font-bold text-slate-600 transition hover:text-slate-950">
         <span aria-hidden="true">←</span><span class="ml-1.5">{backLabel}</span>
       </a>
     )}
-    <p class="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">{eyebrow}</p>
+    <p class="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-600">{eyebrow}</p>
     <h2 class="mt-1 text-2xl font-extrabold tracking-[-0.035em] text-slate-950 md:mt-1.5 md:text-3xl">{title}</h2>
-    <p class="mt-1 max-w-2xl text-sm leading-5 text-slate-500 md:leading-6">{description}</p>
+    <p class="mt-1 max-w-2xl text-sm leading-5 text-slate-600 md:leading-6">{description}</p>
   </div>
   {hasActions && <div class="shrink-0"><slot name="actions" /></div>}
 </header>

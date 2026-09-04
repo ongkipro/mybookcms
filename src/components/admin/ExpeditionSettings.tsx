@@ -669,7 +669,7 @@ export function ExpeditionSettings() {
         <section className="space-y-4" aria-labelledby="state-rate-title">
           <div>
             <h2 id="state-rate-title" className="text-lg font-black text-slate-950">Tarif per negeri dan Wilayah Persekutuan</h2>
-            <p className="mt-1 text-xs text-slate-500">Ubah nilai lalu tekan simpan. Switch berlaku langsung tanpa simpan terpisah.</p>
+            <p className="mt-1 text-xs text-slate-600">Ubah nilai lalu tekan simpan. Switch berlaku langsung tanpa simpan terpisah.</p>
           </div>
           {zoneAccordion((zone) => {
             const zoneStates = states.filter((state) => state.zoneId === zone.id);
@@ -729,7 +729,7 @@ export function ExpeditionSettings() {
         <section className="space-y-4" aria-labelledby="shipping-zone-title">
           <div>
             <h2 id="shipping-zone-title" className="text-lg font-black text-slate-950">Zona dan cakupan poskod</h2>
-            <p className="mt-1 text-xs text-slate-500">Aktifkan zona dan atur rentang poskod yang dilayaninya.</p>
+            <p className="mt-1 text-xs text-slate-600">Aktifkan zona dan atur rentang poskod yang dilayaninya.</p>
           </div>
           {zoneAccordion(zonePostcodeSection, "zones")}
         </section>
@@ -739,7 +739,7 @@ export function ExpeditionSettings() {
         <section className="space-y-4" aria-labelledby="fallback-rate-title">
           <div>
             <h2 id="fallback-rate-title" className="text-lg font-black text-slate-950">Tarif fallback per zona</h2>
-            <p className="mt-1 text-xs text-slate-500">Dipakai ketika tidak ada tarif negeri/WP yang cocok dengan berat yang diminta.</p>
+            <p className="mt-1 text-xs text-slate-600">Dipakai ketika tidak ada tarif negeri/WP yang cocok dengan berat yang diminta.</p>
           </div>
           {zoneAccordion(zoneFallbackSection, "fallback")}
         </section>

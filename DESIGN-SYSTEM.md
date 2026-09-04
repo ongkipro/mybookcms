@@ -40,7 +40,16 @@ must use the shared MYR formatter rather than handwritten symbols or separators.
 ## Admin system
 
 The admin uses the semantic variables and Tailwind bridge in
-`src/styles/admin.css` plus the existing shadcn components. Prefer:
+`src/styles/admin.css` plus the existing shadcn components.
+
+Muted text depends on what it sits on, and the two are not interchangeable.
+`slate-500` (`#62748e`) measures 4.76 against a white card and passes the 4.5 AA
+floor; on the admin page background (`#f5f6f8`) it measures 4.41 and fails.
+Muted text placed directly on the page background uses `slate-600`, which gives
+7.01 there. Written down because the failing pair looks identical in source and
+only a measurement tells them apart.
+
+Prefer:
 
 - one page title and one concise operational description;
 - KPI cards only for actionable totals;
