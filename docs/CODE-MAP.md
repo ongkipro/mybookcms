@@ -176,6 +176,7 @@ All use `AdminLayout` (sidebar from `components/admin/admin-navigation.ts`, shel
 | `/admin/settings/crm` | `pages/admin/settings/crm.astro` | inline form | `/api/admin/settings` | owner, admin |
 | `/admin/settings/developer` | `pages/admin/settings/developer.astro` | `HeadlessApiManagement` | `/api/admin/settings/developer`, `/api/admin/settings` | owner, admin |
 | `/admin/settings/access` | `pages/admin/settings/access.astro` | `AccessManager` | `/api/admin/access` | owner only |
+| `/admin/settings/log` | `pages/admin/settings/log.astro` | `SystemLogPanel` | `/api/admin/system-log` | owner, admin |
 | `/admin/profile` | `pages/admin/profile.astro` | inline form | `/api/admin/profile` | all; the only page allowed while password rotation is pending |
 
 ## 7. Admin API
@@ -201,6 +202,7 @@ All under `/api/admin`, session-gated by middleware, CSRF-checked on unsafe meth
 | `/api/admin/settings` | `pages/api/admin/settings.ts` | GET, PUT, POST | `store-site-url`, `store-pickup`, `embed-security`, `headless-api`, `crm-template`, `storefront-template` | `stores` |
 | `/api/admin/settings/developer` | `pages/api/admin/settings/developer.ts` | GET, POST, PATCH, DELETE | `developer-api-keys` | `developer_api_keys`, `headless_api_audit_events` |
 | `/api/admin/access` | `pages/api/admin/access.ts` | GET, POST, PATCH, DELETE | `admin-credentials`, `auth` | `admin_credentials` |
+| `/api/admin/system-log` | `pages/api/admin/system-log.ts` | GET | `system-log`, `schema-version` | reads `capi_event_outbox`, `payment_events`, `payment_attempts`, `orders`, `notifications`, `headless_api_audit_events`; writes nothing |
 | `/api/admin/profile` | `pages/api/admin/profile.ts` | GET, PUT | `admin-credentials`, `auth` | `admin_credentials` |
 | `/api/admin/notifications` | `pages/api/admin/notifications.ts` | GET, POST | `notifications` | `notifications`, `notification_reads` |
 | `/api/admin/logout` | `pages/api/admin/logout.ts` | POST | `auth` | KV session delete |
@@ -230,6 +232,7 @@ All under `/api/admin`, session-gated by middleware, CSRF-checked on unsafe meth
 | `DokuPaymentSettings.tsx` | 482 | payments | `/api/admin/payments` |
 | `HeadlessApiManagement.tsx` | 536 | settings/developer | `/api/admin/settings/developer` |
 | `AccessManager.tsx` | 998 | settings/access | `/api/admin/access` |
+| `SystemLogPanel.tsx` | 289 | settings/log | `/api/admin/system-log`; read-only, no mutation control |
 | `AdminPageHeader.astro` | 26 | every admin page | static header |
 
 ### Storefront (`src/components/storefront/`)
@@ -256,7 +259,7 @@ Each module has a sibling `*.test.ts` unless marked (no test). Run all with `npm
 
 | Domain | Modules |
 | --- | --- |
-| Auth and admin | `auth` (JWT HS256, roles, route grants), `admin-credentials`, `rate-limit` (KV window + login lockout), `admin-upload`, `admin-date-filter`, `admin-order-status`, `admin-order-delivery`, `notifications`, `notification-chime`, `operational-alerts` (no test; webhook alerts) |
+| Auth and admin | `auth` (JWT HS256, roles, route grants), `admin-credentials`, `rate-limit` (KV window + login lockout), `admin-upload`, `admin-date-filter`, `admin-order-status`, `admin-order-delivery`, `notifications`, `notification-chime`, `system-log` (read-only merged operator event view), `operational-alerts` (no test; webhook alerts) |
 | Tenant and install | `tenant` (store row -> `locals.tenant`), `tenant-contract` (no test), `tenant-content` (no test), `install`, `store-site-url`, `store-pickup`, `storefront-template`, `schema-version` (migration gate), `bundled-migrations` (no test), `version` (no test; `CMS_VERSION.schemaVersion` must match latest migration), `env` (no test) |
 | Catalog and content | `catalog` (no test; public projection), `catalog-data` (admin rows), `catalog-id` (no test; `p{id}-v{id}`), `product-mutation`, `storefront-content` (home/product published copy), `ai-content-instructions`, `storefront-locale` (`formatMyr`), `image-derivative`, `daily-rotation` |
 | Landing pages | `landing-pages` (CMS pages + shortcodes, 869 lines), `native-landing-pages` (register validation), `embed-markup` (snippet + version), `embed-security` (frame-ancestors), `form-config` |
@@ -345,4 +348,5 @@ Local commands: `npm run db:migrate:local`, `npm run db:seed:malaysia:local`, `n
 | Touch Meta/Google tracking | `components/storefront/tracking/AdsBase.astro`, `lib/meta-capi.ts`, `lib/capi-outbox.ts`, `pages/api/meta-event.ts`, `lib/google-catalog.ts` |
 | Change public copy or legal text | `data/legal.ts`, `lib/storefront-content.ts`, `/admin/content` |
 | Change embed behaviour | `public/mybook-form-widget.js`, `pages/embed/form.astro`, `lib/embed-markup.ts` (bump snippet version), `lib/embed-security.ts` |
+| Add a source to the system log | `lib/system-log.ts` — every label is composed from structured columns, never stored prose |
 | Change session, login, or roles | `lib/auth.ts`, `lib/admin-credentials.ts`, `pages/hello.astro`, `src/middleware.ts` |

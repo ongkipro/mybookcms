@@ -362,6 +362,20 @@ test('the admin gate refuses requests without a usable session token', async () 
   assert.equal(pageResponse.headers.get('location'), '/hello');
 });
 
+test('the system log is reachable by owner and admin only', () => {
+  // It aggregates payment lifecycle rows and headless API audit rows, so it sits
+  // with the settings surfaces rather than with the workspaces every operator
+  // uses. Read-only in the product sense, but not read-anyone.
+  for (const role of ['owner', 'admin'] as const) {
+    assert.equal(canAccessAdminRoute(role, '/admin/settings/log'), true);
+    assert.equal(canAccessAdminRoute(role, '/api/admin/system-log'), true);
+  }
+  for (const role of ['advertiser', 'customer_service'] as const) {
+    assert.equal(canAccessAdminRoute(role, '/admin/settings/log'), false);
+    assert.equal(canAccessAdminRoute(role, '/api/admin/system-log'), false);
+  }
+});
+
 test('every admin role is confined to the routes it owns', () => {
   assert.deepEqual([...ADMIN_ROLES], ['owner', 'admin', 'advertiser', 'customer_service']);
   for (const role of ADMIN_ROLES) {

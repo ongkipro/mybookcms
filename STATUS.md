@@ -132,6 +132,16 @@ only because no admin surface can currently write it (A-232). ADR-013 through
 ADR-020 are cited by `PRD.md`, `wrangler.jsonc`, migration `0044`, and a
 navigation test, but were never recorded in this repository (A-233).
 
+Owner and admin now have one read-only `Log sistem` panel at
+`/admin/settings/log`, reachable from the shell header, the settings hub, and
+the settings submenu. It merges schema state, Meta CAPI outbox outcomes, DOKU
+payment transitions, operator notifications, and headless API audit rows that
+D1 already holds, bounded to 200 events within 30 days. It adds no table and
+writes nothing. Advertiser and customer service receive `403` and see no entry
+point. Redaction is structural: labels are composed from typed columns and
+stored prose is never selected, which is what keeps `notifications.body` — the
+one column that carries a customer's name — out of the response.
+
 ## Verified local evidence
 
 - The clean isolated D1 chain is at schema version 60 with 2,931 official Malaysia postcode rows,

@@ -41,6 +41,7 @@ const ADMIN_PAGE_ROUTES = [
   '/admin/settings/store',
   '/admin/settings/developer',
   '/admin/settings/crm',
+  '/admin/settings/log',
 ] as const;
 
 const ADMIN_API_ROUTES = [
@@ -59,6 +60,7 @@ const ADMIN_API_ROUTES = [
   '/api/admin/notifications',
   '/api/admin/profile',
   '/api/admin/logout',
+  '/api/admin/system-log',
 ] as const;
 
 const ROLE_PAGE_ROUTES: Record<Exclude<AdminRole, 'owner' | 'admin'>, readonly string[]> = {

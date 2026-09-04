@@ -7,6 +7,39 @@
 > product's infrastructure and mean nothing to a reader of this repository.
 > The engineering narrative is unchanged.
 
+## 2026-09-04 — Operator system log
+
+- A-225 adds `/admin/settings/log`, a read-only merge of the system events D1
+  already holds: schema state, `capi_event_outbox` outcomes, DOKU
+  `payment_events` transitions, operator `notifications`, and
+  `headless_api_audit_events`. No migration, no write path.
+- The redaction boundary is a projection, not a filter. `src/lib/system-log.ts`
+  composes every label from typed columns and never selects stored prose,
+  because `notifications.body` carries the customer's name by design;
+  `payload_json`, `checkout_url`, `idempotency_key`, `request_fingerprint` and
+  `provider_reference` are excluded for the same reason.
+- One implementation detail worth keeping: `payment_events.received_at` holds
+  two shapes, the ISO string application code writes and the
+  `YYYY-MM-DD HH:MM:SS` that SQLite's `CURRENT_TIMESTAMP` default produces. A
+  space sorts before `T`, so an ISO bound in the `WHERE` clause silently drops
+  same-second default-written rows. The query binds the lexically-earlier shape,
+  which can only be over-inclusive, and an exact cutoff in JavaScript settles it.
+- A failing source is skipped and logged as `system-log-source-failed` rather
+  than being fatal, so a missing table cannot blank the panel for an operator
+  working an incident.
+- Browser evidence at 390 px and 1280 px against a throwaway local database
+  seeded with rows whose forbidden columns held a CAPI token, two Malaysian
+  mobiles, and a street address. None reached the DOM. Page overflow was 0 px at
+  both widths, all eight controls were keyboard reachable, the checkbox label
+  measured exactly 44 px, and the console was clean. Loading, empty,
+  filtered-empty and error states were each exercised. A probe advertiser and a
+  probe customer service each saw zero entry points, got `403 PERMISSION_DENIED`
+  from the API, and were redirected away from the page.
+- The existing local database was not touched: its operator password had been
+  rotated and is the user's, so verification ran against a separate
+  `--persist-to` directory rather than by hunting for a credential.
+- 430/430 tests, zero diagnostics across 356 files, clean build.
+
 ## 2026-09-04 — Code map made self-checking; documentation re-verified
 
 - Added `docs/CODE-MAP.md`, a page-by-page navigation index, and pointed

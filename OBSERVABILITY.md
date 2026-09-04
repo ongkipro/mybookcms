@@ -98,6 +98,28 @@ runtime truth only when its owning task records executable evidence; the list is
 not evidence that the still-open configuration, Ads, or hosted paths already
 exist.
 
+## Operator system log
+
+`/admin/settings/log` is a read-only merge of system events D1 already holds:
+schema version state, `capi_event_outbox` delivery outcomes, DOKU
+`payment_events` transitions with their attempt environment and error class,
+operator `notifications`, and `headless_api_audit_events`. Owner and admin
+reach it; advertiser and customer service receive `403` from
+`GET /api/admin/system-log` and see no entry point. It is bounded to the newest
+200 events within 30 days, and it writes nothing.
+
+Every label is composed in `src/lib/system-log.ts` from structured columns.
+Stored prose is never read, because `notifications.body` carries the customer's
+name by design. `capi_event_outbox.payload_json`, `payment_attempts.checkout_url`,
+`idempotency_key`, `request_fingerprint`, and `provider_reference` are likewise
+outside the projection. A regression test seeds a token, a Malaysian mobile, and
+a street address into those columns and fails if any reaches the response.
+
+A source that fails is skipped rather than fatal, logged as
+`system-log-source-failed` with a bounded `error_class`, so one missing table
+cannot blank the panel for an operator working an incident. Events that exist
+only as Worker logs are out of reach here; giving them a store is A-226.
+
 ## Alerting
 
 MyBookCMS currently has no alert endpoint or pager integration. If an install

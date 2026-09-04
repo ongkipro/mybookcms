@@ -1,0 +1,18 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import AdminPageHeader from '../../../components/admin/AdminPageHeader.astro';
+import { SystemLogPanel } from '../../../components/admin/SystemLogPanel';
+
+export const prerender = false;
+---
+
+<AdminLayout title="Log Sistem" activeMenu="settings">
+  <section class="mx-auto max-w-7xl space-y-5">
+    <AdminPageHeader
+      eyebrow="Observability"
+      title="Log sistem"
+      description="Peristiwa yang sudah direkam runtime: status skema, pengiriman sinyal Ads, siklus pembayaran DOKU, notifikasi operator, dan audit Headless API. Hanya baca."
+    />
+    <SystemLogPanel client:load />
+  </section>
+</AdminLayout>

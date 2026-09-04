@@ -9,6 +9,7 @@ const cards = [
   { href: '/admin/payments', title: 'Pembayaran', description: 'COD dan rekening transfer bank manual.' },
   { href: '/admin/settings/crm', title: 'CRM Templates', description: 'Template follow-up order dan pembayaran.' },
   { href: '/admin/settings/developer', title: 'Headless API', description: 'API key dan domain allowlist.' },
+  { href: '/admin/settings/log', title: 'Log Sistem', description: 'Peristiwa skema, Ads, pembayaran, dan Headless API. Hanya baca.' },
   ...(mayManageAccess ? [{ href: '/admin/settings/access', title: 'Akses Pengguna', description: 'Role dan izin operator.' }] : []),
 ];
 ---
