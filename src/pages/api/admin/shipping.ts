@@ -199,7 +199,16 @@ export const PATCH: APIRoute = async ({ locals, request }) => {
       address: body.address,
       locationId: body.locationId,
       shippingCostSen: body.shippingCost,
+      role: locals.admin?.role,
     });
+    // Refuse rather than silently drop it: an operator whose amount vanished
+    // without a word would reasonably assume it saved.
+    if (delivery.shippingCostRefused) {
+      return jsonError("Peran Anda tidak dapat mengubah shipping_cost.", 403, {
+        code: "PERMISSION_DENIED",
+        fields: ["shipping_cost"],
+      });
+    }
     const assignments = ["shipping_status = ?", ...delivery.assignments];
     const values = [body.shippingStatus, ...delivery.values];
     const mutation = database.prepare(`

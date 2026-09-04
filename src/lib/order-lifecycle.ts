@@ -23,6 +23,16 @@ export type AdminShippingStatus = (typeof ADMIN_SHIPPING_STATUSES)[number];
 const PAID_PAYMENT_STATUSES = new Set(["paid", "settled", "success"]);
 const RELEASING_PAYMENT_STATUSES = new Set(["cancelled", "refunded", "failed"]);
 const RELEASING_SHIPPING_STATUSES = new Set(["cancelled", "returned"]);
+/**
+ * The goods have physically left. Deleting such an order destroys the record of
+ * a real fulfilment, and restoring its stock invents inventory that is in a
+ * customer's hands — the store then oversells it to somebody else, and the first
+ * symptom is a legitimate order it cannot fill.
+ *
+ * `cancelled` and `returned` are deliberately not here: in both the goods are
+ * back, which is exactly when restoring stock is right.
+ */
+const DISPATCHED_SHIPPING_STATUSES = ["shipped", "delivered"] as const;
 const STOCK_RELEASED_SQL =
   "(o.shipping_status IN ('cancelled', 'returned') OR o.payment_status IN ('cancelled', 'refunded', 'failed'))";
 
@@ -292,6 +302,27 @@ export async function deleteOrdersRestoringStock(
   if (paidOrder) {
     throw new OrderLifecycleError(
       "Order dengan pembayaran terverifikasi tidak dapat dihapus. Gunakan alur refund dan pertahankan catatan order.",
+    );
+  }
+
+  // The same argument as the paid guard above, for the other half of the
+  // transaction. A COD order marked delivered whose operator never got round to
+  // marking it paid used to be deletable, and deletion restored its stock —
+  // phantom inventory for goods already handed over.
+  const dispatchedOrder = await database
+    .prepare(
+      `${cte}
+      SELECT id
+      FROM orders
+      WHERE id IN (SELECT order_id FROM selected)
+        AND shipping_status IN (${DISPATCHED_SHIPPING_STATUSES.map(() => "?").join(", ")})
+      LIMIT 1`,
+    )
+    .bind(...orderIds, ...DISPATCHED_SHIPPING_STATUSES)
+    .first<{ id: number }>();
+  if (dispatchedOrder) {
+    throw new OrderLifecycleError(
+      "Order yang sudah dikirim atau diterima tidak dapat dihapus. Tandai dikembalikan lebih dulu jika barang kembali, dan pertahankan catatan order.",
     );
   }
   const statements = [

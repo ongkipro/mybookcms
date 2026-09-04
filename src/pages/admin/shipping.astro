@@ -3,8 +3,11 @@ import { ShippingOperations } from '../../components/admin/ShippingOperations';
 import AdminLayout from '../../layouts/AdminLayout.astro';
 
 export const prerender = false;
+
+// The server refuses a direct shipping amount from a role that may not set one.
+const adminRole = Astro.locals.admin?.role ?? 'customer_service';
 ---
 
 <AdminLayout title="Operasional Pengiriman" activeMenu="shipping">
-  <ShippingOperations client:load />
+  <ShippingOperations adminRole={adminRole} client:load />
 </AdminLayout>

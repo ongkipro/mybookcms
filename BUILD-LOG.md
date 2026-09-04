@@ -7,6 +7,50 @@
 > product's infrastructure and mean nothing to a reader of this repository.
 > The engineering narrative is unchanged.
 
+## 2026-09-04 — Two audit findings fixed, and a review that caught the first fix short
+
+A-237 and A-239, from the independent audit of pre-existing code.
+
+**A-237, and the honest version of it.** The first attempt guarded
+`/api/admin/orders` — the field split for `shipping_cost` and `payment_status`,
+and owner/admin for both deletes — and claimed the boundary was complete. It was
+not. An independent review found the identical money write reachable through
+`PATCH /api/admin/shipping`, a route customer service also holds, two clicks
+away in its own Pengiriman UI, which sent `shippingCost` on every save whether
+it changed or not. The rule now lives inside `resolveAdminOrderDeliveryPatch`,
+the helper both routes share, with `role` as a required input field so a caller
+that forgets it fails to compile rather than falling into the permissive branch.
+The compiler found all three call sites at once, which is the argument for
+putting it there.
+
+Re-attacked along the reviewer's exact path: customer service queued the order,
+which still works because that is its job, then got `403` on the shipping-route
+amount write with the order untouched at 900/3390. The same session still set
+the status to `shipped` and corrected the address. Owner writing 1200 on the
+same route still lands and the total follows to 3690.
+
+One claim from the first attempt is withdrawn rather than defended. It said
+`location_id` was safe because "the system recalculates rather than an operator
+naming a price". The operator picks the zone, and seeded rates run 800–1200 sen
+peninsular against 1500–6000 sen for Sabah, so moving an order to a cheap
+postcode cuts the collected COD total by proxy. That is fraud by data entry, not
+an authorization bypass — any role that may correct an address can do it, and
+blocking it would remove the work customer service exists for. The answer is an
+actor-attributed audit record, A-226, and the helper now says so in the place
+the next reader will look.
+
+The review also noted that a green suite had missed the bypass because nothing
+asserted `/api/admin/shipping` writes shipping money through the same helper.
+That test now exists.
+
+**A-239.** An order whose goods have shipped or been delivered can no longer be
+deleted, mirroring the paid-order refusal beside it. `cancelled` and `returned`
+are excluded on purpose: the goods are back, which is exactly when restoring
+stock is correct. Five workerd-backed D1 tests cover both directions plus a
+mixed batch, which is refused whole rather than partially applied.
+
+456/456 tests, zero diagnostics across 361 files, clean build.
+
 ## 2026-09-04 — Independent audit of the code this session did not touch
 
 The two earlier reviews only read work delivered in this session. A third

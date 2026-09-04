@@ -8,6 +8,7 @@ import {
 import { Input } from "../ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 import { formatMyr } from "../../lib/storefront-locale";
+import type { AdminRole } from "../../lib/auth";
 import { MalaysiaLocationCombobox } from "./MalaysiaLocationCombobox";
 import { formatAdminDateTime } from "../../lib/admin-date-filter";
 
@@ -73,7 +74,12 @@ function shipmentDraft(shipment: Shipment): Draft {
   };
 }
 
-export function ShippingOperations() {
+export function ShippingOperations({
+  adminRole = "customer_service",
+}: { adminRole?: AdminRole } = {}) {
+  // The server refuses a direct amount from this role. Offering the field
+  // anyway would fail the save and read as a broken page.
+  const mayWriteShippingCost = adminRole === "owner" || adminRole === "admin";
   const loadedOnce = useRef(false);
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [total, setTotal] = useState(0);
@@ -154,7 +160,9 @@ export function ShippingOperations() {
           shippingStatus: draft.status,
           address: draft.address,
           ...(locationChanged ? { locationId: draft.locationId } : {}),
-          shippingCost: Math.round(Number(draft.shippingCostMyr) * 100),
+          ...(mayWriteShippingCost
+            ? { shippingCost: Math.round(Number(draft.shippingCostMyr) * 100) }
+            : {}),
         }),
       });
       const payload = await response.json().catch(() => ({}));
@@ -279,13 +287,21 @@ export function ShippingOperations() {
 
     <Dialog open={Boolean(editing)} onOpenChange={(open) => { if (!open && !saving) setEditing(null); }}>
       <DialogContent className="sm:max-w-lg">
-        <DialogHeader><DialogTitle>Perbarui pengiriman {editing?.orderNumber}</DialogTitle><DialogDescription>Edit penanda status, alamat Malaysia, dan biaya pengiriman. Resi dikirim manual melalui WhatsApp.</DialogDescription></DialogHeader>
+        <DialogHeader><DialogTitle>Perbarui pengiriman {editing?.orderNumber}</DialogTitle><DialogDescription>{mayWriteShippingCost ? "Edit penanda status, alamat Malaysia, dan biaya pengiriman." : "Edit penanda status dan alamat Malaysia."} Resi dikirim manual melalui WhatsApp.</DialogDescription></DialogHeader>
         {formError ? <p className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm font-bold text-rose-800" role="alert">{formError}</p> : null}
         <div className="grid grid-cols-1 gap-4">
           <label className="grid grid-cols-1 gap-1.5 text-xs font-bold text-slate-600">Status pengiriman<select className="admin-input-flat min-h-11" value={draft.status} onChange={(event) => setDraft((current) => ({ ...current, status: event.target.value }))} disabled={saving}>{statuses.map((status) => <option key={status} value={status}>{labels[status]}</option>)}</select></label>
           <label className="grid grid-cols-1 gap-1.5 text-xs font-bold text-slate-600">Alamat jalan<Input value={draft.address} maxLength={500} onChange={(event) => setDraft((current) => ({ ...current, address: event.target.value }))} disabled={saving} /></label>
           <label className="grid grid-cols-1 gap-1.5 text-xs font-bold text-slate-600">Bandar, negeri, atau poskod<MalaysiaLocationCombobox value={draft.locationLabel} selectedId={draft.locationId} disabled={saving} onChange={(value, option) => setDraft((current) => ({ ...current, locationLabel: value, locationId: option ? Number(option.location_id) : null }))} /></label>
-          <label className="grid grid-cols-1 gap-1.5 text-xs font-bold text-slate-600">Biaya pengiriman (RM)<Input value={draft.shippingCostMyr} inputMode="decimal" onChange={(event) => setDraft((current) => ({ ...current, shippingCostMyr: event.target.value }))} disabled={saving} /></label>
+          {mayWriteShippingCost ? (
+            <label className="grid grid-cols-1 gap-1.5 text-xs font-bold text-slate-600">Biaya pengiriman (RM)<Input value={draft.shippingCostMyr} inputMode="decimal" onChange={(event) => setDraft((current) => ({ ...current, shippingCostMyr: event.target.value }))} disabled={saving} /></label>
+          ) : (
+            <div className="text-xs font-bold text-slate-600">
+              Biaya pengiriman
+              <p className="mt-1 text-sm font-black text-slate-950">RM {draft.shippingCostMyr}</p>
+              <p className="mt-1 font-medium leading-relaxed text-slate-600">Dihitung ulang otomatis ketika destinasi diubah. Nilai manual hanya dapat diatur oleh owner atau admin.</p>
+            </div>
+          )}
         </div>
         <DialogFooter><Button variant="outline" onClick={() => setEditing(null)} disabled={saving}>Batal</Button><Button onClick={() => void save()} disabled={saving || !dirty}>{saving ? <LoaderCircle className="animate-spin" /> : <PackageCheck />}{saving ? "Menyimpan…" : dirty ? "Simpan pengiriman" : "Tidak ada perubahan"}</Button></DialogFooter>
       </DialogContent>

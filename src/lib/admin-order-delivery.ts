@@ -1,3 +1,4 @@
+import type { AdminRole } from "./auth.ts";
 import { resolveMalaysiaLocation } from "./malaysia-locations.ts";
 import { quoteMalaysiaOrderShippingFromD1 } from "./malaysia-shipping.ts";
 
@@ -6,14 +7,39 @@ export type AdminOrderDeliveryInput = {
   address?: string;
   locationId?: number;
   shippingCostSen?: number;
+  /**
+   * The operator making the change. Required, and not optional-with-a-default,
+   * because a caller that forgets it should fail to compile rather than fall
+   * into the permissive branch.
+   */
+  role: AdminRole | undefined;
 };
 
 export type AdminOrderDeliveryPatch = {
   assignments: string[];
   values: unknown[];
+  /** True when a direct amount was supplied by a role that may not set one. */
+  shippingCostRefused: boolean;
 };
 
-/** Resolves trusted Malaysia destination fields and a consistent MYR total update. */
+/**
+ * Resolves trusted Malaysia destination fields and a consistent MYR total.
+ *
+ * The role check lives here rather than at the call sites, and that is the whole
+ * point of the placement. Guarding `PATCH /api/admin/orders/[id]` alone left the
+ * identical write reachable through `PATCH /api/admin/shipping`, a route
+ * customer service also holds, in two clicks of its own UI — an independent
+ * review found it. Any third route that imports this helper inherits the rule
+ * instead of having to remember it.
+ *
+ * What is guarded is the *direct amount*. A destination change still re-quotes
+ * from D1, because correcting a wrong address is the work customer service
+ * exists to do and the price of the real destination is not the operator's to
+ * choose. That is not a complete answer: an operator who picks a cheaper zone
+ * changes the collected total by proxy, which is fraud by data entry rather
+ * than an authorization bypass, and the answer to it is an actor-attributed
+ * audit record — A-226 — not a block that would break the job.
+ */
 export async function resolveAdminOrderDeliveryPatch(
   database: D1Database,
   input: AdminOrderDeliveryInput,
@@ -25,9 +51,13 @@ export async function resolveAdminOrderDeliveryPatch(
     values.push(value);
   };
 
+  const maySetAmount = input.role === "owner" || input.role === "admin";
+  const shippingCostRefused =
+    input.shippingCostSen !== undefined && !maySetAmount;
+
   if (input.address !== undefined) add("address", input.address);
 
-  let resolvedCost = input.shippingCostSen;
+  let resolvedCost = shippingCostRefused ? undefined : input.shippingCostSen;
   if (input.locationId !== undefined) {
     const location = await resolveMalaysiaLocation(database, input.locationId);
     const quote = await quoteMalaysiaOrderShippingFromD1(database, {
@@ -52,5 +82,5 @@ export async function resolveAdminOrderDeliveryPatch(
     values.push(resolvedCost);
   }
 
-  return { assignments, values };
+  return { assignments, values, shippingCostRefused };
 }

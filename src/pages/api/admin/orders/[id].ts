@@ -191,6 +191,7 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
       address: body.address,
       locationId: body.location_id,
       shippingCostSen: body.shipping_cost,
+      role: locals.admin?.role,
     });
     assignments.push(...delivery.assignments);
     values.push(...delivery.values);

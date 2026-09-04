@@ -423,6 +423,24 @@ test('deleting an order stays with the roles that answer for the books', () => {
   assert.equal(canDeleteOrders(undefined), false);
 });
 
+test('the shipping workspace reaches the same money write, and is bounded the same way', () => {
+  // A green suite missed the first version of this rule because nothing
+  // asserted that `/api/admin/shipping` — which customer service also holds —
+  // writes shipping money through the same helper. It does, and the guard now
+  // lives in that helper rather than at one call site.
+  for (const role of ADMIN_ROLES) {
+    assert.equal(
+      canAccessAdminRoute(role, '/api/admin/shipping'),
+      role !== 'advertiser',
+      `${role} route access to the shipping API changed unexpectedly`,
+    );
+  }
+  // Route access is not permission to name a price. Whoever reaches the route,
+  // only these two may set an amount directly.
+  assert.deepEqual(forbiddenOrderFields('customer_service', { shipping_cost: 0 }), ['shipping_cost']);
+  assert.deepEqual(forbiddenOrderFields('owner', { shipping_cost: 0 }), []);
+});
+
 test('the system log is reachable by owner and admin only', () => {
   // It aggregates payment lifecycle rows and headless API audit rows, so it sits
   // with the settings surfaces rather than with the workspaces every operator

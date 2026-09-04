@@ -7,6 +7,7 @@ import { getPlatformProxy, type PlatformProxy } from "wrangler";
 import {
   applyOrderLifecycleMutation,
   deleteOrdersRestoringStock,
+  OrderLifecycleError,
   type OrderLifecycleState,
 } from "./order-lifecycle.ts";
 import {
@@ -215,4 +216,82 @@ test("real D1 delete restores reserved stock exactly once", async () => {
   assert.equal(await loadStock(variantId), 2);
   assert.deepEqual(await deleteOrdersRestoringStock(database, [order.id]), []);
   assert.equal(await loadStock(variantId), 2);
+});
+
+test("real D1 refuses to delete an order whose goods have shipped", async () => {
+  // The defect: a COD order marked delivered whose operator never got round to
+  // marking it paid was deletable, and deletion restored its stock. The store
+  // then believed it held goods that were in a customer's hands and oversold
+  // them — phantom inventory whose first symptom is an order it cannot fill.
+  for (const [index, shippingStatus] of ["shipped", "delivered"].entries()) {
+    const variantId = 21010 + index;
+    await seedVariant(variantId, 2);
+    const order = await persistOrder(
+      database,
+      orderInput(variantId, `dispatched-order-token-${variantId}`),
+    );
+    assert.equal(await loadStock(variantId), 1, "the sale reserved a unit");
+
+    await database
+      .prepare("UPDATE orders SET shipping_status = ? WHERE id = ?")
+      .bind(shippingStatus, order.id)
+      .run();
+
+    await assert.rejects(
+      () => deleteOrdersRestoringStock(database, [order.id]),
+      (error: unknown) =>
+        error instanceof OrderLifecycleError &&
+        /sudah dikirim atau diterima/.test(error.message),
+      `deleting a ${shippingStatus} order must be refused`,
+    );
+    // The order survives and, crucially, no stock was invented.
+    assert.equal(await loadStock(variantId), 1, `${shippingStatus}: stock must not be restored`);
+    const still = await database
+      .prepare("SELECT id FROM orders WHERE id = ?")
+      .bind(order.id)
+      .first<{ id: number }>();
+    assert.ok(still, `${shippingStatus}: the order record must survive`);
+  }
+});
+
+test("real D1 still deletes an order whose goods came back or never left", async () => {
+  // The other half. `cancelled` and `returned` mean the goods are back, and
+  // `pending` means they never left, so restoring stock is correct in all three
+  // and the guard must not touch them.
+  for (const [index, shippingStatus] of ["pending", "cancelled", "returned"].entries()) {
+    const variantId = 21020 + index;
+    await seedVariant(variantId, 2);
+    const order = await persistOrder(
+      database,
+      orderInput(variantId, `returnable-order-token-${variantId}`),
+    );
+    await database
+      .prepare("UPDATE orders SET shipping_status = ? WHERE id = ?")
+      .bind(shippingStatus, order.id)
+      .run();
+
+    const deleted = await deleteOrdersRestoringStock(database, [order.id]);
+    assert.equal(deleted.length, 1, `${shippingStatus} should still be deletable`);
+    assert.equal(await loadStock(variantId), 2, `${shippingStatus}: stock must come back`);
+  }
+});
+
+test("real D1 refuses a whole batch when one order in it has shipped", async () => {
+  // Bulk delete takes a list. One dispatched order in the batch must stop the
+  // batch rather than let the rest through and leave the operator guessing.
+  const safeVariant = 21030;
+  const shippedVariant = 21031;
+  await seedVariant(safeVariant, 2);
+  await seedVariant(shippedVariant, 2);
+  const safe = await persistOrder(database, orderInput(safeVariant, "batch-safe-token-21030"));
+  const shipped = await persistOrder(database, orderInput(shippedVariant, "batch-shipped-token-21031"));
+  await database
+    .prepare("UPDATE orders SET shipping_status = 'delivered' WHERE id = ?")
+    .bind(shipped.id)
+    .run();
+
+  await assert.rejects(() => deleteOrdersRestoringStock(database, [safe.id, shipped.id]));
+  // Neither was deleted and neither had stock restored.
+  assert.equal(await loadStock(safeVariant), 1);
+  assert.equal(await loadStock(shippedVariant), 1);
 });
