@@ -15,6 +15,10 @@ D1-owned postcode/weight policy. The operator admin remains Indonesian.
   `STATUS.md` owns current verified state; `BUILD-LOG.md` owns history.
 - `src/db/migrations/` is the schema record. Migrations are forward-only and
   hand-authored.
+- `docs/CODE-MAP.md` is the navigation index: which file serves a URL, which
+  API a surface calls, which table a module owns. Read it before searching for
+  a file. It is a map, never authority — when it disagrees with the code, the
+  code is right and the map is stale.
 - **`docs/lineage/inherited-tasks.md` is not a backlog.** This repository was
   forked from the AdsBookCMS / CMSAds engine, and that file holds the upstream
   task history. Every requirement it cites (`REQ-1`-`REQ-172`, `T1`-`T295`, and
@@ -41,6 +45,9 @@ D1-owned postcode/weight policy. The operator admin remains Indonesian.
    accessibility, and error handling.
 4. Add the smallest regression check for non-trivial logic.
 5. Run the project’s relevant check; never claim behavior without evidence.
+6. Adding, removing, or repointing a route, an API endpoint, or a migration
+   makes `docs/CODE-MAP.md` wrong. Update it in the same change and name it in
+   the task `Surface`. Nothing else in that file needs touching.
 
 ```bash
 npm run check
