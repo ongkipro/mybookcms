@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { methodNotAllowed } from "../../lib/api.ts";
 import { z } from "zod";
 import { getStoreAdsConfig } from "../../lib/ads-config.ts";
 import { deliverCapiEvent, drainCapiOutbox, enqueueCapiEvent } from "../../lib/capi-outbox.ts";
@@ -172,3 +173,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     return json({ success: false, error: "Meta event gagal diproses." }, 500);
   }
 };
+
+// Otherwise Astro falls through to the storefront 404 route and answers an
+// API client with a full HTML page.
+export const ALL: APIRoute = () => methodNotAllowed("POST");

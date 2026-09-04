@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { methodNotAllowed } from "../../../../lib/api.ts";
 import { getRuntimeEnv } from "../../../../lib/env.ts";
 import {
   handleOptions,
@@ -65,3 +66,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     ));
   }
 };
+
+// Otherwise Astro falls through to the storefront 404 route and answers an
+// API client with a full HTML page.
+export const ALL: APIRoute = () => methodNotAllowed("POST", "OPTIONS");

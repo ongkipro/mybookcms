@@ -121,14 +121,14 @@ All use `BaseLayout` unless noted. `GeoIpResolvedForm` is a thin wrapper around 
 
 | Route | File | Methods | Libs | Notes |
 | --- | --- | --- | --- | --- |
-| `/api/submit-order` | `pages/api/submit-order.ts` | POST | `order-schema`, `validation`, `malaysia-locations`, `malaysia-shipping`, `order-persistence`, `doku-checkout`, `click-ids`, `accepted-order-meta`, `rate-limit` | The checkout. Re-quotes shipping from D1, persists order + items + stock decrement + CAPI outbox in one batch. DOKU choice creates the hosted checkout after persistence. |
+| `/api/submit-order` | `pages/api/submit-order.ts` | POST, ALL | `order-schema`, `validation`, `malaysia-locations`, `malaysia-shipping`, `order-persistence`, `doku-checkout`, `click-ids`, `accepted-order-meta`, `rate-limit` | The checkout. Re-quotes shipping from D1, persists order + items + stock decrement + CAPI outbox in one batch. DOKU choice creates the hosted checkout after persistence. |
 | `/api/shipping-rates` | `pages/api/shipping-rates.ts` | GET | `malaysia-shipping`, `rate-limit` | Quote by trusted location id + cart weight. |
 | `/api/shipping-options` | `pages/api/shipping-options.ts` | GET | re-exports `shipping-rates` | Alias. |
 | `/api/locations` | `pages/api/locations.ts` | GET | `malaysia-locations`, `rate-limit` | Postcode/city/state search over `malaysia_postcodes`. |
 | `/api/payment-methods` | `pages/api/payment-methods.ts` | GET | `payment-availability`, `payment-brand` | COD, active seller bank accounts, DOKU channels when healthy. Shares one resolver with `/api/v1/storefront` so the two cannot disagree. |
 | `/api/form-config` | `pages/api/form-config.ts` | GET | `catalog`, `form-config` | Product/variant bootstrap for the form. |
-| `/api/order-status` | `pages/api/order-status.ts` | POST | `order-status` | Requires `order_number` + `public_status_token`. |
-| `/api/meta-event` | `pages/api/meta-event.ts` | POST | `ads-config`, `meta-capi`, `capi-outbox`, `catalog-id`, `click-ids`, `ads-signal-policy`, `rate-limit` | Browser-initiated CAPI leg (ViewContent, InitiateCheckout, Lead, fallback Purchase). Rebuilds value from D1. |
+| `/api/order-status` | `pages/api/order-status.ts` | POST, ALL | `order-status` | Requires `order_number` + `public_status_token`. |
+| `/api/meta-event` | `pages/api/meta-event.ts` | POST, ALL | `ads-config`, `meta-capi`, `capi-outbox`, `catalog-id`, `click-ids`, `ads-signal-policy`, `rate-limit` | Browser-initiated CAPI leg (ViewContent, InitiateCheckout, Lead, fallback Purchase). Rebuilds value from D1. |
 | `/api/payments/doku/notifications` | `pages/api/payments/doku/notifications.ts` | POST | `doku-notification`, `doku-payment-lifecycle` | Webhook. Verifies raw-body HMAC before JSON parse; one D1 batch. |
 | `/api/payments/doku/status` | `pages/api/payments/doku/status.ts` | POST (405 otherwise) | `doku-payment-access` | Cookie-capability status read for the buyer pages. |
 | `/api/payments/doku/retry` | `pages/api/payments/doku/retry.ts` | POST (405 otherwise) | `doku-payment-access`, `rate-limit` | Buyer retry of a failed/expired attempt. |
@@ -136,7 +136,7 @@ All use `BaseLayout` unless noted. `GeoIpResolvedForm` is a thin wrapper around 
 
 ## 5. Headless API (`/api/v1`)
 
-Authenticated by `X-App-Key` or `Authorization: Bearer` (legacy `x-api-key`), scoped, rate-limited, audit-logged through `lib/headless-api.ts` (`validateHeadlessRequest`). CORS from `stores.headless_allowed_origins`; every endpoint answers the `OPTIONS` preflight through the shared `handleOptions`. Client SDK and journey helper live in `lib/headless-client.ts`; the OpenAPI document in `lib/headless-openapi.ts`. Contract doc: `STOREFRONT_INTEGRATION.md`.
+Authenticated by `X-App-Key` or `Authorization: Bearer` (legacy `x-api-key`), scoped, rate-limited, audit-logged through `lib/headless-api.ts` (`validateHeadlessRequest`). CORS from `stores.headless_allowed_origins`; every endpoint answers the `OPTIONS` preflight through the shared `handleOptions`, and an unsupported method answers `405` JSON with `Allow` rather than the storefront 404 page. Client SDK and journey helper live in `lib/headless-client.ts`; the OpenAPI document in `lib/headless-openapi.ts`. Contract doc: `STOREFRONT_INTEGRATION.md`.
 
 | Route | File | Methods | Backing lib |
 | --- | --- | --- | --- |
@@ -146,8 +146,8 @@ Authenticated by `X-App-Key` or `Authorization: Bearer` (legacy `x-api-key`), sc
 | `/api/v1/products/[slug]` | `pages/api/v1/products/[slug].ts` | GET, OPTIONS | `catalog` |
 | `/api/v1/geo/districts` | `pages/api/v1/geo/districts.ts` | GET, OPTIONS | `malaysia-locations` |
 | `/api/v1/geo/shipping-rates` | `pages/api/v1/geo/shipping-rates.ts` | GET, POST, OPTIONS | `malaysia-shipping` |
-| `/api/v1/checkout` | `pages/api/v1/checkout.ts` | POST, OPTIONS | same stack as `/api/submit-order` |
-| `/api/v1/orders/status` | `pages/api/v1/orders/status.ts` | POST, OPTIONS | `order-status` |
+| `/api/v1/checkout` | `pages/api/v1/checkout.ts` | POST, OPTIONS, ALL | same stack as `/api/submit-order` |
+| `/api/v1/orders/status` | `pages/api/v1/orders/status.ts` | POST, OPTIONS, ALL | `order-status` |
 
 ## 6. Admin pages
 

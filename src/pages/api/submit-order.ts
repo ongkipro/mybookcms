@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { methodNotAllowed } from "../../lib/api.ts";
 import { resolveAcceptedOrderMetaContext } from "../../lib/accepted-order-meta.ts";
 import { hasClickId, readOrderAttribution, serializeClickIds } from "../../lib/click-ids.ts";
 import { orderSubmitSchema } from "../../lib/order-schema";
@@ -313,3 +314,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     );
   }
 };
+
+// Otherwise Astro falls through to the storefront 404 route and answers an
+// API client with a full HTML page.
+export const ALL: APIRoute = () => methodNotAllowed("POST");

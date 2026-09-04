@@ -45,6 +45,9 @@ name. The status page is `noindex`/`no-store` and displays only the current orde
 status. Courier and tracking evidence are communicated directly
 through WhatsApp and are not part of the API contract.
 
+An unsupported method answers `405` with a JSON body and an `Allow` header
+naming the methods the route accepts. It does not return an HTML page.
+
 ## Privacy and security
 
 Public clients never receive secret configuration, operator-only records, or

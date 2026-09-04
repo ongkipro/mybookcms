@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { methodNotAllowed } from "../../../lib/api.ts";
 import { resolveAcceptedOrderMetaContext } from "../../../lib/accepted-order-meta.ts";
 import { hasClickId, readClickIdCookie, serializeClickIds } from "../../../lib/click-ids.ts";
 import { handleOptions, headlessError, headlessOk, validateHeadlessRequest } from "../../../lib/headless-api";
@@ -108,3 +109,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     return validation.finalize(headlessError("Order gagal diproses.", 500, { code: "CHECKOUT_ERROR" }, validation.corsHeaders));
   }
 };
+
+// Otherwise Astro falls through to the storefront 404 route and answers an
+// API client with a full HTML page.
+export const ALL: APIRoute = () => methodNotAllowed("POST", "OPTIONS");
