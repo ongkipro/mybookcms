@@ -543,6 +543,18 @@ No remote call, no deployment, no commit.
       Dependencies: A-225 delivered. Note the ordering constraint with A-226, which also claims migration `0060`: whichever lands first takes that number and the other renumbers.
       Done when: `EXPLAIN QUERY PLAN` for all four system-log reads shows an index search and no `USE TEMP B-TREE FOR ORDER BY`, captured against a clean chain in `BUILD-LOG.md`; `schemaVersion` is bumped with the new migration; the clean chain still yields the documented live-table count; `npm run check`, `npm test`, and `npm run build` pass.
 
+- [ ] **A-236** — Answer a wrong method on a headless endpoint with JSON, not a storefront page.
+      Found while auditing the running Worker. A client holding a valid API key that calls `GET /api/v1/checkout` or `GET /api/v1/orders/status` — both POST-only — receives `404 text/html`: the complete storefront not-found page, layout and all. An integrator parsing that as JSON fails obscurely, and the response is a rendered page rather than an error. The same is true of `GET` on `/api/order-status`, `/api/submit-order` and `/api/meta-event`.
+      The repository already decided this is worth handling: `/api/payments/doku/status` and `/api/payments/doku/retry` each export an `ALL` handler and answer `405 application/json` with a bounded message. That pattern simply was not extended.
+      **Ruled out during the same audit, recorded so it is not re-investigated:** `DELETE`, `PUT` and `PATCH` to any path answer `403 text/plain` with `Cross-site DELETE form submissions are forbidden`. That is Astro's built-in origin check rejecting a non-GET/POST request that carries no `Origin` header, it applies to every route rather than to these, and it is a security feature behaving correctly. No documented headless operation uses those methods, so nothing is blocked by it.
+      Risk: R1 — adds a rejection path to endpoints that currently fall through to the 404 route. No authentication, authorization, data or business logic changes.
+      Surface: `TASKS.md`, `STATUS.md`, `BUILD-LOG.md`, `STOREFRONT_INTEGRATION.md`, `docs/CODE-MAP.md`, `src/pages/api/v1/checkout.ts`, `src/pages/api/v1/orders/status.ts`, `src/pages/api/order-status.ts`, `src/pages/api/submit-order.ts`, `src/pages/api/meta-event.ts`, `src/lib/headless-api.test.ts`.
+      Non-scope: changing which methods each endpoint supports; adding `OPTIONS` where it is absent; touching the `/api/admin` surface, whose 401 and 403 answers are already JSON; changing Astro's origin check or configuring `security.checkOrigin`.
+      Primary requirement: REQ-182
+      Constraints: REQ-201
+      Dependencies: none.
+      Done when: a wrong method on each named endpoint answers `405` with a JSON body and `no-store`, matching the shape `/api/payments/doku/status` already returns; the code map's Methods column lists the `ALL` handlers the way it notes them for the DOKU routes; a test covers one headless and one public endpoint; `npm run check`, `npm test` and `npm run build` pass.
+
 - [ ] **MYS-5** — Release readiness for a specific install. **Approval: required — never run autonomously.**
       Carried over from the retired `UNIMPLEMENTED_SPECS.md`. This is not a product gap: the product does not depend on any external courier or payment service, and a missing provider contract must never be converted into a blocker. Nothing has been deployed to Cloudflare; the local database is the only one that exists.
       Risk: R4 — production deployment.

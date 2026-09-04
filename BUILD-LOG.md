@@ -37,6 +37,26 @@ claims to protect. So the audit turned on the repository's own guards.
   lists and compare them; `shipping-bootstrap.test.ts` looks thin at one
   assertion but applies the real migration chain to a temporary database through
   wrangler and queries the result.
+- Runtime audit against the built Worker. Security headers are correct on every
+  surface type: `nosniff`, `DENY` framing, HSTS, referrer and permissions policy
+  everywhere; `no-store` added on private surfaces and the login screen; and on
+  `/embed/form` the frame denial is correctly *replaced* by
+  `Content-Security-Policy: frame-ancestors`, failing closed to `'self'` when the
+  store's allowlist does not match the host. Error bodies across public, admin
+  and headless endpoints carry bounded messages with no stack, path, or internal
+  detail, including a deliberately malformed JSON POST.
+- Two contract warts found, one of which turned out not to be a defect at all.
+  `DELETE`, `PUT` and `PATCH` to any path answer `403 text/plain` with
+  `Cross-site DELETE form submissions are forbidden` — that is Astro's built-in
+  origin check rejecting a non-GET/POST request with no `Origin` header, applied
+  to every route, behaving correctly, and no documented headless operation uses
+  those methods. Written down in A-236 precisely so it is not re-investigated.
+  The real one: a wrong method on a POST-only endpoint returns the complete
+  storefront 404 page to a client holding a valid API key, where
+  `/api/payments/doku/status` already answers `405` JSON. Also A-236.
+- The system log's own reads were measured with `EXPLAIN QUERY PLAN` and three
+  of four cost a table scan. Filed as A-235 rather than fixed, since A-225's
+  Non-scope excludes adding a migration.
 - A first scan claiming most of the suite never exercised production code was
   wrong twice before it was right — the detector missed multi-line imports, then
   single-quoted ones. The true figure is 77 of 86 test files importing the code
