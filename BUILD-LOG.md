@@ -7,6 +7,42 @@
 > product's infrastructure and mean nothing to a reader of this repository.
 > The engineering narrative is unchanged.
 
+## 2026-09-04 — Auditing the guards themselves
+
+The two independent reviews taught one lesson worth generalising: a test written
+beside a defect can pin the spelling of the defect rather than the property it
+claims to protect. So the audit turned on the repository's own guards.
+
+- **`src/lib/middleware-path-source.test.ts` guards the worst defect this
+  repository has had** — middleware classifying paths from
+  `context.request.url` while Astro routed on the normalized `context.url`, which
+  left every admin surface readable and most of them writable from a drive-by
+  page with no session. The guard forbade exactly one construction,
+  `new URL(context.request.url)`. Its own docstring says "anything derived from
+  `context.request.url` is, by construction, a different string", and three ways
+  of writing that identical defect walked straight past it: destructuring
+  `const { request } = context` first, going through a local
+  `const raw = context.request.url`, or skipping `URL` entirely with
+  `context.request.url.split("?")[0]` — that last one reintroduces the bypass
+  without constructing a URL at all. Measured, not assumed: each variant was
+  applied to the real source and the guard still passed on three of the four.
+  It now forbids reading `request.url` in that file at all, which is the
+  property; `context.request.headers` and `.method` stay allowed because only
+  `.url` is a different string from the one Astro routed on. All four variants
+  now fail and the current source still passes.
+- The other source-text guards were checked for the same weakness and are
+  sound. `full-form-cutover.test.ts` asserts the *absence* of a set of retired
+  mode identifiers across combined sources rather than one spelling;
+  `brand-contamination.test.ts` and `sample-product-removal.test.ts` compute
+  lists and compare them; `shipping-bootstrap.test.ts` looks thin at one
+  assertion but applies the real migration chain to a temporary database through
+  wrangler and queries the result.
+- A first scan claiming most of the suite never exercised production code was
+  wrong twice before it was right — the detector missed multi-line imports, then
+  single-quoted ones. The true figure is 77 of 86 test files importing the code
+  they test; the nine that do not are deliberate repository-property guards.
+  Recorded because the false version was nearly reported.
+
 ## 2026-09-04 — Release-readiness evidence at `33a29c7`
 
 A-229, the validation gate `MYS-5` needs so it can name one revision.

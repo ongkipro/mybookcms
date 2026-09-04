@@ -43,12 +43,24 @@ test("middleware decides paths from Astro's normalized URL", () => {
     "middleware must bind `url` to context.url",
   );
 
-  const rawReads = SOURCE.match(/new URL\(\s*context\.request\.url/g) ?? [];
+  // Forbid the *value*, not one construction of it.
+  //
+  // This assertion used to be `new URL(\s*context\.request\.url`, which pinned a
+  // spelling rather than the property its own docstring states. Three ways of
+  // writing the identical defect walked past it: destructuring
+  // `const { request } = context` first, going through a local
+  // `const raw = context.request.url`, or skipping `URL` altogether with
+  // `context.request.url.split("?")[0]`. Each reintroduces the admin-gate
+  // bypass exactly, because each starts from the raw bytes the client sent.
+  //
+  // `context.request.headers` and `context.request.method` stay allowed; it is
+  // only `.url` that is a different string from the one Astro routed on.
+  const rawReads = SOURCE.match(/\brequest\s*\.\s*url\b/g) ?? [];
   assert.deepEqual(
     rawReads,
     [],
-    "`new URL(context.request.url)` reintroduces the admin-gate bypass: the " +
-      "raw path is not the path Astro routes on. Use `context.url`.",
+    "reading `request.url` in middleware reintroduces the admin-gate bypass: " +
+      "the raw path is not the path Astro routes on. Use `context.url`.",
   );
 });
 
