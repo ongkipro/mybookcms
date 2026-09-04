@@ -14,6 +14,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     request,
     database: runtime?.OMS_DB as D1Database | undefined,
     rootSecret: getEnvValue("AUTH_SECRET", runtime),
+    sessions: runtime?.SESSION as KVNamespace | undefined,
     clientIp: getClientIp(request.headers),
     userAgent: request.headers.get("User-Agent") || "",
   });

@@ -340,6 +340,7 @@ test("status reconciliation requires the checkout capability and signed provider
     request: statusRequest(facts.order_number, null),
     database,
     rootSecret: ROOT_SECRET,
+    clientIp: "203.0.113.9",
     fetch: (async () => { calls += 1; throw new Error("must not call provider"); }) as typeof fetch,
     now: () => NOW,
   });
@@ -350,6 +351,7 @@ test("status reconciliation requires the checkout capability and signed provider
     request: statusRequest("INV-WRONG", cookie),
     database,
     rootSecret: ROOT_SECRET,
+    clientIp: "203.0.113.9",
     fetch: (async () => { calls += 1; throw new Error("must not call provider"); }) as typeof fetch,
     now: () => NOW,
   });
@@ -364,6 +366,7 @@ test("status reconciliation requires the checkout capability and signed provider
     }),
     database,
     rootSecret: ROOT_SECRET,
+    clientIp: "203.0.113.9",
     fetch: (async () => { calls += 1; throw new Error("must not call provider"); }) as typeof fetch,
     now: () => NOW,
   });
@@ -374,6 +377,7 @@ test("status reconciliation requires the checkout capability and signed provider
     request: statusRequest(facts.order_number, cookie),
     database,
     rootSecret: ROOT_SECRET,
+    clientIp: "203.0.113.9",
     fetch: signedStatusFetch(facts, "SUCCESS", "COMPLETED", {
       order: {
         amount: 999.99,
@@ -391,6 +395,7 @@ test("status reconciliation requires the checkout capability and signed provider
     request: statusRequest(facts.order_number, cookie),
     database,
     rootSecret: ROOT_SECRET,
+    clientIp: "203.0.113.9",
     fetch: signedStatusFetch(facts, "SUCCESS", "COMPLETED", { future_provider_field: { tolerated: true } }),
     now: () => NOW,
   });
@@ -413,6 +418,7 @@ test("status reconciliation requires the checkout capability and signed provider
     request: statusRequest(facts.order_number, cookie),
     database,
     rootSecret: ROOT_SECRET,
+    clientIp: "203.0.113.9",
     fetch: (async () => { lateCalls += 1; throw new Error("must not call after terminal"); }) as typeof fetch,
     now: () => NOW,
   });
@@ -614,4 +620,76 @@ test("unsupported DOKU recovery API methods fail closed with private headers", a
     assert.equal(response.headers.get("Referrer-Policy"), "no-referrer");
     assert.equal(await response.text(), "");
   }
+});
+
+test("the buyer-facing capability endpoints stop spending provider calls without bound", async () => {
+  // Each call reaches the merchant's DOKU credentials. Neither was bounded,
+  // while the checkout endpoints beside them are and the scheduled reconciler
+  // leases and backs off. A buyer with their own valid cookie could loop either
+  // one and turn a single order into unbounded outbound traffic on the
+  // merchant's quota.
+  const variantId = 34090;
+  const token = "access-ratelimit-token-34090";
+  await createAttempt(variantId, token);
+  const facts = await attemptFacts(token);
+  const cookie = await accessCookie(token);
+
+  const store = new Map<string, string>();
+  const sessions = {
+    async get(key: string) { return store.get(key) ?? null; },
+    async put(key: string, value: string) { store.set(key, value); },
+  } as unknown as KVNamespace;
+
+  let providerCalls = 0;
+  const attempt = () =>
+    handleDokuStatusRequest({
+      request: statusRequest(facts.order_number, cookie),
+      database,
+      rootSecret: ROOT_SECRET,
+      sessions,
+      clientIp: "203.0.113.77",
+      fetch: (async () => {
+        providerCalls += 1;
+        throw new Error("provider unavailable");
+      }) as typeof fetch,
+      now: () => NOW,
+    });
+
+  const statuses: number[] = [];
+  for (let index = 0; index < 20; index += 1) statuses.push((await attempt()).status);
+
+  assert.ok(statuses.includes(429), "an unbounded loop was never refused");
+  // The bound is what protects the quota, so the provider must stop being
+  // reached once it bites — not merely have its answer discarded.
+  assert.ok(
+    providerCalls < statuses.length,
+    `every one of ${statuses.length} attempts still reached the provider`,
+  );
+
+  const refused = await attempt();
+  assert.equal(refused.status, 429);
+  assert.ok(refused.headers.get("retry-after"), "a refused caller is told when to come back");
+  // And the refusal stays uncacheable, like every other response on this path.
+  assert.match(refused.headers.get("cache-control") || "", /no-store/);
+});
+
+test("without a KV binding the capability bound fails open rather than stranding a payment", async () => {
+  // A missing binding must not leave a legitimate buyer unable to recover a
+  // payment they already made.
+  const variantId = 34091;
+  const token = "access-ratelimit-open-34091";
+  await createAttempt(variantId, token);
+  const facts = await attemptFacts(token);
+  const cookie = await accessCookie(token);
+
+  const response = await handleDokuStatusRequest({
+    request: statusRequest(facts.order_number, cookie),
+    database,
+    rootSecret: ROOT_SECRET,
+    sessions: undefined,
+    clientIp: "203.0.113.78",
+    fetch: (async () => { throw new Error("provider unavailable"); }) as typeof fetch,
+    now: () => NOW,
+  });
+  assert.notEqual(response.status, 429);
 });

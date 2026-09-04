@@ -1,4 +1,5 @@
 import { DokuClient, DokuClientError } from "./doku-client.ts";
+import { checkRateLimit, rateLimitHeaders } from "./rate-limit.ts";
 import { getEnabledDokuConfig, type DokuRuntimeConfig } from "./doku-config.ts";
 import { createDokuReturnToken } from "./doku-checkout.ts";
 import {
@@ -1107,10 +1108,70 @@ function accessErrorMessage(error: DokuPaymentAccessError): string {
   }
 }
 
+
+/**
+ * Bounds the two buyer-facing capability endpoints.
+ *
+ * Each of them spends a real call against the merchant's DOKU credentials, and
+ * neither was bounded — while `POST /api/submit-order` and `POST /api/v1/checkout`
+ * beside them are, and the scheduled reconciler leases and backs off. A buyer
+ * holding their own valid cookie could loop either one and turn a single order
+ * into unbounded outbound traffic on the merchant's quota. Nothing is forged and
+ * no state is corrupted; the cost is provider standing, which is the merchant's
+ * to lose.
+ *
+ * Two buckets, because they stop different things. The order bucket is what
+ * actually protects the quota, since one order is one attempt is one provider
+ * call. The address bucket stops one client sweeping many orders it happens to
+ * hold capabilities for.
+ *
+ * `checkRateLimit` fails open without KV, deliberately: a missing binding must
+ * not make a payment unrecoverable for every buyer.
+ */
+async function enforceCapabilityRateLimit(
+  sessions: KVNamespace | undefined,
+  clientIp: string,
+  orderNumber: string,
+  scope: "status" | "retry",
+): Promise<Response | null> {
+  const limits = scope === "retry"
+    // Retry creates an attempt and reserves stock, so it is held much tighter
+    // than a read.
+    ? { perOrder: 5, perAddress: 10, windowMs: 10 * 60_000 }
+    : { perOrder: 12, perAddress: 40, windowMs: 60_000 };
+
+  for (const [key, limit] of [
+    [`doku-${scope}-order:${orderNumber}`, limits.perOrder],
+    [`doku-${scope}-ip:${clientIp}`, limits.perAddress],
+  ] as const) {
+    const result = await checkRateLimit(sessions, key, limit, limits.windowMs);
+    if (!result.allowed) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Terlalu banyak permintaan status pembayaran. Cuba sebentar lagi.",
+          code: "DOKU_RATE_LIMITED",
+        }),
+        {
+          status: 429,
+          // `dokuNoStoreHeaders` keeps this response uncacheable like every
+          // other on this path; the retry hints ride alongside it.
+          headers: dokuNoStoreHeaders(
+            rateLimitHeaders(result.remaining, result.resetAt) as Record<string, string>,
+          ),
+        },
+      );
+    }
+  }
+  return null;
+}
+
 export async function handleDokuStatusRequest(input: {
   request: Request;
   database?: D1Database;
   rootSecret: string;
+  sessions?: KVNamespace;
+  clientIp: string;
   fetch?: typeof fetch;
   now?: () => Date;
 }): Promise<Response> {
@@ -1119,6 +1180,13 @@ export async function handleDokuStatusRequest(input: {
   }
   try {
     const access = await requestAccess(input.request, input.database, input.rootSecret);
+    const limited = await enforceCapabilityRateLimit(
+      input.sessions,
+      input.clientIp,
+      access.orderNumber,
+      "status",
+    );
+    if (limited) return limited;
     const payment = await reconcileDokuPaymentStatus(input.database, input.rootSecret, access, {
       fetch: input.fetch,
       now: input.now,
@@ -1136,6 +1204,7 @@ export async function handleDokuRetryRequest(input: {
   request: Request;
   database?: D1Database;
   rootSecret: string;
+  sessions?: KVNamespace;
   clientIp: string;
   userAgent: string;
   fetch?: typeof fetch;
@@ -1146,6 +1215,13 @@ export async function handleDokuRetryRequest(input: {
   }
   try {
     const access = await requestAccess(input.request, input.database, input.rootSecret);
+    const limited = await enforceCapabilityRateLimit(
+      input.sessions,
+      input.clientIp,
+      access.orderNumber,
+      "retry",
+    );
+    if (limited) return limited;
     const retry = await retryDokuPayment(input.database, input.rootSecret, access, {
       requestUrl: input.request.url,
       clientIp: input.clientIp,

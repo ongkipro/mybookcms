@@ -4,6 +4,7 @@ import {
   handleDokuStatusRequest,
 } from "../../../../lib/doku-payment-access.ts";
 import { getEnvValue, getRuntimeEnv } from "../../../../lib/env.ts";
+import { getClientIp } from "../../../../lib/rate-limit.ts";
 
 export const prerender = false;
 
@@ -13,6 +14,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
     request,
     database: runtime?.OMS_DB as D1Database | undefined,
     rootSecret: getEnvValue("AUTH_SECRET", runtime),
+    sessions: runtime?.SESSION as KVNamespace | undefined,
+    clientIp: getClientIp(request.headers),
   });
 };
 
