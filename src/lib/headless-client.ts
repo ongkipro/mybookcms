@@ -42,7 +42,10 @@ export type HeadlessStorefrontBootstrap = {
   content: Record<string, unknown>;
   payment: {
     cod_enabled: boolean;
-    supported_methods: string[];
+    supported_methods: Array<"cod" | "manual_transfer" | "doku">;
+    /** Present and non-empty only where a healthy DOKU config is enabled. */
+    doku_channels: Array<{ code: string; label: string }>;
+    doku_requires_email: boolean;
   };
 };
 
@@ -56,7 +59,13 @@ export type HeadlessCheckoutInput = {
   district: string;
   province: string;
   postal_code: string;
-  payment_method: "cod" | "manual_transfer";
+  /**
+   * `doku` is accepted by `POST /api/v1/checkout` wherever the install has a
+   * healthy enabled DOKU configuration. Read `payment.supported_methods` from
+   * `GET /api/v1/storefront` rather than assuming; `doku` additionally
+   * requires `customer_email`, and `manual_transfer` a `seller_bank_account_id`.
+   */
+  payment_method: "cod" | "manual_transfer" | "doku";
   seller_bank_account_id?: number;
   variant_id: string | number;
   quantity: number;
@@ -144,12 +153,33 @@ export class HeadlessApiClient {
     ) {
       throw new HeadlessApiError(502, "INVALID_API_RESPONSE", "payment tidak sesuai kontrak API.");
     }
+    // An unknown method is dropped rather than passed through. A client that
+    // rendered one could only offer the buyer a choice checkout will refuse.
+    const known: ReadonlyArray<"cod" | "manual_transfer" | "doku"> = [
+      "cod",
+      "manual_transfer",
+      "doku",
+    ];
+    const supported = (payment.supported_methods as string[]).filter(
+      (value): value is "cod" | "manual_transfer" | "doku" =>
+        (known as readonly string[]).includes(value),
+    );
+    // Absent on an install that predates A-231, so treated as "no DOKU" rather
+    // than as a contract violation: an older store genuinely has none.
+    const channels = Array.isArray(payment.doku_channels) ? payment.doku_channels : [];
     return {
       storefront: requireRecord(envelope.storefront, "storefront"),
       content: requireRecord(envelope.content, "content"),
       payment: {
         cod_enabled: payment.cod_enabled === true,
-        supported_methods: payment.supported_methods,
+        supported_methods: supported,
+        doku_channels: channels.flatMap((value) => {
+          const channel = value as { code?: unknown; label?: unknown };
+          return typeof channel?.code === "string" && typeof channel?.label === "string"
+            ? [{ code: channel.code, label: channel.label }]
+            : [];
+        }),
+        doku_requires_email: payment.doku_requires_email === true,
       },
     };
   }

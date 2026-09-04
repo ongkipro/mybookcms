@@ -117,12 +117,30 @@ test("buyer-facing components do not mix Indonesian into Malay copy", () => {
   }
 });
 
+/**
+ * Source with comments removed.
+ *
+ * These checks assert that a file does not *expose* a credential or a
+ * configuration identity, and a grep over raw source cannot tell the difference
+ * between exposing `environment` and a comment promising not to. Stripping
+ * comments first is what makes the assertion about the code.
+ */
+function codeOnly(source: string) {
+  return source
+    .replace(/\/\*[\s\S]*?\*\//g, " ")
+    .replace(/(^|[^:])\/\/[^\n]*/g, "$1");
+}
+
 test("canonical checkout exposes one hosted DOKU choice without card fields or provider leakage", () => {
   const checkout = read("src/components/storefront/forms/MalaysiaCheckoutForm.astro");
   const legal = read("src/data/legal.ts");
   const legalPage = read("src/components/storefront/shared/LegalPage.astro");
   const styles = read("src/styles/form-hybrid.css");
   const methods = read("src/pages/api/payment-methods.ts");
+  // A-231 moved availability resolution into one shared module so the hosted
+  // and headless surfaces cannot disagree; the DOKU lookup now lives there.
+  const availability = read("src/lib/payment-availability.ts");
+  const headlessStorefront = read("src/pages/api/v1/storefront.ts");
   assert.match(checkout, /E-mel untuk pembayaran DOKU/);
   assert.match(checkout, /DOKU menggunakan e-mel dan maklumat pesanan ini untuk menyediakan pembayaran dan resit/);
   assert.match(checkout, /href="\/dasar-privasi#pembayaran-doku" target="_blank" rel="noopener"/);
@@ -145,8 +163,22 @@ test("canonical checkout exposes one hosted DOKU choice without card fields or p
   assert.match(styles, /\.doku-privacy-link[\s\S]+min-height: 44px/);
   assert.match(styles, /\.doku-privacy-link:focus-visible/);
   assert.doesNotMatch(checkout, /name=["'](?:pan|card_number|cvv|cvc)["']/i);
-  assert.match(methods, /getEnabledDokuConfig/);
-  assert.doesNotMatch(methods, /clientId|apiKey|secretKey|configRevision|environment/);
+  assert.match(availability, /getEnabledDokuConfig/);
+  assert.match(methods, /resolvePaymentAvailability/);
+  // No public payment surface may name a credential or a configuration
+  // identity. Checked on all three, because the headless read is now a second
+  // place an enabled DOKU configuration becomes visible.
+  for (const [name, source] of [
+    ["payment-methods", methods],
+    ["payment-availability", availability],
+    ["v1/storefront", headlessStorefront],
+  ] as const) {
+    assert.doesNotMatch(
+      codeOnly(source),
+      /clientId|apiKey|secretKey|configRevision|environment/,
+      `${name} must not expose a DOKU credential, environment, or configuration revision`,
+    );
+  }
 
   for (const route of ["result", "return", "cancel"]) {
     const recovery = read(`src/pages/payment/doku/${route}.astro`);

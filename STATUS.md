@@ -142,6 +142,17 @@ point. Redaction is structural: labels are composed from typed columns and
 stored prose is never selected, which is what keeps `notifications.body` — the
 one column that carries a customer's name — out of the response.
 
+The hosted and headless payment reads now share one resolver, so an install
+cannot advertise different payment methods on its two surfaces. Enabling DOKU
+moves both together; disabling COD moves both together; neither response
+carries a credential, environment, or configuration revision. That closes
+A-231. It also confirmed A-232 rather than resolving it: with
+`stores.is_cod_enabled = 0` both reads correctly reported COD unavailable while
+`POST /api/submit-order` still accepted and persisted a COD order. The toggle is
+presentation-only end to end, latent in shipped installs only because no admin
+surface writes the column. Whether to enforce it or remove it is the user's
+call and remains open.
+
 ## Verified local evidence
 
 - The clean isolated D1 chain is at schema version 60 with 2,931 official Malaysia postcode rows,

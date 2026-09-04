@@ -1,0 +1,136 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import {
+  resolvePaymentAvailability,
+  supportedPaymentMethods,
+  type PaymentAvailability,
+} from "./payment-availability.ts";
+import { buildDokuPaymentMethod } from "./payment-brand.ts";
+
+/**
+ * These exist because two endpoints answered "which payment methods does this
+ * install offer?" and gave different answers. `GET /api/v1/storefront` returned
+ * a literal that omitted `doku` while `POST /api/v1/checkout` accepted it, so
+ * an operator could enable DOKU and have every headless storefront hide it.
+ *
+ * The property worth pinning is therefore not any single value but that the
+ * answer is derived from D1 at all, and that it changes when the store changes.
+ */
+
+function availability(overrides: Partial<PaymentAvailability> = {}): PaymentAvailability {
+  return {
+    codEnabled: true,
+    sellerBankAccounts: [],
+    doku: null,
+    ...overrides,
+  };
+}
+
+const ACTIVE_BANK = {
+  id: 1,
+  bank_code: "MAYBANK",
+  account_holder: "MyBookCMS Malaysia",
+  account_number: "114012345678",
+  is_active: 1,
+};
+
+test("COD is offered only while the store flag allows it", () => {
+  assert.deepEqual(supportedPaymentMethods(availability({ codEnabled: true })), ["cod"]);
+  assert.deepEqual(supportedPaymentMethods(availability({ codEnabled: false })), []);
+});
+
+test("manual transfer needs an active bank account, not merely a row", () => {
+  assert.deepEqual(
+    supportedPaymentMethods(availability({ sellerBankAccounts: [ACTIVE_BANK] })),
+    ["cod", "manual_transfer"],
+  );
+  // `persistOrder` refuses manual transfer without an active account, so
+  // advertising it here would send the buyer down a path the server rejects.
+  assert.deepEqual(
+    supportedPaymentMethods(
+      availability({ sellerBankAccounts: [{ ...ACTIVE_BANK, is_active: 0 }] }),
+    ),
+    ["cod"],
+  );
+});
+
+test("an enabled DOKU configuration adds exactly one hosted method", () => {
+  // Built by the real builder rather than hand-written, so this cannot pass
+  // against a shape the runtime never produces.
+  const doku = buildDokuPaymentMethod(["INTERNET_BANKING_FPX"]);
+  assert.ok(doku, "the builder must produce a method for an allowlisted channel");
+  const withDoku = availability({ doku });
+  assert.equal(doku.channels.length, 1);
+  assert.equal(doku.channels[0].code, "INTERNET_BANKING_FPX");
+
+  // A code outside the allowlist yields no method at all, so an unrecognised
+  // channel can never reach a storefront as an offerable option.
+  assert.equal(buildDokuPaymentMethod(["FPX"]), null);
+  assert.equal(buildDokuPaymentMethod([]), null);
+  assert.deepEqual(supportedPaymentMethods(withDoku), ["cod", "doku"]);
+  assert.deepEqual(supportedPaymentMethods(availability({ doku: null })), ["cod"]);
+});
+
+/** A D1 stand-in that answers by matching the table named in the statement. */
+function fakeDatabase(options: {
+  codEnabled?: boolean;
+  banks?: Array<typeof ACTIVE_BANK>;
+  storeThrows?: boolean;
+}): D1Database {
+  return {
+    prepare() {
+      return {
+        bind() {
+          return this;
+        },
+        async first() {
+          if (options.storeThrows) throw new Error("D1_ERROR");
+          return { is_cod_enabled: options.codEnabled === false ? 0 : 1 };
+        },
+        async all() {
+          if (options.storeThrows) throw new Error("D1_ERROR");
+          return { results: options.banks ?? [], success: true, meta: {} };
+        },
+      };
+    },
+  } as unknown as D1Database;
+}
+
+const NO_LOCALS = {} as App.Locals;
+
+test("availability is read from D1 rather than asserted", async () => {
+  const enabled = await resolvePaymentAvailability(
+    NO_LOCALS,
+    fakeDatabase({ codEnabled: true, banks: [ACTIVE_BANK] }),
+  );
+  assert.equal(enabled.codEnabled, true);
+  assert.equal(enabled.sellerBankAccounts.length, 1);
+
+  const disabled = await resolvePaymentAvailability(
+    NO_LOCALS,
+    fakeDatabase({ codEnabled: false }),
+  );
+  assert.equal(disabled.codEnabled, false);
+  assert.deepEqual(supportedPaymentMethods(disabled), []);
+});
+
+test("a transient store read failure leaves COD available rather than closing the shop", async () => {
+  // Asymmetric on purpose: an unreadable store falls back to the column default,
+  // while an unreadable DOKU configuration is never presented as available.
+  const result = await resolvePaymentAvailability(NO_LOCALS, fakeDatabase({ storeThrows: true }));
+  assert.equal(result.codEnabled, true);
+  assert.equal(result.doku, null);
+});
+
+test("no database at all yields the safe default without throwing", async () => {
+  const result = await resolvePaymentAvailability(NO_LOCALS, null);
+  assert.deepEqual(result, { codEnabled: true, sellerBankAccounts: [], doku: null });
+});
+
+test("DOKU is absent whenever no credential secret is configured", async () => {
+  // `getEnabledDokuConfig` is only reached with an `AUTH_SECRET`; without one
+  // the method must not appear, because nothing could have been decrypted.
+  const result = await resolvePaymentAvailability(NO_LOCALS, fakeDatabase({}));
+  assert.equal(result.doku, null);
+  assert.ok(!supportedPaymentMethods(result).includes("doku"));
+});

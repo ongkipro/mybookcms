@@ -1,6 +1,11 @@
 import type { APIRoute } from 'astro';
 import { handleOptions, headlessError, headlessOk, validateHeadlessRequest } from '../../../lib/headless-api';
 import { getTenantHomeContent } from '../../../lib/tenant-content';
+import { getRuntimeEnv } from '../../../lib/env';
+import {
+  resolvePaymentAvailability,
+  supportedPaymentMethods,
+} from '../../../lib/payment-availability';
 
 export const prerender = false;
 
@@ -25,6 +30,15 @@ export const GET: APIRoute = async ({ request, locals }) => {
       ));
     }
 
+    // Resolved, never asserted. This block used to be a literal that omitted
+    // `doku` entirely, so an install with DOKU enabled told every headless
+    // storefront the option did not exist while the checkout endpoint accepted
+    // it. It now reads the same D1 facts as `GET /api/payment-methods`.
+    const availability = await resolvePaymentAvailability(
+      locals,
+      getRuntimeEnv(locals)?.OMS_DB as D1Database | undefined,
+    );
+
     return validation.finalize(headlessOk(
       {
         storefront: {
@@ -41,8 +55,17 @@ export const GET: APIRoute = async ({ request, locals }) => {
         },
         content: homeContent.content,
         payment: {
-          cod_enabled: true,
-          supported_methods: ['cod', 'manual_transfer'],
+          cod_enabled: availability.codEnabled,
+          supported_methods: supportedPaymentMethods(availability),
+          // Labels only. No credential, environment, or configuration revision
+          // crosses this public boundary.
+          doku_channels: availability.doku
+            ? availability.doku.channels.map((channel) => ({
+                code: channel.code,
+                label: channel.label,
+              }))
+            : [],
+          doku_requires_email: Boolean(availability.doku),
         },
       },
       200,

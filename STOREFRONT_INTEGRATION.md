@@ -14,9 +14,12 @@ This contract applies to a public storefront consuming one MyBookCMS install.
   configuration also offers one hosted `doku` choice carrying only its
   allowlisted Malaysia channels. `manual_transfer` requires an active seller
   bank account and `doku` requires a customer e-mail, both enforced server-side.
-  Do not hard-code the set: `GET /api/v1/storefront` still returns a fixed
-  `payment.supported_methods` that omits `doku`, which `A-231` is open to fix,
-  so treat that field as incomplete and confirm against the install.
+  Do not hard-code the set. `GET /api/v1/storefront` returns
+  `payment.supported_methods` resolved from the install's own state, alongside
+  `payment.doku_channels` (allowlisted labels only, empty when DOKU is off) and
+  `payment.doku_requires_email`. It shares one resolver with the hosted
+  `GET /api/payment-methods`, so the two cannot report different states for one
+  store. No credential, environment, or configuration revision crosses either.
 - Search the local Malaysia directory, retain its location identifier, and
   request shipping with the selected five-digit postcode and cart weight.
   Display the returned D1-owned state/WP quote only for its validity window.

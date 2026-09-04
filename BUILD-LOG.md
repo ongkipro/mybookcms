@@ -7,6 +7,39 @@
 > product's infrastructure and mean nothing to a reader of this repository.
 > The engineering narrative is unchanged.
 
+## 2026-09-04 — One resolver for payment availability
+
+- A-231. `GET /api/v1/storefront` returned a literal
+  `{ cod_enabled: true, supported_methods: ['cod', 'manual_transfer'] }` while
+  `GET /api/payment-methods` beside it resolved the same question from D1. An
+  operator could enable DOKU, have `POST /api/v1/checkout` accept
+  `payment_method: "doku"`, and still have every headless storefront told the
+  option did not exist. The shipped SDK compounded it: `HeadlessCheckoutInput`
+  typed the field `"cod" | "manual_transfer"`.
+- Fixed by extraction rather than by duplication. `src/lib/payment-availability.ts`
+  is now the single resolver both endpoints call, so they can only disagree by
+  being wrong together. `supported_methods` also drops `manual_transfer` when no
+  seller bank account is active, because `persistOrder` refuses it and offering
+  it sent the buyer to a rejection.
+- Proven against a running install: DOKU disabled gave
+  `["cod", "manual_transfer"]`; enabling one sandbox configuration with two
+  channels moved both endpoints to include `doku` together, with labels and no
+  credential, environment, or revision in either response; `is_cod_enabled = 0`
+  moved both again.
+- An existing source-text test pinned `getEnabledDokuConfig` to
+  `payment-methods.ts`. It now follows the call into the shared module and also
+  checks the headless endpoint. Its credential-exposure assertion strips
+  comments first, because it had started matching a comment that promised not to
+  expose `environment`.
+- A-232 was reproduced in the same session and is now demonstrated rather than
+  inferred. With `is_cod_enabled = 0` both read surfaces correctly reported COD
+  unavailable, and `POST /api/submit-order` with `payment_method: "cod"` still
+  answered success and persisted order INV-10001 as COD. The control is
+  presentation-only end to end. It stays latent in shipped installs only because
+  no admin surface writes the column. The fix is not made here: A-232 asks the
+  user to choose between enforcing the toggle and removing it.
+- 437/437 tests, zero diagnostics, clean build.
+
 ## 2026-09-04 — Operator system log
 
 - A-225 adds `/admin/settings/log`, a read-only merge of the system events D1

@@ -246,7 +246,34 @@ export const headlessOpenApiDocument = {
           timestamp: { type: "string", format: "date-time" },
           storefront: { type: "object" },
           content: { type: "object" },
-          payment: { type: "object" },
+          // Described rather than left as a bare object: a consumer that
+          // hard-codes the method list gets it wrong the moment an operator
+          // enables DOKU, which is exactly what happened before A-231.
+          payment: {
+            type: "object",
+            required: ["cod_enabled", "supported_methods"],
+            properties: {
+              cod_enabled: { type: "boolean" },
+              supported_methods: {
+                type: "array",
+                items: { type: "string", enum: ["cod", "manual_transfer", "doku"] },
+              },
+              doku_channels: {
+                type: "array",
+                description:
+                  "Allowlisted Malaysia channel labels for the enabled DOKU configuration. Empty when DOKU is not enabled. Carries no credential, environment, or configuration revision.",
+                items: {
+                  type: "object",
+                  required: ["code", "label"],
+                  properties: {
+                    code: { type: "string" },
+                    label: { type: "string" },
+                  },
+                },
+              },
+              doku_requires_email: { type: "boolean" },
+            },
+          },
         },
       },
       ProductVariant: {

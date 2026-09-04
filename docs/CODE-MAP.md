@@ -125,7 +125,7 @@ All use `BaseLayout` unless noted. `GeoIpResolvedForm` is a thin wrapper around 
 | `/api/shipping-rates` | `pages/api/shipping-rates.ts` | GET | `malaysia-shipping`, `rate-limit` | Quote by trusted location id + cart weight. |
 | `/api/shipping-options` | `pages/api/shipping-options.ts` | GET | re-exports `shipping-rates` | Alias. |
 | `/api/locations` | `pages/api/locations.ts` | GET | `malaysia-locations`, `rate-limit` | Postcode/city/state search over `malaysia_postcodes`. |
-| `/api/payment-methods` | `pages/api/payment-methods.ts` | GET | `doku-config`, `payment-brand` | COD, active seller bank accounts, DOKU channels when healthy. |
+| `/api/payment-methods` | `pages/api/payment-methods.ts` | GET | `payment-availability`, `payment-brand` | COD, active seller bank accounts, DOKU channels when healthy. Shares one resolver with `/api/v1/storefront` so the two cannot disagree. |
 | `/api/form-config` | `pages/api/form-config.ts` | GET | `catalog`, `form-config` | Product/variant bootstrap for the form. |
 | `/api/order-status` | `pages/api/order-status.ts` | POST | `order-status` | Requires `order_number` + `public_status_token`. |
 | `/api/meta-event` | `pages/api/meta-event.ts` | POST | `ads-config`, `meta-capi`, `capi-outbox`, `catalog-id`, `click-ids`, `ads-signal-policy`, `rate-limit` | Browser-initiated CAPI leg (ViewContent, InitiateCheckout, Lead, fallback Purchase). Rebuilds value from D1. |
@@ -141,7 +141,7 @@ Authenticated by `X-App-Key` or `Authorization: Bearer` (legacy `x-api-key`), sc
 | Route | File | Methods | Backing lib |
 | --- | --- | --- | --- |
 | `/api/v1/openapi.json` | `pages/api/v1/openapi.json.ts` | GET | `headless-openapi` |
-| `/api/v1/storefront` | `pages/api/v1/storefront.ts` | GET | `tenant-content` |
+| `/api/v1/storefront` | `pages/api/v1/storefront.ts` | GET | `tenant-content`, `payment-availability` |
 | `/api/v1/products` | `pages/api/v1/products/index.ts` | GET | `catalog` |
 | `/api/v1/products/[slug]` | `pages/api/v1/products/[slug].ts` | GET | `catalog` |
 | `/api/v1/geo/districts` | `pages/api/v1/geo/districts.ts` | GET | `malaysia-locations` |
@@ -264,7 +264,7 @@ Each module has a sibling `*.test.ts` unless marked (no test). Run all with `npm
 | Catalog and content | `catalog` (no test; public projection), `catalog-data` (admin rows), `catalog-id` (no test; `p{id}-v{id}`), `product-mutation`, `storefront-content` (home/product published copy), `ai-content-instructions`, `storefront-locale` (`formatMyr`), `image-derivative`, `daily-rotation` |
 | Landing pages | `landing-pages` (CMS pages + shortcodes, 869 lines), `native-landing-pages` (register validation), `embed-markup` (snippet + version), `embed-security` (frame-ancestors), `form-config` |
 | Orders and shipping | `order-schema` (zod submit schema), `validation` (Malaysia phone/name rules), `order-persistence` (order number + one batch write), `order-lifecycle` (status transitions, stock restoration), `order-status` (public token read), `malaysia-locations`, `malaysia-shipping` (zone/weight quote), `malaysia-states` (no test), `crm-template` (WhatsApp messages), `public-store` (no test) |
-| Payments | `payment-brand`, `seller-bank-account`, `payment-operations` (redacted admin view), `doku-config` (encrypted credentials), `doku-signature` (Global HMAC), `doku-client`, `doku-checkout` (hosted checkout create), `doku-notification`, `doku-payment-lifecycle`, `doku-payment-access` (buyer capability, 1165 lines), `doku-reconciliation` (cron), `encrypted-secret` (AES-GCM) |
+| Payments | `payment-brand`, `payment-availability` (the one resolver both payment reads share), `seller-bank-account`, `payment-operations` (redacted admin view), `doku-config` (encrypted credentials), `doku-signature` (Global HMAC), `doku-client`, `doku-checkout` (hosted checkout create), `doku-notification`, `doku-payment-lifecycle`, `doku-payment-access` (buyer capability, 1165 lines), `doku-reconciliation` (cron), `encrypted-secret` (AES-GCM) |
 | Advertising | `ads-config`, `ads-secret`, `ads-signal-policy`, `click-ids` (cookie + UTM), `meta-capi` (Graph v26.0), `meta-identity` (no test; hashing inputs), `meta-admin-form`, `capi-outbox` (lease/retry/prune), `accepted-order-meta` (no test), `google-catalog` (feed XML) |
 | Headless | `headless-api` (auth, scopes, CORS, audit), `headless-client` (SDK), `headless-openapi`, `developer-api-keys` |
 | Rendering helpers | `json-ld`, `json-script`, `html-escape`, `checkout-navigation`, `ui-variants` (no test), `cn` (no test), `api` (no test), `utils` (empty) |
@@ -348,5 +348,6 @@ Local commands: `npm run db:migrate:local`, `npm run db:seed:malaysia:local`, `n
 | Touch Meta/Google tracking | `components/storefront/tracking/AdsBase.astro`, `lib/meta-capi.ts`, `lib/capi-outbox.ts`, `pages/api/meta-event.ts`, `lib/google-catalog.ts` |
 | Change public copy or legal text | `data/legal.ts`, `lib/storefront-content.ts`, `/admin/content` |
 | Change embed behaviour | `public/mybook-form-widget.js`, `pages/embed/form.astro`, `lib/embed-markup.ts` (bump snippet version), `lib/embed-security.ts` |
+| Change which payment methods an install offers | `lib/payment-availability.ts` — both the hosted and headless reads go through it |
 | Add a source to the system log | `lib/system-log.ts` — every label is composed from structured columns, never stored prose |
 | Change session, login, or roles | `lib/auth.ts`, `lib/admin-credentials.ts`, `pages/hello.astro`, `src/middleware.ts` |
