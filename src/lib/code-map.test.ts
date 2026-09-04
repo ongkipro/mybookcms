@@ -212,16 +212,21 @@ test("a row's route and its file cell describe the same file", () => {
   // passes every other check here: the route exists, the file exists, and the
   // methods match. The map would be internally consistent and still wrong.
   const wrong: string[] = [];
+  let paired = 0;
   for (const line of map.split("\n")) {
     if (!line.startsWith("| `")) continue;
     const cells = line.split("|").map((cell) => cell.trim());
     const route = cells[1]?.replace(/`/g, "").replace(/^(?:GET|POST|PUT|PATCH|DELETE|OPTIONS|ALL)\s+/, "");
     const file = cells[2]?.replace(/`/g, "");
     if (!route?.startsWith("/") || !file?.startsWith("pages/")) continue;
+    paired += 1;
     const derived = routeForPageFile(file.slice("pages/".length));
     const documented = route.split("?")[0].replace(/\/$/, "") || "/";
     if (derived !== documented) wrong.push(`${documented} is paired with ${file}, which serves ${derived}`);
   }
+  // Without this the test passes vacuously if the tables ever gain a leading
+  // column and every cell index shifts by one.
+  assert.ok(paired > 50, `expected many route/file pairs to evaluate, found ${paired}`);
   assert.deepEqual(wrong, [], `\n  ${wrong.join("\n  ")}`);
 });
 
@@ -237,7 +242,9 @@ test("an endpoint exporting a method the map omits is caught", () => {
     const file = cells[2]?.replace(/`/g, "");
     if (!file?.startsWith("pages/api/")) continue;
     const methods = [...(cells[3] ?? "").matchAll(/\b(GET|POST|PUT|PATCH|DELETE|OPTIONS|ALL)\b/g)].map((m) => m[1]);
-    if (methods.length === 0) continue;
+    // An empty Methods cell is recorded as an empty set rather than skipped: a
+    // row that documents no method at all should still fail against a file that
+    // exports several, not become invisible.
     documented.set(file, new Set(methods));
   }
   assert.ok(documented.size > 15, `expected many documented endpoints, found ${documented.size}`);

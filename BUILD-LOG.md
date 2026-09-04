@@ -61,7 +61,20 @@ move the failure to the buyer. The reason is now written where it will be read.
 
 The reviewer's sharpest point was about the tests, not the code: several were
 regex over source, and one asserted the exact expression that carried the bug.
-That one is now a unit. 447/447 tests, zero diagnostics, clean build.
+That one is now a unit.
+
+A second independent review of the remediation returned `PASS` and left three
+low findings, all since closed. The per-source ceiling had been over-corrected:
+an eighth of the total meant the response could never reach half its stated
+maximum, and an operator chasing a reconciliation loop saw 25 payment events
+instead of a month of them. It is now the total divided by the source count, so
+every source keeps its full share and nothing is wasted. The sheet focus
+fallback was a document-wide query and is now scoped to this workspace's own
+container. And the code-map pairing check gained a minimum-row assertion, since
+it would have passed vacuously if the tables ever gained a leading column, while
+an endpoint documenting no method at all is no longer skipped.
+
+447/447 tests, zero diagnostics across 361 files, clean build.
 
 ## 2026-09-04 — Shipping workspace split into jobs, and the draft it was losing
 

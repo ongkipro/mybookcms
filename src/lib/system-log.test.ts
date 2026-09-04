@@ -211,6 +211,21 @@ test("a noisy source is bounded and does not crowd out the others", async () => 
 
   assert.ok(entries.length <= SYSTEM_LOG_MAX_ENTRIES, "the response is not bounded");
 
+  // The noisy source is capped at its share and no more. Only one source is
+  // saturated here, so the total is small on purpose — asserting a large total
+  // would be asserting the fixture, not the behaviour.
+  const noisy = entries.filter((entry) => entry.source === "api").length;
+  const share = SYSTEM_LOG_MAX_ENTRIES / 5;
+  assert.equal(
+    noisy,
+    share,
+    `a noisy source should contribute exactly its share (${share}), got ${noisy}`,
+  );
+  // Five sources at that share fill the budget exactly: nothing is wasted, and
+  // no source can take another's. An earlier ceiling of an eighth made the
+  // response unable to reach half its stated maximum.
+  assert.equal(share * 5, SYSTEM_LOG_MAX_ENTRIES);
+
   // The point of a per-source ceiling. An earlier version set it equal to the
   // total, so 200 API rows filled the response and every schema, payment, order
   // and advertising entry was dropped by the final slice — while this test,

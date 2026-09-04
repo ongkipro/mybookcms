@@ -51,15 +51,24 @@ export const SYSTEM_LOG_MAX_ENTRIES = 200;
 /** Nothing older than this is listed, whatever its source retains. */
 export const SYSTEM_LOG_WINDOW_DAYS = 30;
 
+/** Schema, ads, payment, order, api. */
+const SOURCE_COUNT = 5;
+
 /**
- * Per-source ceiling. It has to be a real fraction of the total, not the total:
- * with both set to 200, a burst of API-audit rows filled the response and every
- * schema, payment, order and advertising entry was dropped by the final slice —
- * exactly the crowding the comment claimed to prevent. Four database-backed
- * sources, so an eighth each leaves room for all of them and still lets a busy
- * source dominate what remains.
+ * Per-source ceiling, sized so the final slice can never drop anything.
+ *
+ * It first equalled the total, which meant a burst of API-audit rows filled the
+ * response and pushed every schema, payment, order and advertising entry out —
+ * the exact crowding the comment claimed to prevent. Over-correcting to an
+ * eighth was worse in a quieter way: the response could not exceed 101 of its
+ * 200 entries, and an operator chasing a reconciliation loop saw 25 payment
+ * events instead of a month of them.
+ *
+ * Dividing by the source count is the honest bound. `SOURCE_COUNT * this` is
+ * exactly the total, so every source keeps its full share, nothing is wasted,
+ * and no source can take another's.
  */
-const PER_SOURCE_LIMIT = Math.floor(SYSTEM_LOG_MAX_ENTRIES / 8);
+const PER_SOURCE_LIMIT = Math.floor(SYSTEM_LOG_MAX_ENTRIES / SOURCE_COUNT);
 
 function windowStart(now: Date): string {
   return new Date(now.getTime() - SYSTEM_LOG_WINDOW_DAYS * 24 * 60 * 60_000).toISOString();

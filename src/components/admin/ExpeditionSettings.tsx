@@ -126,6 +126,7 @@ export function ExpeditionSettings() {
    * trigger is captured on open and focused again on close.
    */
   const sheetOpenerRef = useRef<HTMLElement | null>(null);
+  const workspaceRef = useRef<HTMLDivElement | null>(null);
   const rememberOpener = () => {
     const active = document.activeElement;
     sheetOpenerRef.current = active instanceof HTMLElement ? active : null;
@@ -141,9 +142,13 @@ export function ExpeditionSettings() {
         opener.focus();
         return;
       }
-      // The row that held the trigger was re-rendered, so put focus on the
-      // selected job's tab instead of dropping it on <body>.
-      const fallback = document.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]');
+      // The row that held the trigger was re-rendered, so put focus on this
+      // workspace's selected job tab instead of dropping it on <body>. Scoped to
+      // the container rather than the document: a second tablist on the page
+      // would otherwise steal it.
+      const fallback = workspaceRef.current?.querySelector<HTMLElement>(
+        '[role="tab"][aria-selected="true"]',
+      );
       fallback?.focus();
     });
   };
@@ -639,7 +644,7 @@ export function ExpeditionSettings() {
       })}
     </ul>;
 
-  return <div className="space-y-5">
+  return <div ref={workspaceRef} className="space-y-5">
     <section className="grid grid-cols-3 gap-2 rounded-xl border border-slate-200 bg-white p-3" aria-label="Ringkasan shipping Malaysia">
       {([
         ["Zona aktif", metrics.zones],
