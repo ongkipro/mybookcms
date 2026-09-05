@@ -30,9 +30,11 @@ team. The repository is the product template; it does not deploy a store.
 - The admin remains Indonesian, with English technical labels where useful.
 - Monetary values are stored as MYR integer sen. Formatting is performed at the
   presentation or event boundary with `Intl`.
-- Buyer checkout has one mode-less full form. COD and manual bank transfer stay
-  independently available; manual transfer requires a selected active seller
-  bank account. A healthy enabled DOKU configuration adds one hosted DOKU choice
+- Buyer checkout has one mode-less full form. Manual transfer requires a
+  selected active seller bank account. COD is an Owner/Admin-controlled
+  fallback: its availability read already resolves from D1, while A-232 is the
+  accepted enforcement/control work that will make every submission path obey
+  the same flag. A healthy enabled DOKU configuration adds one hosted DOKU choice
   containing only its allowlisted Malaysia channels. Local implementation is
   complete through buyer recovery, exactly-once Ads settlement, and the accepted
   bilingual disclosure/release controls. A-221 sandbox evidence still prevents
@@ -59,7 +61,8 @@ team. The repository is the product template; it does not deploy a store.
   changes in one D1 batch before acknowledgement.
 - Capability-protected return/result/cancel routes exchange the query capability
   for an HttpOnly cookie before rendering, then resolve state from D1 or an
-  strictly validated and correlated retrieve response. The admin Payments
+  strictly validated and correlated retrieve response. A-240 will apply the
+  accepted 24-hour server-side capability lifetime. The admin Payments
   workspace stores only encrypted,
   environment-bound credentials and masked health. Bounded scheduled/manual
   reconciliation reuses the notification lifecycle and exposes redacted attempt
@@ -262,3 +265,8 @@ capability-safe recovery, reconciliation, admin/buyer surfaces, and Ads
 settlement ownership, plus the A-220 accepted bilingual disclosure and release
 controls. A-221 sandbox proof remains open; A-222/A-223 are separately approved
 production activation and observation.
+
+ADR-026 accepts Owner/Admin control of COD and makes A-232 the remaining
+end-to-end enforcement work. ADR-027 accepts a 24-hour DOKU return-capability
+lifetime and makes A-240 the remaining server-side expiry work. Neither
+decision is evidence that its source change has shipped.

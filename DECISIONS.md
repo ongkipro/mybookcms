@@ -331,3 +331,68 @@ asserting its absence is the guard.
   it from the menu.
 - **Neutral:** the role grants for `/admin/content` and `/api/admin/content` are
   unchanged; owner, admin, and advertiser reach both.
+
+## ADR-026 — COD is an Owner/Admin-controlled, server-enforced fallback
+
+- **Status:** Accepted
+- **Date:** 2026-09-05
+- **Deciders:** MyBookCMS product owner
+- **Amends:** ADR-004 and ADR-021 only for COD availability control
+
+### Context
+
+`stores.is_cod_enabled` already makes both hosted and headless availability
+reads omit COD, but neither buyer submission path consults it and no admin
+surface writes it. A direct D1 change can therefore hide COD while an attacker
+or headless client still persists a COD order. That is a presentation hint, not
+a payment control.
+
+### Decision
+
+COD remains a configurable merchant fallback. Only Owner/Admin may change its
+setting. The D1 flag must be checked in shared order persistence so both buyer
+submission paths refuse COD before any order, stock, or advertising state is
+written. The hosted form, headless read, and PDP trust copy resolve the same
+availability fact. No per-product, per-zone, or Customer Service override is
+introduced.
+
+### Consequences
+
+- **Positive:** an operator can stop accepting COD without trusting a browser
+  to honour that choice.
+- **Negative:** the shared admin payment control requires designer review and
+  browser evidence, even though the server guard itself is small.
+- **Neutral:** manual-transfer and DOKU eligibility rules remain unchanged.
+
+## ADR-027 — DOKU return capabilities expire after 24 hours
+
+- **Status:** Accepted
+- **Date:** 2026-09-05
+- **Deciders:** MyBookCMS product owner
+- **Amends:** ADR-021 buyer recovery only
+
+### Context
+
+The DOKU return token is HMAC-authenticated and removed from the visible URL by
+a secure cookie exchange, but it is a pure function of immutable identifiers.
+The current 30-minute cookie lifetime does not expire the original URL: a saved
+or leaked link can mint a new cookie indefinitely. A payment recovery link must
+remain useful after a buyer leaves checkout, but must not grant permanent order
+status/retry access.
+
+### Decision
+
+Accept a fixed 24-hour capability lifetime measured from the associated
+`payment_attempts.created_at`. The server, not cookie expiry, enforces it before
+any DOKU retrieval or retry. A later retry receives its own attempt and its own
+24-hour capability; an older capability never inherits that later attempt's
+lifetime.
+
+### Consequences
+
+- **Positive:** a normal overnight recovery remains possible while a leaked
+  historical link has a bounded impact.
+- **Negative:** an expired buyer must restart an eligible payment from the
+  normal recovery path rather than reuse an old link.
+- **Neutral:** notification authenticity, capability HMAC construction, cookie
+  flags, and the separate `/order-status` mechanism remain unchanged.

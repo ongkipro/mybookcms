@@ -42,7 +42,9 @@ money is integer sen and all public money is formatted as MYR.
 18. Delivered locally: every buyer entry point converges on the canonical full
     checkout (REQ-214).
 19. Delivered locally: one optional DOKU Malaysia hosted Checkout adapter serves
-    senangPay/DOKU merchants while COD/manual transfer remain independent.
+    senangPay/DOKU merchants while COD/manual-transfer availability is resolved
+    locally. A-232 remains to enforce the accepted Owner/Admin COD control on
+    every order-submission path.
 20. Delivered locally: encrypted provider configuration and an append-auditable
     attempt lifecycle store no raw provider/customer payload.
 21. Delivered locally: exact-raw-byte DOKU Global request and notification
@@ -128,8 +130,10 @@ not mutate the order.
   recovery cookie, then redirected to a clean URL before `BaseLayout`, Ads,
   analytics, or other browser code renders. The routes never trust query status;
   they render local state and may request strictly correlated status reconciliation
-  server-side. The capability is absent from links, DOM, referrers, logs,
-  analytics payloads, and browser storage.
+  server-side. A-240 will additionally reject the capability 24 hours after the
+  associated attempt was created, before any provider call. The capability is
+  absent from links, DOM, referrers, logs, analytics payloads, and browser
+  storage.
 - The scheduled Worker selects only bounded, due, non-terminal attempts. It
   retrieves and verifies current status, then reuses the same transition
   function as notifications. No cron path owns a second payment taxonomy.

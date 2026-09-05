@@ -102,6 +102,25 @@
 Ordered. `G-1` blocks nothing technically but is the only task with a live
 external consequence, so it is listed first and stops for the user.
 
+### Current execution order
+
+The task entries below remain the canonical queue. Two accepted R2 source tasks
+now have complete product decisions; the remaining order makes their visual,
+external, and approval gates explicit rather than mistaking them for code gaps.
+
+1. **A-240** is the next non-visual R2 task: enforce the accepted 24-hour
+   server-side DOKU recovery-capability lifetime.
+2. **A-232** enforces the accepted Owner/Admin COD control after its required
+   designer handoff, because it adds a shared admin payment control.
+3. **A-234** can start only after its required designer handoff decides the
+   shared switch's 44 px target treatment without destabilising every admin
+   list.
+4. **A-226** remains deliberately blocked until the user accepts proposal
+   REQ-230; acceptance is a product decision, not a documentation change.
+5. **A-204**, **A-221**, **A-222**, **A-223**, **G-1**, and **MYS-5** are
+   external, production, or history-rewrite gates and retain their explicit
+   approvals. A-221 must precede A-222, and A-222 must precede A-223.
+
 - [ ] **G-1** — Publish the repository. **Approval: required — never run autonomously.**
       The working tree and local history are clean, but `origin/malaysia-market-audit` still carries two commits (`b34770b`, `9be8c3f`) whose test fixtures held a real person's full name, live Malaysian mobile, and home address. Local history was rebuilt without them; the remote was deliberately left untouched because overwriting it needs the user's explicit word. Publishing before the remote is replaced would put that individual's personal data on the public internet, where it can be indexed and cached even if the repository is made private again.
       Risk: R4 — outward-facing, effectively irreversible once indexed, and personal data is involved.
@@ -434,24 +453,37 @@ Surface, and obtain the independent correctness/security review required by
       Dependencies: none.
       Done when: `GET /api/v1/storefront` resolves its payment block from the same D1 facts `GET /api/payment-methods` uses, so the two endpoints cannot disagree for one store state; an enabled DOKU install lists `doku` with its allowlisted channel labels and no credential, revision, or environment value; `HeadlessCheckoutInput.payment_method` accepts `doku` and the OpenAPI document declares the same enum; a test proves a store with DOKU enabled and one with it disabled produce different `supported_methods`; `npm run check`, `npm test`, and `npm run build` pass.
 
-- [ ] **A-232** — Decide and finish the COD availability control, which is currently wired at one end only.
+- [ ] **A-232** — Enforce the accepted Owner/Admin COD availability control end-to-end.
       Found by A-228. `stores.is_cod_enabled` exists from migration `0032` (`payment_method_toggles`) and defaults to `1`. Exactly one runtime line reads it — `GET /api/payment-methods`, which hides COD from the hosted form when it is `0`. Nothing writes it: no admin API accepts it and the Payments workspace states `COD tetap tersedia`. Nothing enforces it: `orderSubmitSchema` early-returns on `payment_method === 'cod'` without a check, and neither `POST /api/submit-order`, `POST /api/v1/checkout`, nor `persistOrder` consults the column. So the control is presentation-only. It is latent today precisely because the operator cannot reach it, but the moment a toggle is added — or the column is set directly in D1 — hiding the option in one form becomes the only thing standing between a disabled method and a persisted COD order, which contradicts the repository's own rule that browser input is never authority. `manual_transfer` is the counter-example done right: `persistOrder` requires an active seller bank account and refuses without one. Either wire COD the same way end to end, or remove the read and the column claim so nothing suggests a control that does not exist.
       **Reproduced locally 2026-09-04**, so this is demonstrated rather than inferred. Against a throwaway install with `UPDATE stores SET is_cod_enabled = 0`, both read surfaces correctly reported COD as unavailable — `GET /api/v1/storefront` returned `cod_enabled: false` with `supported_methods: ["manual_transfer", "doku"]`, and `GET /api/payment-methods` returned COD with `is_active: false`. `POST /api/submit-order` with `payment_method: "cod"` and the server's own quote then answered `success: true` and persisted order `INV-10001` as `payment_method: "cod"`, `payment_status: "unpaid"`. The control is presentation-only end to end. It remains latent in shipped installs only because no admin surface writes the column, so reaching this state needs a direct D1 write.
-      **Both directions prepared 2026-09-04, as this task asks. Neither is written; the choice is yours.**
-
-      *Direction A — enforce it.* The guard belongs in `persistOrder`, not in `orderSubmitSchema`: the schema has no database, and `persistOrder` already refuses `manual_transfer` without an active seller bank account in the same statement batch, so a COD refusal there inherits the same no-partial-state property and covers `POST /api/submit-order` and `POST /api/v1/checkout` at once. `resolvePaymentAvailability` already reads the flag, so the read is written. Then an operator needs a way to set it: `PUT /api/admin/settings` accepts `is_cod_enabled` and `/admin/payments` renders the switch beside the existing controls, whose copy currently reads `COD tetap tersedia` and would change. Finally the static trust line in `src/pages/produk/[slug].astro` follows the flag. No migration. Cost is one guard, one admin control, two copy changes, and a workerd-backed test proving a disabled store writes no order row, item, stock decrement or advertising event.
-
-      *Direction B — remove it.* One forward migration drops the column, `resolvePaymentAvailability` stops reading it and `codEnabled` becomes a constant, `payment.cod_enabled` leaves the headless contract, and no document describes a COD toggle. Worth knowing before choosing: migration `0032_payment_method_toggles` added two columns and the other one, `is_autolaris_enabled`, has **zero** runtime readers — it is a leftover of the retired Indonesian logistics provider. A removal migration would naturally take both, which makes B a genuine cleanup rather than only a retreat. Cost is one migration, one field removed from a public response, and the doc edits.
-
-      *What tips it.* A is right if an operator should ever be able to stop taking cash on delivery — a real need for a merchant whose courier stops offering it in some postcodes. B is right if COD is a permanent property of this product, in which case the column has been a promise nobody kept since migration `0032`. Nothing in `PRD.md` requires the toggle today.
+      **Decision accepted 2026-09-05: enforce the control (ADR-026).** COD is a
+      merchant operational choice, not a presentation hint. The guard belongs
+      in `persistOrder`, not in `orderSubmitSchema`: the schema has no database,
+      and `persistOrder` already refuses `manual_transfer` without an active
+      seller bank account in the same statement batch. A COD refusal there
+      therefore covers `POST /api/submit-order` and `POST /api/v1/checkout`
+      without partial state. `resolvePaymentAvailability` already reads the
+      flag. Owner/Admin needs the corresponding control in Payments, and the
+      static PDP trust line must follow the resolved availability. No migration
+      is needed.
       Risk: R2 — order acceptance policy on both submission paths; no schema change if the enforcement route is chosen, one forward migration if the removal route is.
-      Surface: `PRD.md`, `TASKS.md`, `STATUS.md`, `BUILD-LOG.md`, `ARCHITECTURE.md`, `docs/CODE-MAP.md`, `src/lib/order-persistence.ts`, `src/lib/order-persistence.test.ts`, `src/lib/order-schema.ts`, `src/lib/order-schema.test.ts`, `src/lib/payment-availability.ts`, `src/pages/api/admin/settings.ts`, `src/pages/api/payment-methods.ts`, `src/pages/admin/payments.astro`, `src/pages/produk/[slug].astro`.
+      Surface: `PRD.md`, `TASKS.md`, `STATUS.md`, `BUILD-LOG.md`, `ARCHITECTURE.md`, `DECISIONS.md`, `docs/CODE-MAP.md`, `src/lib/order-persistence.ts`, `src/lib/order-persistence.test.ts`, `src/lib/payment-availability.ts`, `src/lib/payment-availability.test.ts`, `src/pages/api/admin/settings.ts`, `src/pages/api/payment-methods.ts`, `src/pages/admin/payments.astro`, `src/components/admin/DokuPaymentSettings.tsx`, `src/pages/produk/[slug].astro`.
       A third surface turned up while taking A-229's evidence and belongs to whichever direction is chosen. `src/pages/produk/[slug].astro` line 55 renders the static trust line `Sedia dihantar • COD atau pindahan bank`. It is hard-coded copy, so on the probe install with `is_cod_enabled = 0` the product page told the buyer COD was available while the payment control correctly did not offer it. If the toggle is enforced, this copy has to follow it; if the toggle is removed, the copy is simply true again and needs no change.
-      Non-scope: the headless read contract (A-231); DOKU channel enablement, which has its own revision-bound control; changing manual-transfer or DOKU validation; adding a per-product or per-zone COD rule.
-      Primary requirement: REQ-182
-      Constraints: REQ-190, REQ-198, REQ-223
-      Dependencies: none. The choice between enforcing and removing is the user's; prepare both and report before writing either.
-      Done when: the chosen direction is recorded in `DECISIONS.md`. If enforced: a disabled COD store refuses `payment_method: "cod"` on both `POST /api/submit-order` and `POST /api/v1/checkout` before any order row, item, stock decrement, or advertising event is written, with a test proving no partial state; an owner/admin control writes the column; the hosted form and the headless read agree with the server. If removed: a forward migration drops the column, the read in `GET /api/payment-methods` goes with it, and no document continues to describe a COD toggle.
+      Non-scope: the headless read contract (A-231), except proving its existing
+      shared availability output follows the setting; DOKU channel enablement,
+      which has its own revision-bound control; changing manual-transfer or
+      DOKU validation; adding a per-product or per-zone COD rule.
+      Primary requirement: REQ-216
+      Constraints: REQ-182, REQ-190, REQ-198, REQ-223
+      Dependencies: ADR-026; required designer handoff before the first
+      browser-visible edit.
+      Done when: a disabled COD store refuses `payment_method: "cod"` on both
+      `POST /api/submit-order` and `POST /api/v1/checkout` before any order
+      row, item, stock decrement, or advertising event is written, with a test
+      proving no partial state; an Owner/Admin control writes the column;
+      Customer Service and Advertiser cannot change it; and the hosted form,
+      headless read, and PDP trust line agree with the server at 390 px and
+      1280 px without console or failed-request errors.
 
 - [x] **A-233** — Resolve the ADR ids this product cites but has never recorded. **Done locally 2026-09-04.** Dating settled the approach: the MyBookCMS baseline is `78ac143` on 2026-08-25, and every `BUILD-LOG.md` citation of ADR-013 through ADR-018 is dated 2026-08-17 or 2026-08-19, so they are genuinely upstream. But three of the decisions are still in force here and had no record at all, so they were written rather than erased: ADR-023 for reading Astro's normalized `context.url` instead of the raw request when classifying a route, ADR-024 for the single `compact-market` template, and ADR-025 for `/admin/content` staying reachable while absent from the menu. New numbers, not the upstream range: reusing `ADR-018` would make `BUILD-LOG.md`'s historical citations resolve to a different decision than the one they were written about, and a second test now forbids that. A fourth live citation turned up during the sweep — `PRD.md` `LOGIN-19` attributed the rate-limit ceiling change to ADR-014 — and there the id was dropped rather than recorded, because the row already states the reason in full. `src/lib/decision-records.test.ts` scans code, configuration, and normative documents and fails on an id `DECISIONS.md` does not define; reintroducing one into `wrangler.jsonc` was proven to fail with the file named. Migration `0044` keeps its comment, since an applied migration is never edited and ADR-024 supersedes it. 439/439 tests, zero diagnostics, clean build.
       **Surface expanded during delivery:** added `src/lib/decision-records.test.ts` and `docs/CODE-MAP.md`. The task required a check but did not name a file for it, and the map's `/admin/content` row now points at ADR-025.
@@ -599,16 +631,21 @@ No remote call, no deployment, no commit.
       Dependencies: none. Whether a delivered order should be deletable at all is the prior question and is the user's to answer.
       Done when: deleting an order whose shipping status says the goods have shipped either restores no stock or is refused, whichever the user chooses, with a workerd-backed D1 test covering delivered, in-transit and never-shipped; the existing terminal-restoration tests still pass unchanged.
 
-- [ ] **A-240** — Give the DOKU return capability an end.
+- [ ] **A-240** — Enforce the accepted 24-hour DOKU return-capability lifetime.
       Found by the same audit, which confirmed the token itself is sound: 256-bit HMAC-SHA256 over `attemptId:orderNumber`, compared in constant time, and exchanged for an `HttpOnly` cookie by a `303` before any HTML or script can observe it. What it has no end.
       The token is a pure function of two immutable values, so it is valid forever, and the loader deliberately accepts any historical attempt's token and resolves the newest. The 30-minute cookie is not a bound: whoever holds the original URL re-mints it at will. Anyone who recovers that URL later — a shared device, browser history, a URL-logging middlebox — has permanent read access to the order's status and amount and can trigger retries. There is no rotation and no revocation.
       Risk: R2 — a capability boundary on the buyer recovery path; latent, since it needs the URL to leak first.
-      Surface: `TASKS.md`, `STATUS.md`, `BUILD-LOG.md`, `ARCHITECTURE.md`, `PRD.md`, `src/lib/doku-checkout.ts`, `src/lib/doku-payment-access.ts`, `src/lib/doku-payment-access.test.ts`.
+      Surface: `TASKS.md`, `STATUS.md`, `BUILD-LOG.md`, `ARCHITECTURE.md`, `PRD.md`, `DECISIONS.md`, `src/lib/doku-checkout.ts`, `src/lib/doku-payment-access.ts`, `src/lib/doku-payment-access.test.ts`, `src/pages/payment/doku/return.astro`, `src/pages/payment/doku/result.astro`, `src/pages/payment/doku/cancel.astro`, `src/pages/api/payments/doku/status.ts`, `src/pages/api/payments/doku/retry.ts`.
       Non-scope: the signature scheme, the constant-time comparison, or the cookie exchange, all of which the audit found correct; the notification path; `/order-status`, whose token is a different mechanism and needs its own read.
       Primary requirement: REQ-222
       Constraints: REQ-219, REQ-220
-      Dependencies: none. A buyer must still be able to recover a payment they abandoned an hour ago, so the bound is a product decision before it is a code one.
-      Done when: a return capability stops being accepted after a bounded life the user has chosen, expiry is verified server-side rather than by the cookie alone, and a buyer inside the window is unaffected; a test proves an expired token is refused on status, retry and each of the three recovery routes.
+      Dependencies: ADR-027.
+      Done when: a return capability stops being accepted exactly 24 hours after
+      its associated `payment_attempts.created_at`, regardless of cookie renewal
+      or a historical attempt resolving to a newer one; expiry is verified
+      server-side before any DOKU call; a buyer inside the window is unaffected;
+      and a test proves an expired token is refused on status, retry, return,
+      result, and cancel without provider traffic or a new order/attempt.
 
 - [ ] **MYS-5** — Release readiness for a specific install. **Approval: required — never run autonomously.**
       Carried over from the retired `UNIMPLEMENTED_SPECS.md`. This is not a product gap: the product does not depend on any external courier or payment service, and a missing provider contract must never be converted into a blocker. Nothing has been deployed to Cloudflare; the local database is the only one that exists.

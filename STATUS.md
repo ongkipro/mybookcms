@@ -1,6 +1,7 @@
 # MyBookCMS Status
 
-> Verified against disk: 2026-09-04 @ MyBookCMS working tree
+> Status reviewed against disk: 2026-09-05 @ MyBookCMS working tree. Executable
+> evidence remains dated and revision-bound where recorded below.
 
 ## Current state
 
@@ -40,12 +41,6 @@ retry, stock, operator diagnostics, and Ads/browser evidence remain untested.
 A bounded headless Chrome check reached only the hosted document shell and
 rendered no payment controls; a longer attempt timed out, so it is not channel
 or payment evidence. Production remains disabled.
-
-REQ-228 and A-224 record the accepted next admin-workspace refinement only.
-`/admin/expeditions` will separate state/WP tariffs, zone/postcode coverage,
-and fallback weight bands into URL-addressable task panels with collapsible
-zone detail and contextual Sheets. The existing shipping policy/API/auth
-contract is unchanged until that queued R2 task is executed and browser-verified.
 
 The completed A-205 signal slice preserves a paid click across later
 UTM-only visits, replaces it on a new paid click, gives Meta browser/CAPI one
@@ -123,20 +118,14 @@ derived from disk rather than trusted. All thirteen dated documents were
 re-verified on 2026-09-04 and five contradictions corrected; three of them were
 variations of the same stale claim that checkout is COD and manual transfer only.
 
-That pass left three open code findings, none of them fixed under a
-documentation task. `GET /api/v1/storefront` returns a hard-coded payment set,
-so a headless storefront is never told an enabled DOKU exists and the shipped
-SDK type cannot express it (A-231). `stores.is_cod_enabled` is read only by
-`GET /api/payment-methods` and enforced on no submission path, which is latent
-only because no admin surface can currently write it (A-232). ADR-013 through
-ADR-020 are cited by `PRD.md`, `wrangler.jsonc`, migration `0044`, and a
-navigation test, but were never recorded in this repository. A-233 has since
-closed that: three of those decisions are still in force and are now written as
-this product's own ADR-023, ADR-024 and ADR-025, under new numbers so
-`BUILD-LOG.md`'s historical citations keep resolving to the upstream decisions
-they were written about. A fourth citation was dropped because the requirement
-row already stated its reason. `src/lib/decision-records.test.ts` fails on any
-ADR id cited as authority that `DECISIONS.md` does not define.
+That pass found three code/documentation gaps. A-231 now closes the hard-coded
+headless payment set with the same resolver as the hosted read; A-233 now
+records the three still-effective missing decisions as ADR-023 through ADR-025
+without reusing upstream numbers; and `src/lib/decision-records.test.ts` fails
+on an undefined ADR citation. A-232 remains open: `stores.is_cod_enabled` is
+read by payment availability but not enforced by order persistence, and no
+admin surface currently writes it. ADR-026 now accepts end-to-end Owner/Admin
+control; implementation remains deliberately queued rather than implied.
 
 Owner and admin now have one read-only `Log sistem` panel at
 `/admin/settings/log`, reachable from the shell header, the settings hub, and
@@ -183,6 +172,16 @@ after `33a29c7`, and it changes no code.
 
 This remains local evidence. No remote migration, deployment, or provider
 traffic is claimed by it.
+
+## Current execution gates
+
+The remaining queue is intentionally gate-led. ADR-026 accepts Owner/Admin COD
+control and A-232 now owns its implementation; ADR-027 accepts a 24-hour DOKU
+return-capability lifetime and A-240 now owns its implementation. A-234 still
+needs the required designer handoff before the shared switch is changed, and
+A-226 cannot begin unless the user accepts proposal REQ-230. A-204, A-221,
+A-222, A-223, G-1, and MYS-5 remain explicit external or production approvals.
+Acceptance of ADR-026/ADR-027 is not a claim that either source change shipped.
 
 An independent audit of the pre-existing payment, order and authorization core
 returned PASS with four medium findings, now A-237 through A-240. A-237 is the

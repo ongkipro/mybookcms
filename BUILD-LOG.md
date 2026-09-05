@@ -7,6 +7,27 @@
 > product's infrastructure and mean nothing to a reader of this repository.
 > The engineering narrative is unchanged.
 
+## 2026-09-05 — Roadmap and requirement-status reconciliation
+
+This was a documentation-only planning pass. It did not add a speculative
+requirement or change source, schema, provider configuration, deployment, or
+remote state. REQ-228, REQ-229, and REQ-231 were still marked `Accepted;
+planned` despite the already recorded, locally verified A-224, A-225, A-227,
+and A-228 deliveries; their PRD status now matches that evidence.
+
+The Open queue now states its actual execution order without creating a second
+backlog. The user then accepted the recommended decisions: ADR-026 keeps COD as
+an Owner/Admin-controlled payment method and requires persistence to enforce the
+same D1 flag; ADR-027 sets a 24-hour server-side lifetime for a DOKU return
+capability. A-240 is now the next non-visual R2 specification; A-232 remains
+behind its required designer handoff because it adds a shared admin control.
+A-226 still awaits explicit acceptance of proposal REQ-230; DOKU, release, CI,
+and repository-publication work retain their existing external or approval
+gates. The status document records the same distinction so a reader does not
+mistake an unimplemented decision for a code defect. Validation for this
+documentation change is the canonical task-queue regression check and whitespace
+diff check; no full build is claimed here.
+
 ## 2026-09-04 — A-236, and the contrast half of A-234
 
 **A-236.** Five endpoints had no handler for methods they do not implement, so
