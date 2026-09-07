@@ -860,3 +860,30 @@ No order was submitted and no provider request was required.
 `RUN-20260907T165031Z-9f29635d` records focused privacy regressions,
 `npm run check`, `npm test`, `npm run build`, and browser validation as PASS.
 This is local implementation evidence, not a publication or legal certification.
+
+
+## A-245 — disabled-channel recovery closure (2026-09-08)
+
+The owner accepted REQ-232 under ADR-031. A healthy enabled configuration that
+omits the committed channel now yields a specific disabled-channel reason for a
+retry-eligible failed/expired attempt. Paid, cancelled and returned order state
+takes precedence over this reason; active checkout reuse still requires the
+enabled channel and retains its previous unavailable refusal. No channel is
+substituted and the refusal creates no attempt or provider request.
+
+Return, result and cancel pages project the restriction during SSR and status
+refresh. They hide retry, explain the situation in Malay, and offer order
+tracking plus merchant contact. A dynamic refusal focuses the explanation before
+hiding retry. Stale responses cannot restore the action or replace the message;
+a paid response clears the obsolete restriction. Transient failures remain
+retryable. Result-only paid Purchase signaling and capability handling remain
+unchanged.
+
+`RUN-20260907T170400Z-46155a16` covers real-D1 classification and no-write/no-provider
+regressions, executable client tests for all three pages, full check/tests/build,
+and twelve local browser cases (initial/reload plus dynamic behavior on three
+routes at 390/1280 px). Browser API responses for dynamic race/error cases are
+mocked; initial rendering uses the actual built Worker and fictional D1 data.
+Tracking/contact keyboard navigation, focus transfer, hidden actions and no
+horizontal overflow were checked. Four screenshots passed independent visual
+critique. No sandbox lifecycle or production deployment is claimed.

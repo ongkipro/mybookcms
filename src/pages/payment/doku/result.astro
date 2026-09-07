@@ -2,7 +2,8 @@
 import {
   exchangeDokuCallbackQuery,
   loadDokuPaymentAccessFromCookie,
-  summarizeDokuPayment,
+  summarizeDokuPaymentForRecovery,
+  DOKU_CHANNEL_DISABLED_MESSAGE,
   type PublicDokuPaymentStatus,
 } from "../../../lib/doku-payment-access.ts";
 import { getEnvValue, getRuntimeEnv } from "../../../lib/env.ts";
@@ -30,7 +31,10 @@ if (exchange.type === "redirect") {
 const access = database?.prepare && rootSecret
   ? await loadDokuPaymentAccessFromCookie(database, rootSecret, Astro.request.headers.get("Cookie"))
   : null;
-const payment: PublicDokuPaymentStatus | null = access ? summarizeDokuPayment(access) : null;
+const payment: PublicDokuPaymentStatus | null = access && database
+  ? await summarizeDokuPaymentForRecovery(database, rootSecret, access)
+  : null;
+const retryBlocked = payment?.retry_blocked_reason === "DOKU_CHANNEL_DISABLED";
 type PurchaseSignalRow = { content_ids: string; content_name: string };
 const purchaseRow = access && database?.prepare
   ? await database.prepare(`
@@ -70,7 +74,9 @@ const stateCopy = {
 } as const;
 const currentCopy = payment ? stateCopy[payment.local_status] : null;
 const pageTitle = currentCopy?.[0] || "Maklumat pembayaran tidak tersedia";
-const pageIntro = currentCopy?.[1] || "Pautan ini tidak dapat disahkan atau sudah tidak sah.";
+const pageIntro = retryBlocked
+  ? DOKU_CHANNEL_DISABLED_MESSAGE
+  : currentCopy?.[1] || "Pautan ini tidak dapat disahkan atau sudah tidak sah.";
 const statusText = pageTitle;
 const amountText = payment
   ? new Intl.NumberFormat("ms-MY", { style: "currency", currency: "MYR" }).format(payment.total_amount / 100)
@@ -104,6 +110,8 @@ const amountText = payment
       button, a.button { min-height: 46px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #111; background: #111; color: #fff; padding: 0 16px; font: inherit; font-size: 14px; font-weight: 700; text-decoration: none; cursor: pointer; }
       button.secondary, a.secondary { background: #fff; color: #111; }
       button[disabled] { cursor: not-allowed; opacity: .45; }
+      button[hidden], a[hidden] { display: none; }
+      button:focus-visible, a.button:focus-visible, #payment-message:focus-visible { outline: 2px solid #111; outline-offset: 3px; }
       .note { font-size: 12px; }
     </style>
   </head>
@@ -113,7 +121,7 @@ const amountText = payment
         <section class="section">
           <p class="eyebrow">DOKU Malaysia</p>
           <h1 id="payment-heading" tabindex="-1">{pageTitle}</h1>
-          <p>{pageIntro}</p>
+          <p id="payment-intro">{pageIntro}</p>
           <span id="payment-badge" class="status">{statusText}</span>
         </section>
 
@@ -124,11 +132,12 @@ const amountText = payment
               <div class="row"><dt>Jumlah</dt><dd id="amount">{amountText}</dd></div>
               <div class="row"><dt>Status pembayaran</dt><dd id="payment-status">{statusText}</dd></div>
             </dl>
-            <p id="payment-message" class="note" role="status" tabindex="-1">{pageIntro}</p>
+            <p id="payment-message" class="note" role={retryBlocked ? "alert" : "status"} tabindex="-1">{pageIntro}</p>
             <div class="actions">
               <button id="refresh-status" type="button" class="secondary" hidden={!payment.can_reconcile} disabled={!payment.can_reconcile}>Semak status DOKU</button>
               <button id="retry-payment" type="button" hidden={!payment.can_retry} disabled={!payment.can_retry}>Cuba bayar semula</button>
-              <a class="button secondary" href="/jejak-pesanan">Semak pesanan</a>
+              <a id="track-order" class:list={["button", { secondary: !retryBlocked }]} href="/jejak-pesanan">Semak pesanan</a>
+              <a id="contact-store" class="button secondary" href="/hubungi-kami" hidden={!retryBlocked}>Hubungi pihak kedai</a>
               <a class="button secondary" href="/produk">Lihat produk</a>
             </div>
           </section>
@@ -150,7 +159,7 @@ const amountText = payment
     </script>
 
     {payment && (
-      <script is:inline define:vars={{ initialPayment: payment, purchaseSignal }}>
+      <script is:inline define:vars={{ initialPayment: payment, purchaseSignal, channelDisabledMessage: DOKU_CHANNEL_DISABLED_MESSAGE }}>
         const money = (value) => new Intl.NumberFormat('ms-MY', { style: 'currency', currency: 'MYR' }).format(Math.round(Number(value || 0)) / 100);
         const stateCopy = {
           paid: ['Pembayaran berjaya', 'Pembayaran telah disahkan.'],
@@ -161,6 +170,7 @@ const amountText = payment
           pending: ['Pembayaran sedang diproses', 'Kami sedang menunggu pengesahan pembayaran.'],
         };
         let currentPayment = initialPayment;
+        let retryBlocked = initialPayment.retry_blocked_reason === 'DOKU_CHANNEL_DISABLED';
         const once = (key) => {
           try {
             const name = `mybook_ads_${key}`;
@@ -194,23 +204,41 @@ const amountText = payment
         const setMessage = (value, isError = false) => {
           const message = document.getElementById('payment-message');
           if (!message) return;
-          message.textContent = value;
-          message.setAttribute('role', isError ? 'alert' : 'status');
+          message.textContent = retryBlocked ? channelDisabledMessage : value;
+          message.setAttribute('role', isError || retryBlocked ? 'alert' : 'status');
           if (isError) message.focus();
         };
+        const updateRecoveryActions = () => {
+          const retry = document.getElementById('retry-payment');
+          if (retry) { retry.hidden = retryBlocked || !currentPayment.can_retry; retry.disabled = retryBlocked || !currentPayment.can_retry; }
+          document.getElementById('track-order')?.classList.toggle('secondary', !retryBlocked);
+          const contact = document.getElementById('contact-store');
+          if (contact) contact.hidden = !retryBlocked;
+        };
+        const blockRetry = () => {
+          retryBlocked = true;
+          currentPayment = { ...currentPayment, can_retry: false, retry_blocked_reason: 'DOKU_CHANNEL_DISABLED' };
+          setText('payment-intro', channelDisabledMessage);
+          setMessage(channelDisabledMessage, true);
+          updateRecoveryActions();
+        };
         const setPayment = (payment) => {
-          currentPayment = payment;
+          const newlyBlocked = !retryBlocked && payment.retry_blocked_reason === 'DOKU_CHANNEL_DISABLED';
+          retryBlocked = payment.local_status !== 'paid' && (retryBlocked || newlyBlocked);
+          currentPayment = retryBlocked
+            ? { ...payment, can_retry: false, retry_blocked_reason: 'DOKU_CHANNEL_DISABLED' }
+            : payment;
           const copy = stateCopy[payment.local_status] || stateCopy.attention_required;
           setText('payment-heading', copy[0]);
           setText('payment-badge', copy[0]);
           setText('order-number', payment.order_number);
           setText('amount', money(payment.total_amount));
           setText('payment-status', copy[0]);
-          setMessage(copy[1]);
+          setText('payment-intro', retryBlocked ? channelDisabledMessage : copy[1]);
+          setMessage(copy[1], newlyBlocked);
           const refresh = document.getElementById('refresh-status');
-          const retry = document.getElementById('retry-payment');
           if (refresh) { refresh.hidden = !payment.can_reconcile; refresh.disabled = !payment.can_reconcile; }
-          if (retry) { retry.hidden = !payment.can_retry; retry.disabled = !payment.can_retry; }
+          updateRecoveryActions();
           emitPurchase(payment);
         };
         const postPayment = async (url) => {
@@ -246,6 +274,7 @@ const amountText = payment
           }
         });
         document.getElementById('retry-payment')?.addEventListener('click', async () => {
+          if (retryBlocked || !currentPayment.can_retry) return;
           const card = document.getElementById('payment-card');
           const button = document.getElementById('retry-payment');
           card?.setAttribute('aria-busy', 'true');
@@ -253,6 +282,10 @@ const amountText = payment
           setMessage('Sedang menyediakan pembayaran semula...');
           try {
             const data = await postPayment('/api/payments/doku/retry');
+            if (data?.code === 'DOKU_CHANNEL_DISABLED') {
+              blockRetry();
+              return;
+            }
             if (data?.success && data.checkout_url && window.__MYBOOK_DOKU_NAV__?.(data.checkout_url)) {
               return;
             }

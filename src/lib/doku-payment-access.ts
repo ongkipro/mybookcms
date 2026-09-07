@@ -66,6 +66,7 @@ export type PublicDokuPaymentStatus = {
   product_value_myr: number;
   expires_at: string | null;
   can_retry: boolean;
+  retry_blocked_reason: "DOKU_CHANNEL_DISABLED" | null;
   can_reconcile: boolean;
 };
 
@@ -73,6 +74,7 @@ export class DokuPaymentAccessError extends Error {
   readonly code:
     | "DOKU_ACCESS_DENIED"
     | "DOKU_UNAVAILABLE"
+    | "DOKU_CHANNEL_DISABLED"
     | "DOKU_PROVIDER_FAILED"
     | "DOKU_RETRY_NOT_ALLOWED"
     | "DOKU_STOCK_UNAVAILABLE"
@@ -447,8 +449,30 @@ export function summarizeDokuPayment(access: DokuPaymentAccess): PublicDokuPayme
     product_value_myr: Math.round(access.productValueSen) / 100,
     expires_at: access.expiresAt,
     can_retry: canRetry(access),
+    retry_blocked_reason: null,
     can_reconcile: canReconcile(access),
   };
+}
+
+export const DOKU_CHANNEL_DISABLED_MESSAGE =
+  "Kaedah pembayaran asal untuk pesanan ini telah dinyahaktifkan. Semak status pesanan atau hubungi pihak kedai untuk bantuan.";
+
+/** Read-only recovery projection; unavailable/corrupt config is not a disabled channel. */
+export async function summarizeDokuPaymentForRecovery(
+  database: D1Database,
+  rootSecret: string,
+  access: DokuPaymentAccess,
+): Promise<PublicDokuPaymentStatus> {
+  const payment = summarizeDokuPayment(access);
+  if (!payment.can_retry || !DOKU_PAYMENT_CHANNELS.some(channel => channel === access.channel)) {
+    return payment;
+  }
+  const config = await getEnabledDokuConfig(database, rootSecret);
+  if (config && !config.enabledChannels.some(channel => channel === access.channel)) {
+    payment.can_retry = false;
+    payment.retry_blocked_reason = "DOKU_CHANNEL_DISABLED";
+  }
+  return payment;
 }
 
 function canReconcile(access: DokuPaymentAccess): boolean {
@@ -622,7 +646,9 @@ export async function reconcileDokuPaymentStatus(
   access: DokuPaymentAccess,
   options: { fetch?: typeof fetch; now?: () => Date } = {},
 ): Promise<PublicDokuPaymentStatus> {
-  if (!canReconcile(access) || !access.providerReference) return summarizeDokuPayment(access);
+  if (!canReconcile(access) || !access.providerReference) {
+    return summarizeDokuPaymentForRecovery(database, rootSecret, access);
+  }
   const { config, identity } = await runtimeConfigForAttempt(database, rootSecret, access);
   const client = new DokuClient({
     environment: config.environment,
@@ -651,7 +677,7 @@ export async function reconcileDokuPaymentStatus(
     access.returnToken,
     { now: options.now },
   );
-  return updated ? summarizeDokuPayment(updated) : summarizeDokuPayment(access);
+  return summarizeDokuPaymentForRecovery(database, rootSecret, updated ?? access);
 }
 
 async function loadRetryOrder(database: D1Database, orderId: number): Promise<RetryOrder | null> {
@@ -1016,16 +1042,24 @@ export async function retryDokuPayment(
   let retryAccess = access;
   let order = await loadRetryOrder(database, access.orderId);
   if (!order) throw new DokuPaymentAccessError("DOKU_ACCESS_DENIED", 404);
+  if (PAID_ORDER_STATUSES.has(order.paymentStatus) || ["cancelled", "returned"].includes(order.shippingStatus)) {
+    throw new DokuPaymentAccessError("DOKU_RETRY_NOT_ALLOWED", 409);
+  }
   const { config, identity } = await runtimeConfigForRetry(database, rootSecret);
   const selectedChannel = retryAccess.channel;
   if (!selectedChannel || !DOKU_PAYMENT_CHANNELS.includes(selectedChannel as DokuPaymentChannel)) {
     throw new DokuPaymentAccessError("DOKU_CONFLICT", 409);
   }
-  if (!config.enabledChannels.includes(selectedChannel as DokuPaymentChannel)) {
-    throw new DokuPaymentAccessError("DOKU_UNAVAILABLE", 503);
-  }
   const now = input.now?.() ?? new Date();
   let active = await latestActiveAttempt(database, order.orderId);
+  if (!config.enabledChannels.includes(selectedChannel as DokuPaymentChannel)) {
+    // Active checkout reuse still requires the enabled channel, as before.
+    // Only a retry-eligible terminal attempt receives the new recovery reason.
+    if (canRetry(retryAccess) && !active) {
+      throw new DokuPaymentAccessError("DOKU_CHANNEL_DISABLED", 409);
+    }
+    throw new DokuPaymentAccessError("DOKU_UNAVAILABLE", 503);
+  }
   if (
     active &&
     (
@@ -1182,6 +1216,8 @@ function accessErrorMessage(error: DokuPaymentAccessError): string {
       return "Sesi pembayaran tidak ditemui.";
     case "DOKU_UNAVAILABLE":
       return "DOKU belum tersedia.";
+    case "DOKU_CHANNEL_DISABLED":
+      return DOKU_CHANNEL_DISABLED_MESSAGE;
     case "DOKU_RETRY_NOT_ALLOWED":
       return "Pembayaran ini tidak dapat dicuba semula.";
     case "DOKU_STOCK_UNAVAILABLE":

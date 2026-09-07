@@ -495,3 +495,22 @@ This is the accepted translation/presentation change from the prepared review
 draft, not a new consent mechanism or a claim of complete legal compliance.
 Other legal pages, cookie wording, collected fields and payment processing do
 not change. Local implementation approval does not itself deploy the notice.
+
+
+## ADR-031 — Recovery when a committed DOKU channel is disabled
+
+- **Status:** Accepted by the owner through authorization to execute the blocked tasks
+- **Requirement:** REQ-232
+
+Only a healthy enabled configuration that omits the canonical committed channel
+produces `DOKU_CHANNEL_DISABLED`. Configuration decryption or availability
+failures remain distinct. The initial recovery render and status response expose
+the restriction, suppress retry, and preserve the order's actual payment state.
+The buyer can track the order or contact the merchant; the existing operator
+cancellation path remains unchanged. No automatic cancellation, channel switch,
+provider traffic, or new payment intent is part of this change.
+
+A retry that encounters the restriction announces and focuses its explanation
+before hiding the action. Refresh cannot restore a futile retry or overwrite the
+explanation. Transient errors retain the existing retry behavior. All three
+return/result/cancel pages use the same server restriction contract.

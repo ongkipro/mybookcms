@@ -173,3 +173,18 @@ rather than hidden by a shared mock.
 Local logs and tests prove local paths only. Hosted alert delivery, retention,
 and third-party dashboards require separately recorded evidence for the target
 install.
+
+
+### Disabled committed-channel recovery (A-245)
+
+`DOKU_CHANNEL_DISABLED` is a buyer capability API refusal (409), not a provider
+failure or a new diagnostic log. It is returned only when an inspected healthy,
+enabled configuration omits the attempt's canonical committed channel. Missing,
+disabled or unreadable configuration retains the generic unavailable handling.
+
+The read-only recovery projection carries `retry_blocked_reason` and suppresses
+`can_retry` for retryable failed/expired attempts. Return/result/cancel render
+this before interaction, and status refresh returns the same projection. Buyer
+tracking and merchant contact remain available; the operator can inspect the
+existing order and use its existing permitted cancellation flow. No order,
+stock, attempt, channel or provider state changes merely to display this reason.

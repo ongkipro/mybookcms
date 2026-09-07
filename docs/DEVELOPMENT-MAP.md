@@ -17,7 +17,7 @@ Browser evidence is limited to the cited task's flow and viewports. No provider
 sandbox or production conclusion follows from local checks.
 
 The four A-249 blind spots now have direct route tests. A-232's COD control is
-closed; A-248 privacy copy is locally verified and A-245 recovery remains open.
+closed; A-248 privacy copy and A-245 disabled-channel recovery are locally verified.
 A-234's switch and desktop shell now have fresh browser evidence and passing
 Lighthouse accessibility/contrast checks at 390/1280 px. Old lineage identifiers are not backlog owners here.
 
@@ -39,9 +39,9 @@ Lighthouse accessibility/contrast checks at 390/1280 px. Old lineage identifiers
 | `/` | Static references: [auth.test.ts](../src/lib/auth.test.ts), [headless-openapi.test.ts](../src/lib/headless-openapi.test.ts). No direct runtime verdict inferred. | No browser verdict cited. | No open page-specific verdict claimed. |
 | `/install` | No direct route evidence cited; lower-level coverage not assessed here. | No browser verdict cited. | No open page-specific verdict claimed. |
 | `/jejak-pesanan` | Static references: [malaysia-market.test.ts](../src/lib/malaysia-market.test.ts). No direct runtime verdict inferred. | No browser verdict cited. | No open page-specific verdict claimed. |
-| `/payment/doku/cancel` | Static references: [doku-payment-access.test.ts](../src/lib/doku-payment-access.test.ts). No direct runtime verdict inferred. | No browser verdict cited. | [TASKS Open queue](../TASKS.md#open-queue): A-245: REQ-232 remains Proposal; disabled-channel recovery decision pending. |
-| `/payment/doku/result` | Static references: [doku-payment-access.test.ts](../src/lib/doku-payment-access.test.ts). No direct runtime verdict inferred. | No browser verdict cited. | No open page-specific verdict claimed. |
-| `/payment/doku/return` | No direct route evidence cited; lower-level coverage not assessed here. | No browser verdict cited. | No open page-specific verdict claimed. |
+| `/payment/doku/cancel` | [doku-payment-access.test.ts](../src/lib/doku-payment-access.test.ts): D1 refusal/status projection and executable client-state regression; no provider proof. | [STATUS A-245](../STATUS.md#a-245--disabled-channel-recovery-closure-2026-09-08): SSR/reload, dynamic restriction, focus and tracking/contact at 390/1280 px. | Disabled-channel recovery verified locally; provider lifecycle remains A-221. |
+| `/payment/doku/result` | [doku-payment-access.test.ts](../src/lib/doku-payment-access.test.ts): D1 refusal/status projection and executable client-state regression; no provider proof. | [STATUS A-245](../STATUS.md#a-245--disabled-channel-recovery-closure-2026-09-08): SSR/reload, dynamic restriction, focus and tracking/contact at 390/1280 px. | Disabled-channel recovery verified locally; provider lifecycle remains A-221. |
+| `/payment/doku/return` | [doku-payment-access.test.ts](../src/lib/doku-payment-access.test.ts): D1 refusal/status projection and executable client-state regression; no provider proof. | [STATUS A-245](../STATUS.md#a-245--disabled-channel-recovery-closure-2026-09-08): SSR/reload, dynamic restriction, focus and tracking/contact at 390/1280 px. | Disabled-channel recovery verified locally; provider lifecycle remains A-221. |
 | `/penghantaran` | No direct route evidence cited; lower-level coverage not assessed here. | No browser verdict cited. | No open page-specific verdict claimed; A-248 is limited to the privacy notice. |
 | `/produk/[slug]` | [route-surface.test.ts](../src/lib/route-surface.test.ts) — Direct runtime: variant selection/fallback, executed ViewContent payload, COD trust copy. | [STATUS A-241](../STATUS.md#a-241--fresh-http-checkout-audit-2026-09-07), [A-242](../STATUS.md#a-242--channel-contract-and-settlement-closure-2026-09-07): 390/1280 px; [A-248](../STATUS.md#a-248--bilingual-privacy-notice-closure-2026-09-07): privacy links before name, new-tab keyboard navigation and preserved input. | No open page-specific verdict claimed. |
 | `/produk` | No direct route evidence cited; lower-level coverage not assessed here. | No browser verdict cited. | No open page-specific verdict claimed. |

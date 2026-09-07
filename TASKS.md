@@ -111,8 +111,9 @@ blocked by a decision recorded elsewhere rather than by code.
 
 **Read these before executing anything in this queue.** `PRD.md` is the only
 authority for whether a requirement is accepted. A-248/REQ-211/REQ-212 are now
-accepted and verified locally under ADR-030. A-226/REQ-230 and A-245/REQ-232
-still require their accepted implementation contracts to be recorded before execution. `DECISIONS.md` carries the accepted architecture decisions those
+accepted and verified locally under ADR-030. A-245/REQ-232 is implemented under
+ADR-031. A-226/REQ-230 still requires its accepted implementation contract to be
+recorded before execution. `DECISIONS.md` carries the accepted architecture decisions those
 entries build on, most recently ADR-026 for COD and ADR-027 for capability
 lifetime. `OBSERVABILITY.md` fixes every stable signal name and its allowed
 fields; anything that adds a production log line is incomplete until it is
@@ -138,8 +139,8 @@ Decisions first, because they unblock the most and cost the least:
 
 Decision follow-through after the owner authorized the blocked tasks:
 
-4. **REQ-232** in `PRD.md` — accept or decline the buyer recovery path for a
-   channel disabled mid-payment. **A-245 must not be started before this.**
+4. **REQ-232** in `PRD.md` — accepted under ADR-031; **A-245** implements
+   disabled-channel recovery without changing the committed channel.
 5. **REQ-211/REQ-212** in `PRD.md` — accepted under ADR-030 and implemented
    locally by **A-248**, with bilingual content and first-collection links verified.
 6. **REQ-230** in `PRD.md` — **A-226** remains deliberately blocked until it is
@@ -710,8 +711,9 @@ Surface, and obtain the independent correctness/security review required by
       Dependencies: none. A-243's diagnostic helps confirm the fix but does not gate it.
       Done when: one documented command starts a local worker that reads the installed sandbox DOKU configuration and offers its channels; `INSTALLATION.md` states that command and says plainly which secret local development is authoritative under; a developer who follows the documented path does not silently get a storefront with DOKU missing; and no secret value is written into any tracked file.
 
-- [ ] **A-245** — Give a buyer whose DOKU channel was disabled mid-payment a way forward. **Blocked until REQ-232 is accepted. Do not start from this entry while its PRD row reads `Proposal`.**
-      Found by the independent Opus review of A-242 on 2026-09-07. `retryDokuPayment`
+- [x] **A-245** — Give a buyer whose DOKU channel was disabled mid-payment a way forward. **Accepted and implemented locally under ADR-031; 2026-09-08.**
+      Historical screening finding, before the closure below: the independent
+      Opus review of A-242 on 2026-09-07 found that `retryDokuPayment`
       reads the committed channel from the attempt and refuses with
       `DOKU_UNAVAILABLE` 503 when the install no longer enables it. Reusing the
       committed channel is correct and must not change: the channel is bound
@@ -721,13 +723,12 @@ Surface, and obtain the independent correctness/security review required by
       recovery page offers "try again", every attempt returns the same 503, and
       nothing on the surface says the channel is gone or what to do instead. The
       order is left inspectable in D1 but the buyer has no stated exit.
-      Not started, and deliberately so: the answer is a product decision, not an
-      implementation detail. Copy alone may be enough, or it may want an
-      operator-visible signal so the merchant learns they stranded live orders,
-      or an explicit cancel path. REQ-232 records the question.
-      Risk: R3 — buyer-facing payment recovery copy and possibly order cancellation on a live payment path.
-      Surface: to be set when REQ-232 is accepted; expected to include `src/lib/doku-payment-access.ts`, the `src/pages/payment/doku/` recovery pages, `src/styles/form-hybrid.css`, `src/lib/doku-payment-access.test.ts`, `PRD.md`, `DECISIONS.md`, `OBSERVABILITY.md`, `TASKS.md`, `STATUS.md`.
+      The owner accepted the prepared recommendation: explain the disabled
+      committed channel, suppress futile retries, and offer tracking/contact.
+      Risk: R3 — buyer-facing payment recovery on an existing payment path.
+      Surface: `src/lib/doku-payment-access.ts`, `src/lib/doku-payment-access.test.ts`, `src/pages/payment/doku/return.astro`, `src/pages/payment/doku/result.astro`, `src/pages/payment/doku/cancel.astro`, `PRD.md`, `DECISIONS.md`, `OBSERVABILITY.md`, `TASKS.md`, `STATUS.md`, `docs/DEVELOPMENT-MAP.md`.
       Non-scope: changing which channel a retry uses, relaxing the intent or idempotency binding, adding a channel-switch affordance, refunds, and any provider traffic.
+      Closure evidence: `RUN-20260907T170400Z-46155a16`; focused D1/client regression, full check/tests/build, and twelve browser cases across return/result/cancel at 390/1280 px. Terminal order state takes precedence; active checkout channel restrictions remain unchanged. See STATUS A-245.
       Primary requirement: REQ-232
       Constraints: REQ-220, REQ-222, REQ-223
       Dependencies: acceptance of REQ-232.

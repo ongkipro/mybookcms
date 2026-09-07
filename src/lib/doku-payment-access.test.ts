@@ -3,9 +3,12 @@ import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "n
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test, { after, before } from "node:test";
+import vm from "node:vm";
 import { getPlatformProxy, type PlatformProxy } from "wrangler";
 import {
   buildDokuAccessCookie,
+  summarizeDokuPaymentForRecovery,
+  DOKU_CHANNEL_DISABLED_MESSAGE,
   DOKU_RETURN_CAPABILITY_TTL_MS,
   exchangeDokuCallbackQuery,
   handleDokuRetryRequest,
@@ -697,6 +700,17 @@ test("retry refuses when the original channel is no longer enabled", async () =>
   const token = "access-disabled-channel-token-34006";
   await createAttempt(variantId, token);
   await expireAttempt(token);
+  const terminalCases = [];
+  for (const [index, state] of ["paid", "cancelled", "returned"].entries()) {
+    const caseToken = `access-disabled-terminal-${state}`;
+    await createAttempt(34009 + index, caseToken);
+    await expireAttempt(caseToken);
+    terminalCases.push({ state, token: caseToken, facts: await attemptFacts(caseToken), cookie: await accessCookie(caseToken) });
+  }
+  const activeToken = "access-disabled-active-34012";
+  await createAttempt(34012, activeToken);
+  const activeFacts = await attemptFacts(activeToken);
+  const activeCookie = await accessCookie(activeToken);
   const expired = await attemptFacts(token);
   const cookie = await accessCookie(token);
   await database.prepare(`
@@ -718,8 +732,58 @@ test("retry refuses when the original channel is no longer enabled", async () =>
       }) as typeof fetch,
       now: () => NOW,
     });
-    assert.equal(response.status, 503);
-    assert.match(await response.text(), /DOKU_UNAVAILABLE/);
+    assert.equal(response.status, 409);
+    const refusal = await response.json() as { code: string; error: string };
+    assert.equal(refusal.code, "DOKU_CHANNEL_DISABLED");
+    assert.equal(refusal.error, DOKU_CHANNEL_DISABLED_MESSAGE);
+    const access = await loadDokuPaymentAccessFromCookie(database, ROOT_SECRET, cookie, undefined, { now: () => NOW });
+    assert.ok(access);
+    const summary = await summarizeDokuPaymentForRecovery(database, ROOT_SECRET, access);
+    assert.equal(summary.can_retry, false);
+    assert.equal(summary.retry_blocked_reason, "DOKU_CHANNEL_DISABLED");
+    assert.equal(summary.local_status, "expired");
+    const status = await handleDokuStatusRequest({
+      request: new Request("https://shop.example/api/payments/doku/status", {
+        method: "POST", headers: { Cookie: cookie, "Content-Type": "application/json", Origin: "https://shop.example" },
+        body: JSON.stringify({ order_number: expired.order_number }),
+      }), database, rootSecret: ROOT_SECRET, clientIp: "203.0.113.47", now: () => NOW,
+      fetch: (async () => { providerCalls++; throw new Error("must not call provider"); }) as typeof fetch,
+    });
+    assert.equal(status.status, 200);
+    assert.deepEqual((await status.json() as {payment: unknown}).payment, summary);
+    const unavailable = await summarizeDokuPaymentForRecovery(database, "fictional-wrong-root", access);
+    assert.equal(unavailable.retry_blocked_reason, null);
+    assert.equal(unavailable.can_retry, true);
+    const paid = await summarizeDokuPaymentForRecovery(database, ROOT_SECRET, { ...access, localStatus: "paid", orderPaymentStatus: "paid" });
+    assert.equal(paid.retry_blocked_reason, null);
+    assert.equal(paid.can_retry, false);
+    assert.equal(providerCalls, 0);
+    assert.equal(await attemptCount(token), 1);
+    // Terminal order truth takes precedence; each irreversible state owns a fixture.
+    for (const fixture of terminalCases) {
+      await database.prepare("UPDATE orders SET payment_status = ?, shipping_status = ? WHERE id = ?")
+        .bind(fixture.state === "paid" ? "paid" : "failed", fixture.state === "paid" ? "pending" : fixture.state, fixture.facts.order_id).run();
+      const before = await attemptFacts(fixture.token);
+      const refusal = await handleDokuRetryRequest({
+        request: retryRequest(fixture.facts.order_number, fixture.cookie), database, rootSecret: ROOT_SECRET,
+        clientIp: "203.0.113.47", userAgent: "payment-access-test", now: () => NOW,
+        fetch: (async () => { providerCalls++; throw new Error("must not call provider"); }) as typeof fetch,
+      });
+      assert.equal(refusal.status, 409);
+      assert.equal((await refusal.json() as {code: string}).code, "DOKU_RETRY_NOT_ALLOWED");
+      assert.deepEqual(await attemptFacts(fixture.token), before);
+      assert.equal(await attemptCount(fixture.token), 1);
+    }
+    const beforeActive = await attemptFacts(activeToken);
+    const activeRefusal = await handleDokuRetryRequest({
+      request: retryRequest(activeFacts.order_number, activeCookie), database, rootSecret: ROOT_SECRET,
+      clientIp: "203.0.113.47", userAgent: "payment-access-test", now: () => NOW,
+      fetch: (async () => { providerCalls++; throw new Error("must not call provider"); }) as typeof fetch,
+    });
+    assert.equal(activeRefusal.status, 503);
+    assert.equal((await activeRefusal.json() as {code: string}).code, "DOKU_UNAVAILABLE");
+    assert.deepEqual(await attemptFacts(activeToken), beforeActive);
+    assert.equal(await attemptCount(activeToken), 1);
     assert.equal(providerCalls, 0);
     assert.equal(await attemptCount(token), 1);
   } finally {
@@ -843,4 +907,53 @@ test("without a KV binding the capability bound fails open rather than stranding
     now: () => NOW,
   });
   assert.notEqual(response.status, 429);
+});
+
+test("recovery client preserves disabled-channel restriction through stale responses", async () => {
+const message = 'Fixture channel disabled';
+for (const route of ['return', 'result', 'cancel']) {
+  const source = readFileSync(`src/pages/payment/doku/${route}.astro`, 'utf8');
+  const script = source.match(/<script is:inline define:vars=[^\n]+>\n([\s\S]*?)<\/script>/)![1];
+  const nodes = new Map<string, any>();
+  const events: string[] = [];
+  const document = { getElementById(id: string) {
+    if (!nodes.has(id)) nodes.set(id, {textContent:'', disabled:false, _hidden:false,
+      set hidden(v: boolean) { this._hidden=v; events.push(`${id}:hidden:${v}`); }, get hidden() {return this._hidden;},
+      setAttribute(k: string,v: string){(this as any)[k]=v;}, focus(){events.push(`${id}:focus`);},
+      classList:{toggle(k: string,v: boolean){events.push(`${id}:${k}:${v}`);}},
+      addEventListener(k: string,v: unknown){(this as any)[k]=v;}
+    });
+    return nodes.get(id);
+  }};
+  const initialPayment = { local_status:'failed', can_retry:true, can_reconcile:false, retry_blocked_reason:null, order_number:'FIXTURE', total_amount:100 };
+  let reply: any = {success:false,code:'DOKU_PROVIDER_FAILED',error:'Transient failure'};
+  let calls = 0;
+  vm.runInNewContext(script, {initialPayment, channelDisabledMessage:message, purchaseSignal:null, document, window:{}, Intl, fetch:async()=>{calls++;return{json:async()=>reply};}});
+  const retry=document.getElementById('retry-payment');
+  await retry.click();
+  assert.equal(retry.disabled,false,`${route}: transient retry remains enabled`);
+  assert.equal(document.getElementById('payment-message').textContent,'Transient failure');
+  events.length=0;
+  reply={success:false,code:'DOKU_CHANNEL_DISABLED'};
+  await retry.click();
+  assert.equal(retry.hidden,true);
+  assert.equal(retry.disabled,true);
+  assert.ok(events.indexOf('payment-message:focus')<events.indexOf('retry-payment:hidden:true'));
+  assert.equal(document.getElementById('contact-store').hidden,false);
+  assert.equal(document.getElementById('payment-message').textContent,message);
+  const before=calls;
+  await retry.click();
+  assert.equal(calls,before,'blocked programmatic retry sends nothing');
+  reply={success:true,payment:initialPayment};
+  await document.getElementById('refresh-status').click();
+  assert.equal(retry.hidden,true,'stale response cannot restore retry');
+  assert.equal(document.getElementById('payment-message').textContent,message,'success cannot overwrite explanation');
+  reply={success:true,payment:{...initialPayment,local_status:'paid',can_retry:false}};
+  await document.getElementById('refresh-status').click();
+  assert.equal(retry.hidden,true);
+  assert.equal(document.getElementById('contact-store').hidden,true);
+  assert.notEqual(document.getElementById('payment-message').textContent,message);
+
+}
+
 });
