@@ -42,6 +42,7 @@ test('checkout accepts only the three Malaysia payment families', () => {
     ...validOrder,
     payment_method: 'doku',
     customer_email: 'aisyah@example.com',
+    doku_channel: 'INTERNET_BANKING_FPX',
   }).success, true);
   assert.equal(orderSubmitSchema.safeParse({
     ...validOrder,
@@ -57,6 +58,25 @@ test('DOKU requires a valid customer email', () => {
   assert.equal(orderSubmitSchema.safeParse({
     ...validOrder,
     payment_method: 'doku',
+    doku_channel: 'INTERNET_BANKING_FPX',
+  }).success, false);
+});
+
+test('DOKU requires a known channel and non-DOKU methods reject one', () => {
+  assert.equal(orderSubmitSchema.safeParse({
+    ...validOrder,
+    payment_method: 'doku',
+    customer_email: 'aisyah@example.com',
+  }).success, false);
+  assert.equal(orderSubmitSchema.safeParse({
+    ...validOrder,
+    payment_method: 'doku',
+    customer_email: 'aisyah@example.com',
+    doku_channel: 'EWALLET_UNKNOWN',
+  }).success, false);
+  assert.equal(orderSubmitSchema.safeParse({
+    ...validOrder,
+    doku_channel: 'INTERNET_BANKING_FPX',
   }).success, false);
 });
 

@@ -1,6 +1,6 @@
 # MyBookCMS Architecture
 
-> Verified against disk: 2026-09-04 @ MyBookCMS working tree
+> Verified against disk: 2026-09-07 @ MyBookCMS working tree
 
 MyBookCMS is a single-store commerce CMS for Malaysia. One install owns one
 Cloudflare Worker, D1 database, KV namespace, R2 bucket, domain, and operator
@@ -34,8 +34,9 @@ team. The repository is the product template; it does not deploy a store.
   selected active seller bank account. COD is an Owner/Admin-controlled
   fallback: its availability read already resolves from D1, while A-232 is the
   accepted enforcement/control work that will make every submission path obey
-  the same flag. A healthy enabled DOKU configuration adds one hosted DOKU choice
-  containing only its allowlisted Malaysia channels. Local implementation is
+  the same flag. A healthy enabled DOKU configuration adds each allowlisted
+  Malaysia channel as a direct hosted-payment choice; there is no generic DOKU
+  chooser or locally collected card credential. Local implementation is
   complete through buyer recovery, exactly-once Ads settlement, and the accepted
   bilingual disclosure/release controls. A-221 sandbox evidence still prevents
   any live availability claim.
@@ -53,24 +54,31 @@ team. The repository is the product template; it does not deploy a store.
   origin's exact client/version/timestamp/JSON envelope plus request and D1
   correlations may pass. A malformed or invalid present signature never falls
   back. Cards-specific signatures are outside this boundary.
-- `doku-checkout.ts` persists the order, stock reservation, and attempt before
-  provider transport. Stable submit intent converges; unauthenticated,
-  mismatched, or malformed provider results expose no checkout URL.
+- `doku-checkout.ts` validates the selected channel against the active install
+  policy before persistence, binds it to the request fingerprint, and persists
+  it with the order, stock reservation, and attempt before provider transport.
+  Initial create and eligible retry send that one stored channel as the sole
+  `payment_channels` entry. Stable submit intent converges; a changed, disabled,
+  unauthenticated, mismatched, or malformed intent exposes no checkout URL.
 - `/api/payments/doku/notifications` authenticates the raw request before JSON
-  parsing and commits attempt, order, stock restoration, and deduplicated event
-  changes in one D1 batch before acknowledgement.
+  parsing, refuses a channel that contradicts the stored attempt, and commits
+  attempt, order, stock restoration, and deduplicated event changes in one D1
+  batch before acknowledgement.
 - Capability-protected return/result/cancel routes exchange the query capability
   for an HttpOnly cookie before rendering, then resolve state from D1 or an
-  strictly validated and correlated retrieve response. A-240 will apply the
-  accepted 24-hour server-side capability lifetime. The admin Payments
+  strictly validated and correlated retrieve response. The server rejects the
+  matched attempt's capability exactly 24 hours after its D1-owned creation
+  time, before provider traffic; cookie renewal and a newer retry attempt do not
+  extend it. The admin Payments
   workspace stores only encrypted,
   environment-bound credentials and masked health. Bounded scheduled/manual
   reconciliation reuses the notification lifecycle and exposes redacted attempt
   history without permitting generic DOKU status edits.
-- The canonical checkout submits one stable intent, sends the D1-owned order and
-  MYR amount to hosted DOKU Checkout, and accepts only credential-free HTTPS
-  `doku.com` navigation. No PAN, CVV, or online-banking credential crosses the
-  storefront boundary. Authoritative paid settlement owns the single DOKU Ads
+- The canonical checkout submits one stable intent with one server-validated
+  channel, sends the D1-owned order and MYR amount to hosted DOKU Checkout, and
+  accepts only credential-free HTTPS `doku.com` navigation. No PAN, CVV, or
+  online-banking credential crosses the storefront boundary. Authoritative paid
+  settlement owns the single DOKU Ads
   Purchase; initiation, pending, failure, expiry, and retry do not emit it.
 - Local reachability is not provider readiness. A-220 locally delivers the
   operator-accepted bilingual DOKU disclosure and release controls; A-221 owns
@@ -267,6 +275,5 @@ controls. A-221 sandbox proof remains open; A-222/A-223 are separately approved
 production activation and observation.
 
 ADR-026 accepts Owner/Admin control of COD and makes A-232 the remaining
-end-to-end enforcement work. ADR-027 accepts a 24-hour DOKU return-capability
-lifetime and makes A-240 the remaining server-side expiry work. Neither
-decision is evidence that its source change has shipped.
+end-to-end enforcement work. ADR-027's 24-hour DOKU return-capability lifetime
+is implemented locally by A-240; deployment remains separately gated.

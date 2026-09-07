@@ -1,11 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  paymentAvailabilityTrustLine,
   resolvePaymentAvailability,
   supportedPaymentMethods,
   type PaymentAvailability,
 } from "./payment-availability.ts";
 import { buildDokuPaymentMethod } from "./payment-brand.ts";
+import { canAccessAdminRoute } from "./auth.ts";
+import { PUT as updateSettings } from "../pages/api/admin/settings.ts";
 
 /**
  * These exist because two endpoints answered "which payment methods does this
@@ -37,6 +40,93 @@ const ACTIVE_BANK = {
 test("COD is offered only while the store flag allows it", () => {
   assert.deepEqual(supportedPaymentMethods(availability({ codEnabled: true })), ["cod"]);
   assert.deepEqual(supportedPaymentMethods(availability({ codEnabled: false })), []);
+});
+
+test("PDP payment trust copy follows every resolved availability state", () => {
+  const doku = buildDokuPaymentMethod(["INTERNET_BANKING_FPX"]);
+  assert.ok(doku);
+  assert.equal(
+    paymentAvailabilityTrustLine(availability({ sellerBankAccounts: [ACTIVE_BANK] })),
+    "Sedia dihantar • COD atau pindahan bank",
+  );
+  assert.equal(
+    paymentAvailabilityTrustLine(availability()),
+    "Sedia dihantar • COD tersedia",
+  );
+  assert.equal(
+    paymentAvailabilityTrustLine(availability({ codEnabled: false, sellerBankAccounts: [ACTIVE_BANK] })),
+    "Sedia dihantar • Pindahan bank tersedia",
+  );
+  assert.equal(
+    paymentAvailabilityTrustLine(availability({ codEnabled: false, doku })),
+    "Sedia dihantar • Bayaran dalam talian tersedia",
+  );
+  assert.equal(
+    paymentAvailabilityTrustLine(availability({ codEnabled: false })),
+    "Kaedah bayaran belum tersedia",
+  );
+});
+
+test("only Owner and Admin can reach the COD settings mutation route", () => {
+  assert.equal(canAccessAdminRoute("owner", "/api/admin/settings"), true);
+  assert.equal(canAccessAdminRoute("admin", "/api/admin/settings"), true);
+  assert.equal(canAccessAdminRoute("customer_service", "/api/admin/settings"), false);
+  assert.equal(canAccessAdminRoute("advertiser", "/api/admin/settings"), false);
+});
+
+test("COD settings action validates a boolean and returns the saved state", async () => {
+  let saved: number | null = null;
+  const database = {
+    prepare(sql: string) {
+      const statement = {
+        values: [] as unknown[],
+        bind(...values: unknown[]) {
+          this.values = values;
+          return this;
+        },
+        async first() {
+          if (!/FROM stores/.test(sql)) throw new Error(`Unexpected first query: ${sql}`);
+          return { id: 1, is_cod_enabled: 1 };
+        },
+        async run() {
+          if (!/UPDATE stores SET is_cod_enabled/.test(sql)) {
+            throw new Error(`Unexpected run query: ${sql}`);
+          }
+          saved = Number(this.values[0]);
+          return { success: true };
+        },
+      };
+      return statement;
+    },
+  } as unknown as D1Database;
+  const locals = { runtimeEnv: { OMS_DB: database } } as unknown as App.Locals;
+
+  const invalid = await updateSettings({
+    request: new Request("https://shop.example/api/admin/settings", {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action: "save-cod-availability", cod_enabled: 0 }),
+    }),
+    locals,
+  } as never);
+  assert.equal(invalid.status, 400);
+  assert.equal(saved, null);
+
+  const response = await updateSettings({
+    request: new Request("https://shop.example/api/admin/settings", {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action: "save-cod-availability", cod_enabled: false }),
+    }),
+    locals,
+  } as never);
+  assert.equal(response.status, 200);
+  assert.equal(saved, 0);
+  assert.deepEqual(await response.json(), {
+    success: true,
+    message: "COD dinonaktifkan untuk checkout baru.",
+    data: { cod_enabled: false },
+  });
 });
 
 test("manual transfer needs an active bank account, not merely a row", () => {

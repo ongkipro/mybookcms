@@ -24,7 +24,7 @@ if (!product) throw new Error(`Product ${productSlug} not found`);
 const selectedVariant = resolveFormVariant(product, selectedVariantId) || product.variants[0];
 const locale = resolveStorefrontLocale(Astro.locals.tenant.locale);
 const t = {
-      variant: 'Pilih varian', recipient: 'Maklumat penghantaran', name: 'Nama penuh', phone: 'Nombor telefon Malaysia', address: 'Alamat jalan lengkap', addressPlaceholder: 'Nombor rumah/unit, jalan dan tanda berdekatan', location: 'Cari bandar atau poskod', locationPlaceholder: 'Contoh: Kuala Lumpur atau 50450', locationHint: 'Taip sekurang-kurangnya 3 huruf atau poskod tepat 5 digit.', searching: 'Mencari lokasi…', found: 'lokasi ditemui', empty: 'Tiada lokasi sepadan. Cuba bandar, negeri atau poskod 5 digit.', searchFailed: 'Lokasi gagal dicari.', retry: 'Cuba lagi', deliverTo: 'Hantar ke', change: 'Ubah', addressPending: 'Lengkapkan alamat jalan di atas.', payment: 'Kaedah bayaran', summary: 'Ringkasan pesanan', shipping: 'Penghantaran', total: 'Jumlah', quote: 'Pilih lokasi penghantaran', submit: 'Buat Pesanan Sekarang', dokuSubmit: 'Teruskan ke DOKU', dokuRetry: 'Cuba buka DOKU semula', loading: 'Mengira penghantaran…', unavailable: 'Penghantaran belum tersedia untuk lokasi ini.', quoteFailed: 'Kadar penghantaran gagal dikira.', quoteChanged: 'Kadar penghantaran berubah. Semak jumlah baharu dan hantar semula.', selectFromList: 'Cari dan pilih bandar atau poskod daripada senarai.', submitting: 'Membuat pesanan…', dokuSubmitting: 'Menyediakan pembayaran…', dokuRetrying: 'Sedang menyediakan pembayaran semula…', completeName: 'Lengkapkan nama dahulu', completePhone: 'Lengkapkan nombor WhatsApp dahulu', completeAddress: 'Lengkapkan alamat dahulu', completeEmail: 'Lengkapkan e-mel dahulu', chooseLocation: 'Pilih lokasi penghantaran', loadingPayment: 'Memuatkan kaedah bayaran…', choosePayment: 'Pilih kaedah bayaran', nameEmpty: 'Nama penuh belum diisi.', nameShort: 'Nama penuh terlalu pendek (minimum 2 aksara).', nameInvalid: 'Nama penuh mengandungi aksara yang tidak dibenarkan.', phoneEmpty: 'Nombor WhatsApp belum diisi.', phoneInvalid: 'Masukkan nombor mudah alih Malaysia yang sah. Contoh: 0123456789.', addressEmpty: 'Alamat lengkap belum diisi.', addressShort: 'Alamat lengkap terlalu pendek (minimum 10 aksara).', addressInvalid: 'Alamat lengkap mesti mengandungi nama jalan atau kawasan.', emailInvalid: 'Masukkan alamat e-mel yang sah untuk meneruskan ke DOKU.', paymentRequired: 'Pilih kaedah bayaran.', bankRequired: 'Pilih akaun bank penerima.', paymentFailed: 'Kaedah bayaran gagal dimuatkan.', fixFields: 'Semak ruangan yang ditandakan sebelum membuat pesanan.',
+      variant: 'Pilih varian', recipient: 'Maklumat penghantaran', name: 'Nama penuh', phone: 'Nombor telefon Malaysia', address: 'Alamat jalan lengkap', addressPlaceholder: 'Nombor rumah/unit, jalan dan tanda berdekatan', location: 'Cari bandar atau poskod', locationPlaceholder: 'Contoh: Kuala Lumpur atau 50450', locationHint: 'Taip sekurang-kurangnya 3 huruf atau poskod tepat 5 digit.', searching: 'Mencari lokasi…', found: 'lokasi ditemui', empty: 'Tiada lokasi sepadan. Cuba bandar, negeri atau poskod 5 digit.', searchFailed: 'Lokasi gagal dicari.', retry: 'Cuba lagi', deliverTo: 'Hantar ke', change: 'Ubah', addressPending: 'Lengkapkan alamat jalan di atas.', payment: 'Kaedah bayaran', summary: 'Ringkasan pesanan', shipping: 'Penghantaran', total: 'Jumlah', quote: 'Pilih lokasi penghantaran', submit: 'Buat Pesanan Sekarang', loading: 'Mengira penghantaran…', unavailable: 'Penghantaran belum tersedia untuk lokasi ini.', quoteFailed: 'Kadar penghantaran gagal dikira.', quoteChanged: 'Kadar penghantaran berubah. Semak jumlah baharu dan hantar semula.', selectFromList: 'Cari dan pilih bandar atau poskod daripada senarai.', submitting: 'Membuat pesanan…', dokuSubmitting: 'Menyediakan pembayaran…', dokuRetrying: 'Menyediakan semula pembayaran…', completeName: 'Lengkapkan nama dahulu', completePhone: 'Lengkapkan nombor WhatsApp dahulu', completeAddress: 'Lengkapkan alamat dahulu', completeEmail: 'Lengkapkan e-mel dahulu', chooseLocation: 'Pilih lokasi penghantaran', loadingPayment: 'Memuatkan kaedah bayaran…', choosePayment: 'Pilih kaedah bayaran', nameEmpty: 'Nama penuh belum diisi.', nameShort: 'Nama penuh terlalu pendek (minimum 2 aksara).', nameInvalid: 'Nama penuh mengandungi aksara yang tidak dibenarkan.', phoneEmpty: 'Nombor WhatsApp belum diisi.', phoneInvalid: 'Masukkan nombor mudah alih Malaysia yang sah. Contoh: 0123456789.', addressEmpty: 'Alamat lengkap belum diisi.', addressShort: 'Alamat lengkap terlalu pendek (minimum 10 aksara).', addressInvalid: 'Alamat lengkap mesti mengandungi nama jalan atau kawasan.', emailInvalid: 'Masukkan alamat e-mel yang sah untuk meneruskan pembayaran.', paymentRequired: 'Pilih kaedah bayaran.', bankRequired: 'Pilih akaun bank penerima.', paymentFailed: 'Kaedah bayaran gagal dimuatkan.', fixFields: 'Semak ruangan yang ditandakan sebelum membuat pesanan.',
     };
 const instanceId = `my-checkout-${crypto.randomUUID()}`;
 const searchId = `${instanceId}-location-search`;
@@ -59,13 +59,13 @@ const formatPrice = (amountSen: number) => formatMyr(amountSen, locale);
           </div>
         </section>
 
-        <section class="form-block"><div class="inner-card"><div class="space-y-3 payment-block"><div class="payment-block-anchor" aria-hidden="true"><span></span><small>Pilih cara bayar</small><span></span></div><div data-payment-options class="payment-options" role="radiogroup" aria-label="Kaedah bayaran" aria-busy="true"><p class="text-sm text-[#555555]">{t.loadingPayment}</p></div><div data-doku-details hidden><div class="form-field form-field-full"><input id={`${instanceId}-email`} name="customer_email" type="email" inputmode="email" autocomplete="email" maxlength="160" aria-describedby={`${instanceId}-doku-helper ${instanceId}-doku-privacy ${instanceId}-doku-disclosure`} placeholder=" " disabled /><label for={`${instanceId}-email`}>E-mel untuk pembayaran DOKU</label></div><small id={`${instanceId}-doku-helper`} class="doku-helper">DOKU menggunakan e-mel dan maklumat pesanan ini untuk menyediakan pembayaran dan resit.</small><a id={`${instanceId}-doku-privacy`} class="doku-privacy-link" href="/dasar-privasi#pembayaran-doku" target="_blank" rel="noopener">Baca pendedahan privasi DOKU dalam Bahasa Melayu dan bahasa Inggeris (dibuka dalam tab baharu).</a><p id={`${instanceId}-doku-disclosure`} class="doku-disclosure">Apabila anda meneruskan, anda akan meninggalkan kedai ini dan membuka halaman pembayaran DOKU. Pesanan hanya dianggap dibayar selepas pengesahan diterima.</p></div><small id={`${instanceId}-payment-feedback`} data-payment-feedback class="field-feedback" role="alert" hidden></small><button type="button" data-payment-retry class="district-edit-button" hidden>{t.retry}</button></div></div></section>
+        <section class="form-block"><div class="inner-card"><div class="space-y-3 payment-block"><div class="payment-block-anchor" aria-hidden="true"><span></span><small>Pilih cara bayar</small><span></span></div><div data-payment-options class="payment-options" role="radiogroup" aria-label="Kaedah bayaran" aria-busy="true"><p class="text-sm text-[#555555]">{t.loadingPayment}</p></div><div data-doku-details hidden><div class="form-field form-field-full"><input id={`${instanceId}-email`} name="customer_email" type="email" inputmode="email" autocomplete="email" maxlength="160" aria-describedby={`${instanceId}-doku-privacy ${instanceId}-doku-disclosure`} placeholder=" " disabled /><label for={`${instanceId}-email`}>E-mel untuk resit</label></div><a id={`${instanceId}-doku-privacy`} class="doku-privacy-link" href="/dasar-privasi#pembayaran-doku" target="_blank" rel="noopener" aria-label="Privasi pembayaran (dibuka dalam tab baharu)">Privasi pembayaran</a><p id={`${instanceId}-doku-disclosure`} class="doku-disclosure">Anda akan dibawa ke halaman pembayaran selamat DOKU. Pesanan hanya dianggap dibayar selepas disahkan.</p></div><small id={`${instanceId}-payment-feedback`} data-payment-feedback class="field-feedback" role="alert" hidden></small><button type="button" data-payment-retry class="district-edit-button" hidden>{t.retry}</button></div></div></section>
 
         <section class="form-block summary-block">
           <div class="form-block-head"><h2 class="section-title">Ringkasan Pesanan</h2><p class="section-lead">Semak butiran pesanan sebelum meneruskan.</p></div>
           <div class="summary-card" aria-live="polite"><div class="summary-row summary-row-product"><strong class="summary-product-name">{product.productName}</strong><div class="summary-price"><span data-summary-label class="summary-variant">{selectedVariant.label}</span><span class="summary-price-figures"><span data-summary-compare class="summary-compare-wrap" hidden={(selectedVariant.comparePrice ?? selectedVariant.price) <= selectedVariant.price}>{formatPrice(selectedVariant.comparePrice ?? selectedVariant.price)}</span><strong data-product-total>{formatPrice(selectedVariant.price)}</strong></span></div></div><div class="summary-row"><span>Penghantaran</span><strong data-shipping>{t.quote}</strong><button type="button" data-quote-retry class="district-edit-button" hidden>{t.retry}</button></div><div class="total-box"><div><p>Jumlah Bayaran</p><small>Termasuk produk + penghantaran</small></div><div class="total-box-side"><strong data-total>{formatPrice(selectedVariant.price)}</strong></div></div></div>
           <div class="info-box"><span>Harga dan stok disahkan semula semasa pesanan diproses. Pastikan nombor WhatsApp aktif.</span></div>
-          <div class="submit-panel"><div class="cta-row"><button type="submit" class="submit-main" data-state="disabled" disabled><span class="submit-main-label" data-submit-label>{t.completeName}</span><span class="submit-main-icon" aria-hidden="true">→</span></button></div><div class="trust-strip" aria-label="Maklumat pesanan"><span><b aria-hidden="true">✓</b><i>Data pesanan</i></span><span><b aria-hidden="true">✓</b><i>Harga disahkan</i></span><span><b aria-hidden="true">✓</b><i>Pengesahan admin</i></span></div>{bannerImage && <div class="mt-4 overflow-hidden border-t border-[#E5E5E5]"><img src={bannerImage} alt={`Maklumat promosi ${product.productName}`} class="mx-auto block h-auto w-full object-contain" loading="lazy" decoding="async" /></div>}<p data-checkout-error class="form-error" role="alert" tabindex="-1" hidden></p></div>
+          <div class="submit-panel"><div class="cta-row"><button type="submit" class="submit-main" data-state="disabled" disabled><span class="submit-main-label" data-submit-label>{t.completeName}</span><span class="submit-main-icon" aria-hidden="true">→</span></button></div><div class="trust-strip" aria-label="Maklumat pesanan"><span><svg class="trust-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M8 12h8"/><path d="M8 16h5"/></svg><i>Data pesanan</i></span><span><svg class="trust-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82Z"/><path d="M7 7h.01"/></svg><i>Harga disahkan</i></span><span><svg class="trust-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 11.5 2 2 4-4"/></svg><i>Pengesahan admin</i></span></div>{bannerImage && <div class="mt-4 overflow-hidden border-t border-[#E5E5E5]"><img src={bannerImage} alt={`Maklumat promosi ${product.productName}`} class="mx-auto block h-auto w-full object-contain" loading="lazy" decoding="async" /></div>}<p data-checkout-error class="form-error" role="alert" tabindex="-1" hidden></p></div>
         </section>
       </div>
     </form>
@@ -128,7 +128,10 @@ const formatPrice = (amountSen: number) => formatMyr(amountSen, locale);
   let paymentMethodsFailed = false;
   let submitting = false;
   let dokuRetry = false;
-  const submitToken = crypto.randomUUID();
+  const submitToken = Array.from(
+    crypto.getRandomValues(new Uint8Array(32)),
+    (byte) => byte.toString(16).padStart(2, '0'),
+  ).join('');
   let checkoutSignalSent = false;
 
   const normalizeName = (value) => String(value || '').replace(/\s+/gu, ' ').trim();
@@ -160,11 +163,21 @@ const formatPrice = (amountSen: number) => formatMyr(amountSen, locale);
   };
   const selectedPayment = () => form?.querySelector('input[name="payment_method"]:checked');
   const dokuSelected = () => selectedPayment()?.value === 'doku';
+  const dokuActionLabel = (retry = false) => {
+    const selected = selectedPayment();
+    const label = String(selected?.dataset.dokuLabel || 'pembayaran');
+    if (retry) return `Cuba lagi dengan ${label}`;
+    return selected?.dataset.dokuChannel === 'CREDIT_CARD'
+      ? 'Teruskan dengan kad'
+      : `Teruskan ke ${label}`;
+  };
   const validEmail = () => !dokuSelected() || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(emailInput?.value || '').trim());
   const validPayment = () => {
     const method = selectedPayment();
     if (!method || !['cod', 'manual_transfer', 'doku'].includes(method.value)) return false;
-    return method.value !== 'manual_transfer' || Number(method.dataset.bankId) > 0;
+    if (method.value === 'manual_transfer') return Number(method.dataset.bankId) > 0;
+    if (method.value === 'doku') return Boolean(method.dataset.dokuChannel);
+    return true;
   };
   const ensureFeedback = (input) => {
     if (!input) return null;
@@ -268,7 +281,7 @@ const formatPrice = (amountSen: number) => formatMyr(amountSen, locale);
     if (paymentMethodsLoading) return { ready: false, label: t.loadingPayment };
     if (!paymentMethodsLoaded || paymentMethodsFailed || !validPayment()) return { ready: false, label: t.choosePayment };
     if (!validEmail()) return { ready: false, label: t.completeEmail };
-    return { ready: true, label: dokuSelected() ? (dokuRetry ? t.dokuRetry : t.dokuSubmit) : t.submit };
+    return { ready: true, label: dokuSelected() ? dokuActionLabel(dokuRetry) : t.submit };
   };
   const setSubmitState = () => {
     if (!submit) return;
@@ -308,6 +321,7 @@ const formatPrice = (amountSen: number) => formatMyr(amountSen, locale);
   };
   const closeList = () => {
     if (!listbox || !searchInput) return;
+    locationResults = [];
     listbox.hidden = true;
     listbox.innerHTML = '';
     searchInput.setAttribute('aria-expanded', 'false');
@@ -427,18 +441,18 @@ const formatPrice = (amountSen: number) => formatMyr(amountSen, locale);
     setActiveOption(0);
   };
   const searchLocations = async () => {
+    const sequence = ++searchSequence;
+    searchController?.abort();
+    searchController = null;
     const query = searchInput?.value.trim() || '';
     const numeric = /^\d+$/.test(query);
     if ((numeric && query.length !== 5) || (!numeric && query.length < 3)) {
-      searchController?.abort();
       closeList();
       setLocationStatus(t.locationHint);
       locationLoading = false;
       setSubmitState();
       return;
     }
-    const sequence = ++searchSequence;
-    searchController?.abort();
     searchController = new AbortController();
     locationLoading = true;
     showLocationMessage(t.searching);
@@ -463,11 +477,12 @@ const formatPrice = (amountSen: number) => formatMyr(amountSen, locale);
       renderLocations(items);
       setLocationStatus(`${items.length} ${t.found}`);
     } catch (error) {
-      if (error?.name === 'AbortError') return;
+      if (error?.name === 'AbortError' || sequence !== searchSequence) return;
       showLocationMessage(t.searchFailed);
       setLocationStatus(t.searchFailed, error?.retryable !== false);
     } finally {
       if (sequence === searchSequence) {
+        searchController = null;
         locationLoading = false;
         if (listbox) listbox.removeAttribute('aria-busy');
         setSubmitState();
@@ -513,6 +528,11 @@ const formatPrice = (amountSen: number) => formatMyr(amountSen, locale);
     setSubmitState();
   });
   searchInput?.addEventListener('input', () => {
+    searchSequence += 1;
+    searchController?.abort();
+    searchController = null;
+    locationLoading = false;
+    closeList();
     selectedLocation = null;
     Object.values(fields).forEach((field) => { if (field) field.value = ''; });
     quoteSequence += 1;
@@ -521,7 +541,11 @@ const formatPrice = (amountSen: number) => formatMyr(amountSen, locale);
     resetQuote();
     setFieldState(searchInput);
     clearTimeout(searchTimer);
-    searchTimer = setTimeout(searchLocations, /^\d{5}$/.test(searchInput.value.trim()) ? 0 : 200);
+    const query = searchInput.value.trim();
+    const numeric = /^\d+$/.test(query);
+    const searchable = numeric ? query.length === 5 : query.length >= 3;
+    setLocationStatus(searchable ? t.searching : t.locationHint);
+    searchTimer = setTimeout(searchLocations, /^\d{5}$/.test(query) ? 0 : 200);
   });
   searchInput?.addEventListener('keydown', (event) => {
     if (event.key === 'ArrowDown' && !listbox?.hidden) { event.preventDefault(); setActiveOption(activeIndex + 1); }
@@ -567,15 +591,18 @@ const formatPrice = (amountSen: number) => formatMyr(amountSen, locale);
       const methods = Array.isArray(body?.data) ? body.data.filter((method) => method.is_active) : [];
       if (!response.ok || !methods.length) throw new Error(body?.error || t.paymentFailed);
       paymentOptions.innerHTML = '';
-      methods.forEach((method, index) => {
+      let optionIndex = 0;
+      const appendOption = (method, dokuChannel = null) => {
         const label = document.createElement('label');
         label.className = 'payment-option';
         const input = document.createElement('input');
         input.type = 'radio';
         input.name = 'payment_method';
         input.value = String(method.payment_method || '');
-        input.checked = index === 0;
+        input.checked = optionIndex === 0;
         input.dataset.bankId = String(method.seller_bank_account_id || '');
+        input.dataset.dokuChannel = String(dokuChannel?.code || '');
+        input.dataset.dokuLabel = String(dokuChannel?.label || '');
         input.dataset.hostedRedirect = String(Boolean(method.hosted_redirect));
         input.setAttribute('aria-describedby', paymentFeedback?.id || '');
         input.addEventListener('change', () => {
@@ -586,18 +613,38 @@ const formatPrice = (amountSen: number) => formatMyr(amountSen, locale);
         const copy = document.createElement('div'); copy.className = 'payment-option-copy';
         const radio = document.createElement('div'); radio.className = 'payment-option-radio';
         const main = document.createElement('div'); main.className = 'payment-option-main';
-        const name = document.createElement('p'); name.className = 'payment-option-label'; name.textContent = String(method.name || '');
-        const description = document.createElement('p'); description.className = 'payment-option-desc'; description.textContent = String(method.description || '');
-        main.append(name, description);
-        if (method.payment_method === 'doku' && Array.isArray(method.channels)) {
-          const heading = document.createElement('p'); heading.className = 'doku-channel-heading'; heading.textContent = 'Kaedah tersedia di DOKU:';
-          const list = document.createElement('ul'); list.className = 'doku-channel-list';
-          method.channels.forEach((channel) => { const item = document.createElement('li'); item.textContent = String(channel.label || ''); if (item.textContent) list.append(item); });
-          main.append(heading, list);
+        const name = document.createElement('p'); name.className = 'payment-option-label'; name.textContent = String(dokuChannel?.label || method.name || '');
+        main.append(name);
+        if (!dokuChannel) {
+          const description = document.createElement('p');
+          description.className = 'payment-option-desc';
+          description.textContent = String(method.description || '');
+          main.append(description);
+        }
+        if (dokuChannel) {
           input.setAttribute('aria-describedby', `${paymentFeedback?.id || ''} ${instanceId}-doku-privacy ${instanceId}-doku-disclosure`.trim());
         }
         copy.append(radio, main); label.append(input, copy); paymentOptions.append(label);
+        optionIndex += 1;
+      };
+      methods.forEach((method) => {
+        if (method.payment_method === 'doku') {
+          const channels = Array.isArray(method.channels)
+            ? method.channels.filter((channel) => channel?.code && channel?.label)
+            : [];
+          if (!channels.length) return;
+          const heading = document.createElement('div');
+          heading.className = 'payment-channel-group-heading';
+          heading.setAttribute('role', 'presentation');
+          const title = document.createElement('p'); title.textContent = 'Bayaran dalam talian';
+          heading.append(title);
+          paymentOptions.append(heading);
+          channels.forEach((channel) => appendOption(method, channel));
+          return;
+        }
+        appendOption(method);
       });
+      if (!optionIndex) throw new Error(t.paymentFailed);
       paymentMethodsLoaded = true;
       syncDokuDetails();
     } catch {
@@ -644,7 +691,7 @@ const formatPrice = (amountSen: number) => formatMyr(amountSen, locale);
     const data = Object.fromEntries(new FormData(form));
     const method = form.querySelector('input[name="payment_method"]:checked');
     submitting = true; setSubmitState();
-    const payload = { ...data, payment_method: method?.value || 'cod', seller_bank_account_id: method?.dataset.bankId || undefined, quantity: 1, shipping_cost: shippingCost, submit_token: submitToken };
+    const payload = { ...data, payment_method: method?.value || 'cod', seller_bank_account_id: method?.dataset.bankId || undefined, doku_channel: method?.dataset.dokuChannel || undefined, quantity: 1, shipping_cost: shippingCost, submit_token: submitToken };
     const selectedVariantForSignal = form.querySelector('input[name="variant_id"]:checked');
     const signalContentId = root?.dataset.productId && selectedVariantForSignal?.value ? `p${root.dataset.productId}-v${selectedVariantForSignal.value}` : '';
     if (!checkoutSignalSent) {
@@ -662,13 +709,13 @@ const formatPrice = (amountSen: number) => formatMyr(amountSen, locale);
           throw new Error(t.quoteChanged);
         }
         if (body?.code === 'DOKU_CONFLICT') { dokuRetry = false; throw new Error('Pembayaran ini tidak dapat disambung dengan selamat. Semak pesanan atau hubungi admin sebelum mencuba lagi.'); }
-        if (method?.value === 'doku' && body?.code !== 'DOKU_UNAVAILABLE') { dokuRetry = true; throw new Error('Halaman pembayaran DOKU belum dapat dibuka. Cuba semula tanpa membuat pesanan baharu.'); }
+        if (method?.value === 'doku' && body?.code !== 'DOKU_UNAVAILABLE') { dokuRetry = true; throw new Error('Halaman pembayaran belum dapat dibuka. Cuba lagi tanpa membuat pesanan baharu.'); }
         throw new Error(body?.error || 'Pesanan belum dapat dihantar. Cuba semula.');
       }
       if (method?.value === 'doku') {
         const checkoutUrl = String(body?.payment?.checkout_url || '');
-        if (submitLabel) submitLabel.textContent = 'Membuka halaman DOKU…';
-        if (!window.__MYBOOK_DOKU_NAV__?.(checkoutUrl)) { dokuRetry = true; throw new Error('Halaman pembayaran DOKU belum dapat dibuka. Cuba semula tanpa membuat pesanan baharu.'); }
+        if (submitLabel) submitLabel.textContent = 'Membuka halaman pembayaran…';
+        if (!window.__MYBOOK_DOKU_NAV__?.(checkoutUrl)) { dokuRetry = true; throw new Error('Halaman pembayaran belum dapat dibuka. Cuba lagi tanpa membuat pesanan baharu.'); }
         return;
       }
       const variant = form.querySelector('input[name="variant_id"]:checked');
@@ -679,7 +726,7 @@ const formatPrice = (amountSen: number) => formatMyr(amountSen, locale);
       const transportFailed = error instanceof TypeError || error?.name === 'AbortError';
       const message = transportFailed
         ? method?.value === 'doku'
-          ? 'Sambungan ke DOKU tergendala. Cuba semula tanpa membuat pesanan baharu.'
+          ? 'Sambungan pembayaran tergendala. Cuba lagi tanpa membuat pesanan baharu.'
           : 'Pesanan belum dapat dihantar. Cuba semula.'
         : error instanceof Error ? error.message : 'Pesanan belum dapat dihantar. Cuba semula.';
       if (errorEl) { errorEl.textContent = message; errorEl.hidden = false; errorEl.focus(); }

@@ -95,6 +95,7 @@ function checkoutInput(variantId: number, submitToken: string): DokuCheckoutInpu
     customerName: "Aina Rahman",
     customerPhone: "60123456789",
     customerEmail: "aina@example.com",
+    selectedChannel: "INTERNET_BANKING_FPX",
     address: "12 Jalan Buku, Taman Fokus",
     province: "Johor",
     city: "Johor Bahru",
@@ -206,6 +207,32 @@ test("disabled DOKU is refused before order persistence or provider transport", 
   await database.prepare("UPDATE payment_provider_configs SET is_enabled = 1 WHERE provider = 'doku'").run();
 });
 
+test("a known but disabled channel is refused before order persistence or provider transport", async () => {
+  const variantId = 31007;
+  const token = "doku-disabled-channel-token-31007";
+  await seedVariant(variantId);
+  let calls = 0;
+  await assert.rejects(
+    createDokuHostedCheckout(database, ROOT_SECRET, {
+      ...checkoutInput(variantId, token),
+      selectedChannel: "CREDIT_CARD",
+    }, {
+      fetch: (async () => {
+        calls += 1;
+        throw new Error("must not run");
+      }) as typeof fetch,
+      now: () => NOW,
+    }),
+    (error: unknown) => error instanceof DokuCheckoutError && error.code === "DOKU_UNAVAILABLE",
+  );
+  assert.equal(calls, 0);
+  assert.equal(
+    (await database.prepare("SELECT COUNT(*) AS count FROM orders WHERE submit_token = ?")
+      .bind(token).first<{ count: number }>())?.count,
+    0,
+  );
+});
+
 test("one submit commits order, stock, and attempt before one authoritative DOKU call", async () => {
   const variantId = 31001;
   const token = "doku-authoritative-token-31001";
@@ -224,10 +251,7 @@ test("one submit commits order, stock, and attempt before one authoritative DOKU
     assert.equal(payload.order.amount, 40.9);
     assert.equal(payload.order.currency, "MYR");
     assert.equal(payload.customer.phone, "+60123456789");
-    assert.deepEqual(payload.checkout_experience.payment_channels, [
-      "INTERNET_BANKING_FPX",
-      "EWALLET_TNG",
-    ]);
+    assert.deepEqual(payload.checkout_experience.payment_channels, ["INTERNET_BANKING_FPX"]);
     assert.match(payload.checkout_experience.callback_url, /^https:\/\/shop\.example\/payment\/doku\/return\?/);
     assert.match(payload.checkout_experience.callback_url_cancel, /^https:\/\/shop\.example\/payment\/doku\/cancel\?/);
     const callback = new URL(payload.checkout_experience.callback_url);
@@ -258,6 +282,11 @@ test("one submit commits order, stock, and attempt before one authoritative DOKU
   assert.equal(retry.order.id, first.order.id);
   assert.equal(retry.payment.attemptId, first.payment.attemptId);
   assert.equal(calls, 1);
+  assert.equal(
+    (await database.prepare("SELECT channel FROM payment_attempts WHERE id = ?")
+      .bind(first.payment.attemptId).first<{ channel: string }>())?.channel,
+    "INTERNET_BANKING_FPX",
+  );
   assert.equal(
     (await database.prepare("SELECT stock FROM product_variants WHERE id = ?").bind(variantId).first<{ stock: number }>())?.stock,
     2,
@@ -381,6 +410,16 @@ test("a reused submit token with changed buyer intent is rejected without anothe
     createDokuHostedCheckout(database, ROOT_SECRET, {
       ...checkoutInput(variantId, token),
       address: "99 Jalan Berbeza, Taman Fokus",
+    }, {
+      fetch: fetchImplementation,
+      now: () => NOW,
+    }),
+    (error: unknown) => error instanceof DokuCheckoutError && error.code === "DOKU_CONFLICT",
+  );
+  await assert.rejects(
+    createDokuHostedCheckout(database, ROOT_SECRET, {
+      ...checkoutInput(variantId, token),
+      selectedChannel: "EWALLET_TNG",
     }, {
       fetch: fetchImplementation,
       now: () => NOW,

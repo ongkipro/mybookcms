@@ -19,7 +19,8 @@ const MALAYSIA_PHONE = /^\+?60\d{8,10}$/;
 const CRM_KEYS = ["welcome", "1", "2", "3", "4", "5", "6", "7", "8", "9", "redirect"] as const;
 
 type Payload = {
-  action?: "save-store" | "add-storefront-template" | "save-embed-origins" | "save-headless-origins" | "save-crm";
+  action?: "save-store" | "add-storefront-template" | "save-embed-origins" | "save-headless-origins" | "save-crm" | "save-cod-availability";
+  cod_enabled?: unknown;
   store_name?: unknown;
   site_url?: unknown;
   store_description?: unknown;
@@ -54,6 +55,7 @@ type StoreRow = {
   pickup_phone: string | null;
   pickup_address: string | null;
   pickup_postcode: string | null;
+  is_cod_enabled: number;
 };
 
 const clean = (value: unknown, limit: number) =>
@@ -76,7 +78,7 @@ const getStore = (database: D1Database) => database.prepare(`
   SELECT id, name, support_whatsapp, site_url, description, tagline, logo, locale,
          storefront_template, crm_templates, embed_allowed_origins,
          headless_allowed_origins, pickup_name, pickup_phone, pickup_address,
-         pickup_postcode
+         pickup_postcode, is_cod_enabled
   FROM stores ORDER BY id LIMIT 1
 `).first<StoreRow>();
 
@@ -121,6 +123,7 @@ export const GET: APIRoute = async ({ locals }) => {
           storefront_templates_available: templates.state === "ready",
           embed_allowed_origins: embedPolicy.valid ? embedPolicy.origins : [],
           headless_allowed_origins: parseHeadlessAllowedOrigins(row.headless_allowed_origins ?? []).patterns,
+          cod_enabled: row.is_cod_enabled !== 0,
         },
         crm_templates: parseCrmTemplates(row.crm_templates),
       },
@@ -139,6 +142,20 @@ export const PUT: APIRoute = async ({ request, locals }) => {
   try {
     const current = await getStore(database);
     if (!current) return jsonError("Store belum tersedia.", 404);
+
+    if (body.action === "save-cod-availability") {
+      if (typeof body.cod_enabled !== "boolean") {
+        return jsonError("Status COD harus berupa boolean.", 400);
+      }
+      await database.prepare("UPDATE stores SET is_cod_enabled = ? WHERE id = ?")
+        .bind(body.cod_enabled ? 1 : 0, current.id).run();
+      return jsonOk({
+        message: body.cod_enabled
+          ? "COD diaktifkan untuk checkout baru."
+          : "COD dinonaktifkan untuk checkout baru.",
+        data: { cod_enabled: body.cod_enabled },
+      });
+    }
 
     if (body.action === "save-embed-origins") {
       const policy = parseEmbedAllowedOrigins(body.embed_allowed_origins);

@@ -6,6 +6,7 @@ import test, { after, before } from "node:test";
 import { getPlatformProxy, type PlatformProxy } from "wrangler";
 import {
   buildDokuAccessCookie,
+  DOKU_RETURN_CAPABILITY_TTL_MS,
   exchangeDokuCallbackQuery,
   handleDokuRetryRequest,
   handleDokuStatusRequest,
@@ -96,6 +97,7 @@ function checkoutInput(variantId: number, submitToken: string): DokuCheckoutInpu
     customerName: "Aina Rahman",
     customerPhone: "60123456789",
     customerEmail: "aina@example.com",
+    selectedChannel: "INTERNET_BANKING_FPX",
     address: "12 Jalan Buku, Taman Fokus",
     province: "Johor",
     city: "Johor Bahru",
@@ -156,10 +158,15 @@ function checkoutFetch(observe: (payload: Record<string, any>, headers: Headers)
 
 async function createAttempt(variantId: number, token: string, stock = 3) {
   await seedVariant(variantId, stock);
-  return createDokuHostedCheckout(database, ROOT_SECRET, checkoutInput(variantId, token), {
+  const result = await createDokuHostedCheckout(database, ROOT_SECRET, checkoutInput(variantId, token), {
     now: () => NOW,
     fetch: checkoutFetch(),
   });
+  await database.prepare(`
+    UPDATE payment_attempts SET created_at = ?
+    WHERE order_id = (SELECT id FROM orders WHERE submit_token = ?)
+  `).bind(NOW.toISOString(), token).run();
+  return result;
 }
 
 type AttemptFacts = {
@@ -173,13 +180,14 @@ type AttemptFacts = {
   payment_status: string;
   stock_restored_at: string | null;
   expires_at: string | null;
+  channel: string | null;
 };
 
 async function attemptFacts(token: string) {
   const facts = await database.prepare(`
     SELECT pa.id AS attempt_id, pa.provider_reference, pa.merchant_invoice,
       pa.amount_sen, pa.local_status, o.id AS order_id, o.order_number,
-      o.payment_status, o.stock_restored_at, pa.expires_at
+      o.payment_status, o.stock_restored_at, pa.expires_at, pa.channel
     FROM payment_attempts pa JOIN orders o ON o.id = pa.order_id
     WHERE o.submit_token = ?
     ORDER BY pa.created_at DESC, pa.id DESC
@@ -303,6 +311,7 @@ test("callback query capability is exchanged for a bounded HttpOnly cookie witho
     database,
     ROOT_SECRET,
     new URL(`https://shop.example/payment/doku/result?order_number=${facts.order_number}&return_token=${returnToken}&payment_status=SUCCESS`),
+    { now: () => NOW },
   );
   assert.equal(exchange.type, "redirect");
   assert.equal(exchange.headers.get("Location"), "/payment/doku/result");
@@ -321,6 +330,7 @@ test("callback query capability is exchanged for a bounded HttpOnly cookie witho
     database,
     ROOT_SECRET,
     new URL(`https://shop.example/payment/doku/cancel?order_number=${facts.order_number}&return_token=${"0".repeat(64)}`),
+    { now: () => NOW },
   );
   assert.equal(invalid.type, "redirect");
   assert.equal(invalid.headers.get("Location"), "/payment/doku/cancel");
@@ -451,6 +461,7 @@ test("retry reuses the same order, re-reserves restored stock once, and returns 
       assert.equal(payload.order.amount, 40.9);
       assert.equal(payload.order.currency, "MYR");
       assert.equal(payload.checkout_experience.language, "MS");
+      assert.deepEqual(payload.checkout_experience.payment_channels, ["INTERNET_BANKING_FPX"]);
       assert.match(payload.checkout_experience.callback_url, /^https:\/\/shop\.example\/payment\/doku\/return\?/);
       const callback = new URL(payload.checkout_experience.callback_url);
       assert.equal(callback.searchParams.get("order_number"), expired.order_number);
@@ -474,11 +485,13 @@ test("retry reuses the same order, re-reserves restored stock once, and returns 
   assert.equal(active.local_status, "pending");
   assert.equal(active.payment_status, "pending");
   assert.equal(active.stock_restored_at, null);
+  assert.equal(active.channel, "INTERNET_BANKING_FPX");
   assert.equal((await loadDokuPaymentAccessFromCookie(
     database,
     ROOT_SECRET,
     cookie,
     expired.order_number,
+    { now: () => NOW },
   ))?.attemptId, active.attempt_id);
 
   const reused = await handleDokuRetryRequest({
@@ -523,6 +536,82 @@ test("retry reuses the same order, re-reserves restored stock once, and returns 
   assert.equal(renewalCalls, 1);
   assert.equal(await attemptCount(token), 3);
   assert.equal(await stock(variantId), 2);
+
+  await database.prepare("UPDATE payment_attempts SET created_at = ? WHERE id = ?")
+    .bind(new Date(NOW.getTime() - DOKU_RETURN_CAPABILITY_TTL_MS).toISOString(), expired.attempt_id)
+    .run();
+  assert.equal(await loadDokuPaymentAccessFromCookie(
+    database,
+    ROOT_SECRET,
+    cookie,
+    expired.order_number,
+    { now: () => NOW },
+  ), null, "an expired historical capability must not inherit the newest attempt's lifetime");
+});
+
+test("DOKU return capability expires at 24 hours before recovery or provider traffic", async () => {
+  const variantId = 34008;
+  const token = "access-expired-capability-token-34008";
+  await createAttempt(variantId, token);
+  const facts = await attemptFacts(token);
+  const returnToken = await returnTokenFor(token);
+  const cookie = buildDokuAccessCookie(facts.order_number, returnToken);
+
+  await database.prepare("UPDATE payment_attempts SET created_at = ? WHERE id = ?")
+    .bind(new Date(NOW.getTime() - DOKU_RETURN_CAPABILITY_TTL_MS + 1).toISOString(), facts.attempt_id)
+    .run();
+  const insideWindow = await exchangeDokuCallbackQuery(
+    database,
+    ROOT_SECRET,
+    new URL(`https://shop.example/payment/doku/return?order_number=${facts.order_number}&return_token=${returnToken}`),
+    { now: () => NOW },
+  );
+  assert.equal(insideWindow.type, "redirect");
+  assert.equal(insideWindow.accepted, true);
+
+  await database.prepare("UPDATE payment_attempts SET created_at = ? WHERE id = ?")
+    .bind(new Date(NOW.getTime() - DOKU_RETURN_CAPABILITY_TTL_MS).toISOString(), facts.attempt_id)
+    .run();
+  for (const route of ["return", "result", "cancel"]) {
+    const exchange = await exchangeDokuCallbackQuery(
+      database,
+      ROOT_SECRET,
+      new URL(`https://shop.example/payment/doku/${route}?order_number=${facts.order_number}&return_token=${returnToken}`),
+      { now: () => NOW },
+    );
+    assert.equal(exchange.type, "redirect");
+    assert.equal(exchange.accepted, false);
+    assert.match(exchange.headers.get("Set-Cookie") || "", /^__Host-mybook_doku_access=; Max-Age=0;/);
+  }
+
+  let providerCalls = 0;
+  const providerMustNotRun = (async () => {
+    providerCalls += 1;
+    throw new Error("expired capability must fail before provider traffic");
+  }) as typeof fetch;
+  const status = await handleDokuStatusRequest({
+    request: statusRequest(facts.order_number, cookie),
+    database,
+    rootSecret: ROOT_SECRET,
+    clientIp: "203.0.113.48",
+    fetch: providerMustNotRun,
+    now: () => NOW,
+  });
+  const retry = await handleDokuRetryRequest({
+    request: retryRequest(facts.order_number, cookie),
+    database,
+    rootSecret: ROOT_SECRET,
+    clientIp: "203.0.113.48",
+    userAgent: "payment-access-test",
+    fetch: providerMustNotRun,
+    now: () => NOW,
+  });
+  assert.equal(status.status, 404);
+  assert.match(await status.text(), /DOKU_ACCESS_DENIED/);
+  assert.equal(retry.status, 404);
+  assert.match(await retry.text(), /DOKU_ACCESS_DENIED/);
+  assert.equal(providerCalls, 0);
+  assert.equal(await attemptCount(token), 1);
 });
 
 test("retry refuses unavailable stock and paid attempts before creating another attempt", async () => {
@@ -578,6 +667,45 @@ test("retry refuses unavailable stock and paid attempts before creating another 
   assert.match(await refused.text(), /DOKU_RETRY_NOT_ALLOWED/);
   assert.equal(await attemptCount(paidToken), 1);
   assert.equal((await attemptFacts(paidToken)).local_status, "paid");
+});
+
+test("retry refuses when the original channel is no longer enabled", async () => {
+  const variantId = 34006;
+  const token = "access-disabled-channel-token-34006";
+  await createAttempt(variantId, token);
+  await expireAttempt(token);
+  const expired = await attemptFacts(token);
+  const cookie = await accessCookie(token);
+  await database.prepare(`
+    UPDATE payment_provider_configs
+    SET enabled_channels_json = '["EWALLET_TNG"]'
+    WHERE provider = 'doku'
+  `).run();
+  try {
+    let providerCalls = 0;
+    const response = await handleDokuRetryRequest({
+      request: retryRequest(expired.order_number, cookie),
+      database,
+      rootSecret: ROOT_SECRET,
+      clientIp: "203.0.113.47",
+      userAgent: "payment-access-test",
+      fetch: (async () => {
+        providerCalls += 1;
+        throw new Error("must not call provider");
+      }) as typeof fetch,
+      now: () => NOW,
+    });
+    assert.equal(response.status, 503);
+    assert.match(await response.text(), /DOKU_UNAVAILABLE/);
+    assert.equal(providerCalls, 0);
+    assert.equal(await attemptCount(token), 1);
+  } finally {
+    await database.prepare(`
+      UPDATE payment_provider_configs
+      SET enabled_channels_json = '["INTERNET_BANKING_FPX","EWALLET_TNG"]'
+      WHERE provider = 'doku'
+    `).run();
+  }
 });
 
 test("DOKU recovery pages keep capabilities out of analytics while result owns paid browser Purchase", () => {

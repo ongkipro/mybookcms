@@ -61,3 +61,29 @@ test("headless checkout refuses a non-MYR response", async () => {
   await assert.rejects(() => client.checkout(validCheckout), (error: unknown) =>
     error instanceof HeadlessApiError && error.code === "INVALID_API_RESPONSE");
 });
+
+test("headless checkout sends the selected hosted DOKU channel explicitly", async () => {
+  let submitted: Record<string, unknown> = {};
+  const client = new HeadlessApiClient("https://store.example/api/v1", "mybook_live_test", async (request) => {
+    submitted = await request.json() as Record<string, unknown>;
+    return Response.json({
+      success: true,
+      order: {
+        id: 42,
+        order_number: "INV-10042",
+        public_status_token: "public-token-doku",
+        total_amount: 3140,
+        shipping_amount: 650,
+        currency: "MYR",
+      },
+    }, { status: 201 });
+  });
+  await client.checkout({
+    ...validCheckout,
+    payment_method: "doku",
+    customer_email: "aisyah@example.com",
+    doku_channel: "EWALLET_TNG",
+  });
+  assert.equal(submitted.doku_channel, "EWALLET_TNG");
+  assert.equal("payment_channel" in submitted, false);
+});

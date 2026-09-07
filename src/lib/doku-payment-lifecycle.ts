@@ -48,6 +48,7 @@ type AttemptState = {
   environment: string;
   config_revision: number;
   provider_reference: string | null;
+  channel: string | null;
   merchant_invoice: string;
   amount_sen: number;
   local_status: DokuLocalPaymentStatus;
@@ -94,7 +95,7 @@ async function loadAttempt(database: D1Database, merchantInvoice: string) {
     .prepare(`
       SELECT
         pa.id AS attempt_id, pa.order_id, pa.provider_config_id,
-        pa.environment, pa.config_revision, pa.provider_reference,
+        pa.environment, pa.config_revision, pa.provider_reference, pa.channel,
         pa.merchant_invoice, pa.amount_sen, pa.local_status,
         o.payment_method, o.payment_status, o.shipping_status,
         o.stock_restored_at
@@ -179,6 +180,7 @@ export async function applyDokuPaymentFact(
     attempt.provider_reference !== notification.providerReference ||
     attempt.merchant_invoice !== notification.merchantInvoice ||
     attempt.amount_sen !== notification.amountSen ||
+    (attempt.channel !== null && attempt.channel !== notification.channel) ||
     attempt.payment_method !== "doku"
   ) {
     throw new DokuPaymentLifecycleError("DOKU_PAYMENT_MISMATCH");

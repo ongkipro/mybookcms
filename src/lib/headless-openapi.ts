@@ -464,6 +464,13 @@ export const headlessOpenApiDocument = {
       CheckoutRequest: {
         type: "object",
         required: ["customer_name", "customer_phone", "address", "district", "province", "postal_code", "payment_method", "variant_id", "quantity", "submit_token"],
+        allOf: [{
+          if: {
+            properties: { payment_method: { const: "doku" } },
+            required: ["payment_method"],
+          },
+          then: { required: ["customer_email", "doku_channel"] },
+        }],
         properties: {
           customer_name: { type: "string", minLength: 2, maxLength: 100, description: "Unicode letters, spaces, apostrophes, full stops, and hyphens only." },
           customer_phone: { type: "string" },
@@ -474,6 +481,11 @@ export const headlessOpenApiDocument = {
           province: { type: "string", minLength: 2, maxLength: 120 },
           postal_code: { type: "string", pattern: "^[0-9]{5}$" },
           payment_method: { type: "string", enum: ["cod", "manual_transfer", "doku"] },
+          doku_channel: {
+            type: "string",
+            enum: ["INTERNET_BANKING_FPX", "EWALLET_TNG", "EWALLET_GRABPAY", "EWALLET_SHOPEEPAY", "CREDIT_CARD"],
+            description: "Required when payment_method is doku. Must be advertised by GET /api/v1/storefront for this install.",
+          },
           seller_bank_account_id: { type: "integer", minimum: 1 },
           variant_id: { type: ["string", "integer"] },
           quantity: { type: "integer", minimum: 1, maximum: 100 },

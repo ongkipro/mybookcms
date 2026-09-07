@@ -204,6 +204,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         {
           ...orderInput,
           customerEmail: data.customer_email || "",
+          selectedChannel: data.doku_channel!,
           requestUrl: request.url,
           clientIp,
           userAgent: request.headers.get("User-Agent") || "unknown",

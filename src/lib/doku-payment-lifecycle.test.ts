@@ -6,6 +6,7 @@ import test, { after, before } from "node:test";
 import { getPlatformProxy, type PlatformProxy } from "wrangler";
 import {
   applyDokuPaymentFact,
+  DokuPaymentLifecycleError,
   mapDokuNotificationStatus,
   type DokuNotificationFact,
 } from "./doku-payment-lifecycle.ts";
@@ -104,6 +105,7 @@ async function seedDokuOrder(variantId: number, suffix: string) {
       merchantInvoice,
       idempotencyKey: `idempotency-${suffix}`,
       requestFingerprint: `fingerprint-${suffix}`,
+      channel: "INTERNET_BANKING_FPX",
       expiresAt: new Date(Date.now() + 30 * 60_000).toISOString(),
     },
   });
@@ -227,4 +229,26 @@ test("DOKU failure never queues Purchase", async () => {
     SELECT COUNT(*) AS count FROM capi_event_outbox
     WHERE event_id = ?
   `).bind(`purchase:${order.orderNumber}`).first<{ count: number }>())?.count, 0);
+});
+
+test("a provider fact for a different channel cannot transition the attempt", async () => {
+  const order = await seedDokuOrder(36003, "channel-mismatch");
+  await assert.rejects(
+    applyDokuPaymentFact(
+      database,
+      { id: 1, environment: "sandbox", configRevision: 1 },
+      {
+        ...paymentFact(order, "SUCCESS", "COMPLETED", "wrong-channel"),
+        channel: "EWALLET_TNG",
+      },
+      "notification",
+    ),
+    (error: unknown) => error instanceof DokuPaymentLifecycleError && error.code === "DOKU_PAYMENT_MISMATCH",
+  );
+  const state = await database.prepare(`
+    SELECT pa.local_status, o.payment_status
+    FROM payment_attempts pa JOIN orders o ON o.id = pa.order_id
+    WHERE pa.id = ?
+  `).bind(order.attemptId).first<{ local_status: string; payment_status: string }>();
+  assert.deepEqual(state, { local_status: "pending", payment_status: "pending" });
 });

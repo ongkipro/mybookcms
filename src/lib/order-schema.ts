@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { DOKU_PAYMENT_CHANNELS } from './doku-config.ts';
 import {
   isValidMalaysiaCustomerName,
   isValidMalaysiaDeliveryAddress,
@@ -42,6 +43,7 @@ export const orderSubmitSchema = z.object({
   postal_code: z.string().trim().regex(/^\d{5}$/, 'Poskod mesti mengandungi 5 digit'),
   location_id: z.coerce.number().int().positive().optional(),
   payment_method: z.enum(['cod', 'manual_transfer', 'doku']).default('cod'),
+  doku_channel: z.enum(DOKU_PAYMENT_CHANNELS).optional(),
   seller_bank_account_id: z.coerce.number().int().positive().optional(),
   variant_id: z.union([z.string(), z.number().transform(String)]).pipe(
     z.string().trim().min(1, 'Varian produk harus dipilih').max(120),
@@ -50,6 +52,13 @@ export const orderSubmitSchema = z.object({
   submit_token: z.string().trim().min(16, 'Token submit tidak valid').max(120),
   website: z.string().optional(), // Honeypot field
 }).superRefine((input, context) => {
+  if (input.payment_method !== 'doku' && input.doku_channel) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['doku_channel'],
+      message: 'Saluran DOKU hanya sah untuk pembayaran DOKU',
+    });
+  }
   if (input.payment_method === 'cod') return;
   if (input.payment_method === 'manual_transfer') {
     if (!input.seller_bank_account_id) {
@@ -61,12 +70,21 @@ export const orderSubmitSchema = z.object({
     }
     return;
   }
-  if (input.payment_method === 'doku' && !input.customer_email) {
-    context.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ['customer_email'],
-      message: 'E-mel diperlukan untuk pembayaran DOKU',
-    });
+  if (input.payment_method === 'doku') {
+    if (!input.doku_channel) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['doku_channel'],
+        message: 'Pilih saluran pembayaran DOKU',
+      });
+    }
+    if (!input.customer_email) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['customer_email'],
+        message: 'E-mel diperlukan untuk pembayaran DOKU',
+      });
+    }
   }
 });
 

@@ -7,6 +7,173 @@
 > product's infrastructure and mean nothing to a reader of this repository.
 > The engineering narrative is unchanged.
 
+## 2026-09-07 — A-242 channel-first DOKU Hosted Checkout implemented locally
+
+The accepted full-form payment hierarchy now renders each enabled DOKU Malaysia
+channel as a direct radio beside COD and manual transfer. The former generic
+DOKU radio and its passive channel list are gone. FPX, Touch 'n Go eWallet,
+GrabPay, ShopeePay, and credit/debit cards still hand off to DOKU Hosted
+Checkout; MyBookCMS adds no card, OTP, banking, or wallet credential field.
+The shared e-mail, privacy, redirect, pending, failure, and recovery disclosure
+continues to appear for every DOKU channel.
+
+The UI value is now an authoritative contract rather than display-only state.
+The shared order schema and Headless/OpenAPI request require `doku_channel` only
+with `payment_method: "doku"`. The adapter validates it against the active
+server-owned channel policy before persistence, binds it into the request
+fingerprint, stores it in `payment_attempts.channel`, and sends exactly that one
+value in Hosted Checkout `payment_channels`. A duplicate submit token cannot
+change channel. Retry derives the same stored channel, refuses it if the current
+configuration disabled it, and never substitutes another method. Payment
+notification/status/reconciliation facts cannot transition an attempt when
+their channel contradicts its stored choice.
+
+Executable evidence: 64/64 focused payment/schema/headless tests and 469/469
+full repository tests passed; `npm run check`, `npm run build`, and
+`git diff --check` were clean at verification time. Built-Worker Chromium tested
+the product, `/full-form`, and `/embed/form` at both 390 px and 1280 px. Each
+surface rendered COD, manual transfer, and the same five direct DOKU rows;
+pointer selection and native ArrowRight radio navigation selected a hosted
+channel, revealed the required DOKU e-mail/disclosure block, and exposed the
+payment error state. All six runs had no horizontal overflow, runtime exception,
+failed request, generic DOKU parent, or local card field. No provider request,
+remote mutation, deployment, secret, or PII was used. A-242 remains formally
+open only because its required independent Opus review and delivery-ledger
+approval are unavailable in this Codex session; A-221 separately retains all
+real sandbox lifecycle gates.
+
+## 2026-09-07 — A-221 local sandbox channel policy expanded
+
+After explicit operator approval, a conditional local-D1 update first verified
+that the active FPX-only configuration revision had no created, pending, or
+attention-required payment attempt. It then advanced revision 1 to revision 2
+and selected the five intended hosted Malaysia channels: FPX, Touch 'n Go
+eWallet, GrabPay, ShopeePay, and credit/debit cards. The running local Worker's
+public payment-method contract returned those five labels, and the real product
+form rendered the same list. All 464 repository tests and `git diff --check`
+passed after the policy change. No credential value was read or printed.
+
+The current official DOKU Malaysia Postman collection was rechecked against the
+adapter boundary. Its Hosted Checkout `/v3/checkouts` sample—the path used by
+MyBookCMS—does not carry `device_info`; the field appears in its channel-specific
+Direct Payment `/v3/payments` samples. No direct-payment, embedded-card, PAN,
+OTP, or wallet-credential path was added. MyBookCMS continues to redirect the
+buyer to DOKU's hosted surface and relies on a signed/correlated notification for
+authoritative payment state.
+
+This run proves local configuration and rendering only. It did not mutate DOKU
+Dashboard, call a provider endpoint, create an order or payment attempt, or
+prove that the merchant account has every service active. Localhost and the
+Tailscale HTTP origin remain invalid notification targets, so hosted controls,
+payment outcomes, callback/notification, stock, Ads Purchase, and retry evidence
+remain open under A-221. No remote mutation, deployment, production action,
+secret, or PII was created or exposed. Delivery run
+`RUN-20260907T024256Z-0b9be8ac` is blocked rather than passed because its R4
+review and external lifecycle gates remain unavailable.
+
+## 2026-09-07 — A-241 implementation restores location selection on local HTTP origins
+
+The Malaysia location API was healthy, but the checkout enhancement was not.
+On the operator's plain-HTTP Tailscale origin, Chromium reported
+`isSecureContext=false`, no `crypto.randomUUID`, and a `TypeError` at the
+checkout token declaration. That exception happened before the input listeners
+were attached, leaving the rendered `Cari bandar atau poskod` control inert.
+Literal localhost had hidden the defect because browsers grant it secure-context
+exceptions.
+
+The submit/idempotency token is now generated once per live form with 32 bytes
+from `crypto.getRandomValues`, the CSPRNG browser primitive that remains
+available on a non-secure HTTP origin. The resulting 64-character token remains
+inside the form script instead of being serialized into response HTML, so its
+uniqueness no longer depends on every intermediary treating the page as
+uncacheable. No dependency or weak-random fallback was added.
+
+The follow-up audit also closed two stale-search races. Every input change now
+invalidates and aborts the previous request immediately, clears its options
+before the debounce window can accept Enter, and ignores a late failure or
+response whose sequence no longer owns the current query. The Malaysia
+directory, API, three-character/five-digit threshold, server-side location and
+shipping revalidation, payment policy, and visual design did not change.
+
+Browser evidence re-ran the failing Tailscale HTTP origin against the rebuilt
+local Worker. Chrome stayed at `isSecureContext=false`, exposed no
+`crypto.randomUUID`, and recorded the expected 32-byte `getRandomValues` call.
+At 390 px, the product route rejected synchronous Enter on an old Johor result,
+then selected `50450` by keyboard as Kuala Lumpur and quoted `RM 8.00`. A late
+synthetic failure from the superseded Johor request could not replace the newer
+Kuala Lumpur result. At 1280 px, pointer selection on `/full-form` selected
+Johor Bahru `80000` and quoted `RM 8.00`. At 390 px, keyboard selection inside
+`/embed/form` selected Kuching `93000` and quoted `RM 15.00`. Every run reported
+zero runtime exception, failed request, or horizontal overflow.
+
+The 29 focused location/form/embed/order tests and all 464 repository tests
+passed. `npm run check` reported zero Astro or TypeScript diagnostics, and the
+Cloudflare server build completed. Port `8787` was restarted from that build.
+
+A final same-route security/correctness review reported no finding. It confirmed
+the 64-character token fits the 16–120 character schema, DOKU consumes its hash
+rather than UUID syntax, the value remains stable for submit and Ads event
+deduplication, stale success/error paths are fenced, and the DOKU HTTPS boundary
+is unchanged. A-241 remains open only because that Codex/GPT-5 review cannot
+replace the independent Opus review required by the repository's effective R3
+payment-surface gate; no Opus route is available in this session.
+
+## 2026-09-07 — A-240 bounds every DOKU buyer-recovery capability
+
+The checkout-issued capability now expires server-side exactly 24 hours after
+the matched `payment_attempts.created_at`. The loader fails closed on invalid or
+future D1 timestamps, and checks the historical attempt that issued the token
+before it may surface a newer retry attempt. Cookie renewal therefore cannot
+extend the lifetime, and a later retry receives no authority to revive an older
+URL. Return, result, and cancel exchanges clear expired access; status and retry
+refuse it before provider traffic or mutation. Retry-attempt creation now uses
+the same injected clock as the rest of its request path, eliminating a split
+clock found while crossing the exact boundary in workerd-backed D1 tests.
+
+Executable evidence: 9/9 focused DOKU access tests, 60/60 complete DOKU tests,
+and 464/464 repository tests passed; `npm run check` reported zero Astro,
+TypeScript, warning, or hint diagnostics; `npm run build` completed the
+Cloudflare server build. The boundary regression accepts one millisecond before
+24 hours, refuses at 24 hours on return/result/cancel/status/retry, observes zero
+provider calls, creates no extra attempt, and proves an older token does not
+inherit a later attempt's lifetime. No browser-visible surface, schema,
+credential, provider request, remote D1, deployment, or production state
+changed.
+
+## 2026-09-07 — A-221 sandbox revalidation reaches the account boundary
+
+At revision `5bc1d4a`, all 59 focused DOKU tests passed. A fresh bounded
+credential-injected sandbox check used fictional FPX-only MYR 2.00 data and the
+production adapter: create and retrieve both returned `200`, the Checkout URL
+matched the fixed DOKU allowlist, and the responses carried matching Client ID,
+response timestamp, API version, and JSON media type. Both again omitted
+`Signature`, so the adapter accepted them only through REQ-227's narrow,
+request-owned identity/invoice/MYR correlation profile.
+
+This does not close A-221. A bounded hosted-browser attempt produced no
+attributable rendered-control evidence. At that point local D1 had no DOKU
+configuration row, its dev origin was Tailscale HTTP rather than public HTTPS,
+and no DOKU Dashboard session was available to activate Checkout channels or
+register the required Notification URL.
+
+After explicit operator approval, managed credentials were written through the
+production encryption helper into local D1 revision 1 with only FPX enabled. A
+separate local Worker started with the same managed root secret reported the
+configuration ready and enabled. Its payment-method endpoint exposed DOKU/FPX
+beside COD/manual transfer, and its Malaysia location endpoint still resolved
+`50450`. Headless Chromium at 390 px rendered both the DOKU option and Kuala
+Lumpur result with zero page overflow, runtime exception, or failed request.
+Secret values never entered the repository or command output.
+
+This still does not close A-221. The application deliberately refuses an HTTP
+origin before order persistence or provider transport, and current official
+DOKU guidance says a Notification URL must be internet-reachable and cannot be
+localhost or VPN-gated. No public HTTPS origin or DOKU Dashboard session is
+available, so no order, attempt, hosted checkout, callback, notification,
+resend, payment, stock transition, Ads event, remote mutation, deployment, or
+production action occurred. The next honest step remains Dashboard channel and
+Notification URL setup on an explicitly approved public HTTPS sandbox origin.
+
 ## 2026-09-05 — Roadmap and requirement-status reconciliation
 
 This was a documentation-only planning pass. It did not add a speculative

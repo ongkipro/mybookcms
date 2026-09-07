@@ -107,6 +107,7 @@ function input(variantId: number, token: string): DokuCheckoutInput {
     customerName: "Aina Rahman",
     customerPhone: "60123456789",
     customerEmail: "aina@example.com",
+    selectedChannel: "INTERNET_BANKING_FPX",
     address: "12 Jalan Buku, Taman Fokus",
     province: "Johor",
     city: "Johor Bahru",

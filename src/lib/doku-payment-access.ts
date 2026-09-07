@@ -1,6 +1,11 @@
 import { DokuClient, DokuClientError } from "./doku-client.ts";
 import { checkRateLimit, rateLimitHeaders } from "./rate-limit.ts";
-import { getEnabledDokuConfig, type DokuRuntimeConfig } from "./doku-config.ts";
+import {
+  DOKU_PAYMENT_CHANNELS,
+  getEnabledDokuConfig,
+  type DokuPaymentChannel,
+  type DokuRuntimeConfig,
+} from "./doku-config.ts";
 import { createDokuReturnToken } from "./doku-checkout.ts";
 import {
   applyDokuPaymentFact,
@@ -11,6 +16,7 @@ import {
 
 const ACCESS_COOKIE_NAME = "__Host-mybook_doku_access";
 const ACCESS_COOKIE_MAX_AGE_SECONDS = 30 * 60;
+export const DOKU_RETURN_CAPABILITY_TTL_MS = 24 * 60 * 60 * 1000;
 const MAX_ACCESS_REQUEST_BYTES = 4096;
 const RETRY_TTL_MS = 60 * 60 * 1000;
 const SAFE_JSON_HEADERS = {
@@ -42,6 +48,7 @@ export type DokuPaymentAccess = {
   providerState: string | null;
   localStatus: DokuLocalPaymentStatus;
   errorClass: string | null;
+  createdAt: string;
   orderPaymentStatus: string;
   orderShippingStatus: string;
   stockRestoredAt: string | null;
@@ -103,6 +110,7 @@ type AccessRow = {
   provider_state: string | null;
   local_status: DokuLocalPaymentStatus;
   error_class: string | null;
+  created_at: string;
 };
 
 type RetryOrder = {
@@ -138,6 +146,7 @@ type AttemptRow = {
   provider_config_id: number;
   environment: "sandbox" | "production";
   config_revision: number;
+  channel: string | null;
   provider_reference: string | null;
   checkout_url: string | null;
   expires_at: string | null;
@@ -310,6 +319,7 @@ function accessFromRow(row: AccessRow, returnToken: string): DokuPaymentAccess |
     providerState: row.provider_state,
     localStatus: row.local_status,
     errorClass: row.error_class,
+    createdAt: row.created_at,
     orderPaymentStatus: row.payment_status,
     orderShippingStatus: row.shipping_status,
     stockRestoredAt: row.stock_restored_at,
@@ -329,7 +339,7 @@ async function loadAttemptsForOrder(database: D1Database, orderNumber: string): 
         pa.config_revision, pa.merchant_invoice, pa.idempotency_key,
         pa.provider_reference, pa.amount_sen, pa.checkout_url, pa.expires_at,
         pa.channel, pa.provider_status, pa.provider_state, pa.local_status,
-        pa.error_class
+        pa.error_class, pa.created_at
       FROM orders o
       JOIN payment_attempts pa ON pa.order_id = o.id AND pa.provider = 'doku'
       WHERE o.order_number = ? AND o.payment_method = 'doku'
@@ -346,17 +356,32 @@ export async function loadDokuPaymentAccess(
   rootSecret: string,
   orderNumber: string,
   returnToken: string,
+  options: { now?: () => Date } = {},
 ): Promise<DokuPaymentAccess | null> {
   const safeOrderNumber = normalizeOrderNumber(orderNumber);
   const safeReturnToken = normalizeReturnToken(returnToken);
   if (!database?.prepare || !rootSecret || !safeOrderNumber || !safeReturnToken) return null;
 
   const rows = await loadAttemptsForOrder(database, safeOrderNumber);
+  const nowMs = (options.now?.() ?? new Date()).getTime();
+  if (!Number.isFinite(nowMs)) return null;
   for (const row of rows) {
     const expected = await createDokuReturnToken(rootSecret, row.attempt_id, row.order_number);
     if (timingSafeHexEqual(expected, safeReturnToken)) {
-      // A bounded checkout-issued capability authorizes recovery for this order.
-      // Always surface its newest attempt so a retry does not strand the browser
+      const createdAt = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?:\.\d+)?$/.test(row.created_at)
+        ? `${row.created_at.replace(" ", "T")}Z`
+        : row.created_at;
+      const createdAtMs = Date.parse(createdAt);
+      if (
+        !Number.isFinite(createdAtMs) ||
+        createdAtMs > nowMs ||
+        nowMs - createdAtMs >= DOKU_RETURN_CAPABILITY_TTL_MS
+      ) {
+        return null;
+      }
+      // The matched checkout-issued capability authorizes recovery for this
+      // order only inside its own lifetime. Surface the newest attempt while
+      // that capability remains valid so a retry does not strand the browser
       // on the terminal attempt that originally issued the cookie.
       return rows[0] ? accessFromRow(rows[0], safeReturnToken) : null;
     }
@@ -369,17 +394,25 @@ export async function loadDokuPaymentAccessFromCookie(
   rootSecret: string,
   cookieHeader: string | null,
   expectedOrderNumber?: string,
+  options: { now?: () => Date } = {},
 ): Promise<DokuPaymentAccess | null> {
   const parsed = parseCookieHeader(cookieHeader);
   if (!parsed) return null;
   if (expectedOrderNumber && parsed.orderNumber !== expectedOrderNumber) return null;
-  return loadDokuPaymentAccess(database, rootSecret, parsed.orderNumber, parsed.returnToken);
+  return loadDokuPaymentAccess(
+    database,
+    rootSecret,
+    parsed.orderNumber,
+    parsed.returnToken,
+    options,
+  );
 }
 
 export async function exchangeDokuCallbackQuery(
   database: D1Database | undefined,
   rootSecret: string,
   url: URL,
+  options: { now?: () => Date } = {},
 ): Promise<{ type: "none" } | { type: "redirect"; status: 303; headers: Headers; accepted: boolean }> {
   if (!url.searchParams.has("order_number") && !url.searchParams.has("return_token")) {
     return { type: "none" };
@@ -393,7 +426,7 @@ export async function exchangeDokuCallbackQuery(
   const orderNumber = normalizeOrderNumber(url.searchParams.get("order_number"));
   const returnToken = normalizeReturnToken(url.searchParams.get("return_token"));
   const access = orderNumber && returnToken && database?.prepare
-    ? await loadDokuPaymentAccess(database, rootSecret, orderNumber, returnToken)
+    ? await loadDokuPaymentAccess(database, rootSecret, orderNumber, returnToken, options)
     : null;
   headers.append("Set-Cookie", access
     ? buildDokuAccessCookie(access.orderNumber, access.returnToken)
@@ -606,7 +639,13 @@ export async function reconcileDokuPaymentStatus(
     throw new DokuPaymentAccessError("DOKU_PROVIDER_FAILED", 502);
   }
   await applyDokuPaymentFact(database, identity, fact, "status");
-  const updated = await loadDokuPaymentAccess(database, rootSecret, access.orderNumber, access.returnToken);
+  const updated = await loadDokuPaymentAccess(
+    database,
+    rootSecret,
+    access.orderNumber,
+    access.returnToken,
+    { now: options.now },
+  );
   return updated ? summarizeDokuPayment(updated) : summarizeDokuPayment(access);
 }
 
@@ -662,7 +701,7 @@ async function loadRetryOrder(database: D1Database, orderId: number): Promise<Re
 async function latestActiveAttempt(database: D1Database, orderId: number): Promise<AttemptRow | null> {
   return database.prepare(`
     SELECT id, merchant_invoice, idempotency_key, request_fingerprint,
-      provider_config_id, environment, config_revision, provider_reference,
+      provider_config_id, environment, config_revision, channel, provider_reference,
       checkout_url, expires_at, provider_status, provider_state, local_status
     FROM payment_attempts
     WHERE order_id = ? AND provider = 'doku' AND local_status IN ('created', 'pending')
@@ -676,7 +715,9 @@ async function createRetryAttempt(
   access: DokuPaymentAccess,
   order: RetryOrder,
   identity: DokuPaymentConfigIdentity,
+  channel: DokuPaymentChannel,
   requestFingerprint: string,
+  now: Date,
   expiresAt: string,
 ): Promise<AttemptRow> {
   if (!canRetry(access)) {
@@ -702,6 +743,7 @@ async function createRetryAttempt(
     provider_config_id: identity.id,
     environment: identity.environment,
     config_revision: identity.configRevision,
+    channel,
     provider_reference: null,
     checkout_url: null,
     expires_at: expiresAt,
@@ -709,7 +751,7 @@ async function createRetryAttempt(
     provider_state: null,
     local_status: "created",
   };
-  const nowIso = new Date().toISOString();
+  const nowIso = now.toISOString();
   const abortIfNoChange = (marker: string) => database.prepare(`
     INSERT INTO payment_events (
       payment_attempt_id, source, event_key, resulting_status, received_at
@@ -748,8 +790,8 @@ async function createRetryAttempt(
       INSERT INTO payment_attempts (
         id, order_id, provider_config_id, provider, environment,
         config_revision, merchant_invoice, idempotency_key, request_fingerprint,
-        amount_sen, currency, expires_at, local_status, created_at, updated_at
-      ) VALUES (?, ?, ?, 'doku', ?, ?, ?, ?, ?, ?, 'MYR', ?, 'created', ?, ?)
+        amount_sen, currency, channel, expires_at, local_status, created_at, updated_at
+      ) VALUES (?, ?, ?, 'doku', ?, ?, ?, ?, ?, ?, 'MYR', ?, ?, 'created', ?, ?)
     `).bind(
       attempt.id,
       order.orderId,
@@ -760,6 +802,7 @@ async function createRetryAttempt(
       attempt.idempotency_key,
       attempt.request_fingerprint,
       order.totalAmountSen,
+      attempt.channel,
       attempt.expires_at,
       nowIso,
       nowIso,
@@ -786,7 +829,6 @@ async function createRetryAttempt(
 function checkoutBody(
   order: RetryOrder,
   attempt: AttemptRow,
-  enabledChannels: readonly string[],
   origin: string,
   returnToken: string,
 ): string {
@@ -822,7 +864,7 @@ function checkoutBody(
       expired_at: attempt.expires_at,
     },
     checkout_experience: {
-      payment_channels: enabledChannels,
+      payment_channels: [attempt.channel],
       language: "MS",
       auto_redirect: false,
       retry_payment: { enabled: true },
@@ -878,9 +920,16 @@ async function sendRetryAttemptToDoku(
   requestUrl: string,
   options: { fetch?: typeof fetch; now?: () => Date } = {},
 ): Promise<{ checkoutUrl: string; summary: PublicDokuPaymentStatus; accessCookie: string }> {
+  if (
+    !attempt.channel ||
+    !DOKU_PAYMENT_CHANNELS.includes(attempt.channel as DokuPaymentChannel) ||
+    !config.enabledChannels.includes(attempt.channel as DokuPaymentChannel)
+  ) {
+    throw new DokuPaymentAccessError("DOKU_UNAVAILABLE", 503);
+  }
   const origin = requestOrigin(requestUrl);
   const returnToken = await createDokuReturnToken(rootSecret, attempt.id, order.orderNumber);
-  const rawBody = checkoutBody(order, attempt, config.enabledChannels, origin, returnToken);
+  const rawBody = checkoutBody(order, attempt, origin, returnToken);
   const client = new DokuClient({
     environment: config.environment,
     clientId: config.clientId,
@@ -927,7 +976,13 @@ async function sendRetryAttemptToDoku(
         nowIso,
       ),
     ]);
-    const access = await loadDokuPaymentAccess(database, rootSecret, order.orderNumber, returnToken);
+    const access = await loadDokuPaymentAccess(
+      database,
+      rootSecret,
+      order.orderNumber,
+      returnToken,
+      { now: options.now },
+    );
     if (!access) throw new DokuPaymentAccessError("DOKU_CONFLICT");
     return {
       checkoutUrl: payment.checkoutUrl,
@@ -957,6 +1012,13 @@ export async function retryDokuPayment(
   let order = await loadRetryOrder(database, access.orderId);
   if (!order) throw new DokuPaymentAccessError("DOKU_ACCESS_DENIED", 404);
   const { config, identity } = await runtimeConfigForRetry(database, rootSecret);
+  const selectedChannel = retryAccess.channel;
+  if (!selectedChannel || !DOKU_PAYMENT_CHANNELS.includes(selectedChannel as DokuPaymentChannel)) {
+    throw new DokuPaymentAccessError("DOKU_CONFLICT", 409);
+  }
+  if (!config.enabledChannels.includes(selectedChannel as DokuPaymentChannel)) {
+    throw new DokuPaymentAccessError("DOKU_UNAVAILABLE", 503);
+  }
   const now = input.now?.() ?? new Date();
   let active = await latestActiveAttempt(database, order.orderId);
   if (
@@ -964,14 +1026,21 @@ export async function retryDokuPayment(
     (
       active.provider_config_id !== identity.id ||
       active.environment !== identity.environment ||
-      active.config_revision !== identity.configRevision
+      active.config_revision !== identity.configRevision ||
+      active.channel !== selectedChannel
     )
   ) {
     throw new DokuPaymentAccessError("DOKU_UNAVAILABLE", 503);
   }
   if (active?.checkout_url) {
     const activeToken = await createDokuReturnToken(rootSecret, active.id, order.orderNumber);
-    const activeAccess = await loadDokuPaymentAccess(database, rootSecret, order.orderNumber, activeToken);
+    const activeAccess = await loadDokuPaymentAccess(
+      database,
+      rootSecret,
+      order.orderNumber,
+      activeToken,
+      { now: input.now },
+    );
     if (!activeAccess) throw new DokuPaymentAccessError("DOKU_CONFLICT");
     const expiresAt = active.expires_at ? Date.parse(active.expires_at) : Number.NaN;
     if (Number.isFinite(expiresAt) && expiresAt > now.getTime()) {
@@ -995,9 +1064,13 @@ export async function retryDokuPayment(
       rootSecret,
       access.orderNumber,
       access.returnToken,
+      { now: input.now },
     );
     if (!refreshedAccess) throw new DokuPaymentAccessError("DOKU_ACCESS_DENIED", 404);
     retryAccess = refreshedAccess;
+    if (retryAccess.channel !== selectedChannel) {
+      throw new DokuPaymentAccessError("DOKU_CONFLICT", 409);
+    }
     active = await latestActiveAttempt(database, order.orderId);
     if (active) throw new DokuPaymentAccessError("DOKU_CONFLICT");
   }
@@ -1006,13 +1079,16 @@ export async function retryDokuPayment(
     retryAccess.attemptId,
     identity.id,
     identity.configRevision,
+    selectedChannel,
   ].join("\n"))}:${await sha256Hex(`${input.clientIp.trim()}\n${input.userAgent.trim()}`)}`;
   const attempt = active || await createRetryAttempt(
     database,
     retryAccess,
     order,
     identity,
+    selectedChannel as DokuPaymentChannel,
     fingerprint,
+    now,
     new Date(now.getTime() + RETRY_TTL_MS).toISOString(),
   );
   const result = await sendRetryAttemptToDoku(
@@ -1079,6 +1155,7 @@ async function requestAccess(
   request: Request,
   database: D1Database,
   rootSecret: string,
+  now?: () => Date,
 ): Promise<DokuPaymentAccess> {
   const body = await parseBoundedJson(request);
   const orderNumber = normalizeOrderNumber(body?.order_number);
@@ -1088,6 +1165,7 @@ async function requestAccess(
     rootSecret,
     request.headers.get("Cookie"),
     orderNumber,
+    { now },
   );
   if (!access) throw new DokuPaymentAccessError("DOKU_ACCESS_DENIED", 404);
   return access;
@@ -1179,7 +1257,7 @@ export async function handleDokuStatusRequest(input: {
     return json({ success: false, error: "Sistem pembayaran belum tersedia.", code: "DOKU_UNAVAILABLE" }, 503);
   }
   try {
-    const access = await requestAccess(input.request, input.database, input.rootSecret);
+    const access = await requestAccess(input.request, input.database, input.rootSecret, input.now);
     const limited = await enforceCapabilityRateLimit(
       input.sessions,
       input.clientIp,
@@ -1214,7 +1292,7 @@ export async function handleDokuRetryRequest(input: {
     return json({ success: false, error: "Sistem pembayaran belum tersedia.", code: "DOKU_UNAVAILABLE" }, 503);
   }
   try {
-    const access = await requestAccess(input.request, input.database, input.rootSecret);
+    const access = await requestAccess(input.request, input.database, input.rootSecret, input.now);
     const limited = await enforceCapabilityRateLimit(
       input.sessions,
       input.clientIp,

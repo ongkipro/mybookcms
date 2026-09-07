@@ -19,8 +19,8 @@ test("payment brand normalization remains frontend-safe", () => {
 });
 
 test("DOKU channel labels expose buyer copy without leaking unknown codes", () => {
-  assert.equal(dokuChannelLabel("INTERNET_BANKING_FPX"), "Perbankan dalam talian FPX");
-  assert.equal(dokuChannelLabel("EWALLET_TNG"), "Touch 'n Go eWallet");
+  assert.equal(dokuChannelLabel("INTERNET_BANKING_FPX"), "FPX");
+  assert.equal(dokuChannelLabel("EWALLET_TNG"), "Touch 'n Go");
   assert.equal(dokuChannelLabel("UNKNOWN"), "");
 });
 
@@ -29,12 +29,12 @@ test("DOKU publishes one hosted choice with enabled safe labels only", () => {
   assert.deepEqual(buildDokuPaymentMethod(["EWALLET_TNG", "UNKNOWN"]), {
     code: "DOKU",
     payment_method: "doku",
-    name: "Bayar dalam talian melalui DOKU",
+    name: "Bayaran dalam talian",
     logo_url: "",
-    description: "Pilih kaedah bayaran pada halaman selamat DOKU.",
+    description: "Bayar pada halaman selamat.",
     is_active: true,
     requires_email: true,
     hosted_redirect: true,
-    channels: [{ code: "EWALLET_TNG", label: "Touch 'n Go eWallet" }],
+    channels: [{ code: "EWALLET_TNG", label: "Touch 'n Go" }],
   });
 });

@@ -28,11 +28,7 @@ export type SellerBankAccountRow = {
 };
 
 export type PaymentAvailability = {
-  /**
-   * The store's COD flag. Note that nothing on any submission path enforces it
-   * today — see A-232. This value is what the storefront is told, not a
-   * guarantee the server will refuse a COD order when it is false.
-   */
+  /** The store's COD flag, shared by buyer reads and order persistence. */
   codEnabled: boolean;
   sellerBankAccounts: SellerBankAccountRow[];
   /** Null when DOKU is absent, disabled, unreadable, or has no usable channel. */
@@ -56,6 +52,20 @@ export function supportedPaymentMethods(
   }
   if (availability.doku) methods.push("doku");
   return methods;
+}
+
+/** Compact Malay payment truth for the repeated PDP variant rows. */
+export function paymentAvailabilityTrustLine(availability: PaymentAvailability) {
+  const manualTransferEnabled = availability.sellerBankAccounts.some(
+    (account) => account.is_active,
+  );
+  if (availability.codEnabled && manualTransferEnabled) {
+    return "Sedia dihantar • COD atau pindahan bank";
+  }
+  if (availability.codEnabled) return "Sedia dihantar • COD tersedia";
+  if (manualTransferEnabled) return "Sedia dihantar • Pindahan bank tersedia";
+  if (availability.doku) return "Sedia dihantar • Bayaran dalam talian tersedia";
+  return "Kaedah bayaran belum tersedia";
 }
 
 /**

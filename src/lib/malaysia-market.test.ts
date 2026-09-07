@@ -117,6 +117,32 @@ test("buyer-facing components do not mix Indonesian into Malay copy", () => {
   }
 });
 
+test("the checkout trust strip draws its icons, and the stylesheet's icon rule is reachable", () => {
+  // `.trust-icon` was styled for an SVG — fill: none, stroke-width, round caps —
+  // from the baseline commit onwards, but no markup ever used it. The strip
+  // rendered three identical `<b>\u2713</b>` glyphs instead: one weight lighter
+  // than the labels beneath them, carrying no meaning, and with the wrapping
+  // third label pushing its glyph off the line the other two sat on. Dead CSS is
+  // invisible to every other check in this suite, so it is asserted here.
+  const checkout = read("src/components/storefront/forms/MalaysiaCheckoutForm.astro");
+  const styles = read("src/styles/form-hybrid.css");
+  const strip = checkout.match(/<div class="trust-strip"[\s\S]*?<\/div>/)?.[0];
+  assert.ok(strip, "checkout must render a trust strip");
+  assert.equal((strip.match(/class="trust-icon"/g) || []).length, 3);
+  assert.doesNotMatch(strip, /<b\b/, "trust strip must draw icons, not bold text glyphs");
+  assert.doesNotMatch(strip, /\u2713|\u2714/, "trust strip must not fall back to a checkmark character");
+  for (const svg of strip.match(/<svg[\s\S]*?<\/svg>/g) || []) {
+    assert.match(svg, /aria-hidden="true"/, "a decorative trust icon must stay out of the accessibility tree");
+    assert.match(svg, /focusable="false"/, "a decorative trust icon must not take focus");
+  }
+  assert.match(styles, /\.trust-icon \{[^}]*stroke: currentColor/, "the icon must inherit the strip's colour");
+  assert.match(
+    styles,
+    /\.trust-strip i \{[\s\S]*?min-height: 1\.5625rem/,
+    "every label box must reserve two lines so a wrapping label cannot lift its icon off the line",
+  );
+});
+
 /**
  * Source with comments removed.
  *
@@ -131,7 +157,7 @@ function codeOnly(source: string) {
     .replace(/(^|[^:])\/\/[^\n]*/g, "$1");
 }
 
-test("canonical checkout exposes one hosted DOKU choice without card fields or provider leakage", () => {
+test("canonical checkout exposes enabled DOKU channels as direct hosted choices without card fields or provider leakage", () => {
   const checkout = read("src/components/storefront/forms/MalaysiaCheckoutForm.astro");
   const legal = read("src/data/legal.ts");
   const legalPage = read("src/components/storefront/shared/LegalPage.astro");
@@ -141,14 +167,25 @@ test("canonical checkout exposes one hosted DOKU choice without card fields or p
   // and headless surfaces cannot disagree; the DOKU lookup now lives there.
   const availability = read("src/lib/payment-availability.ts");
   const headlessStorefront = read("src/pages/api/v1/storefront.ts");
-  assert.match(checkout, /E-mel untuk pembayaran DOKU/);
-  assert.match(checkout, /DOKU menggunakan e-mel dan maklumat pesanan ini untuk menyediakan pembayaran dan resit/);
-  assert.match(checkout, /href="\/dasar-privasi#pembayaran-doku" target="_blank" rel="noopener"/);
-  assert.match(checkout, /Baca pendedahan privasi DOKU dalam Bahasa Melayu dan bahasa Inggeris \(dibuka dalam tab baharu\)/);
-  assert.match(checkout, /aria-describedby=\{`\$\{instanceId\}-doku-helper \$\{instanceId\}-doku-privacy \$\{instanceId\}-doku-disclosure`\}/);
-  assert.match(checkout, /meninggalkan kedai ini dan membuka halaman pembayaran DOKU/);
+  assert.match(checkout, /E-mel untuk resit/);
+  assert.doesNotMatch(checkout, /Digunakan untuk pembayaran dan resit/);
+  assert.match(checkout, /href="\/dasar-privasi#pembayaran-doku" target="_blank" rel="noopener" aria-label="Privasi pembayaran \(dibuka dalam tab baharu\)"/);
+  assert.match(checkout, />Privasi pembayaran<\/a>/);
+  assert.match(checkout, /aria-describedby=\{`\$\{instanceId\}-doku-privacy \$\{instanceId\}-doku-disclosure`\}/);
+  assert.match(checkout, /halaman pembayaran selamat DOKU\. Pesanan hanya dianggap dibayar selepas disahkan/);
+  assert.match(checkout, /title\.textContent = 'Bayaran dalam talian'/);
+  assert.doesNotMatch(checkout, /Bayaran dalam talian melalui DOKU/);
+  assert.doesNotMatch(checkout, /Pilih satu saluran\. Anda akan dialihkan/);
+  assert.doesNotMatch(checkout, /Bayar melalui halaman selamat DOKU/);
   assert.match(checkout, /navigateToDokuCheckout/);
-  assert.match(checkout, /Sambungan ke DOKU tergendala/);
+  assert.match(checkout, /input\.dataset\.dokuChannel = String\(dokuChannel\?\.code \|\| ''\)/);
+  assert.match(checkout, /input\.dataset\.dokuLabel = String\(dokuChannel\?\.label \|\| ''\)/);
+  assert.match(checkout, /Teruskan dengan kad/);
+  assert.match(checkout, /Teruskan ke \$\{label\}/);
+  assert.match(checkout, /channels\.forEach\(\(channel\) => appendOption\(method, channel\)\)/);
+  assert.match(checkout, /doku_channel: method\?\.dataset\.dokuChannel \|\| undefined/);
+  assert.doesNotMatch(checkout, /Kaedah tersedia di DOKU/);
+  assert.match(checkout, /Sambungan pembayaran tergendala/);
   assert.ok(
     checkout.indexOf("new FormData(form)") < checkout.indexOf("submitting = true; setSubmitState()"),
     "DOKU email must be captured before submit-state disables payment controls",
@@ -162,6 +199,14 @@ test("canonical checkout exposes one hosted DOKU choice without card fields or p
   assert.match(legalPage, /id=\{section\.id\}/);
   assert.match(styles, /\.doku-privacy-link[\s\S]+min-height: 44px/);
   assert.match(styles, /\.doku-privacy-link:focus-visible/);
+  assert.match(styles, /@media \(hover: hover\) and \(pointer: fine\)[\s\S]+\.payment-option:hover input:not\(:disabled\) \+ \.payment-option-copy/);
+  assert.doesNotMatch(styles, /\.payment-option:hover \.payment-option-copy,\s*\.payment-option input:focus-visible/);
+  assert.ok(
+    styles.indexOf(".payment-option input:checked + .payment-option-copy {")
+      < styles.indexOf(".payment-option input:focus-visible + .payment-option-copy {"),
+    "keyboard focus must remain visible after selected-state rules",
+  );
+  assert.match(styles, /\.payment-option input:focus-visible \+ \.payment-option-copy \{\s*box-shadow: inset 0 0 0 2px var\(--sf-accent\)/);
   assert.doesNotMatch(checkout, /name=["'](?:pan|card_number|cvv|cvc)["']/i);
   assert.match(availability, /getEnabledDokuConfig/);
   assert.match(methods, /resolvePaymentAvailability/);

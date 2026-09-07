@@ -1,5 +1,5 @@
 import { DokuClient, DokuClientError } from "./doku-client.ts";
-import { getEnabledDokuConfig } from "./doku-config.ts";
+import { getEnabledDokuConfig, type DokuPaymentChannel } from "./doku-config.ts";
 import {
   DuplicateSubmissionError,
   persistOrder,
@@ -16,6 +16,7 @@ export type DokuCheckoutInput = Omit<
   "paymentMethod" | "sellerBankAccountId" | "metaPurchase" | "dokuPaymentAttempt"
 > & {
   customerEmail: string;
+  selectedChannel: DokuPaymentChannel;
   requestUrl: string;
   clientIp: string;
   userAgent: string;
@@ -70,6 +71,7 @@ type PersistedDokuOrder = PersistedOrder & {
   merchantInvoice: string;
   idempotencyKey: string;
   requestFingerprint: string;
+  channel: DokuPaymentChannel;
   checkoutUrl: string | null;
   providerReference: string | null;
   expiresAt: string;
@@ -168,7 +170,6 @@ function checkoutCallbacks(origin: string, order: PersistedDokuOrder, returnToke
 
 function checkoutBody(
   order: PersistedDokuOrder,
-  enabledChannels: readonly string[],
   origin: string,
   returnToken: string,
   deviceFingerprint: string,
@@ -201,7 +202,7 @@ function checkoutBody(
       expired_at: order.expiresAt,
     },
     checkout_experience: {
-      payment_channels: enabledChannels,
+      payment_channels: [order.channel],
       language: "MS",
       auto_redirect: false,
       retry_payment: { enabled: true },
@@ -256,7 +257,7 @@ async function loadPersistedDokuOrder(
         pv.title AS variant_title, p.id AS product_id, p.title AS product_title,
         pa.id AS attempt_id, pa.provider_config_id, pa.environment,
         pa.config_revision, pa.merchant_invoice, pa.idempotency_key,
-        pa.request_fingerprint, pa.checkout_url, pa.provider_reference,
+        pa.request_fingerprint, pa.channel, pa.checkout_url, pa.provider_reference,
         pa.expires_at, pa.provider_status, pa.provider_state
       FROM orders o
       JOIN order_items oi ON oi.order_id = o.id
@@ -300,6 +301,7 @@ async function loadPersistedDokuOrder(
     merchantInvoice: String(row.merchant_invoice),
     idempotencyKey: String(row.idempotency_key),
     requestFingerprint: String(row.request_fingerprint),
+    channel: String(row.channel) as DokuPaymentChannel,
     checkoutUrl: row.checkout_url ? String(row.checkout_url) : null,
     providerReference: row.provider_reference ? String(row.provider_reference) : null,
     expiresAt: String(row.expires_at),
@@ -321,6 +323,7 @@ function sameIntent(order: PersistedDokuOrder, input: DokuCheckoutInput): boolea
     order.postalCode === input.postalCode &&
     order.quantity === input.quantity &&
     order.shippingCost === input.shippingCost &&
+    order.channel === input.selectedChannel &&
     (String(order.variantId) === input.variantKey || order.variantSku === input.variantKey)
   );
 }
@@ -434,6 +437,9 @@ export async function createDokuHostedCheckout(
   ) {
     throw new DokuCheckoutError("DOKU_UNAVAILABLE");
   }
+  if (!config.enabledChannels.includes(input.selectedChannel)) {
+    throw new DokuCheckoutError("DOKU_UNAVAILABLE");
+  }
   const origin = requestOrigin(input.requestUrl);
   const intent = JSON.stringify({
     submitToken: input.submitToken,
@@ -448,6 +454,7 @@ export async function createDokuHostedCheckout(
     variantKey: input.variantKey,
     quantity: input.quantity,
     shippingCost: input.shippingCost,
+    selectedChannel: input.selectedChannel,
     configRevision: config.configRevision,
     origin,
   });
@@ -474,6 +481,7 @@ export async function createDokuHostedCheckout(
           merchantInvoice: `MYB-${tokenHash.slice(0, 24)}`,
           idempotencyKey,
           requestFingerprint,
+          channel: input.selectedChannel,
           expiresAt,
         },
       });
@@ -503,7 +511,6 @@ export async function createDokuHostedCheckout(
   );
   const rawBody = checkoutBody(
     order,
-    config.enabledChannels,
     origin,
     returnToken,
     persistedFingerprint.device,

@@ -18,8 +18,8 @@ export const SELLER_BANK_OPTIONS = [
 export type SellerBankCode = (typeof SELLER_BANK_OPTIONS)[number]["code"];
 
 export const DOKU_CHANNEL_LABELS = {
-  INTERNET_BANKING_FPX: "Perbankan dalam talian FPX",
-  EWALLET_TNG: "Touch 'n Go eWallet",
+  INTERNET_BANKING_FPX: "FPX",
+  EWALLET_TNG: "Touch 'n Go",
   EWALLET_GRABPAY: "GrabPay",
   EWALLET_SHOPEEPAY: "ShopeePay",
   CREDIT_CARD: "Kad kredit/debit",
@@ -37,9 +37,9 @@ export function buildDokuPaymentMethod(channels: readonly string[]) {
   return {
     code: "DOKU",
     payment_method: "doku",
-    name: "Bayar dalam talian melalui DOKU",
+    name: "Bayaran dalam talian",
     logo_url: "",
-    description: "Pilih kaedah bayaran pada halaman selamat DOKU.",
+    description: "Bayar pada halaman selamat.",
     is_active: true,
     requires_email: true,
     hosted_redirect: true,

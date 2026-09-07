@@ -4,6 +4,7 @@ import { parseClickIds } from "./click-ids.ts";
 import { prepareMetaCapiPayload, type PreparedMetaPayload } from "./meta-capi.ts";
 import { paymentBrandLabel } from "./payment-brand.ts";
 import { buildOrderNotification, recordNotification } from "./notifications.ts";
+import type { DokuPaymentChannel } from "./doku-config.ts";
 
 export type PersistOrderInput = {
   submitToken: string;
@@ -33,6 +34,7 @@ export type PersistOrderInput = {
     merchantInvoice: string;
     idempotencyKey: string;
     requestFingerprint: string;
+    channel: DokuPaymentChannel;
     expiresAt: string;
   };
 };
@@ -54,8 +56,13 @@ export async function persistOrder(database: D1Database, input: PersistOrderInpu
   const variant = await database.prepare(`SELECT pv.id, pv.product_id, pv.price, pv.stock, p.title FROM product_variants pv INNER JOIN products p ON p.id = pv.product_id WHERE (CAST(pv.id AS TEXT) = ? OR pv.sku = ?) AND p.is_active = 1 LIMIT 1`).bind(input.variantKey, input.variantKey).first<{ id: number; product_id: number; price: number; stock: number | null; title: string }>();
   if (!variant) throw new OrderInputError("Varian produk tidak ditemukan.");
   if (variant.stock !== null && variant.stock < input.quantity) throw new OrderInputError("Stok produk tidak mencukupi.");
-  const store = await database.prepare("SELECT id FROM stores ORDER BY id LIMIT 1").first<{ id: number }>();
+  const store = await database
+    .prepare("SELECT id, is_cod_enabled FROM stores ORDER BY id LIMIT 1")
+    .first<{ id: number; is_cod_enabled: number }>();
   if (!store) throw new Error("Store belum dikonfigurasi.");
+  if (input.paymentMethod === "cod" && store.is_cod_enabled === 0) {
+    throw new OrderInputError("Bayaran COD tidak tersedia.");
+  }
   const bank = input.paymentMethod === "manual_transfer" ? await database.prepare(`SELECT id, bank_code, account_holder, account_number FROM seller_bank_accounts WHERE id = ? AND store_id = ? AND is_active = 1 LIMIT 1`).bind(input.sellerBankAccountId || 0, store.id).first<{ id: number; bank_code: string; account_holder: string; account_number: string }>() : null;
   if (input.paymentMethod === "manual_transfer" && !bank) throw new OrderInputError("Rekening transfer tidak tersedia.");
   const orderNumber = await allocateOrderNumber(database);
@@ -117,10 +124,10 @@ export async function persistOrder(database: D1Database, input: PersistOrderInpu
           INSERT INTO payment_attempts (
             id, order_id, provider_config_id, provider, environment,
             config_revision, merchant_invoice, idempotency_key,
-            request_fingerprint, amount_sen, currency, expires_at,
+            request_fingerprint, amount_sen, currency, channel, expires_at,
             local_status, created_at, updated_at
           )
-          SELECT ?, id, ?, 'doku', ?, ?, ?, ?, ?, ?, 'MYR', ?, 'created', ?, ?
+          SELECT ?, id, ?, 'doku', ?, ?, ?, ?, ?, ?, 'MYR', ?, ?, 'created', ?, ?
           FROM orders WHERE order_number = ? AND submit_token = ?
         `).bind(
           attempt.id,
@@ -131,6 +138,7 @@ export async function persistOrder(database: D1Database, input: PersistOrderInpu
           attempt.idempotencyKey,
           attempt.requestFingerprint,
           totalAmount,
+          attempt.channel,
           attempt.expiresAt,
           nowIso,
           nowIso,

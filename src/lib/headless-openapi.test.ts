@@ -84,6 +84,14 @@ test("documented journey schemas expose the canonical producer and consumer iden
   assert.ok("public_status_token" in schemas.CheckoutOrder.properties);
   assert.ok("shipping_amount" in schemas.CheckoutOrder.properties);
   assert.deepEqual(schemas.CheckoutRequest.properties.payment_method.enum, ["cod", "manual_transfer", "doku"]);
+  assert.deepEqual(schemas.CheckoutRequest.properties.doku_channel.enum, [
+    "INTERNET_BANKING_FPX",
+    "EWALLET_TNG",
+    "EWALLET_GRABPAY",
+    "EWALLET_SHOPEEPAY",
+    "CREDIT_CARD",
+  ]);
+  assert.deepEqual(schemas.CheckoutRequest.allOf[0].then.required, ["customer_email", "doku_channel"]);
   assert.ok("payment" in schemas.CheckoutEnvelope.properties);
   assert.equal(schemas.DokuCheckoutPayment.properties.provider.const, "doku");
   assert.ok("checkout_url" in schemas.DokuCheckoutPayment.properties);

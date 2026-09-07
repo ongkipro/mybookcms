@@ -27,8 +27,13 @@ class Statement {
         title: "Jurnal Fokus Harian",
       } as T;
     }
-    if (/SELECT id FROM stores/.test(this.sql)) return { id: 1 } as T;
-    if (/UPDATE order_number_counters/.test(this.sql)) return { last_value: 10001 } as T;
+    if (/SELECT id, is_cod_enabled FROM stores/.test(this.sql)) {
+      return { id: 1, is_cod_enabled: this.database.codEnabled ? 1 : 0 } as T;
+    }
+    if (/UPDATE order_number_counters/.test(this.sql)) {
+      this.database.orderNumberAllocated = true;
+      return { last_value: 10001 } as T;
+    }
     throw new Error(`Unexpected first query: ${this.sql}`);
   }
 
@@ -42,6 +47,12 @@ class Statement {
 
 class FakeDatabase {
   batchStatements: Statement[] = [];
+  orderNumberAllocated = false;
+  readonly codEnabled: boolean;
+
+  constructor(codEnabled = true) {
+    this.codEnabled = codEnabled;
+  }
 
   prepare(sql: string) {
     return new Statement(sql, this);
@@ -126,4 +137,21 @@ test("order persistence omits Meta outbox without configured signal context", as
     database.batchStatements.some((statement) => /capi_event_outbox/.test(statement.sql)),
     false,
   );
+});
+
+test("disabled COD is refused before allocating a number or batching any order state", async () => {
+  const database = new FakeDatabase(false);
+
+  await assert.rejects(
+    persistOrder(database as unknown as D1Database, input),
+    (error: unknown) => {
+      assert.ok(error instanceof Error);
+      assert.equal(error.name, "Error");
+      assert.equal(error.message, "Bayaran COD tidak tersedia.");
+      return true;
+    },
+  );
+
+  assert.equal(database.orderNumberAllocated, false);
+  assert.deepEqual(database.batchStatements, []);
 });

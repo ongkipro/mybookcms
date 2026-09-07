@@ -1,6 +1,6 @@
 # MyBookCMS Status
 
-> Status reviewed against disk: 2026-09-05 @ MyBookCMS working tree. Executable
+> Status reviewed against disk: 2026-09-07 @ MyBookCMS working tree. Executable
 > evidence remains dated and revision-bound where recorded below.
 
 ## Current state
@@ -42,6 +42,86 @@ A bounded headless Chrome check reached only the hosted document shell and
 rendered no payment controls; a longer attempt timed out, so it is not channel
 or payment evidence. Production remains disabled.
 
+Revalidated on 2026-09-07 at `5bc1d4a`: 59/59 focused DOKU tests pass and a
+fresh, fictional FPX-only MYR 2.00 sandbox create/retrieve pair again returned
+`200` through the accepted REQ-227 envelope, with an allowlisted hosted URL and
+no response `Signature`. A bounded hosted-browser run yielded no attributable
+payment-control evidence. The then-active local D1 had no DOKU configuration
+row, the dev origin was Tailscale HTTP rather than public HTTPS, and no DOKU
+Dashboard session was available to activate a Checkout channel or register the
+Notification URL.
+
+The operator then approved a local sandbox installation. Managed credentials
+are encrypted in local D1, and a guarded no-active-attempt update advanced the
+configuration from FPX-only revision 1 to revision 2 with FPX, Touch 'n Go
+eWallet, GrabPay, ShopeePay, and credit/debit cards selectable. The separate
+managed-secret Worker on port 8787 reports a ready sandbox configuration; its
+public payment-method contract and real product form expose all five DOKU
+labels beside COD/manual transfer. At 390 px the form also resolved `50450` to
+Kuala Lumpur without overflow, runtime exception, or failed request.
+
+The official current Malaysia Postman artifact separates Hosted Checkout
+`/v3/checkouts`, which MyBookCMS uses, from channel-specific Direct Payment
+`/v3/payments`: the hosted sample does not require `device_info`, while the
+direct samples include it. MyBookCMS therefore keeps payment credentials on the
+DOKU-hosted redirect and does not collect PAN, OTP, or wallet credentials. No
+secret value entered source, output, or documentation. This remains local
+configuration/selectability evidence rather than a sandbox lifecycle PASS:
+merchant-service activation in DOKU Dashboard is unverified, HTTP callback
+origins fail closed, DOKU cannot notify localhost or the VPN-gated Tailscale
+URL, and Dashboard channel/Notification URL setup is unavailable. No order,
+attempt, payment, callback, webhook, stock transition, Ads event, remote
+mutation, deployment, or production action was created. A-221 therefore
+remains open on the public-HTTPS, Dashboard, hosted-browser, and end-to-end
+lifecycle gates.
+
+A-242 now implements the accepted channel-first Hosted Checkout refinement.
+The canonical full form flattens the server-advertised DOKU children into direct
+FPX, Touch 'n Go eWallet, GrabPay, ShopeePay, and credit/debit-card radios; it no
+longer renders a generic DOKU parent choice and still collects no PAN, CVV, OTP,
+or wallet credential. `doku_channel` is conditionally required by the shared
+order schema and Headless/OpenAPI contract. Checkout rejects an unknown or
+disabled channel before order/stock persistence, binds the accepted channel to
+the idempotent intent, stores it in `payment_attempts.channel`, and sends only
+that channel to Hosted Checkout. Same-token channel changes, retry after channel
+disablement, and provider facts that contradict the stored channel all fail
+closed. Retry keeps the original channel rather than creating a new buyer
+choice.
+
+Executable evidence on the working tree: 469/469 repository tests,
+`npm run check`, and `npm run build` pass. Built-Worker Chromium exercised the
+product, `/full-form`, and `/embed/form` at 390 px and 1280 px. All six runs
+rendered the same seven direct rows (COD, manual transfer, five DOKU channels),
+defaulted to COD, moved FPX to Touch 'n Go with native radio keyboard behavior,
+revealed the required DOKU e-mail/disclosure state, exposed payment validation,
+and recorded zero horizontal overflow, runtime exception, failed request, or
+local card field. No DOKU provider request, remote mutation, deployment, secret,
+or PII entered this proof. Implementation is complete locally; formal A-242
+closure remains blocked on the required independent Opus review, unavailable in
+this Codex session, and A-221 still owns real sandbox lifecycle evidence.
+
+A-241's implementation fixes the local HTTP form failure reproduced from the operator's exact
+Tailscale origin. The location directory and API were healthy; the inline
+checkout script stopped before attaching listeners because non-secure IP
+origins do not expose `crypto.randomUUID`. The form now generates its stable
+submit/idempotency token from 32 browser-CSPRNG bytes through
+`crypto.getRandomValues`, which remains available on that origin, and no longer
+serializes the token into response HTML. The follow-up audit also invalidates
+and clears old location results immediately on input and prevents a superseded
+request or late error from replacing the latest query.
+
+Built-Worker Chrome exercised the product, `/full-form`, and `/embed/form`
+surfaces at 390 and 1280 px. Keyboard and pointer flows selected Kuala Lumpur
+`50450`, Johor Bahru `80000`, and Kuching `93000`, returned the expected
+D1-owned MYR quotes, and recorded zero exception, failed request, or horizontal
+overflow. A deliberately late stale failure did not replace the current result,
+and synchronous Enter during the debounce could not choose an old option. The
+29 focused tests, all 464 repository tests, `npm run check`, and `npm run build`
+pass. A final same-route security review found no issue in token strength,
+schema/DOKU compatibility, idempotency, race fencing, or payment-policy scope.
+Formal A-241 closure still awaits the required independent Opus review; no such
+model route is available in this Codex session.
+
 The completed A-205 signal slice preserves a paid click across later
 UTM-only visits, replaces it on a new paid click, gives Meta browser/CAPI one
 random first-party visitor identity, initializes regional Google Consent Mode
@@ -75,17 +155,21 @@ idempotent; and the public notification route applies one monotonic payment,
 order, and stock transition before `204`. Capability-protected result, return,
 cancel, status, and same-order retry paths now remove the recovery capability
 before rendering and reuse that lifecycle without trusting redirect data. A
-bounded capability remains valid for the order's newest attempt, while an
-expired active checkout is reconciled with strictly validated provider truth before reuse
+return capability expires server-side exactly 24 hours after its own attempt
+was created; cookie renewal and a newer retry attempt cannot extend that
+lifetime, and expiry fails before provider traffic. A capability still inside
+that bound may resolve the order's newest attempt, while an expired active
+checkout is reconciled with strictly validated provider truth before reuse
 or replacement. The one-minute Worker schedule now leases a bounded due set,
 verifies provider status through the same lifecycle, backs off without overlap,
 and restores stock once for abandoned uninitiated attempts. Order Detail exposes
 redacted attempt/event diagnostics; Owner/Admin receives a confirmed manual
 check while Customer Service remains read-only, and generic DOKU status edits
-are refused. The canonical full buyer form now adds one hosted DOKU choice only
-for a healthy enabled configuration, lists only its enabled Malaysia channels,
-collects the required email with redirect disclosure, and reuses one stable
-submit identity across safe retry. The top-level navigation boundary accepts
+  are refused. The canonical full buyer form now adds each enabled Malaysia
+  channel as a direct hosted DOKU choice only for a healthy configuration,
+  collects the required email with redirect disclosure, and binds one selected
+  channel to the stable submit identity and safe same-channel retry. The
+  top-level navigation boundary accepts
 only credential-free HTTPS `doku.com` hosts, including the embed widget; no
 provider URL enters DOM/storage/analytics. Signed DOKU success now queues one canonical Meta server Purchase
 inside the payment transition, and the real DOKU result callback emits the
@@ -175,13 +259,13 @@ traffic is claimed by it.
 
 ## Current execution gates
 
-The remaining queue is intentionally gate-led. ADR-026 accepts Owner/Admin COD
-control and A-232 now owns its implementation; ADR-027 accepts a 24-hour DOKU
-return-capability lifetime and A-240 now owns its implementation. A-234 still
+The remaining queue is intentionally gate-led. A-240 now implements ADR-027's
+accepted 24-hour DOKU return-capability lifetime. ADR-026 accepts Owner/Admin
+COD control and A-232 owns its implementation. A-234 still
 needs the required designer handoff before the shared switch is changed, and
 A-226 cannot begin unless the user accepts proposal REQ-230. A-204, A-221,
 A-222, A-223, G-1, and MYS-5 remain explicit external or production approvals.
-Acceptance of ADR-026/ADR-027 is not a claim that either source change shipped.
+No deployment or hosted behaviour is claimed by A-240's local evidence.
 
 An independent audit of the pre-existing payment, order and authorization core
 returned PASS with four medium findings, now A-237 through A-240. A-237 is the
@@ -191,8 +275,9 @@ bulk-deleted the order, because the destructive and money-writing handlers under
 `/api/admin/orders` carry no role check while the DOKU reconcile beside them
 does. The others are unbounded buyer-facing DOKU status and retry endpoints,
 stock restored on the deletion of an already-delivered order, and a return
-capability token with no expiry. None is a buyer-exploitable path to money,
-stock, or a forged payment; the audit confirmed those boundaries hold.
+capability token with no expiry. A-237 through A-240 are now remediated locally.
+None was a buyer-exploitable path to money, stock, or a forged payment; the
+audit confirmed those boundaries hold.
 
 ## Verified local evidence
 

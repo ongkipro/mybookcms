@@ -8,6 +8,11 @@ import RatingStars from '../../components/storefront/shared/RatingStars.astro';
 import GeoIpResolvedForm from '../../components/storefront/forms/GeoIpResolvedForm.astro';
 import ProductImageGallery from '../../components/storefront/ProductImageGallery.astro';
 import { formatMyr } from '../../lib/storefront-locale';
+import { getRuntimeEnv } from '../../lib/env';
+import {
+  paymentAvailabilityTrustLine,
+  resolvePaymentAvailability,
+} from '../../lib/payment-availability';
 
 export const prerender = false;
 
@@ -50,9 +55,14 @@ const displayComparePrice = selectedVariant?.comparePrice ?? product.comparePric
 const displayDiscount =
   displayComparePrice > displayPrice ? Math.round((1 - displayPrice / displayComparePrice) * 100) : 0;
 const formatPrice = (value: number) => formatMyr(value, Astro.locals.tenant.locale);
+const paymentAvailability = await resolvePaymentAvailability(
+  Astro.locals,
+  getRuntimeEnv(Astro.locals)?.OMS_DB as D1Database | undefined,
+);
+const paymentTrustLine = paymentAvailabilityTrustLine(paymentAvailability);
 const copy = {
   home: 'Laman Utama', products: 'Produk', catalog: 'Katalog', sold: 'terjual', ratings: 'penilaian', options: 'Pilihan',
-  availableCod: 'Sedia dihantar • COD atau pindahan bank', info: 'Maklumat Produk', category: 'Kategori', focus: 'Fokus Produk',
+  info: 'Maklumat Produk', category: 'Kategori', focus: 'Fokus Produk',
   availability: 'Ketersediaan', available: 'Stok tersedia untuk semua pilihan yang dipaparkan.', benefits: 'Manfaat Utama',
   keyPoints: 'Perkara Penting Produk', ideal: 'Sesuai Untuk', ratingLabel: 'Penilaian produk', reviews: 'Ulasan Produk',
   review: 'ulasan', verified: 'Disahkan', shipping: 'Maklumat Penghantaran', shippingText: 'Kadar penghantaran dikira secara automatik di checkout selepas alamat dan poskod dilengkapkan.',
@@ -248,7 +258,7 @@ const productSchemaJson = JSON.stringify(productSchema).replace(/</g, '\\u003c')
                   <span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#111111]" aria-hidden="true" />
                   <div class="min-w-0">
                     <p class="text-[14px] font-semibold text-[#111111]">{v.label}</p>
-                    <p class="mt-0.5 text-[11px] text-[#555555]">{copy.availableCod}</p>
+                    <p class="mt-0.5 text-[11px] text-[#555555]">{paymentTrustLine}</p>
                   </div>
                 </div>
               </div>

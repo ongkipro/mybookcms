@@ -1,3 +1,5 @@
+import type { DokuPaymentChannel } from "./doku-config.ts";
+
 export type HeadlessProductVariant = {
   id: string | number;
   label: string;
@@ -63,9 +65,11 @@ export type HeadlessCheckoutInput = {
    * `doku` is accepted by `POST /api/v1/checkout` wherever the install has a
    * healthy enabled DOKU configuration. Read `payment.supported_methods` from
    * `GET /api/v1/storefront` rather than assuming; `doku` additionally
-   * requires `customer_email`, and `manual_transfer` a `seller_bank_account_id`.
+   * requires `customer_email` plus one channel advertised by
+   * `payment.doku_channels`, and `manual_transfer` a `seller_bank_account_id`.
    */
   payment_method: "cod" | "manual_transfer" | "doku";
+  doku_channel?: DokuPaymentChannel;
   seller_bank_account_id?: number;
   variant_id: string | number;
   quantity: number;
@@ -325,6 +329,7 @@ export async function runHeadlessCheckoutJourney(
     province: input.province,
     postal_code: input.postal_code,
     payment_method: input.payment_method,
+    doku_channel: input.doku_channel,
     seller_bank_account_id: input.seller_bank_account_id,
     variant_id: variant.id,
     quantity: input.quantity,
