@@ -198,13 +198,29 @@ export const POST: APIRoute = async ({ request, locals }) => {
       adClickIds: hasClickId(clickIds) ? serializeClickIds(clickIds) : undefined,
     };
     if (data.payment_method === "doku") {
+      // `orderSubmitSchema` already refuses a DOKU order without a channel, so
+      // this is not the validation. It is the type boundary: the schema states
+      // the rule in a superRefine, which narrows nothing, and the alternative
+      // here was a non-null assertion that would keep compiling if that rule
+      // were ever relaxed — sending `undefined` into the payment intent instead
+      // of failing. A payment trust boundary does not get to assume.
+      if (!data.doku_channel) {
+        return json(
+          {
+            success: false,
+            error: "Pilih saluran pembayaran DOKU.",
+            code: "DOKU_CHANNEL_REQUIRED",
+          },
+          422,
+        );
+      }
       const checkout = await createDokuHostedCheckout(
         database,
         getEnvValue("AUTH_SECRET", getRuntimeEnv(locals)),
         {
           ...orderInput,
           customerEmail: data.customer_email || "",
-          selectedChannel: data.doku_channel!,
+          selectedChannel: data.doku_channel,
           requestUrl: request.url,
           clientIp,
           userAgent: request.headers.get("User-Agent") || "unknown",

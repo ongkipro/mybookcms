@@ -59,10 +59,19 @@ function fakeDatabase() {
   } as unknown as D1Database;
 }
 
-test("payment operations expose a bounded redacted role-aware history", async () => {
+test("payment operations expose a bounded redacted role-aware history", async (t) => {
+  const recorded: unknown[][] = [];
+  const original = console.error;
+  console.error = (...args: unknown[]) => { recorded.push(args); };
+  t.after(() => { console.error = original; });
   const database = fakeDatabase();
   const owner = await loadPaymentOperations(database, 1, "owner", "invalid-test-root-secret-at-least-32-chars");
   const customerService = await loadPaymentOperations(database, 1, "customer_service", "invalid-test-root-secret-at-least-32-chars");
+  const expectedDiagnostic = ["doku-config-unusable", {
+    environment: "sandbox", configRevision: 3, enabled: true,
+    reason: "DokuConfigError", code: "DOKU_CONFIG_INVALID",
+  }];
+  assert.deepEqual(recorded, [expectedDiagnostic, expectedDiagnostic]);
   assert.ok(owner);
   assert.ok(customerService);
   assert.equal(owner.can_reconcile, false);

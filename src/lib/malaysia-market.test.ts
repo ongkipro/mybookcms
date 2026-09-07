@@ -1,11 +1,43 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync, readdirSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { getTenantLegalPage, legalPages } from "../data/legal.ts";
 import { formatAdminDateTime } from "./admin-date-filter.ts";
 import { MALAYSIA_STATES, malaysiaStateCode } from "./malaysia-states.ts";
 import { MalaysiaShippingError, quoteMalaysiaShipping } from "./malaysia-shipping.ts";
 
 const read = (path: string) => readFileSync(new URL(`../../${path}`, import.meta.url), "utf8");
+
+test("privacy presents the complete Malay notice before English and preserves accepted DOKU copy", () => {
+  const notice = getTenantLegalPage("privacy", "Fixture Store");
+  assert.deepEqual(notice.sections.map(section => section.lang), [...Array(7).fill("ms"), ...Array(8).fill("en")]);
+  assert.equal(notice.sections[7].title, "Privacy Notice — Fixture Store");
+  assert.equal(notice.sections.find(section => section.id === "pembayaran-doku")?.lang, "ms");
+  for (const section of notice.sections) {
+    assert.ok(section.paragraphs.length > 0);
+    assert.ok(section.paragraphs.every(paragraph => paragraph.trim() && !paragraph.includes("{{store}}")));
+  }
+  const acceptedDoku = legalPages.privacy.sections
+    .filter(section => ["Pembayaran melalui DOKU", "Payments through DOKU"].includes(section.title))
+    .map(({ title, paragraphs }) => ({ title, paragraphs }));
+  // The accepted REQ-227 paragraphs predate the translation task and are outside its scope.
+  assert.equal(createHash("sha256").update(JSON.stringify(acceptedDoku)).digest("hex"), "829c277cfe4704f1557a49e0265ebeb8c9ecee6038ce515e84d0f39c3d026ac8");
+});
+
+test("the bilingual privacy notice precedes the first checkout name field independently of DOKU", () => {
+  const checkout = read("src/components/storefront/forms/MalaysiaCheckoutForm.astro");
+  const start = checkout.indexOf("data-privacy-notice");
+  const name = checkout.indexOf('name="customer_name"');
+  assert.ok(start >= 0 && start < name);
+  const introduction = checkout.slice(start, name);
+  assert.equal((introduction.match(/href="\/dasar-privasi"/g) ?? []).length, 2);
+  assert.match(introduction, /Sebelum mengisi maklumat peribadi, baca/);
+  assert.match(introduction, /Before entering personal information, read/);
+  assert.match(introduction, /lang="ms"/);
+  assert.match(introduction, /lang="en"/);
+  assert.match(read("src/components/storefront/shared/LegalPage.astro"), /lang=\{section\.lang\}/);
+});
 
 /**
  * Market invariants that no single module owns, each pinned because it was
@@ -114,6 +146,25 @@ test("buyer-facing components do not mix Indonesian into Malay copy", () => {
   ];
   for (const file of surfaces) {
     assert.doesNotMatch(read(file), /konfirmasi/i, `${file} uses Indonesian "konfirmasi"; Malay is "pengesahan"`);
+  }
+});
+
+test("neither checkout endpoint asserts the DOKU channel it was handed", () => {
+  // orderSubmitSchema states "a DOKU order carries a channel" in a superRefine,
+  // and a superRefine narrows no type. Both endpoints used to bridge that gap
+  // with `data.doku_channel!`, which keeps compiling if the rule is ever
+  // relaxed and would send `undefined` into the payment intent rather than
+  // fail. Asserted at the source because the guard that replaced it cannot be
+  // reached through the schema, which is exactly why it is worth keeping.
+  for (const file of ["src/pages/api/submit-order.ts", "src/pages/api/v1/checkout.ts"]) {
+    const source = codeOnly(read(file));
+    assert.doesNotMatch(source, /doku_channel!/, `${file} asserts the channel instead of checking it`);
+    assert.match(source, /if \(!data\.doku_channel\)/, `${file} must refuse a DOKU order with no channel`);
+    assert.match(source, /DOKU_CHANNEL_REQUIRED/, `${file} must name the refusal`);
+    assert.ok(
+      source.indexOf("if (!data.doku_channel)") < source.indexOf("createDokuHostedCheckout("),
+      `${file} must check the channel before it opens a payment`,
+    );
   }
 });
 

@@ -43,6 +43,14 @@ the provider.
   never executed autonomously — prepare it, report it, stop. Sections below the
   Open queue are delivered history, and `docs/lineage/` is another product's.
 
+## Delivery evidence retention
+
+Per ADR-029, `.delivery/` is explicitly ignored machine-local verification
+evidence. Keep task outcomes and dated verification summaries in the canonical
+repository documents. A fresh checkout must rerun the relevant checks; it does
+not inherit a local ledger PASS. Do not rewrite or prune existing local history.
+Never stage the ledger with `git add -f`.
+
 ## Required practice
 
 1. Inspect the relevant flow and every caller before changing it.

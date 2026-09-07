@@ -7,6 +7,10 @@ serves this URL, what does it import, which API does it call, and which table
 does it touch". It does not define behaviour: `ARCHITECTURE.md` owns the
 design, `PRD.md` owns requirements, and code wins over this file.
 
+**Evidence and maintenance.** [DEVELOPMENT-MAP](DEVELOPMENT-MAP.md) records
+bounded route verification. A task that adds, changes or removes a route also
+updates its evidence row there and includes both maps in its declared Surface.
+
 **Keeping it true.** Three changes make this file wrong: adding, removing, or
 repointing a route; adding, removing, or changing the methods of an API
 endpoint; adding a migration that creates or drops a table. Any change of those
@@ -170,7 +174,7 @@ All use `AdminLayout` (sidebar from `components/admin/admin-navigation.ts`, shel
 | `/admin/ads` | `pages/admin/ads.astro` | inline script hub | `/api/admin/ads` | owner, admin, advertiser |
 | `/admin/ads/meta` | `pages/admin/ads/meta.astro` | inline form (`meta-admin-form`) | `/api/admin/ads` | owner, admin, advertiser |
 | `/admin/ads/google` | `pages/admin/ads/google.astro` | inline form + feed diagnostics | `/api/admin/ads`, `/api/admin/ads/google-catalog` | owner, admin, advertiser |
-| `/admin/payments` | `pages/admin/payments.astro` | `SellerBankAccounts`, `DokuPaymentSettings` | `/api/admin/seller-bank-accounts`, `/api/admin/payments` | owner, admin |
+| `/admin/payments` | `pages/admin/payments.astro` | `SellerBankAccounts`, `DokuPaymentSettings`, `CodAvailability` | `/api/admin/seller-bank-accounts`, `/api/admin/payments`, `/api/admin/settings` | owner, admin |
 | `/admin/settings` | `pages/admin/settings.astro` | card hub | none | owner, admin |
 | `/admin/settings/store` | `pages/admin/settings/store.astro` | inline form | `/api/admin/settings` | owner, admin |
 | `/admin/settings/crm` | `pages/admin/settings/crm.astro` | inline form | `/api/admin/settings` | owner, admin |
@@ -229,7 +233,7 @@ All under `/api/admin`, session-gated by middleware, CSRF-checked on unsafe meth
 | `ContentWorkbench.tsx` | 317 | content | `/api/admin/content`, `/api/admin/media` |
 | `ExpeditionSettings.tsx` | 870 | expeditions | `/api/admin/expeditions`; three `?panel=` addressable jobs, sheets with dirty-close protection |
 | `SellerBankAccounts.tsx` | 449 | payments | `/api/admin/seller-bank-accounts`; `lib/payment-brand` |
-| `DokuPaymentSettings.tsx` | 482 | payments | `/api/admin/payments` |
+| `DokuPaymentSettings.tsx` | 553 | payments | `/api/admin/payments`, `/api/admin/settings` |
 | `HeadlessApiManagement.tsx` | 536 | settings/developer | `/api/admin/settings/developer` |
 | `AccessManager.tsx` | 998 | settings/access | `/api/admin/access` |
 | `SystemLogPanel.tsx` | 289 | settings/log | `/api/admin/system-log`; read-only, no mutation control |
@@ -329,6 +333,7 @@ Local commands: `npm run db:migrate:local`, `npm run db:seed:malaysia:local`, `n
 | `RELEASE.md`, `INSTALLATION.md`, `OBSERVABILITY.md` | Release, install, logging contracts. |
 | `DESIGN-SYSTEM.md`, `design-tokens.md` | Visual tokens per surface. |
 | `STOREFRONT_INTEGRATION.md` | Headless consumer contract. |
+| `docs/DEVELOPMENT-MAP.md` | How finished each route is, and which open task owns its gaps. This file answers *where* code lives; that one answers *how mature* it is. Neither restates the other. |
 | `docs/LANDING-PAGES.md` | Authoring CMS vs native landing pages. |
 | `docs/lineage/` | Upstream AdsBookCMS history. Not a backlog. |
 | `docs/research/` | Malaysia shipping research. |
@@ -337,6 +342,7 @@ Local commands: `npm run db:migrate:local`, `npm run db:seed:malaysia:local`, `n
 
 | Task | Start here |
 | --- | --- |
+| Judge whether a route is finished, or find which routes nothing covers | `docs/DEVELOPMENT-MAP.md` |
 | Change a checkout field or validation | `lib/order-schema.ts`, `lib/validation.ts`, `components/storefront/forms/MalaysiaCheckoutForm.astro`, `pages/api/submit-order.ts`, `pages/api/v1/checkout.ts` |
 | Change shipping pricing | `lib/malaysia-shipping.ts`, `pages/api/admin/expeditions.ts`, migrations 0048/0053/0056 |
 | Change order statuses or stock rules | `lib/order-lifecycle.ts`, `lib/admin-order-status.ts` |

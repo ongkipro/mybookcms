@@ -91,6 +91,10 @@ test("documented journey schemas expose the canonical producer and consumer iden
     "EWALLET_SHOPEEPAY",
     "CREDIT_CARD",
   ]);
+  assert.deepEqual(
+    schemas.StorefrontEnvelope.properties.payment.properties.doku_channels.items.properties.code.enum,
+    schemas.CheckoutRequest.properties.doku_channel.enum,
+  );
   assert.deepEqual(schemas.CheckoutRequest.allOf[0].then.required, ["customer_email", "doku_channel"]);
   assert.ok("payment" in schemas.CheckoutEnvelope.properties);
   assert.equal(schemas.DokuCheckoutPayment.properties.provider.const, "doku");

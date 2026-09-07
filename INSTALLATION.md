@@ -34,6 +34,32 @@ approved private interface, append Wrangler arguments, for example
 The preview seed is idempotent fictional data and must never be run with
 `--remote`.
 
+### Local sandbox using managed secrets
+
+If the A-221 local sandbox setup encrypted its configuration under managed
+`AUTH_SECRET`, start the worker with:
+
+```bash
+npm run cf:dev:managed
+```
+
+This optional Bash/POSIX development path requires the workstation's
+`secrets-env` helper and its already-configured managed `AUTH_SECRET` and
+`INSTALL_TOKEN`. It builds before injecting secrets, then uses the same local
+`.wrangler/state` database. `--env-file /dev/null` deliberately bypasses
+`.dev.vars` and dotenv files; Wrangler's declared required secrets come from
+the managed child environment. Additional Wrangler arguments can be appended,
+for example `npm run cf:dev:managed -- --ip 127.0.0.1 --port 8788`.
+
+For the managed A-221 install, the managed `AUTH_SECRET` is authoritative.
+Ordinary `npm run cf:dev` follows Wrangler's `.dev.vars`/dotenv loading and is
+appropriate only when the local database credentials were encrypted under
+that same root. Do not alternate roots against one persisted database or
+copy secret values into documentation. The managed command does not migrate,
+re-encrypt, enable DOKU, or contact the provider. If online payment is absent,
+inspect the redacted `doku-config-unusable` diagnostic and configuration health
+before assuming the record is missing. Provider proof still belongs to A-221.
+
 ## Store setup
 
 1. Copy the product into a new install repository.

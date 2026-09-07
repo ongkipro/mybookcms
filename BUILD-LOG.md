@@ -5769,3 +5769,74 @@ inspected 307 files with zero errors, warnings, or hints and confirmed generated
 types are current; `npm run build` and `wrangler deploy --dry-run` completed.
 No hosted CI run, remote migration, deployment, vendor request, commit, or push
 occurred.
+
+## 2026-09-07 — A-241 fresh audit under ADR-028
+
+Run `RUN-20260907T150257Z-b5838fbe` closes the local HTTP checkout task
+against unchanged committed form code. Twelve Chromium route/viewport/origin
+cases prove native 32-byte randomness, stable non-HTML submit tokens, stale
+lookup fencing, pointer/keyboard selection, D1-authoritative destination fields
+and shipping quotes, with no overflow or unexpected browser failure.
+Submissions used fictional data and intercepted refusals; no order or provider
+request occurred. Current focused checks plus the identical-runtime A-243
+full-suite/check/build evidence and independent final boundary review support
+this closure. Historical BLOCKED runs remain unchanged.
+
+## 2026-09-07 — A-242 channel contract and settlement audit
+
+Run `RUN-20260907T150624Z-2fbee8c5` closes A-242 under ADR-028. Independent
+review uncovered bootstrap/request enum drift, malformed status-channel
+fallback, and settlement without a persisted allowlisted channel. Focused
+regressions reproduced the defects before repair; client/OpenAPI now share the
+allowlist and all settlement sources require the committed channel. Invalid
+facts leave payment/order state and events unchanged and emit no Purchase.
+Six real Chromium cases exercise every direct channel, keyboard selection,
+conditional/invalid email, focused refusal and stable retry tokens on the
+product/full-form/embed routes at mobile/desktop sizes. Provider requests and
+actual submissions were blocked. Full check/test/build and independent final
+review evidence belong to the run; historical BLOCKED evidence is retained.
+
+## 2026-09-07 — A-234 shared switch target implementation
+
+Implemented the designer-reviewed real 44 px target with compact inner track
+and Radix data-state styling. Isolated browser checks cover both sizes,
+keyboard state/appearance, expanded tariff rows, and responsive page overflow.
+Full suite and build passed; Payments visual critique passed independently.
+Task closure is withheld pending the required fresh Lighthouse audit and its
+runner/scope decision. No runtime data, API, or authorization path changed.
+
+## 2026-09-07 — A-232 COD availability control
+
+Added the designer-reviewed Owner/Admin switch to Payments using the existing
+settings action. Confirmed-state updates, disabled pending controls, load retry,
+save failure, focus restoration, and independent DOKU handling were verified
+in Chromium at 390/1280 px. Hosted form, PDP, and Headless availability agree.
+Both HTTP checkout routes rejected disabled COD without order/item/stock/Ads
+or attempt writes in an isolated D1 fixture; unauthorized roles were denied.
+Full suite/check/build and focused contracts passed. Final evidence used direct
+Miniflare/workerd after Wrangler's local forwarding proxy lost connections;
+failed attempts remain in the local ledger. No live mutation or Git publication.
+
+## 2026-09-07 — A-234 fresh Lighthouse evidence and desktop scope gate
+
+Run `RUN-20260907T160501Z-9636d3b7` used Lighthouse 13.4.1 from a temporary npm
+cache, without changing repository dependencies or installing a system tool.
+The authenticated fictional `/admin/settings/log` scored accessibility 100 at
+390 px and 96 at 1280 px. The desktop color-contrast failure exposes sidebar
+labels (2.51:1), active Settings text (4.48:1), and the keyboard hint (2.63:1).
+The 16-case switch browser audit passed again. Source was unchanged from the
+immediately preceding A-249 full suite/typecheck/build evidence.
+
+A-234 remains open pending explicit Surface expansion for AppSidebar/AdminShell.
+The designer's minimal text-colour proposal is recorded in TASKS; no out-of-scope
+source was edited. Earlier BLOCKED evidence is retained, and the 390 px pass is
+not substituted for the failed desktop audit.
+
+## 2026-09-07 — A-234 approved contrast completion
+
+Owner-authorized scope added AppSidebar/AdminShell. The designer's text-only
+fixes cover normal/restricted sidebar labels and active text, keyboard hint and
+mobile-menu headings. Fresh Lighthouse 13.4.1 scores accessibility 100 / contrast PASS
+at 390/1280 px; rendered ratios are 7.26, 5.95, 7.58 respectively. Full check/test/build,
+16 switch scenarios, three shell states and independent visual critique pass.
+Run `RUN-20260907T163554Z-7edbd892` retains the earlier failed/blocked evidence.

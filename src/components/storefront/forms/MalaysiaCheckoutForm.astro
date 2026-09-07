@@ -52,6 +52,10 @@ const formatPrice = (amountSen: number) => formatMyr(amountSen, locale);
         <section class="form-block">
           <div class="form-block-head gap-1.5"><h2 class="section-title">Data penerima</h2><p class="section-lead">Isi data dengan betul supaya pesanan mudah diproses.</p></div>
           <div class="field-grid address-field-grid">
+            <div data-privacy-notice class="form-field-full space-y-2 text-[14px] leading-6 text-[#555555]">
+              <p lang="ms">Sebelum mengisi maklumat peribadi, baca <a href="/dasar-privasi" target="_blank" rel="noopener" class="underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#111111]">Dasar Privasi<span class="sr-only"> (dibuka dalam tab baharu)</span></a>.</p>
+              <p lang="en">Before entering personal information, read the <a href="/dasar-privasi" target="_blank" rel="noopener" class="underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#111111]">Privacy Notice<span class="sr-only"> (opens in a new tab)</span></a>.</p>
+            </div>
             <div class="form-field form-field-full"><input id={`${instanceId}-name`} required name="customer_name" minlength={MIN_CUSTOMER_NAME_LENGTH} maxlength={MAX_CUSTOMER_NAME_LENGTH} autocomplete="name" placeholder=" " /><label for={`${instanceId}-name`}>Nama penuh</label></div>
             <div class="form-field form-field-full"><input id={`${instanceId}-phone`} required name="customer_phone" type="tel" inputmode="numeric" autocomplete="tel" placeholder=" " /><label for={`${instanceId}-phone`}>Nombor WhatsApp Malaysia</label></div>
             <div class="form-field form-field-full"><textarea id={`${instanceId}-address`} required name="address" rows="2" minlength={MIN_DELIVERY_ADDRESS_LENGTH} maxlength={MAX_DELIVERY_ADDRESS_LENGTH} autocomplete="street-address" placeholder=" "></textarea><label for={`${instanceId}-address`}>Alamat lengkap &amp; panduan lokasi</label></div>

@@ -49,6 +49,17 @@ export const POST: APIRoute = async ({ request, locals }) => {
       adClickIds: hasClickId(clickIds) ? serializeClickIds(clickIds) : undefined,
     };
     if (data.payment_method === "doku") {
+      // See the same guard in `POST /api/submit-order`: the schema's superRefine
+      // states the rule but narrows no type, so the payment path checks rather
+      // than asserts.
+      if (!data.doku_channel) {
+        return validation.finalize(headlessError(
+          "Pilih saluran pembayaran DOKU.",
+          422,
+          { code: "DOKU_CHANNEL_REQUIRED" },
+          validation.corsHeaders,
+        ));
+      }
       const checkout = await createDokuHostedCheckout(
         database,
         getEnvValue("AUTH_SECRET", getRuntimeEnv(locals)),
@@ -56,7 +67,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
           ...orderInput,
           city: orderInput.city || data.district,
           customerEmail: data.customer_email || "",
-          selectedChannel: data.doku_channel!,
+          selectedChannel: data.doku_channel,
           requestUrl: request.url,
           clientIp,
           userAgent: request.headers.get("User-Agent") || "unknown",

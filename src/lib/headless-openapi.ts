@@ -1,3 +1,5 @@
+import { DOKU_PAYMENT_CHANNELS } from "./doku-config.ts";
+
 const errorResponse = (description: string) => ({
   description,
   content: {
@@ -266,7 +268,7 @@ export const headlessOpenApiDocument = {
                   type: "object",
                   required: ["code", "label"],
                   properties: {
-                    code: { type: "string" },
+                    code: { type: "string", enum: DOKU_PAYMENT_CHANNELS },
                     label: { type: "string" },
                   },
                 },
@@ -483,7 +485,7 @@ export const headlessOpenApiDocument = {
           payment_method: { type: "string", enum: ["cod", "manual_transfer", "doku"] },
           doku_channel: {
             type: "string",
-            enum: ["INTERNET_BANKING_FPX", "EWALLET_TNG", "EWALLET_GRABPAY", "EWALLET_SHOPEEPAY", "CREDIT_CARD"],
+            enum: DOKU_PAYMENT_CHANNELS,
             description: "Required when payment_method is doku. Must be advertised by GET /api/v1/storefront for this install.",
           },
           seller_bank_account_id: { type: "integer", minimum: 1 },

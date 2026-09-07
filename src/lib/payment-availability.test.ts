@@ -7,6 +7,7 @@ import {
   type PaymentAvailability,
 } from "./payment-availability.ts";
 import { buildDokuPaymentMethod } from "./payment-brand.ts";
+import { encryptSecret } from "./encrypted-secret.ts";
 import { canAccessAdminRoute } from "./auth.ts";
 import { PUT as updateSettings } from "../pages/api/admin/settings.ts";
 
@@ -42,24 +43,47 @@ test("COD is offered only while the store flag allows it", () => {
   assert.deepEqual(supportedPaymentMethods(availability({ codEnabled: false })), []);
 });
 
-test("PDP payment trust copy follows every resolved availability state", () => {
+test("PDP payment trust copy names every method the install actually offers", () => {
   const doku = buildDokuPaymentMethod(["INTERNET_BANKING_FPX"]);
   assert.ok(doku);
+  // The combination that shipped wrong: everything enabled, and the line still
+  // said only "COD atau pindahan bank" because the old ladder returned on its
+  // first match. This case is asserted first because it is the one that was
+  // missing, and its absence is the whole reason the defect survived review.
+  assert.equal(
+    paymentAvailabilityTrustLine(availability({ sellerBankAccounts: [ACTIVE_BANK], doku })),
+    "Sedia dihantar • COD, pindahan bank atau bayaran dalam talian",
+  );
+  assert.equal(
+    paymentAvailabilityTrustLine(availability({ doku })),
+    "Sedia dihantar • COD atau bayaran dalam talian",
+  );
+  assert.equal(
+    paymentAvailabilityTrustLine(availability({ codEnabled: false, sellerBankAccounts: [ACTIVE_BANK], doku })),
+    "Sedia dihantar • Pindahan bank atau bayaran dalam talian",
+  );
   assert.equal(
     paymentAvailabilityTrustLine(availability({ sellerBankAccounts: [ACTIVE_BANK] })),
     "Sedia dihantar • COD atau pindahan bank",
   );
   assert.equal(
     paymentAvailabilityTrustLine(availability()),
-    "Sedia dihantar • COD tersedia",
+    "Sedia dihantar • COD",
   );
   assert.equal(
     paymentAvailabilityTrustLine(availability({ codEnabled: false, sellerBankAccounts: [ACTIVE_BANK] })),
-    "Sedia dihantar • Pindahan bank tersedia",
+    "Sedia dihantar • Pindahan bank",
   );
   assert.equal(
     paymentAvailabilityTrustLine(availability({ codEnabled: false, doku })),
-    "Sedia dihantar • Bayaran dalam talian tersedia",
+    "Sedia dihantar • Bayaran dalam talian",
+  );
+  // An inactive account is not an offer, the same way persistOrder refuses it.
+  assert.equal(
+    paymentAvailabilityTrustLine(
+      availability({ codEnabled: false, sellerBankAccounts: [{ ...ACTIVE_BANK, is_active: 0 }] }),
+    ),
+    "Kaedah bayaran belum tersedia",
   );
   assert.equal(
     paymentAvailabilityTrustLine(availability({ codEnabled: false })),
@@ -166,14 +190,16 @@ function fakeDatabase(options: {
   codEnabled?: boolean;
   banks?: Array<typeof ACTIVE_BANK>;
   storeThrows?: boolean;
+  dokuConfig?: Record<string, unknown>;
 }): D1Database {
   return {
-    prepare() {
+    prepare(sql: string) {
       return {
         bind() {
           return this;
         },
         async first() {
+          if (sql.includes("payment_provider_configs")) return options.dokuConfig ?? null;
           if (options.storeThrows) throw new Error("D1_ERROR");
           return { is_cod_enabled: options.codEnabled === false ? 0 : 1 };
         },
@@ -218,9 +244,43 @@ test("no database at all yields the safe default without throwing", async () => 
 });
 
 test("DOKU is absent whenever no credential secret is configured", async () => {
-  // `getEnabledDokuConfig` is only reached with an `AUTH_SECRET`; without one
-  // the method must not appear, because nothing could have been decrypted.
+  // An unconfigured install never offers DOKU.
   const result = await resolvePaymentAvailability(NO_LOCALS, fakeDatabase({}));
   assert.equal(result.doku, null);
   assert.ok(!supportedPaymentMethods(result).includes("doku"));
+});
+
+test("availability diagnoses an enabled encrypted configuration even when its root secret is missing", async () => {
+  const fixtureRoot = "fictional-root-for-availability-regression-only";
+  const dokuConfig = {
+    environment: "sandbox", client_id: "BRN-001-0000001",
+    api_key_ciphertext: await encryptSecret("fictional-api-key", fixtureRoot, "mybookcms:doku:sandbox:api-key:v1"),
+    secret_key_ciphertext: await encryptSecret("fictional-secret-key", fixtureRoot, "mybookcms:doku:sandbox:secret-key:v1"),
+    enabled_channels_json: JSON.stringify(["INTERNET_BANKING_FPX"]),
+    is_enabled: 1, config_revision: 7,
+  };
+  const recorded: unknown[][] = [];
+  const original = console.error;
+  console.error = (...args: unknown[]) => { recorded.push(args); };
+  try {
+    for (const root of ["", "short", "a-different-fictional-root-of-sufficient-length"]) {
+      recorded.length = 0;
+      const locals = { runtimeEnv: { AUTH_SECRET: root } } as unknown as App.Locals;
+      const result = await resolvePaymentAvailability(locals, fakeDatabase({ dokuConfig }));
+      assert.equal(result.doku, null);
+      assert.deepEqual(recorded, [["doku-config-unusable", {
+        environment: "sandbox", configRevision: 7, enabled: true,
+        reason: "EncryptedSecretError", code: null,
+      }]]);
+    }
+    recorded.length = 0;
+    const locals = { runtimeEnv: { AUTH_SECRET: fixtureRoot } } as unknown as App.Locals;
+    const healthy = await resolvePaymentAvailability(locals, fakeDatabase({ dokuConfig }));
+    assert.deepEqual(healthy.doku?.channels.map(channel => channel.code), ["INTERNET_BANKING_FPX"]);
+    const empty = await resolvePaymentAvailability(NO_LOCALS, fakeDatabase({}));
+    assert.equal(empty.doku, null);
+    assert.deepEqual(recorded, []);
+  } finally {
+    console.error = original;
+  }
 });

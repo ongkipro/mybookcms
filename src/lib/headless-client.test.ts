@@ -87,3 +87,29 @@ test("headless checkout sends the selected hosted DOKU channel explicitly", asyn
   assert.equal(submitted.doku_channel, "EWALLET_TNG");
   assert.equal("payment_channel" in submitted, false);
 });
+
+test("advertised DOKU channels are allowlisted and round-trip into checkout", async () => {
+  let submitted: Record<string, unknown> = {};
+  const client = new HeadlessApiClient("https://store.example/api/v1", "mybook_live_test", async (request) => {
+    if (new URL(request.url).pathname.endsWith("/storefront")) {
+      return Response.json({ success: true, storefront: {}, content: {}, payment: {
+        cod_enabled: true, supported_methods: ["cod", "doku"], doku_requires_email: true,
+        doku_channels: [
+          { code: "EWALLET_TNG", label: "Touch 'n Go eWallet" },
+          { code: "UNKNOWN_CHANNEL", label: "Unsupported" },
+          { code: "CREDIT_CARD", label: 123 }, null,
+        ],
+      }});
+    }
+    submitted = await request.json() as Record<string, unknown>;
+    return Response.json({ success: true, order: {
+      id: 42, order_number: "INV-10042", public_status_token: "fictional-token",
+      total_amount: 3140, shipping_amount: 650, currency: "MYR",
+    }});
+  });
+  const bootstrap = await client.getStorefront();
+  assert.deepEqual(bootstrap.payment.doku_channels, [{ code: "EWALLET_TNG", label: "Touch 'n Go eWallet" }]);
+  await client.checkout({ ...validCheckout, payment_method: "doku", customer_email: "audit@example.com",
+    doku_channel: bootstrap.payment.doku_channels[0].code });
+  assert.equal(submitted.doku_channel, "EWALLET_TNG");
+});

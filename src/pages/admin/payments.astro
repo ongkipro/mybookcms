@@ -1,7 +1,7 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
 import AdminPageHeader from '../../components/admin/AdminPageHeader.astro';
-import DokuPaymentSettings from '../../components/admin/DokuPaymentSettings';
+import DokuPaymentSettings, { CodAvailability } from '../../components/admin/DokuPaymentSettings';
 import SellerBankAccounts from '../../components/admin/SellerBankAccounts';
 
 export const prerender = false;
@@ -19,7 +19,8 @@ export const prerender = false;
 
     <section class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6" aria-labelledby="manual-payment-heading">
       <h2 id="manual-payment-heading" class="text-lg font-bold text-slate-950">Pembayaran manual</h2>
-      <p class="mt-1 text-sm leading-6 text-slate-600">COD tetap tersedia. Atur rekening yang ditampilkan untuk transfer bank manual.</p>
+      <p class="mt-1 text-sm leading-6 text-slate-600">Atur ketersediaan COD dan rekening untuk transfer bank manual.</p>
+      <CodAvailability client:load />
       <SellerBankAccounts client:load />
     </section>
   </main>

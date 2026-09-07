@@ -8,3 +8,6 @@ dist/
 .dev.vars
 .dev.vars.*
 tmp/
+
+# Machine-local delivery evidence; repository policy: ADR-029.
+.delivery/

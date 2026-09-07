@@ -3,7 +3,7 @@ type LegalPageTemplate = {
   badge: string;
   title: string;
   description: string;
-  sections: Array<{ id?: string; title: string; paragraphs: string[] }>;
+  sections: Array<{ id?: string; lang?: "ms" | "en"; title: string; paragraphs: string[] }>;
 };
 
 export const legalPages: Record<LegalPageKey, LegalPageTemplate> = {
@@ -13,6 +13,7 @@ export const legalPages: Record<LegalPageKey, LegalPageTemplate> = {
     description: 'Penjelasan tentang data yang boleh diproses apabila anda melawat kedai atau membuat pesanan di {{store}}.',
     sections: [
       {
+        lang: "ms",
         title: 'Data pesanan',
         paragraphs: [
           'Apabila anda membuat pesanan, sistem boleh memproses nama, nombor telefon atau WhatsApp, alamat penghantaran, item pesanan dan kaedah bayaran yang anda berikan.',
@@ -20,12 +21,14 @@ export const legalPages: Record<LegalPageKey, LegalPageTemplate> = {
         ],
       },
       {
+        lang: "ms",
         title: 'Data teknikal',
         paragraphs: [
           'Sistem boleh memproses maklumat teknikal yang diperlukan untuk keselamatan dan operasi checkout, seperti alamat IP serta maklumat pelayar.',
         ],
       },
       {
+        lang: "ms",
         title: 'Pengukuran dan pengiklanan',
         paragraphs: [
           'Apabila integrasi pengiklanan dikonfigurasikan untuk kedai ini, tag dan pengenal Meta dan/atau Google boleh dimuatkan pada storefront untuk mengukur keberkesanan iklan serta mengaitkan lawatan dengan hasil iklan.',
@@ -34,6 +37,7 @@ export const legalPages: Record<LegalPageKey, LegalPageTemplate> = {
         ],
       },
       {
+        lang: "ms",
         title: 'Penyedia perkhidmatan',
         paragraphs: [
           'Data yang diperlukan boleh diberikan kepada pihak penghantaran, customer service atau bank penerima hanya untuk menjalankan pesanan anda.',
@@ -41,6 +45,7 @@ export const legalPages: Record<LegalPageKey, LegalPageTemplate> = {
         ],
       },
       {
+        lang: "ms",
         id: 'pembayaran-doku',
         title: 'Pembayaran melalui DOKU',
         paragraphs: [
@@ -49,13 +54,7 @@ export const legalPages: Record<LegalPageKey, LegalPageTemplate> = {
         ],
       },
       {
-        title: 'Payments through DOKU',
-        paragraphs: [
-          'If you choose DOKU payment, {{store}} sends your name, phone number, email address, delivery address, order details, MYR amount, and technical information required to prepare the payment, prevent misuse, and check transaction status.',
-          'Payment is completed on DOKU’s hosted page. DOKU processes this data under its own privacy policy and service terms. {{store}} does not collect or store your card number, CVV, or online-banking credentials. Payment status is updated only after server confirmation is received.',
-        ],
-      },
-      {
+        lang: "ms",
         title: 'Keselamatan dan penyimpanan',
         paragraphs: [
           'Pengelola kedai menghadkan akses pentadbiran dan menggunakan langkah keselamatan teknikal yang tersedia. Tiada kaedah penyimpanan atau penghantaran data bebas risiko sepenuhnya.',
@@ -63,9 +62,72 @@ export const legalPages: Record<LegalPageKey, LegalPageTemplate> = {
         ],
       },
       {
+        lang: "ms",
         title: 'Permintaan berkaitan data',
         paragraphs: [
           'Permintaan akses, pembetulan atau pemadaman data boleh dibuat melalui customer service kedai. Permintaan mungkin memerlukan pengesahan identiti dan masih tertakluk pada kewajipan penyimpanan yang berkenaan.',
+        ],
+      },
+      {
+        lang: "en",
+        title: 'Privacy Notice — {{store}}',
+        paragraphs: [
+          "An explanation of the data that may be processed when you visit or place an order with {{store}}.",
+        ],
+      },
+      {
+        lang: "en",
+        title: 'Order data',
+        paragraphs: [
+          "When you place an order, the system may process the name, phone or WhatsApp number, delivery address, ordered items and payment method you provide.",
+          "This data is used to record your order, contact you about it, and carry out the available payment or delivery process.",
+        ],
+      },
+      {
+        lang: "en",
+        title: 'Technical data',
+        paragraphs: [
+          "The system may process technical information needed for security and checkout operations, such as your IP address and browser information.",
+        ],
+      },
+      {
+        lang: "en",
+        title: 'Measurement and advertising',
+        paragraphs: [
+          "When advertising integrations are configured for this store, Meta and/or Google tags and identifiers may load on the storefront to measure advertising effectiveness and attribute visits to advertising results.",
+          "For accepted orders, purchase-event information may be sent directly from the store server to those advertising platforms. Names, phone numbers, cities, states and postcodes used for matching are sent as one-way SHA-256 hashes rather than plain text. IP addresses and browser information are sent without hashing because the platforms require them for matching.",
+          "The store’s Cookie Policy describes the storage and identifiers involved.",
+        ],
+      },
+      {
+        lang: "en",
+        title: 'Service providers',
+        paragraphs: [
+          "Necessary data may be shared with delivery providers, customer service or the receiving bank solely to fulfil your order.",
+          "Each provider processes data under its own terms and privacy policy.",
+        ],
+      },
+      {
+        lang: "en",
+        title: 'Payments through DOKU',
+        paragraphs: [
+          'If you choose DOKU payment, {{store}} sends your name, phone number, email address, delivery address, order details, MYR amount, and technical information required to prepare the payment, prevent misuse, and check transaction status.',
+          'Payment is completed on DOKU’s hosted page. DOKU processes this data under its own privacy policy and service terms. {{store}} does not collect or store your card number, CVV, or online-banking credentials. Payment status is updated only after server confirmation is received.',
+        ],
+      },
+      {
+        lang: "en",
+        title: 'Security and retention',
+        paragraphs: [
+          "The store operator restricts administrative access and uses the available technical security measures. No method of storing or transmitting data is entirely risk-free.",
+          "Data retention depends on operational needs, dispute resolution and applicable legal obligations.",
+        ],
+      },
+      {
+        lang: "en",
+        title: 'Data requests',
+        paragraphs: [
+          "You can request access to, correction of or deletion of your data through the store’s customer service. Requests may require identity verification and remain subject to applicable retention obligations.",
         ],
       },
     ],

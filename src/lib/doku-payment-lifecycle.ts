@@ -1,3 +1,4 @@
+import { DOKU_PAYMENT_CHANNELS } from "./doku-config.ts";
 import { buildStockRestorationStatements } from "./order-lifecycle.ts";
 import { prepareSettledDokuMetaPurchase } from "./accepted-order-meta.ts";
 
@@ -180,7 +181,8 @@ export async function applyDokuPaymentFact(
     attempt.provider_reference !== notification.providerReference ||
     attempt.merchant_invoice !== notification.merchantInvoice ||
     attempt.amount_sen !== notification.amountSen ||
-    (attempt.channel !== null && attempt.channel !== notification.channel) ||
+    !DOKU_PAYMENT_CHANNELS.some((channel) => channel === attempt.channel) ||
+    attempt.channel !== notification.channel ||
     attempt.payment_method !== "doku"
   ) {
     throw new DokuPaymentLifecycleError("DOKU_PAYMENT_MISMATCH");

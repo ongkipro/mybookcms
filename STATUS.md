@@ -88,7 +88,8 @@ disablement, and provider facts that contradict the stored channel all fail
 closed. Retry keeps the original channel rather than creating a new buyer
 choice.
 
-Executable evidence on the working tree: 469/469 repository tests,
+Executable evidence, now committed rather than on the working tree: 474/474
+repository tests,
 `npm run check`, and `npm run build` pass. Built-Worker Chromium exercised the
 product, `/full-form`, and `/embed/form` at 390 px and 1280 px. All six runs
 rendered the same seven direct rows (COD, manual transfer, five DOKU channels),
@@ -96,9 +97,73 @@ defaulted to COD, moved FPX to Touch 'n Go with native radio keyboard behavior,
 revealed the required DOKU e-mail/disclosure state, exposed payment validation,
 and recorded zero horizontal overflow, runtime exception, failed request, or
 local card field. No DOKU provider request, remote mutation, deployment, secret,
-or PII entered this proof. Implementation is complete locally; formal A-242
-closure remains blocked on the required independent Opus review, unavailable in
-this Codex session, and A-221 still owns real sandbox lifecycle evidence.
+or PII entered this proof. The required independent Opus review was carried out
+on 2026-09-07 and reported no blocking finding, and the work is committed as
+`62f634d`. At that earlier audit, A-242 stayed open: its delivery-ledger boundary approval
+could not be bound, because `review-boundary` only attaches to an active run
+whose implementer route differs from the reviewer's, and no non-Opus reviewer
+route was available. Ledger evidence is `RUN-20260907T100902Z-d900360b`, closed
+BLOCKED with every check recorded as executed rather than asserted. A-221 still
+owns real sandbox lifecycle evidence. The review's five non-blocking findings
+are tracked: two are fixed under A-243, A-232 now has its verified control,
+and the remaining decisions sit with A-221 and A-245. A-242 is now closed by
+the fresh ADR-028 review recorded below.
+
+`docs/DEVELOPMENT-MAP.md` was added 2026-09-07 and screens every route on disk
+against three checkable signals: a test that names it, recorded browser
+evidence, and an open task claiming the file. `docs/CODE-MAP.md` answers where
+code lives and nothing answered how finished it is, so a route could be fully
+documented and still have no coverage naming it, no browser evidence, and no
+owner. Five findings came out of it and are queued as A-249: `/produk/[slug]` is
+the largest page in the repository and no test names it; `/[slug]` has three
+redirect branches and an admin-preview auth path with none named; the
+`/admin/ads/meta` and `/admin/settings/developer` credential surfaces have no
+test naming them; recorded browser evidence is concentrated on `/full-form`,
+`/embed/form`, and `/thanks`, leaving the DOKU recovery pages with none by
+route; and three already-open gaps now have a page address. Library-layer
+coverage remains strong — the point is that "tested one layer down" is now
+checkable rather than assumed.
+
+A placement defect in `TASKS.md` was found and fixed on 2026-09-07 by checking
+rather than assuming. Nine open tasks — A-241 through A-249 — sat under
+`## Release gate` instead of `## Open queue`, because each was appended by
+anchoring on `MYS-5`, which is the last entry of the release section rather than
+of the queue. `task-queue.test.ts` validates only the queue, so all nine escaped
+the contract that was supposed to guard them and Goal Mode would never have read
+them. All nine are now in the queue and all pass; the number of open tasks under
+contract went from 8 to 17. `MYS-5` deliberately stays outside it, because its
+own `Dependencies` line is that the queue is empty.
+
+A gap screening on 2026-09-07 queued what nothing owned. Five entries were
+added: A-244 now provides `npm run cf:dev:managed`, matching the managed
+`AUTH_SECRET` used by A-221 setup; ordinary `cf:dev` retains its documented
+`.dev.vars`/dotenv authority; A-245 gives a buyer a way forward when the channel they committed
+to is disabled mid-payment, blocked until proposed REQ-232 is accepted; A-246
+records the owner-approved ADR-028 reviewer policy; A-241/A-242/A-243 now
+have fresh audit closures with independent boundary approval; A-247 now
+explicitly ignores `.delivery/` under ADR-029, retaining its evidence locally; and A-248 schedules the bilingual privacy-notice decision A-203
+researched on 2026-09-01 and left as two `Proposal` rows nothing has owned since.
+Two PRD status rows were corrected rather than left standing: REQ-216 recorded
+COD enforcement as pending A-232 after it had landed, and REQ-224 claimed
+verification the configuration half never had. `TASKS.md` now opens with an
+execution order that names which document to read before each entry.
+
+A-243 makes a configured-but-unreadable DOKU install visible. `inspectRow` in
+`src/lib/doku-config.ts` swallowed every credential failure in a bare catch, so
+`getEnabledDokuConfig` returned null, `resolvePaymentAvailability` produced no
+DOKU method, and the storefront omitted online payment with nothing logged
+anywhere — indistinguishable from an install that never configured DOKU. It now
+records one redacted `doku-config-unusable` diagnostic naming environment,
+revision, enabled state, and error class, and never the root secret, either
+credential, or either ciphertext; an unconfigured row stays silent. This was
+reproduced on 2026-09-07: the A-221 sandbox script encrypts with the managed
+`AUTH_SECRET` while `npm run cf:dev` decrypts with the one in `.dev.vars`, so
+every worker started through the project's own script served a storefront with
+DOKU absent while D1 held an enabled row with five channels. That mismatch is
+A-221's; being unable to see it was this. Two smaller review findings landed
+with it: both checkout endpoints now refuse a DOKU order with no channel instead
+of asserting `data.doku_channel!`, and the PDP trust line names every method the
+install offers rather than returning on its first matching arm.
 
 A-241's implementation fixes the local HTTP form failure reproduced from the operator's exact
 Tailscale origin. The location directory and API were healthy; the inline
@@ -116,11 +181,13 @@ surfaces at 390 and 1280 px. Keyboard and pointer flows selected Kuala Lumpur
 D1-owned MYR quotes, and recorded zero exception, failed request, or horizontal
 overflow. A deliberately late stale failure did not replace the current result,
 and synchronous Enter during the debounce could not choose an old option. The
-29 focused tests, all 464 repository tests, `npm run check`, and `npm run build`
-pass. A final same-route security review found no issue in token strength,
-schema/DOKU compatibility, idempotency, race fencing, or payment-policy scope.
-Formal A-241 closure still awaits the required independent Opus review; no such
-model route is available in this Codex session.
+29 focused tests, `npm run check`, and `npm run build` pass; the repository suite
+was 464 tests when that evidence was taken and is 474 at `62f634d`. A final
+same-route security review found no issue in token strength, schema/DOKU
+compatibility, idempotency, race fencing, or payment-policy scope, and the
+independent Opus review on 2026-09-07 reported no blocking finding either.
+The earlier A-241 run lacked a bound independent approval. Its fresh ADR-028
+audit closure is recorded below; the historical BLOCKED run is unchanged.
 
 The completed A-205 signal slice preserves a paid click across later
 UTM-only visits, replaces it on a new paid click, gives Meta browser/CAPI one
@@ -261,9 +328,9 @@ traffic is claimed by it.
 
 The remaining queue is intentionally gate-led. A-240 now implements ADR-027's
 accepted 24-hour DOKU return-capability lifetime. ADR-026 accepts Owner/Admin
-COD control and A-232 owns its implementation. A-234 still
-needs the required designer handoff before the shared switch is changed, and
-A-226 cannot begin unless the user accepts proposal REQ-230. A-204, A-221,
+COD control and A-232 now has verified local implementation. A-234 now has its
+designer-approved switch and desktop contrast fixes with passing browser and
+Lighthouse checks at both required widths. A-226 cannot begin unless the user accepts proposal REQ-230. A-204, A-221,
 A-222, A-223, G-1, and MYS-5 remain explicit external or production approvals.
 No deployment or hosted behaviour is claimed by A-240's local evidence.
 
@@ -551,3 +618,245 @@ commands above; it is not a production penetration-test claim.
 
 `TASKS.md` is the canonical execution queue. `BUILD-LOG.md` is historical
 evidence, not a statement of current behaviour.
+
+## A-246 — Owner-approved reviewer policy, 2026-09-07
+
+ADR-028 accepts the owner's instruction to resume with an available qualified
+independent reviewer, including GPT-5.6 Sol, instead of blocking solely on an
+Opus model-name requirement. At that initial decision, a separate reviewer and
+different model or provider were required. The later owner amendment below
+removes the route restriction. Historical BLOCKED runs are unchanged.
+
+This completed the policy decision only. A-241/A-242/A-243 were left open for
+fresh implementation verification, required browser evidence, and final
+boundary approval. A-241/A-242/A-243's subsequent closures are recorded below.
+Delivery run `RUN-20260907T145200Z-55836332` owns this documentation change;
+no runtime, provider, deployment, commit, or push is part of A-246.
+
+## A-243 — Configuration diagnosis closure, 2026-09-07
+
+Run `RUN-20260907T145451Z-798a794d` audits the existing A-243 implementation
+and removes its remaining empty-root-secret shortcut in payment availability.
+An enabled configuration is now inspected even when no root is available, so
+DOKU remains unavailable and one safe `doku-config-unusable` event is emitted.
+An unconfigured or disabled install is still omitted without a decryption
+attempt. The fixture regression failed before the repair and passed after it.
+
+Tests cover missing, short, wrong, and correct fictional roots, malformed and
+partial credentials, and exact diagnostics in payment operations. Both submit
+endpoints retain their channel checks; all availability combinations retain
+their Malay trust copy. The operator guidance no longer diagnoses every
+unusable configuration as a key mismatch.
+
+The full repository tests, type-check, build, focused regressions, and final
+independent correctness/security and boundary review are recorded in the run.
+Chromium at 390 and 1280 px against an isolated built Worker and fictional D1
+rendered the complete COD/bank/online trust line on both PDP variants with zero
+overflow, console error, failed request, or external request. This verifies
+local display and fail-closed configuration behavior, not provider lifecycle
+or deployment. A-221 remains open.
+
+## A-241 — Fresh HTTP checkout audit, 2026-09-07
+
+`RUN-20260907T150257Z-b5838fbe` closes A-241 under ADR-028 without changing
+the committed form. Its 12 real Chromium cases cover product/full-form/embed
+at 390/1280 px on literal localhost and a private HTTP IP; secure-context state
+was explicitly checked for both. The form requested 32 random bytes, retained
+one 64-hex token across two intercepted submit refusals, and emitted no token
+in response HTML. City and postcode lookup, stale Enter refusal, delayed stale
+error fencing, pointer/keyboard selection, D1-exact hidden destination fields,
+and shipping quotes passed without page overflow or unexpected browser errors.
+
+The prior A-243 full suite, type-check, and build cover unchanged runtime code;
+fresh focused tests, browser proof, and independent correctness/security
+boundary review belong to this run. No actual submit reached the Worker and
+no order, payment, provider call, secret, or remote mutation was involved.
+
+## A-242 — Channel contract and settlement closure, 2026-09-07
+
+Run `RUN-20260907T150624Z-2fbee8c5` completes the fresh ADR-028 audit and
+repairs defects found by the independent review. Headless bootstrap codes now
+share the checkout channel type/allowlist; the client drops unsupported codes
+and both OpenAPI directions expose the same enum. A typed bootstrap-to-checkout
+regression proves the public contract round-trip.
+
+Status retrieval rejects a present malformed provider channel instead of
+substituting the stored choice. Shared settlement requires a persisted
+allowlisted channel equal to the provider fact; null/unknown stored channels
+cannot transition through notification, status, or reconciliation. Workerd D1
+regressions first reproduced the acceptance bugs and then proved refusal with
+pending order/attempt state, unchanged events, and no Purchase outbox entry.
+Absent retrieve-channel compatibility uses only an already committed known
+channel and does not excuse a present invalid or contradictory value.
+
+Six Chromium cases cover product/full-form/embed at 390/1280 px: all five
+channels by pointer, keyboard channel selection, COD/email visibility, invalid
+email gating, focused retryable refusal, stable tokens, zero card fields or
+iframe, zero overflow and no unexpected console/network error. Submissions
+were intercepted before the Worker; no order or provider call occurred.
+The final full-suite/check/build and independent correctness/security boundary
+review are recorded in this run. Sandbox/provider proof remains A-221; the
+proposed disabled-channel recovery UX remains A-245. No deployment is claimed.
+
+## A-247 — Local ledger retention, 2026-09-07
+
+ADR-029 explicitly ignores `.delivery/`. Existing local history remains intact;
+no ledger content was staged, published, or removed. Repository documents retain
+dated outcome summaries, but another checkout must regenerate executable proof
+and its required independent approvals. Ignore-rule and task-queue checks verify
+this decision; it does not change runtime or certify another checkout.
+
+## A-244 — Managed local development command, 2026-09-07
+
+`npm run cf:dev:managed` builds first, then injects managed secrets into Wrangler
+with `--env-file /dev/null` and the existing `.wrangler/state` persistence.
+INSTALLATION distinguishes this managed authority from ordinary `cf:dev`'s
+dotenv authority. No database, credential, or production resolution changed.
+
+Executed the documented command with loopback port/inspector overrides; the
+build completed and a read-only `/api/payment-methods` check returned HTTP 200
+with all five installed DOKU channels active. Only the assertion result was
+recorded, not account or credential values. Task-queue and diff checks passed.
+No provider payment request, remote mutation, deployment, commit, or push was
+performed. This proves local configuration loading, not A-221 interoperability.
+
+## A-234 — Shared switch implementation, 2026-09-07
+
+The required designer handoff selected a real 44 × 44 px Radix Root, reserving
+space rather than extending a pseudo-element into adjacent controls. The inner
+track retains its compact default/small geometry. State styling now follows
+Radix's actual `data-state` attributes; controlled state, props, keyboard
+semantics, and immediate-write callers remain intact.
+
+The isolated fictional admin fixture verified 390/1280 px targets by
+`elementFromPoint`, both sizes, expanded tariff panels, keyboard state changes,
+track colour/thumb travel, and no page overflow or unexpected console/network
+errors on Orders, Pengiriman, Payments, Tarif Malaysia, and Products. Payments
+screenshots passed the independent designer's visual critique. Full suite, type check, and
+build passed. Existing page-background contrast values remain documented.
+
+The initial implementation run remained BLOCKED because no installed Lighthouse
+runner was available. A later audit used pinned `lighthouse@13.4.1` through
+`npm exec` with a disposable `/tmp` cache, avoiding repository dependency or
+system installation changes; the earlier proposed package Surface expansion is
+unnecessary. The historical BLOCKED record remains intact.
+
+Fresh `/admin/settings/log` reports show accessibility 100 and color-contrast
+PASS at 390 px, but accessibility 96 and color-contrast FAIL at 1280 px. The
+visible desktop sidebar reveals slate-400 group labels at 2.51:1, active Settings
+text at 4.48:1, and the topbar keyboard hint at 2.63:1. At that audit A-234 remained open:
+`AppSidebar.tsx` and `AdminShell.tsx` were outside its approved Surface. A read-only
+designer proposes slate-600 labels/hint (including the sibling mobile-menu
+heading) and blue-700 active text with backgrounds unchanged. That run stopped
+for owner approval without editing shell source or claiming a desktop pass.
+
+Run `RUN-20260907T160501Z-9636d3b7` also repeated all 16 real-browser switch
+route/viewport checks successfully on the isolated fictional fixture. Runtime
+source is unchanged from A-249's passing full suite, typecheck and fresh build.
+The existing LandingPageEditor switch lacks an explicit name; its label remains
+outside this task's permitted scope and was not changed.
+
+## A-232 — Owner/Admin COD control closure, 2026-09-07
+
+Payments now renders a labelled COD switch in its manual-payment card. Its
+independent island reads the existing settings API, validates boolean responses,
+and writes only `save-cod-availability`. Loading/saving disables the switch;
+save failures retain the last confirmed display, initial-load failures offer
+retry, and completed keyboard saves restore focus when it fell back to body.
+DOKU credential/configuration controls remain independent.
+
+At 390 and 1280 px, both Owner and Admin passed failed-load/retry, failed-save,
+pending state, keyboard/pointer toggles, refresh persistence, and hosted-form
+and PDP availability agreement. Headless reads matched both enabled/disabled
+states. Customer Service and Advertiser received API 403 `PERMISSION_DENIED`
+and redirects from the Payments page. Designer critique passed both viewports;
+changed flows had zero overflow and unexpected browser errors.
+
+Both real HTTP checkout endpoints returned 422 for disabled COD against an
+isolated D1 fixture, while order/item/attempt/outbox counts and variant stocks
+remained identical. The existing regression proves refusal before order-number
+allocation or any batch. Full suite, type check, build, and focused contracts
+passed. No schema, provider, production, commit, or push change occurred.
+
+The final browser/HTTP evidence uses the installed Miniflare/workerd directly
+with the same built bundle and fictional D1/KV fixture. Earlier Wrangler
+forwarding-proxy attempts terminated with `Network connection lost` during
+role-denial requests; their failed records remain. Direct workerd passed the
+complete checks. No Wrangler fix or production-impact diagnosis is claimed.
+
+## A-249 — Route evidence map and direct coverage, 2026-09-07
+
+The development map now accounts for every file-based page and endpoint exactly
+once, including aliases and tombstones, and distinguishes static test references
+from direct runtime checks. Rows cite the relevant test, recorded browser task
+or open decision; they make no unrecorded browser or provider claim. A-232's
+closed COD gap and A-234's outstanding Lighthouse check are stated explicitly.
+The maintenance rule is visible at the TASKS entrypoint and in CODE-MAP.
+
+`src/lib/route-surface.test.ts` builds the current Worker before starting a
+Wrangler test harness with isolated, non-persistent D1/KV and fictional secrets.
+It asserts PDP variant/fallback selection, executes the rendered ViewContent
+script, checks resolved COD copy, exercises product/takeover redirects and
+non-stale admin draft preview, verifies Meta role gates and token masking, and
+issues/lists/revokes a developer API key under the actual route middleware.
+`src/lib/development-map.test.ts` checks complete unique route inventory and
+local citation paths; it does not certify prose quality or browser artifacts.
+No route, real credentials, provider state or production resource changed.
+
+Validation: the focused route/map/task checks, full `npm test`, `npm run check`
+(type generation, Astro and TypeScript), and `git diff --check` passed. The route
+suite itself runs a fresh `npm run build` before exercising the Worker. Evidence
+is recorded in `RUN-20260907T155220Z-bf0aac03`; no new browser behavior was
+introduced by this test/documentation-only change.
+
+## A-234 — Approved desktop contrast closure, 2026-09-07
+
+The owner authorized the previously blocked work and its two additional shell
+paths. Both sidebar-label and active-link branches, the keyboard hint and the
+sibling mobile-menu heading now use the designer-selected text colours while
+preserving backgrounds, layout and behavior. Rendered ratios are 7.26:1 for
+sidebar labels, 5.95:1 for active links, and 7.58:1 for the keyboard hint and
+mobile headings. DESIGN-SYSTEM records the measured pairs.
+
+Lighthouse 13.4.1 against the authenticated fictional `/admin/settings/log`
+reports accessibility 100 and color-contrast PASS at both 390 and 1280 px.
+The real-browser switch audit covers all 16 route/viewport combinations again;
+normal/restricted desktop and the open mobile menu also pass contrast, overflow,
+console/network and focus-return checks. Designer screenshot critique passed.
+`npm run check`, `npm test`, and `npm run build` passed after source changes.
+Run `RUN-20260907T163554Z-7edbd892` supersedes the incomplete evidence without
+rewriting historical BLOCKED runs. No deployment or real data was involved.
+
+## A-246 — Model eligibility restrictions removed, 2026-09-07
+
+The owner explicitly requested removal of model locks. ADR-028 now permits any
+capable model/provider, including the implementer's route for a separate actual
+reviewer agent. No specific vendor, model or reasoning level is an eligibility
+gate. The independent review, truthful provenance, current boundary digest and
+product/scope/live-operation approvals remain.
+
+The restriction came from shared AGENTS and OMP instructions, delivery-ledger's
+R3/R4 route comparison, and ai-policy-lint's hardcoded lane anchors. Dotfiles
+TASK-062 corrected all four sources and passed ledger/policy regressions, the
+canonical policy lint and independent review. This repository's remaining
+normative wording is aligned here; historical model provenance is retained.
+
+
+## A-248 — bilingual privacy notice closure (2026-09-07)
+
+The owner accepted REQ-211/REQ-212 and the reviewed draft under ADR-030.
+The privacy page now contains seven Malay sections followed by eight English
+sections, with explicit article language attributes and one page heading.
+Both accepted DOKU disclosures are unchanged, verified by a content digest.
+
+The shared checkout displays Malay and English privacy links before the buyer
+name field. Both open the notice in a new tab, with accessible new-tab text,
+so entered data remains in place. Local browser checks covered the PDP,
+full form, embed, and privacy page at 390/1280 px: notice placement, visibility
+across available payment choices, keyboard link activation, preserved input,
+article language order, existing DOKU anchor, and no horizontal overflow.
+No order was submitted and no provider request was required.
+
+`RUN-20260907T165031Z-9f29635d` records focused privacy regressions,
+`npm run check`, `npm test`, `npm run build`, and browser validation as PASS.
+This is local implementation evidence, not a publication or legal certification.

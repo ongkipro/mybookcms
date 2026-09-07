@@ -537,7 +537,11 @@ function parseDokuStatusFact(
   const merchantInvoice = stringField(order.invoice_number, /^[A-Za-z0-9_-]{1,64}$/);
   const orderAmountSen = majorMyrToSen(order.amount);
   const paymentAmountSen = majorMyrToSen(payment.amount);
-  const channel = stringField(payment.channel, /^[A-Z][A-Z0-9_]{1,63}$/) || access.channel || "UNKNOWN";
+  // An absent channel may reuse the committed intent; a present invalid one
+  // must never be replaced with it and become an apparently matching fact.
+  const channel = payment.channel === undefined
+    ? access.channel || "UNKNOWN"
+    : stringField(payment.channel, /^[A-Z][A-Z0-9_]{1,63}$/);
   const providerStatus = stringField(payment.status, /^[A-Z][A-Z0-9_]{1,63}$/);
   const providerState = stringField(payment.state, /^[A-Z][A-Z0-9_]{1,63}$/);
   const orderStatus = stringField(order.status, /^[A-Z][A-Z0-9_]{1,63}$/) || undefined;
@@ -549,6 +553,7 @@ function parseDokuStatusFact(
     payment.currency !== "MYR" ||
     orderAmountSen !== access.amountSen ||
     paymentAmountSen !== access.amountSen ||
+    !channel ||
     !providerStatus ||
     !providerState
   ) {

@@ -76,6 +76,27 @@ const sandboxDraft = {
   enabledChannels: ["INTERNET_BANKING_FPX", "EWALLET_TNG"] as const,
 };
 
+/**
+ * Run `body` with `console.error` captured, and hand back what it recorded.
+ *
+ * `inspectRow` reports an unusable configured row, which is the point of the
+ * test below — but several tests here deliberately build unusable rows, and
+ * without this their expected diagnostics would print as if something had gone
+ * wrong in the suite.
+ */
+async function withCapturedErrors<T>(
+  body: () => Promise<T>,
+): Promise<{ result: T; recorded: unknown[][] }> {
+  const recorded: unknown[][] = [];
+  const original = console.error;
+  console.error = (...args: unknown[]) => { recorded.push(args); };
+  try {
+    return { result: await body(), recorded };
+  } finally {
+    console.error = original;
+  }
+}
+
 test("a DOKU draft stores only environment-bound ciphertext and stays disabled", async () => {
   const { sqlite, database } = createDatabase();
   await saveDokuConfigDraft(database, ROOT_SECRET, sandboxDraft);
@@ -124,7 +145,12 @@ test("plaintext, incomplete, and cross-environment records fail closed", async (
   await saveDokuConfigDraft(database, ROOT_SECRET, sandboxDraft);
 
   sqlite.prepare("UPDATE payment_provider_configs SET environment = 'production'").run();
-  assert.deepEqual(await getDokuConfigStatus(database, ROOT_SECRET), {
+  const crossEnvironment = await withCapturedErrors(() => getDokuConfigStatus(database, ROOT_SECRET));
+  // OBSERVABILITY.md, "Test signal discipline": a failure-path test that trips a
+  // production console.error asserts the exact safe label and bounded object
+  // rather than merely silencing it.
+  assert.deepEqual(crossEnvironment.recorded.map(([label]) => label), ["doku-config-unusable"]);
+  assert.deepEqual(crossEnvironment.result, {
     source: "database",
     health: "invalid",
     environment: "production",
@@ -141,7 +167,17 @@ test("plaintext, incomplete, and cross-environment records fail closed", async (
     UPDATE payment_provider_configs SET
       environment = 'sandbox', api_key_ciphertext = 'plaintext-api-key'
   `).run();
-  assert.equal((await getDokuConfigStatus(database, ROOT_SECRET)).health, "invalid");
+  const plaintextCiphertext = await withCapturedErrors(() => getDokuConfigStatus(database, ROOT_SECRET));
+  assert.equal(plaintextCiphertext.result.health, "invalid");
+  assert.deepEqual(plaintextCiphertext.recorded.map(([label]) => label), ["doku-config-unusable"]);
+
+  sqlite.prepare("UPDATE payment_provider_configs SET secret_key_ciphertext = ''").run();
+  const incomplete = await withCapturedErrors(() => getDokuConfigStatus(database, ROOT_SECRET));
+  assert.equal(incomplete.result.health, "invalid");
+  assert.deepEqual(incomplete.recorded, [["doku-config-unusable", {
+    environment: "sandbox", configRevision: 1, enabled: false,
+    reason: "DokuConfigError", code: "DOKU_CONFIG_INVALID",
+  }]]);
 
   await clearDokuConfigDraft(database, 1);
   assert.equal((await getDokuConfigStatus(database, ROOT_SECRET)).health, "missing");
@@ -152,6 +188,58 @@ test("plaintext, incomplete, and cross-environment records fail closed", async (
       secret_key_ciphertext = NULL, enabled_channels_json = '[]', is_enabled = 0
   `).run();
   assert.equal((await getDokuConfigStatus(database, ROOT_SECRET)).health, "missing");
+});
+
+test("a configured DOKU row that cannot be read says so, without revealing why in secret terms", async () => {
+  // Reproduced on 2026-09-07 and fixed here. The local sandbox script encrypted
+  // the credential under the managed AUTH_SECRET while the dev server decrypted
+  // with the one in .dev.vars. inspectRow swallowed the failure, getEnabledDokuConfig
+  // returned null, resolvePaymentAvailability turned that into no DOKU method,
+  // and the storefront was simply missing online payment. Nothing on that whole
+  // path emitted a single line, so the state was indistinguishable from an
+  // install that never configured DOKU. REQ-224 asks an operator to be able to
+  // tell a configuration failure apart; that requires it to be recorded.
+  const { sqlite, database } = createDatabase();
+  await saveDokuConfigDraft(database, ROOT_SECRET, sandboxDraft);
+  await setDokuConfigEnabled(database, ROOT_SECRET, 1, true);
+
+  const { result: status, recorded } = await withCapturedErrors(
+    () => getDokuConfigStatus(database, "a-different-root-secret-of-sufficient-length"),
+  );
+
+  assert.equal(status.health, "invalid");
+  assert.equal(recorded.length, 1, "an unusable configured row must be recorded exactly once");
+  const [label, detail] = recorded[0] as [string, Record<string, unknown>];
+  assert.equal(label, "doku-config-unusable");
+  assert.equal(detail.environment, "sandbox");
+  assert.equal(detail.configRevision, 1);
+  assert.equal(detail.enabled, true);
+  assert.ok(typeof detail.reason === "string" && detail.reason.length > 0);
+
+  // The point of the log is diagnosis, not disclosure: nothing in it may carry
+  // the root secret, either credential, or either ciphertext.
+  const serialized = JSON.stringify(detail);
+  const row = sqlite.prepare(`
+    SELECT client_id, api_key_ciphertext, secret_key_ciphertext
+    FROM payment_provider_configs LIMIT 1
+  `).get() as { client_id: string; api_key_ciphertext: string; secret_key_ciphertext: string };
+  for (const secret of [
+    ROOT_SECRET,
+    sandboxDraft.apiKey,
+    sandboxDraft.secretKey,
+    row.api_key_ciphertext,
+    row.secret_key_ciphertext,
+  ]) {
+    assert.ok(!serialized.includes(secret), "the diagnostic must not carry credential material");
+  }
+
+  // A row that was never configured is a normal state, not a fault, and must
+  // stay silent so the signal above keeps meaning something. Activation does not
+  // move the configuration revision, so clearing still expects revision 1.
+  await clearDokuConfigDraft(database, 1);
+  const quiet = await withCapturedErrors(() => getDokuConfigStatus(database, ROOT_SECRET));
+  assert.equal(quiet.result.health, "missing");
+  assert.equal(quiet.recorded.length, 0, "an unconfigured install must not be reported as a fault");
 });
 
 test("replacement increments revision, disables the draft, and clear never deletes audit identity", async () => {

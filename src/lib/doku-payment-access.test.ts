@@ -437,6 +437,29 @@ test("status reconciliation requires the checkout capability and signed provider
   assert.equal(await eventCount(facts.attempt_id, "status"), 1);
 });
 
+test("status retrieval cannot replace a malformed provider channel with the committed channel", async () => {
+  for (const [index, channel] of ["ewallet_tng", "", null, 42, {}, "UNKNOWN"].entries()) {
+    const token = `malformed-channel-3490${index}`;
+    await createAttempt(34900 + index, token);
+    const facts = await attemptFacts(token);
+    const response = await handleDokuStatusRequest({
+      request: statusRequest(facts.order_number, await accessCookie(token)),
+      database, rootSecret: ROOT_SECRET, clientIp: `203.0.113.${100 + index}`,
+      fetch: signedStatusFetch(facts, "SUCCESS", "COMPLETED", { payment: {
+        amount: facts.amount_sen / 100, currency: "MYR", channel,
+        status: "SUCCESS", state: "COMPLETED",
+      }}),
+      now: () => NOW,
+    });
+    assert.equal(response.status, 502, `invalid channel case ${index} must be refused`);
+    const state = await attemptFacts(token);
+    assert.equal(state.local_status, "pending");
+    assert.equal(state.payment_status, "pending");
+    assert.equal(state.channel, "INTERNET_BANKING_FPX");
+    assert.equal(await eventCount(facts.attempt_id, "status"), 0);
+  }
+});
+
 test("retry reuses the same order, re-reserves restored stock once, and returns no capability or PII", async () => {
   const variantId = 34003;
   const token = "access-retry-token-34003";

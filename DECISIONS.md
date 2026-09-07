@@ -396,3 +396,102 @@ lifetime.
   normal recovery path rather than reuse an old link.
 - **Neutral:** notification authenticity, capability HMAC construction, cookie
   flags, and the separate `/order-status` mechanism remain unchanged.
+
+## ADR-028 — Independent review follows capability and recorded provenance
+
+- **Status:** Accepted by the product owner on 2026-09-07
+- **Deciders:** MyBookCMS product owner
+- **Scope:** A-246 and repository task review requirements
+
+### Context
+
+A-241, A-242, and A-243 have implementation and review evidence, but their
+required final delivery boundary approvals were not bound to an active run.
+Model-name requirements made the available reviewer route unusable. The owner
+explicitly accepted the recommendation to resume with GPT-5.6 Sol as an
+independent reviewer and remove these model-name blockers.
+
+### Decision
+
+The owner's subsequent explicit instruction on 2026-09-07 removes all model
+and provider eligibility restrictions. Use any available capable model/provider
+for implementation, design or review. Older model names are examples, not gates.
+Correctness and security review obligations retain their original scope.
+
+The reviewer must be a separate actual agent; it may use the same model and
+provider as the implementer. Record real identities, route, findings and
+verification evidence. Model/provider are provenance only. The ledger rejects
+the implementer's identity as reviewer but cannot prove process separation from
+strings; the orchestrator must obtain a real separate-agent review rather than
+renaming self-review. If no separate reviewer can run, leave the review gate
+open without inventing approval.
+
+The shared implementation was corrected under dotfiles TASK-062,
+`RUN-20260907T163715Z-9766f188`: shared AGENTS, OMP guidance, delivery-ledger
+command/verifier and policy lint no longer enforce model names or a different
+model/provider. R3 same-route approval/finish/verify and retained negative
+identity/provenance/stale-evidence checks passed with independent review.
+
+For A-241/A-242/A-243, schedule fresh audit runs against the current revision
+and relevant uncommitted content. Capture the base HEAD, dirty fingerprints,
+allowed surface, and any accepted overlap before edits. The parent owns
+regression verification and browser evidence where required; the independent
+reviewer examines the actual implementation as well as the final task diff.
+Attach approval to the current run's final boundary digest only after review
+findings are resolved. Existing tests and dated browser evidence must be
+checked for coverage and freshness, not assumed to certify new edits.
+
+Historical BLOCKED runs remain immutable. A new PASS certifies only its stated
+audit surface and evidence; it does not retroactively certify an old run.
+A-241/A-242/A-243 stay open until their remaining verification and boundary
+gates pass. The parent will dispatch those audits after A-246 closes.
+
+### Consequences
+
+- Model availability no longer blocks a qualified independent review solely
+  because a task names a vendor or model.
+- The separate-agent review requirement, identity guard and verification remain.
+- Product proposals, legal acceptance, secrets, remote writes, deployment,
+  publication, commit, and push retain their separate authorization gates.
+
+## ADR-029 — Keep generated delivery ledgers local
+
+- **Status:** Accepted on 2026-09-07 under the delegated A-247 decision
+- **Scope:** Local verification evidence retention; REQ-231
+
+### Decision
+
+Explicitly ignore `.delivery/` at the repository root. Its run details, file
+fingerprints, and boundary approvals remain machine-local and disposable.
+Preserve existing history on this machine; this decision neither rewrites nor
+prunes it. `ledger.lock` remains excluded by the existing nested ignore file.
+
+Canonical TASKS, STATUS, and BUILD-LOG documents retain dated outcome summaries
+and the revision and check scope where available. Those summaries are not a
+portable ledger or a transferable PASS: another checkout must run the relevant
+checks and obtain its own required review and boundary approval.
+
+### Consequences
+
+Generated run details will not silently enter a future commit, and routine
+verification does not dirty the product tree. Loss of this machine loses its
+raw ledger evidence. No shared archive or backup is claimed. A later decision
+to publish evidence requires a reviewed retention and redaction policy first.
+No existing run was inspected for publication, staged, or committed here.
+
+## ADR-030 — Bilingual privacy notice at first collection
+
+- **Status:** Accepted by the owner on 2026-09-07 when authorizing the blocked tasks
+- **Requirements:** REQ-211, REQ-212; preserve REQ-185 and accepted REQ-227 disclosure
+
+Publish the complete existing Malay privacy notice first, followed by its English
+counterpart on the same page without a language selector. Preserve both accepted
+DOKU paragraphs verbatim and the `pembayaran-doku` anchor. Identify paragraph
+language for assistive technology. The shared checkout presents the accepted
+Malay and English notice links immediately before the first name input for all
+payment methods and embedded forms; opening the notice preserves entered data.
+
+This is the accepted translation/presentation change from the prepared review
+draft, not a new consent mechanism or a claim of complete legal compliance.
+Other legal pages, cookie wording, collected fields and payment processing do
+not change. Local implementation approval does not itself deploy the notice.

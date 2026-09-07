@@ -386,7 +386,28 @@ async function inspectRow(
       },
       runtime,
     };
-  } catch {
+  } catch (error) {
+    // A configured row that cannot be inspected is an operational fault, and it
+    // used to be completely silent. `getEnabledDokuConfig` returns the null
+    // below, `resolvePaymentAvailability` turns that into no DOKU method, and
+    // the buyer is shown a store with online payment simply absent — identical
+    // to an install that never configured DOKU. On 2026-09-07 that cost hours:
+    // the local sandbox script had encrypted the credential under the managed
+    // `AUTH_SECRET` while the dev server decrypted with the one in `.dev.vars`,
+    // and nothing anywhere said so. REQ-224 requires an operator to be able to
+    // distinguish a configuration failure; that is only true if it is recorded.
+    //
+    // The empty-row case returns above and never reaches here, so this fires
+    // only for a row that claims to be configured and is not usable.
+    console.error("doku-config-unusable", {
+      environment: base.environment,
+      configRevision: base.configRevision,
+      enabled: base.enabled,
+      // The class only. A decryption failure must not put ciphertext, key
+      // material, or a provider payload into a log line.
+      reason: error instanceof Error ? error.name : "UnknownError",
+      code: error instanceof DokuConfigError ? error.code : null,
+    });
     return {
       status: {
         ...base,

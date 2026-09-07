@@ -104,25 +104,83 @@ external consequence, so it is listed first and stops for the user.
 
 ### Current execution order
 
-The task entries below remain the canonical queue. A-240 has closed the accepted
-DOKU capability-lifetime decision; A-242 now owns the accepted channel-first
-Hosted Checkout refinement. The remaining order makes visual, external, and
-approval gates explicit rather than mistaking them for code gaps.
+Screened against disk 2026-09-07 at `62f634d` plus the uncommitted A-243 surface.
+The task entries below remain the canonical queue; this section only orders them
+and says which document a reader should open first, because several entries are
+blocked by a decision recorded elsewhere rather than by code.
 
-1. **A-242** implements the accepted channel-first Hosted Checkout contract
-   after its completed designer handoff.
-2. **A-241** is implemented and locally verified, but remains open until the
-   required independent Opus review and delivery-ledger approval are available.
-3. **A-232** enforces the accepted Owner/Admin COD control after its required
-   designer handoff, because it adds a shared admin payment control.
-4. **A-234** can start only after its required designer handoff decides the
+**Read these before executing anything in this queue.** `PRD.md` is the only
+authority for whether a requirement is accepted. A-248/REQ-211/REQ-212 are now
+accepted and verified locally under ADR-030. A-226/REQ-230 and A-245/REQ-232
+still require their accepted implementation contracts to be recorded before execution. `DECISIONS.md` carries the accepted architecture decisions those
+entries build on, most recently ADR-026 for COD and ADR-027 for capability
+lifetime. `OBSERVABILITY.md` fixes every stable signal name and its allowed
+fields; anything that adds a production log line is incomplete until it is
+registered there, which A-243 learned the hard way. `RELEASE.md` owns the gates
+no task may skip. `STATUS.md` describes the current state and is the fastest way
+to see what is genuinely done versus merely implemented.
+
+Decisions first, because they unblock the most and cost the least:
+
+1. **A-246** records the owner's accepted reviewer policy in ADR-028.
+   GPT-5.6 Sol may supply the independent review previously tied to Opus.
+   A-241/A-242/A-243 now have fresh local closure runs with verification and
+   independent boundary review. Historical BLOCKED runs remain unchanged.
+   Read ADR-028
+   and the run evidence in `.delivery/runs/`.
+2. **A-247** decides whether that evidence is tracked at all. Pairs naturally
+   with A-246 and is a few minutes of work. Read `.delivery/.gitignore` and
+   `AGENTS.md`.
+3. **A-244** repairs the local development path so a worker started from the
+   repository's own script can read the DOKU sandbox configuration. It is not a
+   product gap, but it is the reason two sessions have now mistaken a working
+   install for a broken one. Read `INSTALLATION.md`.
+
+Decision follow-through after the owner authorized the blocked tasks:
+
+4. **REQ-232** in `PRD.md` — accept or decline the buyer recovery path for a
+   channel disabled mid-payment. **A-245 must not be started before this.**
+5. **REQ-211/REQ-212** in `PRD.md` — accepted under ADR-030 and implemented
+   locally by **A-248**, with bilingual content and first-collection links verified.
+6. **REQ-230** in `PRD.md` — **A-226** remains deliberately blocked until it is
+   accepted; acceptance is a product decision, not a documentation change.
+
+Then the implementation work that already has its decision:
+
+7. **A-232** enforces the accepted Owner/Admin COD control. Its server half
+   landed 2026-09-07 in `62f634d`; what remains is the operator control, which
+   needs the designer handoff because it adds a shared admin payment control.
+   Read ADR-026 in `DECISIONS.md`.
+8. **A-234** can start only after its required designer handoff decides the
    shared switch's 44 px target treatment without destabilising every admin
-   list.
-5. **A-226** remains deliberately blocked until the user accepts proposal
-   REQ-230; acceptance is a product decision, not a documentation change.
-6. **A-204**, **A-221**, **A-222**, **A-223**, **G-1**, and **MYS-5** are
-   external, production, or history-rewrite gates and retain their explicit
-   approvals. A-221 must precede A-222, and A-222 must precede A-223.
+   list. Read `DESIGN-SYSTEM.md` and `design-tokens.md`.
+
+External, production, and approval gates keep their explicit approvals and are
+not reordered by anything above:
+
+9. **A-204**, **A-221**, **A-222**, **A-223**, and **G-1**. A-221 must precede
+   A-222, and A-222 must precede A-223. Read `RELEASE.md` before any of them, and
+   note that A-221 now also owns confirming the exact `payment.channel` string
+   DOKU returns per channel — `CREDIT_CARD` most of all, because a mismatch there
+   strands a paid order rather than failing loudly.
+10. **MYS-5** is last and lives under `## Release gate`, not in this queue, on
+   purpose: its own `Dependencies` line is that the Open queue is empty, so
+   listing it inside the thing it waits for would make it self-referential. It is
+   the only open task outside the queue, and it is outside it deliberately.
+
+Before judging whether a route is finished, or looking for what nothing covers,
+open `docs/DEVELOPMENT-MAP.md`. `docs/CODE-MAP.md` says where code lives; the
+development map says how mature it is, and it is the only document that crosses
+the routes on disk against tests, browser evidence, and this queue. Three
+entries gained a page address from it: A-232 is now closed on
+`/admin/payments`; A-245 remains on `/payment/doku/cancel`, and A-248 on
+`/dasar-privasi` plus the shared checkout notice link. Every task that adds, changes or removes a route must update its
+development-map row in the same task, cite its evidence, and include the map in
+its Surface. Run the development-map and code-map tests before closing it.
+
+Screened and deliberately not queued: the `// lazy:` retention ceiling in
+`src/lib/notifications.ts` names its own trigger and upgrade path, and no store
+is near it. It is an accepted corner, not an open gap.
 
 - [ ] **G-1** — Publish the repository. **Approval: required — never run autonomously.**
       The working tree and local history are clean, but `origin/malaysia-market-audit` still carries two commits (`b34770b`, `9be8c3f`) whose test fixtures held a real person's full name, live Malaysian mobile, and home address. Local history was rebuilt without them; the remote was deliberately left untouched because overwriting it needs the user's explicit word. Publishing before the remote is replaced would put that individual's personal data on the public internet, where it can be indexed and cached even if the repository is made private again.
@@ -368,7 +426,7 @@ Surface, and obtain the independent correctness/security review required by
       Primary requirement: REQ-216
       Constraints: REQ-217, REQ-218, REQ-219, REQ-220, REQ-221, REQ-222, REQ-223, REQ-224, REQ-225, REQ-226
       Dependencies: A-220 (which transitively requires A-210 through A-219) and A-221R
-      Done when: after explicit approval, an isolated sandbox install records redacted evidence for signed create/retrieve requests and REQ-227-compliant responses, enabled Malaysia channels, correct hosted redirect, valid signed notification, duplicate delivery, success, pending, failure, expiry/cancel, eligible retry, bounded reconciliation, stock invariants, operator diagnostics, Ads single-Purchase behavior, desktop/mobile buyer recovery, and zero secret/PII leakage; production remains disabled.
+      Done when: after explicit approval, an isolated sandbox install records redacted evidence for signed create/retrieve requests and REQ-227-compliant responses, enabled Malaysia channels, the exact `payment.channel` string DOKU returns for each enabled channel compared against the code this repository pins and stores — `CREDIT_CARD` in particular, which providers commonly report as a card sub-brand and which would strand a paid order as `DOKU_PAYMENT_MISMATCH` if it differs — correct hosted redirect, valid signed notification, duplicate delivery, success, pending, failure, expiry/cancel, eligible retry, bounded reconciliation, stock invariants, operator diagnostics, Ads single-Purchase behavior, desktop/mobile buyer recovery, and zero secret/PII leakage; production remains disabled.
       Blocked evidence 2026-09-02: the operator approved A-221 sandbox vendor traffic. Managed credentials were injected into one child process without revealing values, and the current official Malaysia contract was rechecked before use. A signed FPX-only `POST /v3/checkouts` with fictional data reached DOKU sandbox validation, but the supplied account rejected `MYR` with `currency_not_support`; the unsigned `400` was fail-closed by the adapter as `DOKU_RESPONSE_HEADERS`. The official OpenAPI currently advertises checkout language `MY`, while sandbox rejected it and accepted the runtime's `MS` far enough to evaluate currency. No checkout was created, so retrieve, hosted browser, payment states, notification/resend, reconciliation, stock, and Ads cells remain unproven. No dashboard login credential is available to enable the required account/channel capability or register a webhook, and registering a replacement account requires operator-owned email/password and Terms acceptance. No local/remote D1 state, webhook, deployment, production resource, order, charge, secret, or real customer data was created or changed. Resume only after a sandbox account accepts `MYR` and its dashboard access is available for channel/webhook configuration.
       Resumed evidence 2026-09-02: after the operator replaced the managed sandbox credential set, DOKU accepted signed fictional FPX-only MYR Checkout requests. Sandbox enforces a MYR 2.00 minimum; create and immediate retrieve then both returned `200`, matching merchant ID, MYR 2.00, and pending/initiate facts, and create returned an allowlisted DOKU-hosted URL shape. Neither successful response carried a `Signature` header, although Client ID, response timestamp, and API version were present; a separate response-header inventory found no alternate signature header. Current official artifacts conflict: the endpoint OpenAPI models empty response headers and the DOKU Malaysia Postman Checkout requests contain no response-signature assertion, while the generic Global integrity guide says DOKU signs responses. The shared adapter therefore failed closed as `DOKU_RESPONSE_HEADERS` before returning or persisting the hosted URL. This conflicts with accepted REQ-218/REQ-219 and the current A-221 signed-response gate; changing that integrity contract or its source surface requires a separate explicit decision. No local D1 order/attempt, browser redirect, payment completion, webhook, Ads event, deployment, production resource, secret value, or real customer data was created or changed. A-221 remains open.
       Remediation evidence 2026-09-02: accepted REQ-227, ADR-022, and completed A-221R resolve the create/retrieve response-contract blocker with the endpoint-specific profile proven above. A-221 remains open: dashboard channel/webhook setup, hosted browser payment states, notification/resend, retry, stock, operator diagnostics, and Ads/browser evidence have not been exercised, and only FPX create/retrieve transport is proven. Production remains disabled.
@@ -425,7 +483,7 @@ Surface, and obtain the independent correctness/security review required by
       Non-scope: recording buyer or storefront traffic; recording order edits, whose rows already carry their lifecycle; placing a value, secret, token, password hash, or customer field in `detail`; any UI beyond what A-225 renders; export; alerting; editing or deleting an event through any API; changing any mutation's authorization or validation.
       Primary requirement: REQ-230
       Constraints: REQ-182, REQ-197, REQ-198, REQ-201, REQ-217, LOGIN-3
-      Dependencies: A-225 delivered; REQ-230 accepted by the user; independent Opus review plus delivery-ledger approval, as for every R3 change.
+      Dependencies: A-225 delivered; REQ-230 accepted by the user; independent separate-agent review under ADR-028 plus delivery-ledger approval, as for every R3 change.
       Done when: the clean migration chain applies to an empty local D1 with `schemaVersion` bumped; a workerd-backed D1 test proves an admin mutation and its event commit or roll back together; a scheduler-failure test proves the best-effort write never throws into `scheduled`; the prune deletes only rows older than 90 days; a fixture proves `detail` for each named mutation contains no secret, token, password hash, phone, or address; every event appears in `/admin/settings/log` with the acting username; `npm run check`, `npm test`, and `npm run build` pass.
 
 - [x] **A-227** — Make `docs/CODE-MAP.md` fail a test when it drifts from `src/`. **Done locally 2026-09-04.** `src/lib/code-map.test.ts` derives routes, paths, endpoint methods, and the live-table set from disk and refuses to agree with a stale map. Four drift cases were each proven to fail with the offending path named: deleting a route row, renaming a page file, silently changing a documented HTTP method, and adding a `CREATE TABLE`. The first draft passed case one wrongly — a deleted `/jejak-pesanan` row still counted as documented because the route remained a redirect *target* elsewhere — so route recognition was narrowed to a row's own first cell. Writing the check also surfaced two real defects: the map addressed admin API and storefront component files by a section-relative path that resolved nowhere, now absolute; and `src/pages/landing/README.md` was a live public route, which became A-230. 421/421 tests, zero diagnostics, clean build; the check runs in 0.2 s.
@@ -459,9 +517,19 @@ Surface, and obtain the independent correctness/security review required by
       Dependencies: none.
       Done when: `GET /api/v1/storefront` resolves its payment block from the same D1 facts `GET /api/payment-methods` uses, so the two endpoints cannot disagree for one store state; an enabled DOKU install lists `doku` with its allowlisted channel labels and no credential, revision, or environment value; `HeadlessCheckoutInput.payment_method` accepts `doku` and the OpenAPI document declares the same enum; a test proves a store with DOKU enabled and one with it disabled produce different `supported_methods`; `npm run check`, `npm test`, and `npm run build` pass.
 
-- [ ] **A-232** — Enforce the accepted Owner/Admin COD availability control end-to-end.
+- [x] **A-232** — Enforce the accepted Owner/Admin COD availability control end-to-end.
+      Closed locally 2026-09-07: labelled Payments control, failure/retry and confirmed-state persistence passed for Owner/Admin at 390/1280 px; Customer Service/Advertiser received API 403 and page redirects. Real D1/HTTP checks proved both checkout paths reject disabled COD without order/item/stock/Ads/attempt writes. Hosted form, Headless read, and PDP agree.
       Found by A-228. `stores.is_cod_enabled` exists from migration `0032` (`payment_method_toggles`) and defaults to `1`. Exactly one runtime line reads it — `GET /api/payment-methods`, which hides COD from the hosted form when it is `0`. Nothing writes it: no admin API accepts it and the Payments workspace states `COD tetap tersedia`. Nothing enforces it: `orderSubmitSchema` early-returns on `payment_method === 'cod'` without a check, and neither `POST /api/submit-order`, `POST /api/v1/checkout`, nor `persistOrder` consults the column. So the control is presentation-only. It is latent today precisely because the operator cannot reach it, but the moment a toggle is added — or the column is set directly in D1 — hiding the option in one form becomes the only thing standing between a disabled method and a persisted COD order, which contradicts the repository's own rule that browser input is never authority. `manual_transfer` is the counter-example done right: `persistOrder` requires an active seller bank account and refuses without one. Either wire COD the same way end to end, or remove the read and the column claim so nothing suggests a control that does not exist.
       **Reproduced locally 2026-09-04**, so this is demonstrated rather than inferred. Against a throwaway install with `UPDATE stores SET is_cod_enabled = 0`, both read surfaces correctly reported COD as unavailable — `GET /api/v1/storefront` returned `cod_enabled: false` with `supported_methods: ["manual_transfer", "doku"]`, and `GET /api/payment-methods` returned COD with `is_active: false`. `POST /api/submit-order` with `payment_method: "cod"` and the server's own quote then answered `success: true` and persisted order `INV-10001` as `payment_method: "cod"`, `payment_status: "unpaid"`. The control is presentation-only end to end. It remains latent in shipped installs only because no admin surface writes the column, so reaching this state needs a direct D1 write.
+      **Original remaining gap after `62f634d`, now closed by the verified control above.**
+      `persistOrder` now reads `stores.is_cod_enabled` alongside the store id and
+      refuses a COD order when it is `0`, so the presentation-only state
+      reproduced below no longer exists on either submission path, and
+      `PUT /api/admin/settings` accepts a `save-cod-availability` action. What
+      remains is the half an operator can actually see: no admin surface reads or
+      writes `cod_enabled`, so the flag is reachable only by a direct D1 write.
+      The static PDP trust line is also resolved now rather than hard-coded, fixed
+      under A-243.
       **Decision accepted 2026-09-05: enforce the control (ADR-026).** COD is a
       merchant operational choice, not a presentation hint. The guard belongs
       in `persistOrder`, not in `orderSubmitSchema`: the schema has no database,
@@ -512,17 +580,27 @@ Surface, and obtain the independent correctness/security review required by
       Dependencies: A-227 first, so the code-map half of the pass is mechanical.
       Done when: every claim of a route, endpoint, table, binding, migration number, cron, or role grant in the listed files is traced to a line in `src/` or `wrangler.jsonc` at HEAD; each contradiction is fixed in the document or listed in `BUILD-LOG.md` as a new task; every advanced date names the same HEAD; the ledger `observedHead` equals `git rev-parse HEAD`; `npm run check` and `npm test` still pass.
 
-- [ ] **A-234** — Close the touch-target half of the admin's accessibility bar. **The contrast half is done 2026-09-04; the switch half is what remains, and it wants a designer.** Both predate this session and both are system-wide.
+- [x] **A-234** — Close the touch-target half of the admin's accessibility bar. **Completed locally 2026-09-07 after owner-approved desktop contrast remediation. Switch/browser checks and Lighthouse at 390/1280 px pass.** The original findings below were system-wide.
       *Touch target.* `DESIGN-SYSTEM.md` requires a minimum 44 px interactive height across the admin. The shared `src/components/ui/switch.tsx` renders an 18 px by 32 px control and expands its hit area with an `after:-inset-x-3 after:-inset-y-2` pseudo-element. Measured with `elementFromPoint` at 390 px, the effective target is 33 px by 53 px: wider than the floor, and 11 px short of it vertically. Every switch in the admin inherits it, including Order Management and Payments.
-      *Text contrast — **done**.* A Lighthouse pass on `/admin/settings/log` scored accessibility 96 with one failure and best practices 100. The failure was real and narrower than it first looked: `text-slate-500` is `#62748e`, which gives **4.76** on a white card and passes, but **4.41** on the admin page background `#f5f6f8` and fails the 4.5 AA floor. So the 277 occurrences across admin code are mostly fine — only text sitting directly on the page background is not. Lighthouse found exactly two such nodes, the eyebrow and the description in `AdminPageHeader.astro`, which 20 admin pages render. `slate-600` on the same background gives 7.01. Fixed in `AdminPageHeader.astro` — eyebrow, description and back link — and in the three panel descriptions of `ExpeditionSettings.tsx`, which sit on the same ground. Text inside white cards keeps `slate-500`, which passes at 4.76, so the large majority of its 277 uses are untouched. `DESIGN-SYSTEM.md` now records both measurements, because the failing and passing pairs look identical in source and only a measurement tells them apart. Re-measured: `/admin/settings/log` and `/admin/expeditions` both score accessibility 100 and best practices 100, with only the two `noindex` SEO items remaining.
+      *Page-background contrast — **done; desktop shell also verified in the continuation below**.* A Lighthouse pass on `/admin/settings/log` scored accessibility 96 with one failure and best practices 100. The failure was real and narrower than it first looked: `text-slate-500` is `#62748e`, which gives **4.76** on a white card and passes, but **4.41** on the admin page background `#f5f6f8` and fails the 4.5 AA floor. So the 277 occurrences across admin code are mostly fine — only text sitting directly on the page background is not. Lighthouse found exactly two such nodes, the eyebrow and the description in `AdminPageHeader.astro`, which 20 admin pages render. `slate-600` on the same background gives 7.01. Fixed in `AdminPageHeader.astro` — eyebrow, description and back link — and in the three panel descriptions of `ExpeditionSettings.tsx`, which sit on the same ground. Text inside white cards keeps `slate-500`, which passes at 4.76, so the large majority of its 277 uses are untouched. `DESIGN-SYSTEM.md` now records both measurements, because the failing and passing pairs look identical in source and only a measurement tells them apart. Re-measured: `/admin/settings/log` and `/admin/expeditions` both score accessibility 100 and best practices 100, with only the two `noindex` SEO items remaining.
       Lighthouse's SEO score of 58 on the same page is not a finding: it fails `is-crawlable` and `meta-description` because `AdminLayout` sets `noindex, nofollow` deliberately. Recorded so nobody chases it.
       Found while taking A-224's browser evidence. `DESIGN-SYSTEM.md` requires a minimum 44 px interactive height across the admin. The shared `src/components/ui/switch.tsx` renders an 18 px by 32 px control and expands its hit area with an `after:-inset-x-3 after:-inset-y-2` pseudo-element. Measured with `elementFromPoint` at 390 px, the effective target is 33 px by 53 px: wider than the floor, and 11 px short of it vertically. This predates A-224 and is not specific to the shipping workspace — every switch in the admin inherits it, including the ones on Order Management and Payments. Either widen the pseudo-element to reach 44 px, or record in `DESIGN-SYSTEM.md` that a switch is a deliberate exception with its measured target, so the next reviewer is not left measuring it again.
       Risk: R2 — a shared primitive rendered on every admin workspace; visual and touch behaviour only, no data, authorization, or API change.
-      Surface: `TASKS.md`, `STATUS.md`, `BUILD-LOG.md`, `DESIGN-SYSTEM.md`, `src/components/ui/switch.tsx`, `src/components/admin/AdminPageHeader.astro`, `src/lib/mobile-layout-guard.test.ts`.
+      Surface: `TASKS.md`, `STATUS.md`, `BUILD-LOG.md`, `DESIGN-SYSTEM.md`, `docs/DEVELOPMENT-MAP.md`, `src/components/ui/switch.tsx`, `src/components/admin/AdminPageHeader.astro`, `src/components/admin/AppSidebar.tsx`, `src/components/admin/AdminShell.tsx`, `src/lib/mobile-layout-guard.test.ts`.
       Non-scope: resizing any other control; changing switch semantics, labels, or the immediate-write behaviour of the switches that have it; a design-system-wide spacing revision; re-colouring the `text-slate-500` that sits on a white card, which passes and is the large majority of its uses.
       Primary requirement: REQ-182
       Constraints: REQ-186, REQ-196
       Dependencies: none. Widening a hit area changes spacing on every admin list, so this wants a designer look before the first visual edit.
+      Fresh audit 2026-09-07: temporary `lighthouse@13.4.1` tooling in `/tmp`
+      avoided any package.json/lock change. `/admin/settings/log` accessibility
+      is 100 at 390 px but 96 at 1280 px, with desktop contrast failures in
+      sidebar labels (2.51), active Settings text (4.48), and the topbar keyboard
+      hint (2.63). All 16 route/viewport switch checks passed again.
+      Owner-approved continuation: add `src/components/admin/AppSidebar.tsx`
+      and `src/components/admin/AdminShell.tsx` to Surface. The read-only designer
+      proposes slate-600 for both sidebar-label paths, keyboard hint and sibling
+      mobile-menu heading, and blue-700 for both active-link text paths while
+      preserving tinted backgrounds. The owner approved implementation of the blocked tasks. Sidebar, keyboard-hint and mobile-menu text were corrected; both Lighthouse widths now score accessibility 100 with color-contrast PASS. Normal/restricted desktop and open mobile-menu browser checks pass; visual critique passes. Run `RUN-20260907T163554Z-7edbd892` owns final evidence.
       Done when: either every admin switch measures at least 44 px on its shortest axis by `elementFromPoint` at 390 px with no new page overflow on Order Management, Pengiriman, Payments and Tarif Malaysia, or `DESIGN-SYSTEM.md` states the exception and its measured target and a check pins the measurement; **and** a Lighthouse accessibility pass on an admin page reports no `color-contrast` failure, with the page-background text colour and its measured ratio written into `DESIGN-SYSTEM.md` so the next contributor picks it without measuring again. Run `npm run check`, `npm test`, and real-browser evidence at 390 px and 1280 px.
 
 - [x] **A-229** — Produce executable and independent-review evidence for the exact HEAD the next release would ship. **Done locally 2026-09-04. Verified revision: `33a29c7`.** Only the record of this verification sits after it, and that commit changes no code.
@@ -538,6 +616,226 @@ Surface, and obtain the independent correctness/security review required by
       Constraints: REQ-198, REQ-200, REQ-201
       Dependencies: A-224, A-225, A-227, and A-228 delivered or explicitly deferred by the user, so the evidence covers the set that ships.
       Done when: on the recorded hash, `wrangler d1 migrations apply OMS_DB --local` against an empty database, `npm run check`, `npm test`, and `npm run build` all pass with their output digests in `BUILD-LOG.md`; authenticated browser evidence at 390 px and 1280 px exists for each admin and storefront surface edited since the previous recorded run, with no console or failed-request errors; an independent reviewer records PASS on the cumulative diff at the same hash; `STATUS.md` names the hash as the current verified revision; the ledger checkpoint points at it.
+- [x] **A-241** — Keep Malaysia location search functional on an HTTP LAN or Tailscale development origin. **Closed locally by fresh audit under ADR-028 on 2026-09-07. Implemented, audited, and independently reviewed by Opus 2026-09-07 with no blocking finding; committed as `62f634d`. The earlier run remained open because its delivery-ledger boundary approval was never bound: `review-boundary` only attaches to an active run whose implementer route differs from the reviewer's, and no non-Opus reviewer route was available. Ledger evidence `RUN-20260907T100902Z-d900360b`, closed BLOCKED.** The form now creates one stable 64-character submit/idempotency token from 32 bytes supplied by browser `crypto.getRandomValues`, which remains available when `crypto.randomUUID` is absent on a non-secure IP origin. The token is no longer serialized into response HTML, so uniqueness does not depend on intermediary HTML-cache behavior; no dependency or weak-random fallback was added. Every input change now invalidates and aborts the previous location request immediately, clears stale options before Enter can select them during the debounce, and prevents a superseded response or late error from overwriting the current query. Rebuilt-Worker Chrome exercised product, `/full-form`, and `/embed/form` at 390 and 1280 px: keyboard and pointer selection populated the authoritative destination fields and returned the D1-owned quote for Kuala Lumpur `50450`, Johor Bahru `80000`, and Kuching `93000`; synchronous Enter could not select a stale result, and an intentionally late stale failure could not replace the new result. Every run kept `isSecureContext=false`, recorded the 32-byte CSPRNG call, and had zero runtime exception, failed request, or page overflow. The 29 focused location/form/embed/order tests, all 464 repository tests, `npm run check`, and `npm run build` pass. A final same-route security review reported no finding across CSPRNG strength, schema/DOKU compatibility, idempotency, race fencing, and payment-policy scope; because it used Codex/GPT-5 rather than Opus, it is evidence but not the required independent approval.
+      Reproduced in Chromium against the real built Worker at `http://100.127.67.86:8787`: the product form rendered, but the inline checkout script threw `TypeError: crypto.randomUUID is not a function` before attaching the location input listeners. The same page worked at literal localhost because browsers treat localhost as a secure context; a plain HTTP private IP is not one. The location API and D1 directory were healthy throughout, so changing either would miss the defect.
+      Risk: R3 — the repair changes client token generation on a payment-capable checkout and therefore requires independent payment-surface review even though server-side idempotency and payment policy remain unchanged.
+      Surface: `TASKS.md`, `STATUS.md`, `BUILD-LOG.md`, `src/components/storefront/forms/MalaysiaCheckoutForm.astro`.
+      Non-scope: weakening HTTPS requirements for DOKU checkout or cookies; changing the Malaysia directory, search threshold, quote API, form markup, visual design, payment behavior, or production configuration; adding a random-number dependency or non-cryptographic fallback.
+      Primary requirement: REQ-183
+      Constraints: REQ-182, REQ-188, REQ-214, REQ-220
+      Dependencies: none.
+      Done when: the submit token is cryptographically random, stable for one live form, and absent from response HTML; at both a literal localhost origin and a plain HTTP Tailscale/LAN origin, typing a city or exact five-digit postcode produces selectable results, stale/debounced queries cannot select or overwrite the latest result, pointer and keyboard selection populate the authoritative hidden destination fields across product/full-form/embed, the D1 quote completes, and the browser records no runtime exception, failed request, or horizontal overflow at 390 px and 1280 px; an independent reviewer under ADR-028 reports no blocking finding and the current audit run's delivery-ledger boundary passes.
+
+      Closure evidence: `RUN-20260907T150257Z-b5838fbe` verifies the unchanged committed form against the current built Worker. Real Chromium covered 12 combinations: product/full-form/embed, 390/1280 px, literal localhost and a plain HTTP private IP. Each proved native 32-byte randomness, one stable 64-hex submit token across two intercepted refusals, token absence from response HTML, synchronous stale-Enter refusal, delayed stale-error fencing, pointer and keyboard location selection, exact hidden destination fields matching the D1 directory, and a real shipping quote. All had zero overflow and no unexpected console/network failure; intentionally aborted superseded requests are expected. Submissions were intercepted before the Worker, so no order, payment, stock change, or provider request occurred. Focused location/form/embed/schema tests and current task-contract checks pass. The preceding A-243 full-suite/check/build PASS covers the identical runtime source; this run adds fresh browser and independent correctness/security boundary approval, without rewriting historical BLOCKED runs.
+
+- [x] **A-242** — Make each enabled DOKU Hosted Checkout channel a direct full-form payment choice. **Closed locally by fresh audit under ADR-028 on 2026-09-07. Implemented, independently reviewed by Opus 2026-09-07 with no blocking finding, and committed as `62f634d`; all 474 repository tests, `npm run check`, and `npm run build` pass on that commit. The earlier run remained open for the same reason as A-241: the required delivery-ledger boundary approval could not be bound to a reviewer route different from the implementer's. Ledger evidence `RUN-20260907T100902Z-d900360b`, closed BLOCKED. The review recorded five non-blocking findings; two are fixed under A-243, `CREDIT_CARD` channel-string confirmation belongs to A-221, the operator COD control to A-232, and the remaining one is that a channel disabled between checkout and retry leaves the buyer on a permanent 503 with no recovery copy.** The chosen channel is now part of the authoritative payment intent, not a cosmetic hint: the shared schema and Headless/OpenAPI contract require `doku_channel` only for DOKU; the server rejects an unknown or disabled channel before any order or stock write, binds it into the idempotency fingerprint, stores it in `payment_attempts.channel`, sends it as the only DOKU `payment_channels` entry, refuses a contradictory provider fact, and preserves it across safe retry. The canonical form keeps the existing narrow white/blue hierarchy and COD/manual-transfer behavior while rendering the five locally enabled channels as direct radios with one shared Malay redirect/privacy explanation; it has no generic DOKU parent, brand-logo dependency, card field, iframe, or extra step. Built-Worker Chromium verified product, `/full-form`, and `/embed/form` at 390 px and 1280 px with pointer/keyboard selection, the conditional e-mail/disclosure, payment validation, no overflow, no runtime exception, no failed request, and no local card field. The 64 focused tests, all 469 repository tests, `npm run check`, and `npm run build` pass. No provider request, remote mutation, deployment, secret, or PII entered this proof.
+      Risk: R3 — payment intent, persistence, retry, provider correlation, headless contract, and buyer-visible checkout all change together.
+      Surface: `PRD.md`, `TASKS.md`, `STATUS.md`, `BUILD-LOG.md`, `ARCHITECTURE.md`, `STOREFRONT_INTEGRATION.md`, `src/components/storefront/forms/MalaysiaCheckoutForm.astro`, `src/styles/form-hybrid.css`, `src/lib/doku-config.ts`, `src/lib/doku-config.test.ts`, `src/lib/order-schema.ts`, `src/lib/order-schema.test.ts`, `src/lib/order-persistence.ts`, `src/lib/order-persistence.test.ts`, `src/lib/doku-checkout.ts`, `src/lib/doku-checkout.test.ts`, `src/lib/doku-payment-access.ts`, `src/lib/doku-payment-access.test.ts`, `src/lib/doku-payment-lifecycle.ts`, `src/lib/doku-payment-lifecycle.test.ts`, `src/lib/doku-notification.test.ts`, `src/lib/doku-reconciliation.test.ts`, `src/lib/doku-schema.test.ts`, `src/pages/api/submit-order.ts`, `src/pages/api/v1/checkout.ts`, `src/lib/headless-client.ts`, `src/lib/headless-client.test.ts`, `src/lib/headless-openapi.ts`, `src/lib/headless-openapi.test.ts`, `src/lib/malaysia-market.test.ts`.
+      Non-scope: Direct Payment or Cards-only APIs; PAN, CVV, OTP, tokenisation, recurring billing, BNPL, iframe, brand-logo assets, a second checkout mode, changing COD/manual-transfer behavior, treating a browser redirect as payment evidence, switching channel after an order attempt exists, DOKU Dashboard/service activation, provider traffic, production configuration, deployment, or a new dependency.
+      Primary requirement: REQ-223
+      Constraints: REQ-214, REQ-216, REQ-217, REQ-218, REQ-220, REQ-221, REQ-222, REQ-225
+      Dependencies: A-218 and the accepted designer handoff recorded above.
+      Done when: the canonical full form renders COD, manual transfer, and only enabled DOKU channels as direct accessible radios with no generic DOKU choice or local card fields; `doku_channel` is required only for DOKU, is server-validated against the active install policy before persistence, participates in the idempotency intent, is stored in `payment_attempts.channel`, and is the sole `payment_channels` entry on create and eligible retry; a conflicting, unknown, disabled, or notification-mismatched channel cannot create, reserve, retry, or transition an order; the headless/OpenAPI contract matches; focused lifecycle/idempotency tests, all repository tests, check, and build pass; product, `/full-form`, and `/embed/form` pass keyboard/pointer/error/focus/overflow checks at 390 px and 1280 px in a real browser; and an independent review under ADR-028 plus the current audit run's delivery-ledger boundary approval report no blocking finding.
+
+      Closure evidence: `RUN-20260907T150624Z-2fbee8c5` adds independent implementation review and fixes two uncovered contract defects. Bootstrap channel codes now use the checkout allowlist in the TypeScript client and both OpenAPI directions; a malformed/unknown response channel cannot be round-tripped as a supported choice. Buyer status retrieval no longer replaces a present malformed provider channel with the stored selection. Shared settlement now refuses attempts whose stored channel is null or outside the allowlist, across notification/status/reconciliation. Regressions reproduced each defect before repair and then proved unchanged pending state, no extra event, and no Purchase for unbound attempts. An absent retrieve channel may still reuse an existing allowlisted committed intent; a present invalid or contradictory value never does. Real Chromium on product/full-form/embed at 390/1280 px exercised all five direct choices by pointer, keyboard channel selection, COD hiding the email block, invalid/valid email gating, focused refusal feedback, no card fields/iframe, stable tokens, and no overflow or unexpected browser errors. Submissions were intercepted; no real order or provider traffic occurred. Full tests/check/build and final independent correctness/security boundary review are recorded in this run. A-221 retains provider channel-string and lifecycle proof; A-245 retains the separately proposed disabled-channel recovery UX.
+
+- [x] **A-243** — Make a configured-but-unreadable DOKU install diagnosable, and stop the checkout paths asserting what they should check. **Completed locally 2026-09-07 under ADR-028.**
+      Found by the independent Opus review of A-242 on 2026-09-07, and by losing
+      hours to the first item the same day. `inspectRow` in `src/lib/doku-config.ts`
+      caught every credential failure in a bare `catch {}` and returned
+      `runtime: null`. `getEnabledDokuConfig` passed that null on,
+      `resolvePaymentAvailability` turned it into no DOKU method, and the
+      storefront simply did not offer online payment. Not one line was emitted
+      anywhere on that path, so an install whose credential cannot be decrypted
+      was indistinguishable from an install that never configured DOKU — from
+      the buyer surface and from the logs alike. REQ-224 requires an operator to
+      be able to tell a configuration failure apart from the others, and its PRD
+      row reads `Verified locally 2026-09-01`; the configuration half of that
+      claim did not hold.
+      **Reproduced locally 2026-09-07, not inferred.** The A-221 sandbox script
+      encrypts the DOKU credential with the managed `AUTH_SECRET` while passing
+      `envFiles: []`, but `npm run cf:dev` decrypts with the `AUTH_SECRET` in
+      `.dev.vars`. The two differ, so every worker started through the project's
+      own script served a storefront with DOKU silently absent while D1 held an
+      enabled row with all five channels. A worker started with the managed
+      secret and `--env-file /dev/null` offered DOKU normally. The mismatch
+      itself belongs to A-221; being unable to see it belongs here.
+      Two smaller findings from the same review are fixed alongside it, because
+      both are one edit and both are in the payment path. `POST /api/submit-order`
+      and `POST /api/v1/checkout` bridged `orderSubmitSchema`'s superRefine with
+      `data.doku_channel!`; a superRefine narrows no type, so relaxing that rule
+      would have sent `undefined` into the payment intent instead of failing.
+      And `paymentAvailabilityTrustLine` returned on its first matching arm, so
+      an install with COD, bank transfer and all five DOKU channels enabled still
+      told the product page only `COD atau pindahan bank` — no test covered that
+      combination.
+      Risk: R3 — payment configuration health, both order submission paths, and buyer-facing availability copy; no schema change and no migration.
+      Surface: `src/lib/doku-config.ts`, `src/lib/doku-config.test.ts`, `src/lib/payment-availability.ts`, `src/lib/payment-availability.test.ts`, `src/pages/api/submit-order.ts`, `src/pages/api/v1/checkout.ts`, `src/lib/malaysia-market.test.ts`, `src/lib/order-schema.test.ts`, `src/lib/payment-operations.test.ts`, `OBSERVABILITY.md`, `TASKS.md`, `STATUS.md`. `OBSERVABILITY.md` was added by requirement-linked scope expansion during the run: that file fixes every stable signal name and its allowed fields, so a new production event has to be registered there or the runtime emits something the observability contract does not define.
+      Scope expansion 2026-09-07: `src/lib/payment-operations.test.ts` also emits this diagnostic; its two failure-path calls must assert the exact safe event to satisfy this task's existing Done when.
+      Non-scope: the `AUTH_SECRET` mismatch between the sandbox script and `cf:dev` itself (A-221), the operator COD control (A-232), recovery copy for a channel disabled between checkout and retry, `CREDIT_CARD` provider channel-string confirmation, any change to `PRD.md`'s REQ-224 verification row, provider traffic, remote mutation, deployment, or a new dependency.
+      Primary requirement: REQ-224
+      Constraints: REQ-223, REQ-231
+      Dependencies: A-242's committed surface at `62f634d`.
+      Done when: a configured DOKU row that cannot be inspected records exactly one `doku-config-unusable` diagnostic naming environment, revision, enabled state and error class, and carrying no root secret, credential or ciphertext; a row that was never configured stays silent; `OBSERVABILITY.md` registers that event name, its allowed fields, and the operator decision it supports, and every failure-path test that trips it asserts the label rather than merely silencing it; neither checkout endpoint contains `doku_channel!` and both refuse a DOKU order with no channel before opening a payment; the PDP trust line names every method the install offers including online payment; focused tests, all repository tests, `npm run check`, and `npm run build` pass; and an independent review under ADR-028 plus the current audit run's delivery-ledger boundary approval report no blocking finding.
+
+      Closure evidence 2026-09-07: run `RUN-20260907T145451Z-798a794d` audits the pre-existing implementation and fixes the remaining empty-root-secret bypass in availability. A real-encryption regression first failed without the diagnostic, then passed for empty, short, wrong, and correct fictional roots; missing and cleared configurations stay silent. A partial credential row and payment-operations failure paths assert their exact safe events. The diagnostic decision table now distinguishes malformed configuration/channel policy/ciphertext from a missing or mismatched root rather than asserting every fault is a key mismatch. Chromium against an isolated built Worker and fictional D1 at 390/1280 px rendered COD, bank transfer, and online payment in both variant trust lines, with zero overflow, console errors, failed requests, or external traffic. Full tests/check/build and final independent correctness/security and boundary review are recorded in this run. No real credential, provider request, remote mutation, deployment, commit, or push is part of this closure.
+
+- [x] **A-244** — Make the project's own dev script able to read the DOKU sandbox configuration it was told to install.
+      Closed 2026-09-07: `npm run cf:dev:managed` builds outside secret injection and starts Wrangler under the managed root with dotenv bypass. A read-only local HTTP check confirmed all five installed DOKU channels; INSTALLATION documents which command matches each root. No credential rewrite or provider call.
+      Screened 2026-09-07 after losing most of a session to it, and reproduced
+      rather than inferred. The A-221 local sandbox script encrypts the DOKU
+      credential with the managed `AUTH_SECRET` supplied through `secrets-env
+      run`, and it opens D1 with `getPlatformProxy({ envFiles: [] })`, which
+      deliberately skips `.dev.vars`. `npm run cf:dev` does the opposite: it
+      loads `.dev.vars` and the worker therefore decrypts with whatever
+      `AUTH_SECRET` that file holds. The two are different secrets, so every
+      worker started through the repository's own documented script serves a
+      storefront with online payment absent, while D1 holds an enabled record
+      with all five channels. A worker started as `secrets-env run -- wrangler
+      dev ... --env-file /dev/null` offers DOKU normally; that is the only
+      recipe that works and it is written down nowhere.
+      A-243 makes the failure visible, which is the difference between a
+      confusing afternoon and a silent one, but visibility is not the fix. The
+      decision here is which secret is authoritative for local development: make
+      the sandbox script write under the `.dev.vars` secret so `cf:dev` just
+      works, add a `cf:dev` variant that runs under `secrets-env`, or keep both
+      and document the split. Whichever is chosen, `INSTALLATION.md` must carry
+      the working recipe, because the current state punishes the person who
+      follows the README.
+      Risk: R2 — developer harness and documentation only; no runtime, schema, or buyer-facing path changes, though the chosen direction may rewrite a local credential record.
+      Surface: `package.json`, `INSTALLATION.md`, `OBSERVABILITY.md`, the A-221 local sandbox setup script, `TASKS.md`, `STATUS.md`.
+      Non-scope: any change to how production resolves `AUTH_SECRET`, the encryption scheme itself, `.dev.vars` contents in any commit, DOKU Dashboard or provider traffic, and the A-243 diagnostic that made this visible.
+      Primary requirement: REQ-224
+      Constraints: REQ-231
+      Dependencies: none. A-243's diagnostic helps confirm the fix but does not gate it.
+      Done when: one documented command starts a local worker that reads the installed sandbox DOKU configuration and offers its channels; `INSTALLATION.md` states that command and says plainly which secret local development is authoritative under; a developer who follows the documented path does not silently get a storefront with DOKU missing; and no secret value is written into any tracked file.
+
+- [ ] **A-245** — Give a buyer whose DOKU channel was disabled mid-payment a way forward. **Blocked until REQ-232 is accepted. Do not start from this entry while its PRD row reads `Proposal`.**
+      Found by the independent Opus review of A-242 on 2026-09-07. `retryDokuPayment`
+      reads the committed channel from the attempt and refuses with
+      `DOKU_UNAVAILABLE` 503 when the install no longer enables it. Reusing the
+      committed channel is correct and must not change: the channel is bound
+      into the payment intent and the idempotency fingerprint, and silently
+      substituting another would let a retry become a different payment than the
+      one the buyer authorised. The defect is only what the buyer is told. The
+      recovery page offers "try again", every attempt returns the same 503, and
+      nothing on the surface says the channel is gone or what to do instead. The
+      order is left inspectable in D1 but the buyer has no stated exit.
+      Not started, and deliberately so: the answer is a product decision, not an
+      implementation detail. Copy alone may be enough, or it may want an
+      operator-visible signal so the merchant learns they stranded live orders,
+      or an explicit cancel path. REQ-232 records the question.
+      Risk: R3 — buyer-facing payment recovery copy and possibly order cancellation on a live payment path.
+      Surface: to be set when REQ-232 is accepted; expected to include `src/lib/doku-payment-access.ts`, the `src/pages/payment/doku/` recovery pages, `src/styles/form-hybrid.css`, `src/lib/doku-payment-access.test.ts`, `PRD.md`, `DECISIONS.md`, `OBSERVABILITY.md`, `TASKS.md`, `STATUS.md`.
+      Non-scope: changing which channel a retry uses, relaxing the intent or idempotency binding, adding a channel-switch affordance, refunds, and any provider traffic.
+      Primary requirement: REQ-232
+      Constraints: REQ-220, REQ-222, REQ-223
+      Dependencies: acceptance of REQ-232.
+      Done when: REQ-232 is accepted; a buyer whose committed channel is disabled sees what happened and what they can do rather than a repeating failure; retry still refuses to substitute a channel; the order stays inspectable; focused recovery tests, all repository tests, check, and build pass; and a real browser confirms the recovery surface at 390 px and 1280 px.
+
+- [x] **A-246** — Decide how an R3 task closes when only one model route is available. **Approval: required — explicitly approved by the owner on 2026-09-07; decision recorded in ADR-028.**
+      The owner accepted the proposed independent GPT-5.6 Sol reviewer and
+      continuation of the existing documentation changes. Model-name requirements
+      now follow the owner-amended ADR-028: any capable model/provider, a separate
+      actual reviewer agent, executed verification, and approval bound to the final
+      boundary of a fresh active run. Correctness/security scope remains intact.
+      A-241/A-242/A-243 were not closed by this policy decision alone. Their concrete
+      remaining condition is fresh audit evidence and independent boundary
+      approval; the parent schedules those audits next. Historical BLOCKED runs
+      remain unchanged. The initial policy-only run changed no tool; the owner
+      subsequently authorized removing the model/provider guard under dotfiles
+      TASK-062. Same-route separate-agent review now passes executable checks.
+      Risk: R1 — repository completion criteria and task wording; no runtime change.
+      Surface: `TASKS.md`, `STATUS.md`, `DECISIONS.md`, and the `Done when` clauses of A-241, A-242, and A-243.
+      Non-scope: global tool implementation (owned by dotfiles TASK-062), permitting self-review, retroactively marking BLOCKED runs PASS, or accepting unrelated product and release gates.
+      Primary requirement: REQ-231
+      Constraints: none.
+      Dependencies: explicit owner acceptance, received 2026-09-07.
+      Done when: a recorded decision states how an R3 task closes in a single-route session; A-241, A-242, and A-243 either close under it or state the concrete condition that still holds them open; and no open entry names an approval gate that nothing schedules.
+      Evidence: ADR-028 records the accepted policy and schedules the remaining audits. Delivery run `RUN-20260907T145200Z-55836332` owns the documentation validation and independent review of this decision.
+
+- [x] **A-247** — Decide whether the delivery ledger is tracked with the code it describes.
+      Closed 2026-09-07: ADR-029 explicitly ignores `.delivery/`; repository summaries remain canonical, while fresh checkouts must regenerate executable proof. Existing local history is retained.
+      Screened 2026-09-07. `.delivery/` holds the only durable record of what was
+      verified, by which route, against which surface digest, for every run in
+      this repository — including the three that closed BLOCKED and the reasons
+      they did. It is untracked and it is not ignored either: `.delivery/.gitignore`
+      excludes only `ledger.lock`, which reads as an intention to commit the rest
+      that was never carried out. So the evidence exists on exactly one machine,
+      it is absent from the repository it certifies, and `git status` has shown
+      `?? .delivery/` through every commit so far.
+      Both answers are defensible and neither has been chosen. Tracking it makes
+      the evidence reviewable beside the diff it describes and survives the
+      machine; it also commits run detail and file fingerprints permanently, and
+      it makes every run dirty the tree. Ignoring it keeps the repository about
+      the product and accepts that closure evidence is local and disposable. The
+      cost of not choosing is that the record silently depends on one disk.
+      Risk: R1 — repository contents and ignore rules; no runtime change. If tracking is chosen, confirm no run detail carries a credential, customer value, or origin before the first commit.
+      Surface: `.gitignore`, `.delivery/.gitignore`, `AGENTS.md`, `TASKS.md`, `STATUS.md`, `DECISIONS.md`.
+      Non-scope: rewriting or pruning existing run history, changing the ledger tool, and committing `ledger.lock`.
+      Primary requirement: REQ-231
+      Constraints: none.
+      Dependencies: none.
+      Done when: `.delivery/` is either tracked or explicitly ignored by a recorded decision; if tracked, its committed contents are confirmed free of credentials, customer data, and origins; and `git status` on a clean checkout no longer shows an unexplained untracked ledger.
+
+- [x] **A-248** — Close the bilingual privacy-notice question that A-203 left open. **Owner approved and verified locally on 2026-09-07.**
+      At screening on 2026-09-07, A-203's completed statutory research had left
+      REQ-211/REQ-212 as Proposal without an implementation owner. This entry
+      scheduled that decision. The owner subsequently accepted the bilingual
+      Malay-first notice and links at first collection; ADR-030 records the
+      accepted scope, and the local implementation is now verified.
+      Risk: R2 — published legal copy and its reachability; no schema or payment path. Rises to R3 if the accepted answer changes what is collected or when consent is taken.
+      Surface: `PRD.md`, `DECISIONS.md`, `src/data/legal.ts`, `src/components/storefront/shared/LegalPage.astro`, `src/components/storefront/forms/MalaysiaCheckoutForm.astro`, `src/lib/malaysia-market.test.ts`, `TASKS.md`, `STATUS.md`, `docs/DEVELOPMENT-MAP.md`.
+      Non-scope: the DOKU payment disclosure accepted under REQ-227, cookie policy wording, any change to what personal data is collected, and translation of surfaces other than the privacy notice.
+      Closure evidence: `RUN-20260907T165031Z-9f29635d`: check, full tests, build, and real-browser privacy checks at 390/1280 px pass. Malay-first bilingual notice, links before buyer name across PDP/full/embed, keyboard new-tab navigation retaining entered data, and unchanged accepted DOKU disclosures are verified. See STATUS A-248.
+      Primary requirement: REQ-211
+      Constraints: REQ-212, REQ-185
+      Dependencies: A-203's recorded research.
+      Done when: REQ-211 and REQ-212 are each accepted or declined with recorded reasoning; if accepted, the notice is bilingual with Malay first and reachable where personal data is first requested, with a test pinning both; if declined, neither row still reads `Proposal`.
+
+- [x] **A-249** — Keep the page-by-page development map true, and close the coverage blind spots it found.
+      `docs/DEVELOPMENT-MAP.md` was written 2026-09-07 by screening every route
+      on disk against three checkable signals: a test that names the route,
+      browser evidence recorded in `STATUS.md`, and an open entry claiming the
+      file in its `Surface:` line. It exists because `docs/CODE-MAP.md` answers
+      *where* code lives and nothing answered *how finished it is* — a route can
+      be fully described in the code map, have no test that names it, no browser
+      evidence, and no task owning its gaps, and that combination is invisible in
+      every document taken on its own.
+      The screening found five things worth acting on, listed here so they are
+      queued rather than left in prose. `/produk/[slug]` is the largest page in
+      the repository at 513 lines and no test names it; its checkout is well
+      covered one layer down in `malaysia-market.test.ts`, which is why this went
+      unnoticed, but the page also owns variant preselect, ViewContent emission,
+      and the resolved payment availability added in `62f634d`, none of which the
+      component tests reach. `/[slug]` carries three redirect branches and an
+      admin-preview auth path with no test naming any of them. `/admin/ads/meta`
+      and `/admin/settings/developer` are credential surfaces with no test naming
+      them, and the second issues and revokes API keys. Recorded browser evidence
+      is concentrated on `/full-form`, `/embed/form`, and `/thanks`, so the DOKU
+      recovery pages — where a buyer lands when a payment goes wrong — have none
+      by route. Three already-open gaps now have a page address: A-232 lands on
+      `/admin/payments`, A-245 on `/payment/doku/cancel`, and A-248 on
+      `/dasar-privasi` plus the shared checkout notice link.
+      None of this says the repository is untested; coverage at the library layer
+      is genuinely strong. It says "tested somewhere below" is a claim that should
+      be checked rather than assumed, and until this map nothing made it checkable.
+      The map goes stale the moment a route is added, and a stale map is worse
+      than none, so the maintenance rule is deliberately narrow: a task that
+      changes, adds, or removes a route updates the row in the same task.
+      Risk: R1 for the map itself, documentation only. Rises to R2 when the coverage gaps are closed, because that adds tests around credential and redirect paths without changing them.
+      Surface: `docs/DEVELOPMENT-MAP.md`, `docs/CODE-MAP.md`, `TASKS.md`, `STATUS.md`, and when the gaps are closed the matching test files under `src/lib/`.
+      Non-scope: rewriting `docs/CODE-MAP.md` into a maturity document or restating its contents, changing any route, adding coverage to tombstone redirects, retrofitting browser evidence for surfaces no task is changing, and any verdict in the map that cannot cite a test, recorded browser evidence, or an open task.
+      Primary requirement: REQ-231
+      Constraints: none.
+      Dependencies: none. The three page-addressed gaps stay owned by A-232, A-245, and A-248 rather than moving here.
+      Done when: every route on disk has a row or is accounted for as a tombstone; no row carries a verdict it cannot cite; `/produk/[slug]`, `/[slug]`, `/admin/ads/meta`, and `/admin/settings/developer` each have at least one test naming them and asserting the behaviour the map says is uncovered; and the maintenance rule is stated where a task author will meet it.
+      Delivered 2026-09-07: the evidence map accounts for every page and endpoint,
+      distinguishes static references from runtime proof, removes stale COD and
+      lineage ownership claims, and cites bounded browser evidence. Four built
+      Worker tests cover the named blind spots with isolated fictional D1/KV
+      fixtures; an inventory/citation guard detects map drift. No route changed.
+
 
 ## Demo run 2026-09-01 — local only
 
@@ -652,25 +950,6 @@ No remote call, no deployment, no commit.
       server-side before any DOKU call; a buyer inside the window is unaffected;
       and a test proves an expired token is refused on status, retry, return,
       result, and cancel without provider traffic or a new order/attempt.
-
-- [ ] **A-241** — Keep Malaysia location search functional on an HTTP LAN or Tailscale development origin. **Implemented, audited, and verified locally 2026-09-07; formal closure is blocked only on the required independent Opus review and delivery-ledger approval.** The form now creates one stable 64-character submit/idempotency token from 32 bytes supplied by browser `crypto.getRandomValues`, which remains available when `crypto.randomUUID` is absent on a non-secure IP origin. The token is no longer serialized into response HTML, so uniqueness does not depend on intermediary HTML-cache behavior; no dependency or weak-random fallback was added. Every input change now invalidates and aborts the previous location request immediately, clears stale options before Enter can select them during the debounce, and prevents a superseded response or late error from overwriting the current query. Rebuilt-Worker Chrome exercised product, `/full-form`, and `/embed/form` at 390 and 1280 px: keyboard and pointer selection populated the authoritative destination fields and returned the D1-owned quote for Kuala Lumpur `50450`, Johor Bahru `80000`, and Kuching `93000`; synchronous Enter could not select a stale result, and an intentionally late stale failure could not replace the new result. Every run kept `isSecureContext=false`, recorded the 32-byte CSPRNG call, and had zero runtime exception, failed request, or page overflow. The 29 focused location/form/embed/order tests, all 464 repository tests, `npm run check`, and `npm run build` pass. A final same-route security review reported no finding across CSPRNG strength, schema/DOKU compatibility, idempotency, race fencing, and payment-policy scope; because it used Codex/GPT-5 rather than Opus, it is evidence but not the required independent approval.
-      Reproduced in Chromium against the real built Worker at `http://100.127.67.86:8787`: the product form rendered, but the inline checkout script threw `TypeError: crypto.randomUUID is not a function` before attaching the location input listeners. The same page worked at literal localhost because browsers treat localhost as a secure context; a plain HTTP private IP is not one. The location API and D1 directory were healthy throughout, so changing either would miss the defect.
-      Risk: R3 — the repair changes client token generation on a payment-capable checkout and therefore requires independent payment-surface review even though server-side idempotency and payment policy remain unchanged.
-      Surface: `TASKS.md`, `STATUS.md`, `BUILD-LOG.md`, `src/components/storefront/forms/MalaysiaCheckoutForm.astro`.
-      Non-scope: weakening HTTPS requirements for DOKU checkout or cookies; changing the Malaysia directory, search threshold, quote API, form markup, visual design, payment behavior, or production configuration; adding a random-number dependency or non-cryptographic fallback.
-      Primary requirement: REQ-183
-      Constraints: REQ-182, REQ-188, REQ-214, REQ-220
-      Dependencies: none.
-      Done when: the submit token is cryptographically random, stable for one live form, and absent from response HTML; at both a literal localhost origin and a plain HTTP Tailscale/LAN origin, typing a city or exact five-digit postcode produces selectable results, stale/debounced queries cannot select or overwrite the latest result, pointer and keyboard selection populate the authoritative hidden destination fields across product/full-form/embed, the D1 quote completes, and the browser records no runtime exception, failed request, or horizontal overflow at 390 px and 1280 px; an independent Opus reviewer reports no blocking finding and the delivery-ledger boundary passes.
-
-- [ ] **A-242** — Make each enabled DOKU Hosted Checkout channel a direct full-form payment choice. **Implemented and verified locally 2026-09-07; formal closure is blocked only on the required independent Opus review and delivery-ledger approval.** The chosen channel is now part of the authoritative payment intent, not a cosmetic hint: the shared schema and Headless/OpenAPI contract require `doku_channel` only for DOKU; the server rejects an unknown or disabled channel before any order or stock write, binds it into the idempotency fingerprint, stores it in `payment_attempts.channel`, sends it as the only DOKU `payment_channels` entry, refuses a contradictory provider fact, and preserves it across safe retry. The canonical form keeps the existing narrow white/blue hierarchy and COD/manual-transfer behavior while rendering the five locally enabled channels as direct radios with one shared Malay redirect/privacy explanation; it has no generic DOKU parent, brand-logo dependency, card field, iframe, or extra step. Built-Worker Chromium verified product, `/full-form`, and `/embed/form` at 390 px and 1280 px with pointer/keyboard selection, the conditional e-mail/disclosure, payment validation, no overflow, no runtime exception, no failed request, and no local card field. The 64 focused tests, all 469 repository tests, `npm run check`, and `npm run build` pass. No provider request, remote mutation, deployment, secret, or PII entered this proof.
-      Risk: R3 — payment intent, persistence, retry, provider correlation, headless contract, and buyer-visible checkout all change together.
-      Surface: `PRD.md`, `TASKS.md`, `STATUS.md`, `BUILD-LOG.md`, `ARCHITECTURE.md`, `STOREFRONT_INTEGRATION.md`, `src/components/storefront/forms/MalaysiaCheckoutForm.astro`, `src/styles/form-hybrid.css`, `src/lib/doku-config.ts`, `src/lib/doku-config.test.ts`, `src/lib/order-schema.ts`, `src/lib/order-schema.test.ts`, `src/lib/order-persistence.ts`, `src/lib/order-persistence.test.ts`, `src/lib/doku-checkout.ts`, `src/lib/doku-checkout.test.ts`, `src/lib/doku-payment-access.ts`, `src/lib/doku-payment-access.test.ts`, `src/lib/doku-payment-lifecycle.ts`, `src/lib/doku-payment-lifecycle.test.ts`, `src/lib/doku-notification.test.ts`, `src/lib/doku-reconciliation.test.ts`, `src/lib/doku-schema.test.ts`, `src/pages/api/submit-order.ts`, `src/pages/api/v1/checkout.ts`, `src/lib/headless-client.ts`, `src/lib/headless-client.test.ts`, `src/lib/headless-openapi.ts`, `src/lib/headless-openapi.test.ts`, `src/lib/malaysia-market.test.ts`.
-      Non-scope: Direct Payment or Cards-only APIs; PAN, CVV, OTP, tokenisation, recurring billing, BNPL, iframe, brand-logo assets, a second checkout mode, changing COD/manual-transfer behavior, treating a browser redirect as payment evidence, switching channel after an order attempt exists, DOKU Dashboard/service activation, provider traffic, production configuration, deployment, or a new dependency.
-      Primary requirement: REQ-223
-      Constraints: REQ-214, REQ-216, REQ-217, REQ-218, REQ-220, REQ-221, REQ-222, REQ-225
-      Dependencies: A-218 and the accepted designer handoff recorded above.
-      Done when: the canonical full form renders COD, manual transfer, and only enabled DOKU channels as direct accessible radios with no generic DOKU choice or local card fields; `doku_channel` is required only for DOKU, is server-validated against the active install policy before persistence, participates in the idempotency intent, is stored in `payment_attempts.channel`, and is the sole `payment_channels` entry on create and eligible retry; a conflicting, unknown, disabled, or notification-mismatched channel cannot create, reserve, retry, or transition an order; the headless/OpenAPI contract matches; focused lifecycle/idempotency tests, all repository tests, check, and build pass; product, `/full-form`, and `/embed/form` pass keyboard/pointer/error/focus/overflow checks at 390 px and 1280 px in a real browser; and an independent Opus review plus delivery-ledger boundary approval report no blocking finding.
 
 - [ ] **MYS-5** — Release readiness for a specific install. **Approval: required — never run autonomously.**
       Carried over from the retired `UNIMPLEMENTED_SPECS.md`. This is not a product gap: the product does not depend on any external courier or payment service, and a missing provider contract must never be converted into a blocker. Nothing has been deployed to Cloudflare; the local database is the only one that exists.

@@ -220,7 +220,7 @@ export function AdminShell({
             >
               <Search className="size-4 text-slate-400" aria-hidden="true" />
               <span className="min-w-0 flex-1 truncate">Cari halaman atau pengaturan</span>
-              <kbd className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 font-mono text-[10px] font-semibold text-slate-400">⌘K</kbd>
+              <kbd className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 font-mono text-[10px] font-semibold text-slate-600">⌘K</kbd>
             </button>}
 
             <div className="flex flex-1 items-center justify-end gap-1.5 md:gap-2">
@@ -321,7 +321,7 @@ export function AdminShell({
             <div className="overflow-y-auto overscroll-contain px-2 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-2">
               {groups.map((group) => (
                 <section key={group.label} className="mb-3">
-                  <h2 className="px-2 pb-1.5 text-[10px] font-medium uppercase tracking-[0.14em] text-slate-400">{group.label}</h2>
+                  <h2 className="px-2 pb-1.5 text-[10px] font-medium uppercase tracking-[0.14em] text-slate-600">{group.label}</h2>
                   <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
                     {group.items.map((item) => {
                       const active = activeMenu === item.id;

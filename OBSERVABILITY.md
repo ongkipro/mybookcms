@@ -30,6 +30,12 @@ or complete vendor payloads.
 
 ## DOKU payment signals
 
+For the managed A-221 local sandbox, use `npm run cf:dev:managed` as documented
+in `INSTALLATION.md`. It resolves the same managed encryption root as setup;
+ordinary `cf:dev` may instead load a different root from `.dev.vars`. Do not
+print either value while diagnosing `doku-config-unusable`.
+
+
 The local A-210–A-219 implementation persists redacted configuration health,
 attempt state, sanitized failure class, deduplicated notification events,
 bounded scheduled reconciliation, role-aware payment operations, and the
@@ -50,6 +56,21 @@ behavior is claimed locally.
   transition, backoff, and exhaustion/attention-required outcome.
 - Lifecycle: paid-once, terminal stock release, rejected downgrade/revival, and
   DOKU Ads Purchase eligibility/deduplication.
+
+A configured DOKU record that cannot be inspected emits one event at the point
+of inspection. Its stable event name is `doku-config-unusable`; allowed fields
+are `environment`, `configRevision`, `enabled`, bounded `reason` (an error class
+name), and `code` (a `DokuConfigError` code or null). It carries no root secret,
+no credential, and no ciphertext. It fires only for a record that claims to be
+configured and is not usable: a store that never configured DOKU returns earlier
+and stays silent, so the signal keeps meaning "this install is broken" rather
+than "this install has no DOKU".
+
+This signal exists because its absence was itself the defect. Every credential
+failure was swallowed, `getEnabledDokuConfig` returned null, availability
+resolved to no DOKU method, and the storefront quietly omitted online payment —
+indistinguishable from an unconfigured install, on the buyer surface and in the
+logs alike. The decision table below can only be used if the failure is visible.
 
 The scheduled reconciliation journey emits one terminal structured event per
 leased attempt at the handling boundary. Its stable event name is
@@ -78,6 +99,7 @@ runtime. They are not automated alerts or proof that a responder exists.
 | Observed condition | Evidence source | Operator decision |
 | --- | --- | --- |
 | Configuration is missing, invalid, disabled, or does not match the attempt revision/environment | Payments health plus Order Detail `config_health` | Keep DOKU disabled; replace or re-enable only the reviewed revision. Never copy credentials into logs or tickets. |
+| The storefront offers no online payment while D1 holds an enabled DOKU record | `doku-config-unusable` naming environment, revision, and error class | Inspect the error class/code and redacted configuration health. Causes include malformed configuration, invalid channel policy, corrupt ciphertext, and a missing or mismatched runtime `AUTH_SECRET`; this event alone does not prove a key mismatch. Check the configured secret source without exposing its value before replacing credentials. Buyers correctly see no DOKU until it resolves. |
 | `authentication` or `signature` error class | Redacted attempt plus `doku-reconciliation` outcome | Treat as configuration/integrity failure. Do not mark paid or repeatedly retry by hand; inspect the matching environment and signed transport setup. |
 | `timeout` or `provider` remains retryable | Attempt `next_reconcile_at`, `reconcile_attempts`, and scheduler event | Allow bounded automatic backoff. Investigate only after freshness is overdue or the attempt becomes `attention_required`. |
 | `attention_required`, no next check, or eight reconciliation attempts | Attempt state and chronological events | Owner/Admin reviews provider truth and may run the one idempotent manual check when the UI says it is eligible. Customer Service remains read-only. |

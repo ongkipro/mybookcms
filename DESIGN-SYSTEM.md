@@ -1,6 +1,6 @@
 # MyBookCMS Design System
 
-> Verified against disk: 2026-09-04 @ MyBookCMS working tree
+> Verified against disk: 2026-09-07 @ MyBookCMS working tree
 
 ## Product surfaces
 
@@ -58,6 +58,13 @@ Prefer:
 - stacked phone layouts, with wide tables placed in intentional horizontal
   scroll containers when they cannot collapse safely.
 
+Shared admin switches reserve a real 44 × 44 CSS px interactive box at both
+`default` and `sm` sizes. Their centred visual tracks remain 32 × 18.4 px and
+24 × 14 px respectively. The hit area must not protrude into neighbouring
+inputs or actions; an overflowing pseudo-element is not a substitute for
+reserved layout space. Radix `data-state` controls track colour and thumb
+position. Keep keyboard focus visible around the interactive box.
+
 Do not introduce a second component library, a separate color vocabulary, or a
 provider brand as a system accent.
 
@@ -76,6 +83,16 @@ gallery on product detail pages. Every image requires explicit dimensions and a
 descriptive alt string. The first product-detail image is eager/high-priority;
 below-the-fold images may be lazy. Uploaded catalogue derivatives use the
 `-sm` convention resolved by `cardImageSrc`.
+
+## Measured admin shell contrast
+
+Verified in the 2026-09-07 A-234 browser audit: sidebar section labels use
+`text-slate-600` (rendered #45556c) on #f9fafc, 7.26:1. Active sidebar links use
+`text-blue-700` (rendered #1447e6) on the existing blended accent background
+(approximately #eaeffb), 5.95:1. Keyboard hints and mobile-menu headings use
+slate-600 on white, 7.58:1. Both normal and restricted sidebar branches follow
+these pairs. Preserve compact typography and backgrounds; do not restore
+slate-400 text or the failing blue-600 active foreground.
 
 ## Responsive and accessibility acceptance
 

@@ -83,12 +83,12 @@ export function AppSidebar({
       <SidebarContent className="px-2">
         {restricted && (
           <SidebarGroup className="py-1">
-            <SidebarGroupLabel className="mb-0.5 h-6 px-2 text-[10px] font-medium uppercase tracking-[0.14em] text-slate-400">
+            <SidebarGroupLabel className="mb-0.5 h-6 px-2 text-[10px] font-medium uppercase tracking-[0.14em] text-slate-600">
               Keamanan akun
             </SidebarGroupLabel>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive tooltip={profileNavItem.label} className="h-9 rounded-lg px-2.5 font-medium group-data-[collapsible=icon]:size-10!" style={{ backgroundColor: `${ADMIN_ACCENT}12`, color: ADMIN_ACCENT }}>
+                <SidebarMenuButton asChild isActive tooltip={profileNavItem.label} className="h-9 rounded-lg px-2.5 font-medium data-[active=true]:text-blue-700 group-data-[collapsible=icon]:size-10!" style={{ backgroundColor: `${ADMIN_ACCENT}12` }}>
                   <a href={profileNavItem.href} aria-current="page">
                     <profileNavItem.icon className="size-[17px]" aria-hidden="true" />
                     <span>{profileNavItem.label}</span>
@@ -100,7 +100,7 @@ export function AppSidebar({
         )}
         {groups.map((group) => (
           <SidebarGroup key={group.label} className="py-1">
-            <SidebarGroupLabel className="mb-0.5 h-6 px-2 text-[10px] font-medium uppercase tracking-[0.14em] text-slate-400">
+            <SidebarGroupLabel className="mb-0.5 h-6 px-2 text-[10px] font-medium uppercase tracking-[0.14em] text-slate-600">
               {group.label}
             </SidebarGroupLabel>
             <SidebarMenu>
@@ -114,7 +114,6 @@ export function AppSidebar({
                 const itemStyle = active
                   ? {
                       backgroundColor: `${ADMIN_ACCENT}12`,
-                      color: ADMIN_ACCENT,
                     }
                   : undefined;
 
@@ -124,7 +123,7 @@ export function AppSidebar({
                       asChild
                       isActive={active}
                       tooltip={children.length > 0 ? `${item.label} · memiliki submenu` : item.label}
-                      className="relative h-9 rounded-lg px-2.5 font-normal text-slate-600 hover:bg-slate-100 hover:text-slate-950 data-[active=true]:font-medium group-data-[collapsible=icon]:size-10!"
+                      className="relative h-9 rounded-lg px-2.5 font-normal text-slate-600 hover:bg-slate-100 hover:text-slate-950 data-[active=true]:font-medium data-[active=true]:text-blue-700 group-data-[collapsible=icon]:size-10!"
                       style={itemStyle}
                     >
                       <a

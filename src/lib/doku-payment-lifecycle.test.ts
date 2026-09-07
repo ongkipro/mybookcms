@@ -252,3 +252,29 @@ test("a provider fact for a different channel cannot transition the attempt", as
   `).bind(order.attemptId).first<{ local_status: string; payment_status: string }>();
   assert.deepEqual(state, { local_status: "pending", payment_status: "pending" });
 });
+
+test("an attempt without a persisted allowlisted channel cannot settle from any fact source", async () => {
+  for (const [index, channel] of [null, "UNKNOWN"].entries()) {
+    const order = await seedDokuOrder(36900 + index, `unbound-channel-${index}`);
+    await database.prepare("UPDATE payment_attempts SET channel = ? WHERE id = ?")
+      .bind(channel, order.attemptId).run();
+    const eventsBefore = await database.prepare("SELECT COUNT(*) AS count FROM payment_events WHERE payment_attempt_id = ?")
+      .bind(order.attemptId).first<{ count: number }>();
+    for (const source of ["notification", "status", "reconciliation"] as const) {
+      await assert.rejects(applyDokuPaymentFact(database,
+        { id: 1, environment: "sandbox", configRevision: 1 },
+        { ...paymentFact(order, "SUCCESS", "COMPLETED", `unbound-${index}-${source}`), channel: channel ?? "INTERNET_BANKING_FPX" }, source),
+        (error: unknown) => error instanceof DokuPaymentLifecycleError && error.code === "DOKU_PAYMENT_MISMATCH");
+    }
+    const state = await database.prepare(`SELECT pa.local_status, o.payment_status
+      FROM payment_attempts pa JOIN orders o ON o.id = pa.order_id WHERE pa.id = ?`)
+      .bind(order.attemptId).first();
+    assert.deepEqual(state, { local_status: "pending", payment_status: "pending" });
+    const events = await database.prepare("SELECT COUNT(*) AS count FROM payment_events WHERE payment_attempt_id = ?")
+      .bind(order.attemptId).first<{ count: number }>();
+    assert.equal(events?.count, eventsBefore?.count);
+    const purchases = await database.prepare("SELECT COUNT(*) AS count FROM capi_event_outbox WHERE event_id = ?")
+      .bind(`purchase:${order.orderNumber}`).first<{ count: number }>();
+    assert.equal(purchases?.count, 0);
+  }
+});

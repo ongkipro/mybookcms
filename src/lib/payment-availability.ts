@@ -54,18 +54,29 @@ export function supportedPaymentMethods(
   return methods;
 }
 
-/** Compact Malay payment truth for the repeated PDP variant rows. */
+/**
+ * Compact Malay payment truth for the repeated PDP variant rows.
+ *
+ * It names every method the install actually offers rather than the first pair
+ * it matches. The earlier version fell out of a ladder of `if`s whose first arm
+ * caught COD plus manual transfer and returned, so an install with COD, bank
+ * transfer and all five DOKU channels enabled still told the buyer only "COD
+ * atau pindahan bank" — the store's strongest signal, instant online payment,
+ * was the one thing the product page never mentioned. No test covered that
+ * combination, which is why it went unnoticed.
+ */
 export function paymentAvailabilityTrustLine(availability: PaymentAvailability) {
-  const manualTransferEnabled = availability.sellerBankAccounts.some(
-    (account) => account.is_active,
-  );
-  if (availability.codEnabled && manualTransferEnabled) {
-    return "Sedia dihantar • COD atau pindahan bank";
+  const methods: string[] = [];
+  if (availability.codEnabled) methods.push("COD");
+  if (availability.sellerBankAccounts.some((account) => account.is_active)) {
+    methods.push("pindahan bank");
   }
-  if (availability.codEnabled) return "Sedia dihantar • COD tersedia";
-  if (manualTransferEnabled) return "Sedia dihantar • Pindahan bank tersedia";
-  if (availability.doku) return "Sedia dihantar • Bayaran dalam talian tersedia";
-  return "Kaedah bayaran belum tersedia";
+  if (availability.doku) methods.push("bayaran dalam talian");
+  if (!methods.length) return "Kaedah bayaran belum tersedia";
+  const listed = methods.length > 1
+    ? `${methods.slice(0, -1).join(", ")} atau ${methods[methods.length - 1]}`
+    : methods[0];
+  return `Sedia dihantar • ${listed.charAt(0).toUpperCase()}${listed.slice(1)}`;
 }
 
 /**
@@ -114,7 +125,9 @@ export async function resolvePaymentAvailability(
       // directly would offer DOKU on an install whose secret is corrupt, and the
       // buyer would meet the failure at the provider instead of never seeing it.
       const rootSecret = getEnvValue("AUTH_SECRET", getRuntimeEnv(locals));
-      const config = rootSecret ? await getEnabledDokuConfig(database, rootSecret) : null;
+      // An enabled row with a missing root secret must emit the same safe
+      // health diagnostic as any other unreadable configuration.
+      const config = await getEnabledDokuConfig(database, rootSecret);
       doku = buildDokuPaymentMethod(config?.enabledChannels || []);
     } catch {
       doku = null;

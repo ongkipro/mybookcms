@@ -5,6 +5,7 @@ import PageIntro from './PageIntro.astro';
 
 interface LegalSection {
   id?: string;
+  lang?: 'ms' | 'en';
   title: string;
   paragraphs: string[];
 }
@@ -32,7 +33,7 @@ const { badge, title, description, sections, breadcrumbs = [] } = Astro.props;
     <div class="space-y-6">
       {
         sections.map((section) => (
-          <article id={section.id} class={cn('scroll-mt-5', listItemVariants({ density: 'featured' }))}>
+          <article id={section.id} lang={section.lang} class={cn('scroll-mt-5', listItemVariants({ density: 'featured' }))}>
             <h2 class={cn('text-[18px] font-semibold tracking-[-0.01em]', textVariants({ tone: 'heading' }))}>
               {section.title}
             </h2>

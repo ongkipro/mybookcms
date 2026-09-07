@@ -12,6 +12,77 @@ import {
   DialogTitle,
 } from "../ui/dialog";
 import { Input } from "../ui/input";
+import { Switch } from "../ui/switch";
+
+export function CodAvailability() {
+  const [enabled, setEnabled] = useState<boolean | null>(null);
+  const [busy, setBusy] = useState(true);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const control = useRef<HTMLButtonElement>(null);
+
+  async function load() {
+    setBusy(true);
+    setError("");
+    try {
+      const response = await fetch("/api/admin/settings");
+      const body = await response.json();
+      if (!response.ok || !body.success || typeof body.data?.store?.cod_enabled !== "boolean") {
+        throw new Error("Gagal memuat status COD. Coba lagi.");
+      }
+      setEnabled(body.data.store.cod_enabled);
+    } catch {
+      setError("Gagal memuat status COD. Coba lagi.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  useEffect(() => { void load(); }, []);
+
+  async function save(next: boolean) {
+    if (busy || enabled === null) return;
+    const restoreFocus = document.activeElement === control.current;
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      const response = await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "save-cod-availability", cod_enabled: next }),
+      });
+      const body = await response.json();
+      if (!response.ok || !body.success || typeof body.data?.cod_enabled !== "boolean") {
+        throw new Error("Gagal menyimpan status COD.");
+      }
+      setEnabled(body.data.cod_enabled);
+      setMessage(body.data.cod_enabled ? "COD diaktifkan." : "COD dinonaktifkan.");
+    } catch {
+      setError("Gagal menyimpan status COD. Status terakhir dipertahankan; coba ubah kembali.");
+    } finally {
+      setBusy(false);
+      if (restoreFocus && document.activeElement === document.body) {
+        requestAnimationFrame(() => control.current?.focus());
+      }
+    }
+  }
+
+  return (
+    <div className="my-4 border-b border-slate-200 pb-4">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <label htmlFor="cod-availability" className="text-sm font-semibold text-slate-950">Bayar di tempat (COD)</label>
+          <p id="cod-availability-description" className="mt-1 text-sm leading-6 text-slate-600">Perubahan langsung berlaku untuk checkout baru. Pesanan yang sudah masuk tidak berubah.</p>
+        </div>
+        <Switch ref={control} id="cod-availability" aria-describedby="cod-availability-description" checked={enabled ?? false} disabled={busy || enabled === null} onCheckedChange={(next) => void save(next)} />
+      </div>
+      <p role="status" className="mt-2 text-sm text-slate-600">{busy ? enabled === null ? "Memuat status COD…" : "Menyimpan status COD…" : message}</p>
+      {error && <p role="alert" className="mt-2 text-sm text-red-700">{error}</p>}
+      {error && enabled === null && <Button type="button" variant="outline" className="mt-2" disabled={busy} onClick={() => void load()}>Coba muat lagi</Button>}
+    </div>
+  );
+}
 
 const CHANNELS = [
   ["INTERNET_BANKING_FPX", "FPX Online Banking"],

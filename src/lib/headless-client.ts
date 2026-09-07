@@ -1,4 +1,4 @@
-import type { DokuPaymentChannel } from "./doku-config.ts";
+import { DOKU_PAYMENT_CHANNELS, type DokuPaymentChannel } from "./doku-config.ts";
 
 export type HeadlessProductVariant = {
   id: string | number;
@@ -46,7 +46,7 @@ export type HeadlessStorefrontBootstrap = {
     cod_enabled: boolean;
     supported_methods: Array<"cod" | "manual_transfer" | "doku">;
     /** Present and non-empty only where a healthy DOKU config is enabled. */
-    doku_channels: Array<{ code: string; label: string }>;
+    doku_channels: Array<{ code: DokuPaymentChannel; label: string }>;
     doku_requires_email: boolean;
   };
 };
@@ -179,8 +179,9 @@ export class HeadlessApiClient {
         supported_methods: supported,
         doku_channels: channels.flatMap((value) => {
           const channel = value as { code?: unknown; label?: unknown };
-          return typeof channel?.code === "string" && typeof channel?.label === "string"
-            ? [{ code: channel.code, label: channel.label }]
+          const code = DOKU_PAYMENT_CHANNELS.find((code) => code === channel?.code);
+          return code && typeof channel?.label === "string"
+            ? [{ code, label: channel.label }]
             : [];
         }),
         doku_requires_email: payment.doku_requires_email === true,
