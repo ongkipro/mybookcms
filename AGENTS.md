@@ -73,7 +73,10 @@ Never stage the ledger with `git add -f`.
    Mode and to `task-queue.test.ts`, which validates the queue alone. Confirm the
    section after inserting; a green test is not confirmation.
 9. A new `console.error` label is registered in `OBSERVABILITY.md` in the same
-   change, under the emitted signal registry.
+   change, under the emitted signal registry. That document is the contract for
+   what an operator can observe; an unregistered label is a signal the contract
+   does not define, and `doku-config-unusable` shipped that way for a day before
+   anyone noticed.
 10. An R3 run records what its independent review found, as a `verification`
     check beside the `boundary_review` event. The event itself has no field for
     findings — it stores reviewer, route, digests and `APPROVED`, and nothing
@@ -83,10 +86,15 @@ Never stage the ledger with `git add -f`.
     approval and twelve bound inside three minutes. That is not an accusation:
     the ledger cannot tell a real review from a renamed one, which the shared
     contract says outright. Recording the findings is what closes the gap, and
-    it costs one `record --check` per review. That document is the contract for
-   what an operator can observe; an unregistered label is a signal the contract
-   does not define, and `doku-config-unusable` shipped that way for a day before
-   anyone noticed.
+    it costs one `record --check` per review.
+11. `delivery-ledger check-boundary` runs **before** `git commit`, not after.
+    The boundary is evaluated against the HEAD captured at `start`; committing
+    first moves HEAD past it and the check can then only report `repository HEAD
+    moved after baseline capture`, which denies `finish --result PASS` for a run
+    whose work was entirely in surface. There is no re-baseline command, so the
+    run closes `FAIL` and the evidence has to be argued in prose instead of
+    read off the tool. This cost run `RUN-20260908T174024Z-5393afaf` its clean
+    close on 2026-09-09 for exactly that reason and nothing else.
 
 ```bash
 npm run check

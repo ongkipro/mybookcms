@@ -76,7 +76,7 @@ export default function LandingPageCatalog() {
       if (!res.ok) throw new Error("Failed to fetch landing pages");
       const { data } = await res.json();
       setPages(data || []);
-    } catch (err) {
+    } catch {
       toast.error("Gagal memuat katalog landing page");
     } finally {
       setLoading(false);
@@ -93,7 +93,7 @@ export default function LandingPageCatalog() {
       if (!res.ok) throw new Error("Delete failed");
       toast.success(`Landing page "${pageToDelete.title}" berhasil dihapus`);
       setPages((prev) => prev.filter((p) => p.id !== pageToDelete.id));
-    } catch (err) {
+    } catch {
       toast.error("Gagal menghapus landing page");
     } finally {
       setIsDeleting(false);

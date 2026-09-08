@@ -166,7 +166,7 @@ export function ProductCatalog({
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "draft">("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
-  const [loading, setLoading] = useState(initialProducts ? false : true);
+  const [loading, setLoading] = useState(!initialProducts);
   const [error, setError] = useState("");
   const [isDesktop, setIsDesktop] = useState(false);
   const [requestVersion, setRequestVersion] = useState(0);

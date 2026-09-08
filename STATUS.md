@@ -437,6 +437,56 @@ exactly that separation. They are queued as A-274, which also folds `lint` into
 recorded in the ledger as `lint-baseline-first-run=FAIL` — an executed red, kept
 red, rather than a green derived from a command chosen to pass.
 
+## A-274 — the lint baseline cleared, and `check` now gates on it 2026-09-09
+
+The three errors ADR-032 recorded are gone and `npm run lint` is folded into
+`check`, so CI's existing "Typecheck and static analysis" step gates on it
+without a new step. `ci.yml` was not touched — the step name still describes what
+runs. 15 `useExhaustiveDependencies` warnings remain reported and untouched, by
+the entry's own non-scope: telling a genuinely under-specified hook dependency
+from a deliberate one needs each component's data flow read, and a blanket fix
+would either add re-render loops or add a lie to a suppression comment.
+
+The two unused `catch (err)` bindings were dropped rather than logged. The check
+the entry asked for was whether either block wanted the message: both already
+discard it, and of the 50 bound `catch` blocks across `src/components/admin`,
+only these two never read the binding. `ProductCatalog` became
+`useState(!initialProducts)`, identical for `undefined` and for `[]`.
+
+**The first draft of that paragraph was wrong and the review caught it.** It said
+"of 18 catch blocks ... the other 16 do read their binding", calling the two
+outliers. There are 73 `catch` blocks in that directory, 23 already written as
+bare `catch {` — so bare `catch` is the house pattern and the edit conforms to it
+rather than deviating. 18 was the lint-finding count reused as a block count, and
+"16" had no referent in the code at all. The edit was right; the story told about
+it was invented.
+
+**The browser check went past rendering.** Both surfaces were confirmed at 390 px
+and 1280 px with no runtime exceptions, console errors, or overflow, and then
+`/api/admin/landing-pages` was forced to fail through CDP to prove the edited
+`catch` still reports "Gagal memuat katalog landing page" to the operator. That
+assertion was mutation-proved: with the forced failure removed, the toast never
+appears and the check times out. A render-only check would have passed whether or
+not the edit broke the failure path.
+
+## A-261's ledger run closed FAIL on ordering, not on work 2026-09-09
+
+Worth recording because the cause is a session habit, not a defect.
+`RUN-20260908T174024Z-5393afaf` delivered A-261 entirely inside its declared
+surface and closed `FAIL`. The reason is that `git commit` ran before
+`check-boundary`, which moved HEAD past the baseline captured at `start`; from
+there the boundary can only report `repository HEAD moved after baseline
+capture`, and there is no re-baseline command. `finish --result PASS` is denied
+by the boundary, so the run closes red and the evidence has to be argued in prose
+— `surface-vs-baseline` records that `git diff fc851ce..93eec71` lists exactly
+the seven declared files with a clean tree.
+
+This is the contract working, not misfiring, and it was not worked around.
+`AGENTS.md` rule 11 now states the ordering so the next session does not repeat
+it. While editing that file, a second defect surfaced: rule 9's closing sentences
+had been stranded at the end of rule 10 by an earlier edit, still carrying rule
+9's three-space indent. Restored.
+
 ## A-275 — an unattributed test failure now has a name 2026-09-09
 
 A `npm test` exit 1 was recorded as unattributed on 2026-09-08 after six clean

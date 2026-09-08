@@ -532,22 +532,43 @@ commit and bury every future diff under reformatting noise; it also cannot be
 reconciled with `DESIGN-SYSTEM.md` without review. This adopts a lint floor, not
 a house style.
 
-**The rule set is deliberately not `recommended`.** Only rules that catch a
+**The rule set is deliberately empty by default (`preset: "none"`).** Only rules that catch a
 defect or dead code are enabled: unused variables, imports and parameters;
 `useExhaustiveDependencies` at warn; `noDoubleEquals`, `noDuplicateObjectKeys`,
 `noDuplicateCase`, `noFallthroughSwitchClause`, `noSelfCompare`,
 `noUselessTernary`, `noUselessCatch`. Rules that express taste rather than
 correctness are off, and no enabled rule contradicts `DESIGN-SYSTEM.md`.
 
-**Scope is `src/**/*.ts`, `src/**/*.tsx` and `scripts/**/*.mts`.** Astro and CSS
-files are excluded because Biome's CSS parser rejects the Tailwind at-rules this
-project depends on (`@source`, `@apply`); linting them produced 334 parse
-failures that said nothing about the code. `src/worker-configuration.d.ts` is
-generated and excluded.
+**Scope is `src/**/*.ts`, `src/**/*.tsx` and `scripts/**/*.mts`.**
+`src/worker-configuration.d.ts` is generated and excluded. Astro and CSS are
+excluded too, but **for two different reasons, and an earlier draft of this ADR
+gave only the CSS one for both.**
+
+CSS is excluded because Biome's CSS parser rejects the Tailwind at-rules this
+project depends on (`@source`, `@apply`); linting it produced 334 parse failures
+that said nothing about the code.
+
+Astro is excluded for a stronger reason. Biome does lint `.astro` — it parses the
+frontmatter — and pointing this same rule set at `src/pages/admin` reports 81
+errors across 25 files. They are false. Biome sees the frontmatter and not the
+template, so anything the frontmatter declares and the markup consumes reads as
+unused: `src/pages/admin/shipping.astro:2` imports `ShippingOperations`, uses it
+at line 12, and is reported as an unused import **with an offered fix that would
+delete it**. Enabling `.astro` would not add coverage; it would add 81 wrong
+answers and a fix button that breaks pages.
+
+The cost is real and is recorded rather than hidden: non-trivial TypeScript lives
+in `.astro` frontmatter and is now unlinted. `src/pages/admin/products.astro:29`
+onward is a D1 `batch()`, a row-to-`Product` mapping, and a `catch` that logs.
+Nothing in this gate covers it. Re-enabling `.astro` needs Biome to understand
+template usage, not a config change.
 
 **The first run is recorded, not fixed here.** 291 files, 18 findings: 15
 `useExhaustiveDependencies` warnings, 2 `noUnusedVariables` errors, 1
-`noUselessTernary` error. Every one of them is in a React admin component;
-`src/lib` — the payment, order, and schema logic — returned clean. The three
+`noUselessTernary` error. Sixteen are in React admin components; the other two
+are `useExhaustiveDependencies` warnings in `src/components/ui/sidebar.tsx`,
+which is vendored shadcn — worth stating because a `shadcn` regeneration
+overwrites that file, so those two are not a backlog anyone should plan to fix
+by hand. `src/lib` — the payment, order, and schema logic — returned clean. The three
 errors are queued as A-274, which also folds `lint` into `check` so CI never
 gates on a baseline it was born red against.
