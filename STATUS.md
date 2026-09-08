@@ -411,6 +411,18 @@ after `33a29c7`, and it changes no code.
 This remains local evidence. No remote migration, deployment, or provider
 traffic is claimed by it.
 
+## Working tree reconciled again 2026-09-08
+
+`36e3345` commits the seventeen files from A-257, A-259, A-260, A-262, A-265,
+A-266 and A-267 — three new guards, one deduplicated payment-body builder, a
+clean dependency audit, a coverage baseline, and the documentation each of them
+changed. Verified on the exact tree committed: 528 tests pass, `astro check`
+reports 0 errors across 381 files, the production build completes, and
+`npm audit --omit=dev` finds nothing. The tree is clean, so the next R1
+documentation run starts without inheriting a pre-existing dirty path — which
+was the single reason nine of ten runs closed BLOCKED before the first
+reconciliation.
+
 ## A-267 — device address guard 2026-09-08
 
 `src/lib/repository-hygiene.test.ts` enforces REQ-210: every tracked file under
