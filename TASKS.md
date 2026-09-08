@@ -1208,6 +1208,52 @@ Surface, and obtain the independent correctness/security review required by
       Dependencies: none. Adjacent to A-244, which fixed the other half of local dev.
       Done when: `npm run cf:dev` and `npm run cf:dev:managed` serve `/_astro/*` and `/favicon.png` with 200; `/admin/expeditions` renders its zones, panels and switches at 390 px and 1280 px; `scripts/verify-expeditions-page.mts` asserts the island chunk is served before it asserts anything about the page; and `INSTALLATION.md` states why the flag exists and what its absence looks like.
 
+- [ ] **A-271** — Give the schema log entry somewhere to go, and the operator something to read when it goes red. **The second half requires the designer/vision handoff before the first visual edit.**
+      Screened 2026-09-08 while auditing the system log after a request to add an
+      action button there. The button already exists: `SystemLogPanel.tsx:302`
+      renders a "Buka" link per entry, conditional on `entry.href`, beside the
+      refresh control and the source filters. Five of the six sources supply a
+      destination — `payment` and `order` to `/admin/orders/{order}`, `ads` to
+      `/admin/ads/meta`, `api` to `/admin/settings/developer`, and `audit` to the
+      matching surface except for operator events a non-owner may not follow,
+      which is deliberate role gating. The sixth, `schema`, sets `href: null`
+      unconditionally at `src/lib/system-log.ts:140`.
+      That is the wrong one to leave without a destination. `schema` is the only
+      source that can carry `severity: "error"`, and it does so when the running
+      code and the database disagree about the migration chain — the entry an
+      operator most needs to act on is the one entry that offers them nowhere to
+      act. Worse, this is not merely a missing link: a search across
+      `src/pages/admin`, `src/components/admin` and `src/pages/api/admin` finds
+      no surface that exposes the schema version at all, so there is currently
+      nothing for the link to point at.
+      **This is why the entry does not simply set an `href`.** Pointing the
+      operator at a page that does not explain the mismatch would turn "no
+      destination" into a destination that misleads, which is worse than the
+      honest `null` that stands today. The destination has to exist first.
+      The work therefore splits, and the halves have different gates. The data
+      half — giving the `schema` source a destination once one exists — is
+      non-visual wiring in `src/lib/system-log.ts` and needs no designer. The
+      visual half — a surface that states the expected version, the applied
+      version, the mismatch state and its error code, and what the operator is
+      expected to do about it — is browser-visible and routes to
+      `designer`/`vision` before its first edit, per the working agreement. Doing
+      the data half first would be wiring to nothing; doing the visual half first
+      makes the data half a one-line change.
+      Two constraints the design has to respect rather than discover. The
+      mismatch state is already computed by `getSchemaVersionStatus` and needs no
+      new query, and the panel already renders the state in prose, so the surface
+      is a place to land rather than a second copy of the diagnosis. And the
+      existing `audit` role gate is the precedent for who may follow a link: a
+      schema destination that exposes migration detail should decide, explicitly,
+      whether Customer Service and Advertiser roles may reach it.
+      Risk: R2 — a read-only admin surface plus one field in a log source; no schema, payment, or buyer-facing path. Rises to R3 only if the surface exposes anything beyond version, state and error code.
+      Surface: `src/lib/system-log.ts`, `src/lib/system-log.test.ts`, one new or extended admin surface under `src/pages/admin/settings/` with its component, `docs/CODE-MAP.md` if a route is added, `docs/DEVELOPMENT-MAP.md`, `TASKS.md`, `STATUS.md`.
+      Non-scope: changing what `getSchemaVersionStatus` computes, adding migration execution or repair controls to the admin, altering the five sources that already supply a destination, the deliberate `audit` role gate, and any change to the log panel's existing button, filters or refresh.
+      Primary requirement: REQ-229
+      Constraints: REQ-186, REQ-224, REQ-231
+      Dependencies: the designer/vision handoff for the visual half. The data half depends on that half landing first.
+      Done when: an operator following the `schema` entry reaches a surface that states expected version, applied version, mismatch state and error code, and what to do next; `src/lib/system-log.ts` no longer returns `href: null` for a source that has a destination; the role allowed to follow it is decided and asserted; a test pins the destination so it cannot silently return to null; and a real browser confirms the surface at 390 px and 1280 px.
+
 - [ ] **A-261** — Decide whether a 62,000-line codebase gets a linter. **Approval: required — adds a toolchain to a repository that has kept dependencies deliberately minimal.**
       Found by the health report of 2026-09-08. There is no `eslint`, `prettier`,
       or `biome` configuration anywhere in the repository. `tsconfig.json` has

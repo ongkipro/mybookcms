@@ -411,6 +411,27 @@ after `33a29c7`, and it changes no code.
 This remains local evidence. No remote migration, deployment, or provider
 traffic is claimed by it.
 
+## A-271 — the schema log entry has nowhere to go 2026-09-08
+
+Queued after a request to add an action button to the system log. The button
+already exists: `SystemLogPanel.tsx:302` renders a per-entry "Buka" link,
+conditional on `entry.href`, beside the refresh control and source filters. Five
+of six sources supply a destination. The sixth, `schema`, sets `href: null`
+unconditionally — and it is the only source that can carry `severity: "error"`,
+which it does when the running code and the database disagree about the
+migration chain. The entry an operator most needs to act on is the one that
+offers nowhere to act.
+
+It is not merely a missing link: no surface under `src/pages/admin`,
+`src/components/admin` or `src/pages/api/admin` exposes the schema version at
+all, so there is nothing for a link to point at. The entry therefore does not
+set an `href` — pointing an operator at a page that does not explain the
+mismatch would turn "no destination" into one that misleads. The work splits
+with different gates: supplying the destination is non-visual wiring, while the
+surface that states expected version, applied version, mismatch state and what
+to do about it is browser-visible and routes to designer/vision before its first
+edit.
+
 ## A-268 — pre-provider refusals now name their reason 2026-09-08
 
 A retry refused before DOKU is contacted records an `error_class` the operator
