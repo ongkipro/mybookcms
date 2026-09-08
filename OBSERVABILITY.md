@@ -52,13 +52,21 @@ that the author remembered.
 | --- | ---: | --- |
 | Authentication and access | 6 | `admin-access-delete`, `admin-access-get`, `admin-access-patch`, `admin-access-post`, `admin-login`, `admin-login-default-notice` |
 | Checkout and orders | 6 | `admin-order-update`, `admin-orders-list`, `headless-checkout`, `notification-record-failed`, `submit-order`, `submit-order-shipping-quote` |
-| Payments | 4 | `doku-config-unusable`, `doku-notification`, `doku-paid-meta-prepare`, `payment-availability-config` |
-| Advertising | 7 | `accepted-order-meta-prepare`, `ads-config-load`, `ads-config-update`, `capi-outbox-drain`, `google-catalog-admin`, `google-catalog-feed`, `meta-event` |
+| Payments | 5 | `doku-config-unusable`, `doku-notification`, `doku-paid-meta-prepare`, `doku-reconciliation-scheduled`, `payment-availability-config` |
+| Advertising | 8 | `accepted-order-meta-prepare`, `ads-config-load`, `ads-config-update`, `capi-outbox-drain`, `capi-outbox-scheduled`, `google-catalog-admin`, `google-catalog-feed`, `meta-event` |
 | Shipping and location | 8 | `admin-shipping-queue`, `headless-location-search`, `malaysia-location-search`, `malaysia-shipping-rates`, `malaysia-shipping-settings`, `malaysia-shipping-settings-list`, `manual-shipping-list`, `manual-shipping-update` |
 | Catalog and storefront | 20 | `home-content-no-database-binding`, `home-landing-pages-load`, `native-landing-claim-read-failed`, `native-landing-reconcile-failed`, `sitemap-landing-pages`, `sitemap-products`, `storefront-catalog-load`, `storefront-content-invalid`, `storefront-home-content-invalid`, `storefront-home-content-load`, `storefront-product-content-load`, `storefront-support-whatsapp-load`, `storefront-support-whatsapp-no-database-binding`, `storefront-support-whatsapp-no-store-row`, `storefront-template-invalid`, `storefront-template-list`, `storefront-template-resolve`, `tenant-identity-load`, `tenant-identity-unmigrated`, `tenant-malformed-storefront-template` |
 | Admin operations | 18 | `admin-analytics-get`, `admin-developer-keys-delete`, `admin-developer-keys-get`, `admin-developer-keys-patch`, `admin-developer-keys-post`, `admin-media-post`, `admin-notifications-read`, `admin-notifications-write`, `admin-products-delete`, `admin-products-get`, `admin-products-initial-load`, `admin-products-patch`, `admin-products-post`, `admin-products-status-patch`, `admin-profile-get`, `admin-profile-put`, `settings-get`, `settings-put` |
 | Headless API | 1 | `headless-api-audit-write-failed` |
-| Install and platform | 10 | `install-completed`, `install-missing-auth-secret`, `install-missing-setup-token`, `install-no-credential-row`, `install-no-database-binding`, `install-run`, `system-event-write-failed`, `system-events-retention-failed`, `system-log-read-failed`, `system-log-source-failed` |
+| Install and platform | 11 | `install-completed`, `install-missing-auth-secret`, `install-missing-setup-token`, `install-no-credential-row`, `install-no-database-binding`, `install-run`, `schema-upgrade-failed`, `system-event-write-failed`, `system-events-retention-failed`, `system-log-read-failed`, `system-log-source-failed` |
+
+Three labels reach production through a constant or a ternary rather than a
+string literal: `schema-upgrade-failed` (`SCHEMA_UPGRADE_ERROR_LABEL` in
+`src/lib/schema-version.ts`), and `capi-outbox-scheduled` /
+`doku-reconciliation-scheduled` (a ternary in `src/lib/system-events.ts`). They
+are registered above and named here because a scanner that reads only literals
+cannot see them — the first version of this registry missed all three for
+exactly that reason.
 
 Registry entries carry the label only. Fields stay governed by **Event fields**
 above, and the DOKU and system-event sections below remain authoritative where
@@ -67,7 +75,7 @@ they additionally fix allowed fields and operator decisions for a signal.
 Nothing enforces this list yet. `docs/CODE-MAP.md` and `docs/DEVELOPMENT-MAP.md`
 each have a guard test that fails when the document drifts from disk; this
 document has none, which is why it drifted to 75 unregistered labels
-without a single failing check. **A-257** adds that guard.
+without a single failing check. `src/lib/observability-registry.test.ts` is that guard (A-257).
 
 ## DOKU payment signals
 

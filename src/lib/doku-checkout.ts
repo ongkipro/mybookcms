@@ -1,4 +1,5 @@
 import { DokuClient, DokuClientError } from "./doku-client.ts";
+import { buildDokuCheckoutBody, DokuRequestBodyError } from "./doku-request-body.ts";
 import { getEnabledDokuConfig, type DokuPaymentChannel } from "./doku-config.ts";
 import {
   DuplicateSubmissionError,
@@ -151,22 +152,6 @@ function parseRequestFingerprint(value: string) {
   return match ? { intent: match[1], device: match[2] } : null;
 }
 
-function majorMyr(sen: number): number {
-  if (!Number.isSafeInteger(sen) || sen < 0) throw new DokuCheckoutError("DOKU_CONFLICT");
-  return sen / 100;
-}
-
-function checkoutCallbacks(origin: string, order: PersistedDokuOrder, returnToken: string) {
-  const capability = new URLSearchParams({
-    order_number: order.orderNumber,
-    return_token: returnToken,
-  });
-  return {
-    callback_url: `${origin}/payment/doku/return?${capability}`,
-    callback_url_cancel: `${origin}/payment/doku/cancel?${capability}`,
-    callback_url_result: `${origin}/payment/doku/result?${capability}`,
-  };
-}
 
 function checkoutBody(
   order: PersistedDokuOrder,
@@ -174,61 +159,36 @@ function checkoutBody(
   returnToken: string,
   deviceFingerprint: string,
 ): string {
-  const nameParts = order.customerName.split(/\s+/);
-  const firstName = nameParts.shift() || order.customerName;
-  const lastName = nameParts.join(" ") || firstName;
-  const lineItems: Array<Record<string, unknown>> = [{
-    id: String(order.variantId),
-    name: order.productTitle.slice(0, 255),
-    quantity: order.quantity,
-    price: majorMyr(order.unitPrice),
-    sku: order.variantSku.slice(0, 120),
-  }];
-  if (order.shippingCost > 0) {
-    lineItems.push({
-      id: "shipping",
-      name: "Penghantaran",
-      quantity: 1,
-      price: majorMyr(order.shippingCost),
-    });
-  }
-  return JSON.stringify({
-    id: order.attemptId,
-    order: {
-      amount: majorMyr(order.totalAmount),
-      invoice_number: order.merchantInvoice,
-      currency: "MYR",
-      line_items: lineItems,
-      expired_at: order.expiresAt,
-    },
-    checkout_experience: {
-      payment_channels: [order.channel],
-      language: "MS",
-      auto_redirect: false,
-      retry_payment: { enabled: true },
-      ...checkoutCallbacks(origin, order, returnToken),
-    },
-    customer: {
-      id: order.orderNumber,
-      name: order.customerName,
-      email: order.customerEmail,
-      phone: `+${order.customerPhone}`,
-      country: "MY",
-      address: order.address,
-    },
-    shipping_address: {
-      first_name: firstName,
-      last_name: lastName,
+  try {
+    return buildDokuCheckoutBody({
+      attemptId: order.attemptId,
+      merchantInvoice: order.merchantInvoice,
+      orderNumber: order.orderNumber,
+      expiresAt: order.expiresAt,
+      channel: order.channel,
+      totalAmountSen: order.totalAmount,
+      unitPriceSen: order.unitPrice,
+      shippingCostSen: order.shippingCost,
+      quantity: order.quantity,
+      variantId: order.variantId,
+      variantSku: order.variantSku,
+      productTitle: order.productTitle,
+      customerName: order.customerName,
+      customerEmail: order.customerEmail,
+      customerPhone: order.customerPhone,
       address: order.address,
       city: order.city,
-      postal_code: order.postalCode,
-      phone: `+${order.customerPhone}`,
-      country_code: "MY",
-    },
-    metadata: {
-      device_id: deviceFingerprint,
-    },
-  });
+      postalCode: order.postalCode,
+      origin,
+      returnToken,
+      deviceFingerprint,
+    });
+  } catch (error) {
+    // Preserved from the guard this used to carry inline: a money value that is
+    // not a safe non-negative integer is a conflict, never a provider request.
+    if (error instanceof DokuRequestBodyError) throw new DokuCheckoutError("DOKU_CONFLICT");
+    throw error;
+  }
 }
 
 async function enabledConfigIdentity(database: D1Database) {

@@ -148,10 +148,10 @@ test('a missing KV binding fails open rather than locking the admin out', async 
 
 test('the client address prefers the Cloudflare header over forwarded ones', () => {
   assert.equal(
-    getClientIp(new Headers({ 'cf-connecting-ip': ' 203.0.113.4 ', 'x-forwarded-for': '1.1.1.1' })),
+    getClientIp(new Headers({ 'cf-connecting-ip': ' 203.0.113.4 ', 'x-forwarded-for': '198.51.100.7' })),
     '203.0.113.4',
   );
-  assert.equal(getClientIp(new Headers({ 'x-forwarded-for': '203.0.113.5, 70.41.3.18' })), '203.0.113.5');
+  assert.equal(getClientIp(new Headers({ 'x-forwarded-for': '203.0.113.5, 198.51.100.8' })), '203.0.113.5');
   assert.equal(getClientIp(new Headers()), 'unknown');
 });
 

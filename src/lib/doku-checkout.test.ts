@@ -13,6 +13,7 @@ import {
   createDokuHostedCheckout,
   type DokuCheckoutInput,
 } from "./doku-checkout.ts";
+import { buildDokuCheckoutBody, DokuRequestBodyError } from "./doku-request-body.ts";
 import { createDokuGlobalResponseSignature } from "./doku-signature.ts";
 import { splitMigrationStatements } from "./schema-version.ts";
 
@@ -427,4 +428,49 @@ test("a reused submit token with changed buyer intent is rejected without anothe
     (error: unknown) => error instanceof DokuCheckoutError && error.code === "DOKU_CONFLICT",
   );
   assert.equal(calls, 1);
+});
+
+const bodyInput = {
+  attemptId: "attempt-1", merchantInvoice: "MYB-000000000000000000000001",
+  orderNumber: "INV-10001", expiresAt: "2026-09-01T08:00:00.000Z",
+  channel: "INTERNET_BANKING_FPX", totalAmountSen: 4090, unitPriceSen: 3290,
+  shippingCostSen: 800, quantity: 1, variantId: 31001, variantSku: "SKU-1",
+  productTitle: "Buku", customerName: "Aina Rahman",
+  customerEmail: "aina@example.com", customerPhone: "60123456789",
+  address: "12 Jalan Buku", city: "Johor Bahru", postalCode: "80000",
+  origin: "https://shop.example", returnToken: "a".repeat(64),
+};
+
+test("create and retry build the same DOKU body, differing only by the create-only device metadata", () => {
+  // The two paths built this body separately until 2026-09-08 and had drifted
+  // 25 lines apart. They share one builder now, so the only legitimate
+  // difference is the fingerprint a retry has no way to supply.
+  const retry = JSON.parse(buildDokuCheckoutBody(bodyInput));
+  const create = JSON.parse(buildDokuCheckoutBody({ ...bodyInput, deviceFingerprint: "device-1" }));
+  assert.deepEqual(create.metadata, { device_id: "device-1" });
+  assert.equal("metadata" in retry, false);
+  delete create.metadata;
+  assert.deepEqual(create, retry);
+  // Byte equality, not just deep equality: this body is signed, so key order
+  // moving would break the signature while deepEqual stayed happy.
+  assert.equal(buildDokuCheckoutBody(bodyInput), JSON.stringify(retry));
+});
+
+test("a money value that is not a safe non-negative integer never reaches the provider", () => {
+  // The create path always refused these; the retry path divided by 100 raw and
+  // sent the result. That asymmetry is the defect this builder removes, so it is
+  // asserted on the retry shape - the one that used to let them through.
+  for (const broken of [
+    { totalAmountSen: -1 }, { totalAmountSen: 40.9 }, { totalAmountSen: Number.NaN },
+    { unitPriceSen: -100 }, { shippingCostSen: 12.5 },
+  ]) {
+    assert.throws(
+      () => buildDokuCheckoutBody({ ...bodyInput, ...broken }),
+      (error: unknown) => error instanceof DokuRequestBodyError,
+      `expected refusal for ${JSON.stringify(broken)}`,
+    );
+  }
+  // A zero shipping cost is not broken; it drops the shipping line item.
+  const free = JSON.parse(buildDokuCheckoutBody({ ...bodyInput, shippingCostSen: 0 }));
+  assert.equal(free.order.line_items.length, 1);
 });

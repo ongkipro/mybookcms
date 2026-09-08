@@ -7,6 +7,7 @@ import {
   type DokuRuntimeConfig,
 } from "./doku-config.ts";
 import { createDokuReturnToken } from "./doku-checkout.ts";
+import { buildDokuCheckoutBody, DokuRequestBodyError } from "./doku-request-body.ts";
 import {
   applyDokuPaymentFact,
   type DokuLocalPaymentStatus,
@@ -863,64 +864,35 @@ function checkoutBody(
   origin: string,
   returnToken: string,
 ): string {
-  const nameParts = order.customerName.split(/\s+/);
-  const firstName = nameParts.shift() || order.customerName;
-  const lastName = nameParts.join(" ") || firstName;
-  const lineItems: Array<Record<string, unknown>> = [{
-    id: String(order.variantId),
-    name: order.productTitle.slice(0, 255),
-    quantity: order.quantity,
-    price: order.unitPriceSen / 100,
-    sku: order.variantSku.slice(0, 120),
-  }];
-  if (order.shippingCostSen > 0) {
-    lineItems.push({
-      id: "shipping",
-      name: "Penghantaran",
-      quantity: 1,
-      price: order.shippingCostSen / 100,
-    });
-  }
-  const capability = new URLSearchParams({
-    order_number: order.orderNumber,
-    return_token: returnToken,
-  });
-  return JSON.stringify({
-    id: attempt.id,
-    order: {
-      amount: order.totalAmountSen / 100,
-      invoice_number: attempt.merchant_invoice,
-      currency: "MYR",
-      line_items: lineItems,
-      expired_at: attempt.expires_at,
-    },
-    checkout_experience: {
-      payment_channels: [attempt.channel],
-      language: "MS",
-      auto_redirect: false,
-      retry_payment: { enabled: true },
-      callback_url: `${origin}/payment/doku/return?${capability}`,
-      callback_url_cancel: `${origin}/payment/doku/cancel?${capability}`,
-      callback_url_result: `${origin}/payment/doku/result?${capability}`,
-    },
-    customer: {
-      id: order.orderNumber,
-      name: order.customerName,
-      email: order.customerEmail,
-      phone: `+${order.customerPhone}`,
-      country: "MY",
-      address: order.address,
-    },
-    shipping_address: {
-      first_name: firstName,
-      last_name: lastName,
+  try {
+    return buildDokuCheckoutBody({
+      attemptId: attempt.id,
+      merchantInvoice: attempt.merchant_invoice,
+      orderNumber: order.orderNumber,
+      expiresAt: attempt.expires_at,
+      channel: attempt.channel,
+      totalAmountSen: order.totalAmountSen,
+      unitPriceSen: order.unitPriceSen,
+      shippingCostSen: order.shippingCostSen,
+      quantity: order.quantity,
+      variantId: order.variantId,
+      variantSku: order.variantSku,
+      productTitle: order.productTitle,
+      customerName: order.customerName,
+      customerEmail: order.customerEmail,
+      customerPhone: order.customerPhone,
       address: order.address,
       city: order.city,
-      postal_code: order.postalCode,
-      phone: `+${order.customerPhone}`,
-      country_code: "MY",
-    },
-  });
+      postalCode: order.postalCode,
+      origin,
+      returnToken,
+    });
+  } catch (error) {
+    // Retry previously divided by 100 with no guard at all, so a corrupt sen
+    // value reached the provider here while create refused it. Same refusal now.
+    if (error instanceof DokuRequestBodyError) throw new DokuPaymentAccessError("DOKU_CONFLICT");
+    throw error;
+  }
 }
 
 function failureClass(error: unknown): string {

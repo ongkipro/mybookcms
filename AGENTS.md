@@ -82,6 +82,7 @@ Never stage the ledger with `git add -f`.
 npm run check
 npm test
 npm run build
+npm run test:coverage   # optional; Node's built-in coverage, baseline in docs/DEVELOPMENT-MAP.md
 ```
 
 Browser-visible changes require a real browser check in addition to compilation.

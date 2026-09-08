@@ -411,6 +411,120 @@ after `33a29c7`, and it changes no code.
 This remains local evidence. No remote migration, deployment, or provider
 traffic is claimed by it.
 
+## A-267 — device address guard 2026-09-08
+
+`src/lib/repository-hygiene.test.ts` enforces REQ-210: every tracked file under
+`src/`, `scripts/`, `docs/` and the root Markdown may carry only loopback, the
+unspecified and broadcast addresses, and the three RFC 5737 documentation
+ranges. It allowlists ranges by name rather than banning IP literals, and a
+second test pins the allowlist so it cannot widen unnoticed.
+
+Its first run found four real violations that the manual scan behind the task
+had only partly seen. `TASKS.md` still carried the operator's Tailscale origin
+a Tailscale CGNAT address twice, inside A-241's own reproduction note — the exact leak the
+task was queued to prevent, in the entry that described it. Those are redacted
+to a placeholder rather than to a documentation address, because substituting
+one would falsify the record of what was tested. `rate-limit.test.ts` carried
+a redacted address and a redacted address as forwarded-header fixtures and now uses RFC 5737
+addresses; the assertions are unchanged. REQ-210 cites the guard instead of
+stating that nothing does.
+
+## Development map refreshed 2026-09-08
+
+The map's provenance line still read "audited at base `62f634d`" two commits
+after that stopped being true, and `development-map.test.ts` passed throughout —
+it guards structure (every route once, every citation resolving, the four
+runtime claims naming executable tests) and cannot guard a prose header. The
+header now names base `4a41894` plus the uncommitted closures, and says in the
+document itself that a green suite is not proof the line is current. The
+coverage figure was re-measured after A-260 added two tests and corrected from
+524 tests / 88.67-75.24-88.30 to 526 tests / 88.66-75.30-88.34. A-267 is queued
+for the REQ-210 guard that A-266 identified and declined to fake.
+
+## A-260 — one DOKU request body 2026-09-08
+
+`src/lib/doku-request-body.ts` is now the only place the signed Hosted Checkout
+body is built. The duplication hid a real asymmetry: the create path ran every
+money field through a guard that refuses a value which is not a safe
+non-negative integer, and the retry path divided by 100 raw, so a corrupt or
+negative sen value was refused on the way in and sent to the provider on the
+way back. Both paths share the guard now. `metadata.device_id` stays create-only
+because a retry has no browser fingerprint, appended last so both bodies remain
+byte-identical to the ones they replaced — proved by every existing signed-body
+assertion passing unchanged, plus a new test that compares serialized bytes
+rather than deep equality because key order carries the signature. Independent
+payment-surface review remains owed under the entry's own Risk line.
+
+## A-262 — coverage baseline 2026-09-08
+
+`npm run test:coverage` reports 88.67% lines, 75.24% branches and 88.30%
+functions across `src/` on 524 passing tests. No dependency was added: Node
+24.18 ships `--experimental-test-coverage`, so the entry's budgeted `c8`
+dependency was not spent. The baseline sits in `docs/DEVELOPMENT-MAP.md` beside
+the citation method it supplements, and the command in `AGENTS.md`. Branch
+coverage at 75.24% is the weakest axis and is the honest place to look next; no
+threshold is enforced, because one chosen before the first measurement is a
+guess.
+
+## A-266 — requirements joined to evidence 2026-09-08
+
+Fourteen `Implemented locally` rows in `PRD.md` now read `Verified locally` and
+name the test file and test that satisfies them. Each citation was resolved by
+finding the named test in its file rather than by keyword similarity; four
+keyword candidates were discarded on reading, including a match that pointed
+REQ-203 at CRM copy instead of slug redirects. Two rows were not raised. REQ-210
+is true on disk — only loopback and RFC 5737 documentation addresses appear —
+but no test asserts it, so its status cell now says so instead of claiming
+verification; it is the natural next guard after A-257 and A-265. REQ-180
+already carried its own qualifier and was left alone.
+
+## A-259 — dependency audit cleared 2026-09-08
+
+`npm audit --omit=dev` reports zero vulnerabilities. The high `fast-uri` and
+moderate `qs` advisories shared one cause: `shadcn`, a build-time CLI, was
+declared in `dependencies`. Nothing under `src/` imports it and no npm script
+invokes it, so it was never runtime code; moving it to `devDependencies`
+removed `qs` from the production tree, and `npm audit fix --package-lock-only`
+resolved the transitive `fast-uri` under `astro-seo`. No direct dependency
+version changed and the sixteen outdated packages were left alone. Validated
+with `npm ci` from clean, then check, the full suite, and the production build.
+
+## A-265 — task id uniqueness guard 2026-09-08
+
+`task-queue.test.ts` now fails when an id heads two entries in one section, and
+when an open-queue id is reused from a closed one. Both were mutation-proved.
+The ten archive duplicates `A-176`-`A-185` are left as they are by decision
+rather than exempted by name: they are genuinely different closed tasks from
+before the fork restarted numbering at the `## A23` era, they carry 55
+cross-references in `BUILD-LOG.md`, the docs and the ledger, and renumbering
+settled history would invalidate all of them to prevent nothing. Every
+collision that caused harm on 2026-09-08 was inside `## Open queue`, which both
+assertions cover.
+
+## A-257 — observability guard 2026-09-08
+
+`src/lib/observability-registry.test.ts` now fails when a production
+`console.error` label is not in the `OBSERVABILITY.md` registry, and when the
+registry names a label nothing emits. Building it found three labels the
+registry had missed because they reach production through a constant
+(`schema-upgrade-failed`) and a ternary (`capi-outbox-scheduled`,
+`doku-reconciliation-scheduled`) rather than a string literal — the exact gap
+the entry predicted, and one the earlier literal-only check could not see. All
+three are registered and a third test fails if that exemption list outlives its
+source. The guard was mutation-tested in three directions before being trusted.
+
+## Working tree reconciled 2026-09-08
+
+`4a41894` commits the 61 files that had accumulated across sessions — the
+abandoned-checkout leads feature and migration `0062`, the landing content
+sections and migration `0063`, IDR advertising values, checkout receipt and
+footer polish, DOKU configuration diagnosability, the observability registry,
+the working-agreement rules, and the queue. Every untracked file was read
+before staging; no secret, device address, or scratch file was among them.
+`astro check` reported 0 errors and the production build completed on the
+exact tree committed. The tree is clean, and the first documentation run on it
+reached PASS without a review reason, which is the condition A-258 named.
+
 ## Working-agreement rules and two joining tasks 2026-09-08
 
 Three rules were added to `AGENTS.md` because each had already been broken

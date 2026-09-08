@@ -1,7 +1,7 @@
 {
   "name": "mybookcms",
   "version": "1.4.0",
-  "description": "MyBookCMS — single-install direct-response commerce CMS for Cloudflare Workers",
+  "description": "MyBookCMS \u2014 single-install direct-response commerce CMS for Cloudflare Workers",
   "engines": {
     "node": ">=22",
     "npm": ">=10"
@@ -13,6 +13,7 @@
     "build": "astro build",
     "check": "npm run cf:types:check && astro check && tsc --noEmit",
     "test": "node --experimental-strip-types --test src/lib/*.test.ts",
+    "test:coverage": "node --experimental-strip-types --test --experimental-test-coverage --test-coverage-exclude='**/*.test.ts' src/lib/*.test.ts",
     "cf:types": "wrangler types src/worker-configuration.d.ts --env-interface Env --include-runtime false --strict-vars false",
     "cf:types:check": "npm run cf:types -- --check",
     "preview": "astro preview",
@@ -46,7 +47,6 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "recharts": "^3.8.0",
-    "shadcn": "^4.16.2",
     "sonner": "^2.0.8",
     "tailwind-merge": "^3.6.0",
     "tailwindcss": "^4.3.0",
@@ -60,6 +60,7 @@
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
+    "shadcn": "^4.16.2",
     "typescript": "^5.7.3",
     "wrangler": "^4.120.0"
   }

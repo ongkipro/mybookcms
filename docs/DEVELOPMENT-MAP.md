@@ -1,12 +1,30 @@
 # MyBookCMS Development Map
 
-> Audited against the 2026-09-07 working tree at base `62f634d`, including the
-> local A-232/A-241/A-242/A-243 closures. This is an evidence index, not a release
-> certification. Code and executable checks remain authoritative.
+> Audited against the 2026-09-08 working tree at base `4a41894`, including the
+> uncommitted A-257/A-259/A-260/A-262/A-265/A-266 closures, and carrying forward
+> the A-232/A-241/A-242/A-243 audit of 2026-09-07. This is an evidence index, not
+> a release certification. Code and executable checks remain authoritative.
+>
+> `development-map.test.ts` guards this file's *structure* — every route appears
+> exactly once, every citation resolves, the four runtime claims name executable
+> tests. It cannot guard this provenance line, which is prose: on 2026-09-08 the
+> header still named a base two commits old while the guard passed. Whoever
+> audits next updates the line by hand, and should not read a green suite as
+> proof that it is current.
 
 [CODE-MAP](CODE-MAP.md) locates implementation. This map records the limits of
 verification; [PRD](../PRD.md) defines requirements and [TASKS](../TASKS.md#open-queue)
 owns accepted work. Closed task evidence is in [STATUS](../STATUS.md).
+
+**Coverage baseline.** `npm run test:coverage` measures the same suite this map
+indexes, using Node's built-in `--experimental-test-coverage` — no dependency
+was added, because the runner already does it. Measured 2026-09-08 on 526
+passing tests: **88.66% lines, 75.30% branches, 88.34% functions** across
+`src/`, excluding test files themselves. No threshold is enforced; a threshold
+picked before the first measurement is a guess. The figure supplements this
+map, it does not replace it — coverage says how much of a file ran, and the
+columns below say which route a test actually exercised, which is the question
+a percentage cannot answer.
 
 **Evidence vocabulary.** “Direct runtime” means the named test sends requests
 through the freshly built Worker using isolated D1/KV and fictional credentials.
@@ -15,6 +33,16 @@ makes no claim that the rendered route was exercised. A missing citation means
 this map offers no verdict, not that all lower-level behavior is untested.
 Browser evidence is limited to the cited task's flow and viewports. No provider
 sandbox or production conclusion follows from local checks.
+
+Three guards were added on 2026-09-08 that this map depends on but does not
+itself contain: `observability-registry.test.ts` (A-257) fails when a production
+log label is missing from or stale in `OBSERVABILITY.md`, and `task-queue.test.ts`
+(A-265) now fails on a duplicated task id — the mechanism behind two entries in
+this map's own queue column being overwritten that morning. `npm run test:coverage`
+(A-262) supplies the figure below. A-260 replaced the duplicated DOKU request-body
+builder with `src/lib/doku-request-body.ts`, which is why the payment rows below
+cite the same tests as before and still hold: every existing signed-body
+assertion passed unchanged, which is what proved the bytes did not move.
 
 The four A-249 blind spots now have direct route tests. A-232's COD control is
 closed; A-248 privacy copy and A-245 disabled-channel recovery are locally verified.

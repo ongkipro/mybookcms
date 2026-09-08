@@ -38,6 +38,60 @@ test("every open task carries what Goal Mode needs to execute it", () => {
   }
 });
 
+/**
+ * Ids collided four times on 2026-09-08 — `A-255`, `A-258`, `A-263`, `A-264` —
+ * because two sessions allocated from the same range without seeing each other,
+ * and each time the loser's entry was overwritten or marked complete unworked.
+ * Every one of those collisions was inside `## Open queue`, which is what makes
+ * them harmful: that is the section Goal Mode executes and the only one this
+ * file otherwise validates.
+ *
+ * The rule is deliberately not a list of allowed duplicates. Ten ids —
+ * `A-176`–`A-185` — legitimately head two different closed tasks each, because
+ * the fork restarted numbering after the 2026-08-23 `## A23` era, and those
+ * entries carry 55 cross-references in `BUILD-LOG.md`, the docs, and the
+ * delivery ledger. Renumbering closed history to satisfy a checker would
+ * invalidate all of them to fix nothing an agent can trip over. So the check
+ * asks the two questions that actually matter: an id may not repeat inside one
+ * section, and an id in the open queue may not appear anywhere else. A new
+ * collision fails wherever it lands; settled history stays settled.
+ */
+const sections = () => {
+  const found = new Map<string, string[]>();
+  let current = "(preamble)";
+  for (const line of tasks.split("\n")) {
+    if (line.startsWith("## ")) current = line.slice(3).trim();
+    const id = line.match(/^- \[[ x]\] \*\*([A-Z]+-\d+)\*\*/)?.[1];
+    if (id) found.set(current, [...(found.get(current) ?? []), id]);
+  }
+  return found;
+};
+
+test("no task id is used twice inside one section", () => {
+  for (const [section, ids] of sections()) {
+    const duplicates = [...new Set(ids.filter((id, index) => ids.indexOf(id) !== index))].sort();
+    assert.deepEqual(
+      duplicates,
+      [],
+      `${section} heads more than one entry with ${duplicates.join(", ")}; allocate the next free id per AGENTS.md rule 7`,
+    );
+  }
+});
+
+test("an open-queue id is not reused from a closed section", () => {
+  const all = sections();
+  const open = new Set(all.get("Open queue") ?? []);
+  const elsewhere = [...all]
+    .filter(([section]) => section !== "Open queue")
+    .flatMap(([, ids]) => ids)
+    .filter((id) => open.has(id));
+  assert.deepEqual(
+    [...new Set(elsewhere)].sort(),
+    [],
+    "an open task reuses an id a closed entry already owns; the ledger and BUILD-LOG cannot tell them apart",
+  );
+});
+
 test("no open task cites a requirement PRD.md does not define", () => {
   const prd = readFileSync(new URL("../../PRD.md", import.meta.url), "utf8");
   const defined = new Set(prd.match(/REQ-\d+/g) ?? []);
