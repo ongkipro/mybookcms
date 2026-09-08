@@ -430,6 +430,18 @@ test("a reused submit token with changed buyer intent is rejected without anothe
   assert.equal(calls, 1);
 });
 
+/** The exact bytes both pre-change builders emitted for `bodyInput` at `36e3345^`,
+ *  confirmed identical across 3000 randomized inputs by the independent review of
+ *  A-260. Frozen here so a future key reorder fails instead of passing quietly. */
+const RETRY_BODY_AT_36E3345 = "{\"id\":\"attempt-1\",\"order\":{\"amount\":40.9,\"invoice_number\":\"MYB-000000000000000000000001\",\"currency\":\"MYR\",\"line_items\":[{\"id\":\"31001\",\"name\":\"Buku\",\"quantity\":1,\"price\":32.9,\"sku\":\"SKU-1\"},{\"id\":\"shipping\",\"name\":\"Penghantaran\",\"quantity\":1,\"price\":8}],\"expired_at\":\"2026-09-01T08:00:00.000Z\"},\"checkout_experience\":{\"payment_channels\":[\"INTERNET_BANKING_FPX\"],\"language\":\"MS\",\"auto_redirect\":false,\"retry_payment\":{\"enabled\":true},\"callback_url\":\"https://shop.example/payment/doku/return?order_number=INV-10001&return_token=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"callback_url_cancel\":\"https://shop.example/payment/doku/cancel?order_number=INV-10001&return_token=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"callback_url_result\":\"https://shop.example/payment/doku/result?order_number=INV-10001&return_token=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"customer\":{\"id\":\"INV-10001\",\"name\":\"Aina Rahman\",\"email\":\"aina@example.com\",\"phone\":\"+60123456789\",\"country\":\"MY\",\"address\":\"12 Jalan Buku\"},\"shipping_address\":{\"first_name\":\"Aina\",\"last_name\":\"Rahman\",\"address\":\"12 Jalan Buku\",\"city\":\"Johor Bahru\",\"postal_code\":\"80000\",\"phone\":\"+60123456789\",\"country_code\":\"MY\"}}";
+
+/** The same body as `RETRY_BODY_AT_36E3345` with the create path's trailing
+ *  `metadata` — byte-exact against the old create builder at `36e3345^`, confirmed
+ *  by the follow-up review. Frozen separately because `deepEqual` after deleting
+ *  `metadata` is order-blind: moving `metadata` from last to first passed all 22
+ *  tests, and that is the one placement the shared builder exists to preserve. */
+const CREATE_BODY_AT_36E3345 = "{\"id\":\"attempt-1\",\"order\":{\"amount\":40.9,\"invoice_number\":\"MYB-000000000000000000000001\",\"currency\":\"MYR\",\"line_items\":[{\"id\":\"31001\",\"name\":\"Buku\",\"quantity\":1,\"price\":32.9,\"sku\":\"SKU-1\"},{\"id\":\"shipping\",\"name\":\"Penghantaran\",\"quantity\":1,\"price\":8}],\"expired_at\":\"2026-09-01T08:00:00.000Z\"},\"checkout_experience\":{\"payment_channels\":[\"INTERNET_BANKING_FPX\"],\"language\":\"MS\",\"auto_redirect\":false,\"retry_payment\":{\"enabled\":true},\"callback_url\":\"https://shop.example/payment/doku/return?order_number=INV-10001&return_token=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"callback_url_cancel\":\"https://shop.example/payment/doku/cancel?order_number=INV-10001&return_token=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"callback_url_result\":\"https://shop.example/payment/doku/result?order_number=INV-10001&return_token=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"customer\":{\"id\":\"INV-10001\",\"name\":\"Aina Rahman\",\"email\":\"aina@example.com\",\"phone\":\"+60123456789\",\"country\":\"MY\",\"address\":\"12 Jalan Buku\"},\"shipping_address\":{\"first_name\":\"Aina\",\"last_name\":\"Rahman\",\"address\":\"12 Jalan Buku\",\"city\":\"Johor Bahru\",\"postal_code\":\"80000\",\"phone\":\"+60123456789\",\"country_code\":\"MY\"},\"metadata\":{\"device_id\":\"device-1\"}}";
+
 const bodyInput = {
   attemptId: "attempt-1", merchantInvoice: "MYB-000000000000000000000001",
   orderNumber: "INV-10001", expiresAt: "2026-09-01T08:00:00.000Z",
@@ -451,9 +463,22 @@ test("create and retry build the same DOKU body, differing only by the create-on
   assert.equal("metadata" in retry, false);
   delete create.metadata;
   assert.deepEqual(create, retry);
-  // Byte equality, not just deep equality: this body is signed, so key order
-  // moving would break the signature while deepEqual stayed happy.
-  assert.equal(buildDokuCheckoutBody(bodyInput), JSON.stringify(retry));
+  // Both shapes are frozen. deepEqual above cannot see key order, so it would
+  // accept `metadata` moving to the front of the create body — which breaks
+  // every create-path signature and passed silently until this line existed.
+  assert.equal(
+    buildDokuCheckoutBody({ ...bodyInput, deviceFingerprint: "device-1" }),
+    CREATE_BODY_AT_36E3345,
+  );
+  // A frozen fixture, not a round-trip of the builder's own output. The first
+  // version of this assertion compared `buildDokuCheckoutBody(...)` against
+  // `JSON.stringify(JSON.parse(same call))`, which is the builder measured
+  // against itself: it would have passed with every key reordered, and key
+  // order is exactly what carries the signature. The independent review of
+  // A-260 caught that. This string was proved byte-identical to both
+  // pre-change builders at `36e3345^` over 3000 randomized inputs, so it locks
+  // the shape those two agreed on rather than whatever this builder does today.
+  assert.equal(buildDokuCheckoutBody(bodyInput), RETRY_BODY_AT_36E3345);
 });
 
 test("a money value that is not a safe non-negative integer never reaches the provider", () => {
@@ -470,7 +495,12 @@ test("a money value that is not a safe non-negative integer never reaches the pr
       `expected refusal for ${JSON.stringify(broken)}`,
     );
   }
-  // A zero shipping cost is not broken; it drops the shipping line item.
-  const free = JSON.parse(buildDokuCheckoutBody({ ...bodyInput, shippingCostSen: 0 }));
-  assert.equal(free.order.line_items.length, 1);
+  // A shipping cost that fails the `> 0` test is dropped as a line item rather
+  // than refused, because the guard sits inside that branch. Zero is the
+  // legitimate case; negative and NaN reach the same silent drop, which the
+  // module comment documents and nothing asserted until here.
+  for (const shippingCostSen of [0, -100, Number.NaN, -0.5]) {
+    const dropped = JSON.parse(buildDokuCheckoutBody({ ...bodyInput, shippingCostSen }));
+    assert.equal(dropped.order.line_items.length, 1, `shipping ${shippingCostSen} should drop the line item`);
+  }
 });

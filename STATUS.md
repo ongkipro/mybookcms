@@ -411,6 +411,60 @@ after `33a29c7`, and it changes no code.
 This remains local evidence. No remote migration, deployment, or provider
 traffic is claimed by it.
 
+## A-260 review bound, and a flaky-evidence finding queued 2026-09-08
+
+The independent reviewer approved the A-260 surface for an R3 payment-path
+boundary after three passes, and `review-boundary` is bound to it —
+`RUN-20260908T110827Z-fe372668` closed PASS, the first R3 run today to do so
+rather than leaving the gate open. The reviewer re-derived both frozen body
+constants itself against the builders at `36e3345^` instead of trusting the
+generated values, and mutation-proved that both now bite, including the
+`metadata`-to-front reorder it had earlier demonstrated passing all 22 tests.
+It judged the single-input-shape fixture coverage acceptable and advised
+against a task, because key order in that builder is fixed by the source
+literal for every key except the one conditional key, and both of its states
+are now frozen.
+
+Its one new finding is queued as A-269 and is not an A-260 defect.
+`src/lib/rate-limit.ts:38` derives its window from the real wall clock,
+ignoring the injected clock the rest of that path accepts, so a capability test
+firing 21 requests against a 12-per-60s bound flips whenever a real minute
+boundary falls mid-loop. Proved by shifting only `Date.now` and sweeping the
+offset — clean at +3700 ms, failing from +4000 to +4500 — and measured at one
+failure in fifteen full-suite runs. It predates A-260 by two commits. What
+makes it worth an entry is the evidence consequence: a suite that fails one run
+in fifteen for unrelated reasons means a single green run is not reproducible
+proof for that file, and every `full-tests PASS` recorded against it carries
+that caveat until the clock is threaded.
+
+## A-260 independently reviewed 2026-09-08
+
+A separate agent reviewed the DOKU request-body deduplication and returned
+NON_BLOCKING_FINDINGS: no defect producing a wrong provider outcome. Byte
+equivalence was proved empirically, not by reading — both pre-change builders
+were extracted from `36e3345^` and diffed against the new one over 3000
+randomized inputs, byte-identical for create and retry. All 21 field mappings
+match their old sources, and the highest-risk item, that retry can now throw
+where it previously could not, leaves no new state class because the
+pre-existing `DOKU_UNAVAILABLE` throw sits in the same position and
+`expireUninitiatedAttempt` restores stock on the scheduled pass.
+
+Three of the four findings are fixed. The sharpest was mine: the byte-equality
+assertion compared the builder against a round-trip of its own output, so it
+would have passed with every key reordered — precisely the regression the commit
+claimed it guarded. It is now a frozen fixture, and reordering two keys fails
+it. The new retry refusal is now asserted through `handleDokuRetryRequest`;
+building that test surfaced that `accessFromRow` already refuses a non-integer
+`orders.total_amount` at the capability layer, so the corrupt value has to enter
+through `order_items.unit_price` instead. A module comment that claimed more
+than the code did is corrected. The fourth finding, that both pre-provider
+refusals never record an `error_class` and so appear in the operator log without
+a reason, is queued as A-268 because it changes what a payment path writes.
+
+The ledger could not bind a `boundary_review` event: that run had finished, and
+review-boundary attaches only to an active run. The review is real and recorded
+in the task entry rather than stamped in the ledger.
+
 ## Working tree reconciled again 2026-09-08
 
 `36e3345` commits the seventeen files from A-257, A-259, A-260, A-262, A-265,

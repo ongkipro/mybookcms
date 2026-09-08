@@ -695,6 +695,50 @@ test("retry refuses unavailable stock and paid attempts before creating another 
   assert.equal((await attemptFacts(paidToken)).local_status, "paid");
 });
 
+test("retry refuses a corrupt persisted money value at the surface, before any provider call", async () => {
+  // The defect A-260 fixed lived here: create guarded its money fields and
+  // retry divided by 100 raw, so a corrupt sen value was refused on the way in
+  // and sent to the provider on the way back. The independent review noted the
+  // fix was only asserted against the builder in isolation, never through the
+  // surface that had the bug. This is that assertion.
+  const variantId = 34095;
+  const token = "access-corrupt-amount-token-34095";
+  await createAttempt(variantId, token);
+  await expireAttempt(token);
+  const expired = await attemptFacts(token);
+  const cookie = await accessCookie(token);
+
+  // Corrupting `orders.total_amount` cannot reach the builder: `accessFromRow`
+  // already refuses a non-integer total and the request dies as 404 at the
+  // capability layer — defence in depth that was there before A-260. The line
+  // item's `unit_price` is not covered by that check, reaches the builder
+  // through `loadRetryOrder`, and is exactly what the old retry path would have
+  // divided by 100 and shipped. Written straight to D1 because no code path
+  // produces it.
+  await database.prepare(`
+    UPDATE order_items SET unit_price = ?
+    WHERE order_id = (SELECT id FROM orders WHERE order_number = ?)
+  `).bind(32.9, expired.order_number).run();
+
+  let providerCalls = 0;
+  const response = await handleDokuRetryRequest({
+    request: retryRequest(expired.order_number, cookie),
+    database,
+    rootSecret: ROOT_SECRET,
+    clientIp: "203.0.113.44",
+    userAgent: "payment-access-test",
+    fetch: (async () => {
+      providerCalls += 1;
+      throw new Error("a corrupt amount must never reach the provider");
+    }) as typeof fetch,
+    now: () => NOW,
+  });
+
+  assert.equal(response.status, 409);
+  assert.match(await response.text(), /DOKU_CONFLICT/);
+  assert.equal(providerCalls, 0, "the refusal must land before provider transport");
+});
+
 test("retry refuses when the original channel is no longer enabled", async () => {
   const variantId = 34006;
   const token = "access-disabled-channel-token-34006";

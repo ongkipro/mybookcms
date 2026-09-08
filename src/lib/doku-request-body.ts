@@ -4,10 +4,18 @@
  * It used to be built twice — once in `doku-checkout.ts` for the first attempt
  * and once in `doku-payment-access.ts` for retry — and the copies had already
  * drifted 25 lines apart. Most of that was plumbing, but one difference was
- * not: create ran every money field through a guard that refuses a value which
+ * not: create ran its money fields through a guard that refuses a value which
  * is not a safe non-negative integer, and retry divided by 100 raw. A corrupt
  * or negative sen value was therefore refused on the way in and sent to the
  * provider on the way back. Both paths now share the guard.
+ *
+ * "Its money fields", not every one: any `shippingCostSen` that fails the
+ * `> 0` test — zero, negative, or NaN — is dropped as a line item rather than
+ * refused, so the guard never sees it. NaN is the surprising member of that
+ * set, which is why it is named here and asserted in the tests. That matches the create path exactly and is therefore not a
+ * regression, and `DokuClient` re-checks the total against `expectedAmountSen`
+ * afterwards — but the earlier wording here claimed more than the code does.
+ * Noted by the independent review of A-260.
  *
  * Key order is load-bearing. This body is serialized and then signed, so the
  * bytes must not move; `metadata` is appended last and only when a device

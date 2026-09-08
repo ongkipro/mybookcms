@@ -1071,7 +1071,10 @@ Surface, and obtain the independent correctness/security review required by
       Dependencies: A-258, because a lockfile change on a tree with 61 uncommitted files is one more thing the next commit has to explain.
       Done when: `npm audit --omit=dev` reports zero high and zero moderate; `npm ci`, `npm run check`, `npm test`, and `npm run build` pass on the new lockfile; and the diff touches no direct dependency's major version.
 
-- [x] **A-260** — Build the DOKU request body in one place. **Done locally 2026-09-08. Independent payment-surface review still owed.** `src/lib/doku-request-body.ts` now builds the signed Hosted Checkout body for both the first attempt and retry; neither call site keeps body-shaping logic.
+- [x] **A-260** — Build the DOKU request body in one place. **Done locally 2026-09-08. Independently reviewed 2026-09-08 by a separate agent: NON_BLOCKING_FINDINGS, no defect producing a wrong provider outcome.**
+      The reviewer proved byte equivalence empirically rather than by reading — it extracted both pre-change builders from `36e3345^` and diffed their output against the new one across 3000 randomized inputs (null expiry, null channel, zero shipping, unicode names, quotes and newlines in address, strings crossing the `slice` boundaries): byte-identical for create and retry. All 21 field mappings match their old sources, both error mappings are correct including the 409 default, and the highest-risk item — that retry can now throw where it previously could not — was traced and found to leave no new state class, because the pre-existing `DOKU_UNAVAILABLE` throw sits in the same position and `expireUninitiatedAttempt` restores stock on the scheduled pass.
+      **Three of its four findings are fixed here; the fourth is queued as A-268.** F1 was the sharpest and was mine: the byte-equality assertion compared the builder against a round-trip of its own output, so it would have passed with every key reordered — the exact regression the commit claimed it guarded. It is now a frozen fixture of the bytes both pre-change builders emitted, and reordering `currency` against `line_items` fails it. F2, that the new retry refusal had no surface-level test, is now asserted through `handleDokuRetryRequest`; building it found that `accessFromRow` already refuses a non-integer `orders.total_amount` at the capability layer, so the test corrupts `order_items.unit_price` instead — unguarded there and reaching the builder through `loadRetryOrder`. Mutation-proved. F4, that the module comment claimed the guard covered every money field when a negative shipping cost is dropped by the `> 0` test rather than refused, is corrected in the comment; the behaviour matches the old create path and is not a regression.
+      The ledger's `boundary_review` event could not be bound: that run had already finished, and `review-boundary` attaches only to an active run. The review is real and recorded here rather than stamped there. `src/lib/doku-request-body.ts` now builds the signed Hosted Checkout body for both the first attempt and retry; neither call site keeps body-shaping logic.
       **The review found a real defect, not just duplication.** Create ran every money field through a guard refusing anything that is not a safe non-negative integer, throwing `DOKU_CONFLICT`; retry divided by 100 raw with no guard at all. A corrupt, negative or fractional sen value was therefore refused on the way in and sent to the provider on the way back. Both paths share the guard now, each mapping the shared error to its own type. The other differences were plumbing: retry inlined the same three callback URLs `checkoutCallbacks` already built, and `metadata.device_id` is legitimately create-only because a retry has no browser fingerprint, so it is appended last and only when supplied — which is what keeps both bodies byte-identical to the ones they replaced.
       Validated: every existing signed-body assertion in `doku-checkout.test.ts` and `doku-payment-access.test.ts` passes unchanged, which is the byte-equality proof; a new test asserts create and retry produce identical bodies for identical inputs, compares serialized bytes rather than deep equality because key order carries the signature, and asserts the money guard now refuses `-1`, `40.9` and `NaN` on the retry shape that used to accept them. Focused DOKU tests, `npm run check`, the full suite, and `npm run build` all pass as executed evidence.
       One implementation note worth keeping: the first version used a TypeScript constructor parameter property, which `npm test` rejects because Node runs strip-only mode. The tests caught it immediately; the class declares its field explicitly and says why.
@@ -1129,6 +1132,65 @@ Surface, and obtain the independent correctness/security review required by
       Constraints: REQ-231
       Dependencies: none.
       Done when: a test fails when a tracked file outside the permitted documentation ranges contains a host or network address, passes on the current tree, and names the permitted ranges in its own source so the next author sees why loopback is allowed; and REQ-210's status cell cites it instead of stating that nothing does.
+
+- [ ] **A-268** — Record a reason when a retry is refused before the provider call.
+      Raised by the independent review of A-260 on 2026-09-08 (finding F3), and
+      queued rather than folded into that task because it changes what a payment
+      path writes. `checkoutBody` is called at `src/lib/doku-payment-access.ts:935`,
+      outside the `try` that begins at `:944`, so the two refusals that fire
+      there — the pre-existing `DOKU_UNAVAILABLE` for a disabled or unknown
+      channel, and the `DOKU_CONFLICT` A-260 added for a corrupt persisted money
+      value — never reach `recordAttemptFailure`. A provider failure leaves
+      `error_class='provider'`; these leave it NULL. `src/lib/system-log.ts:240`
+      renders the operator's reason from `error_class`, so an operator sees the
+      refusal in the system log with no reason attached, on the one surface
+      whose whole purpose is telling them why a payment did not proceed.
+      The state is otherwise identical to a provider failure and self-heals:
+      the attempt carries `expires_at = now + RETRY_TTL_MS` and
+      `expireUninitiatedAttempt` restores stock on the scheduled pass. So this is
+      observability, not correctness — but REQ-224 is exactly the requirement
+      that an operator can distinguish failure classes, and here two of them are
+      indistinguishable from silence.
+      Risk: R3 — writes on the DOKU retry path; independent payment-surface review required. No schema change: `error_class` already exists.
+      Surface: `src/lib/doku-payment-access.ts`, `src/lib/doku-payment-access.test.ts`, `OBSERVABILITY.md` if a new label or error class is introduced, `TASKS.md`, `STATUS.md`.
+      Non-scope: changing when either refusal fires, altering stock restoration or the expiry sweep, moving the provider call itself, and adding retry behaviour for a refusal that is deliberately terminal.
+      Primary requirement: REQ-224
+      Constraints: REQ-216, REQ-220
+      Dependencies: A-260, committed as `36e3345`.
+      Done when: both pre-provider refusals record a bounded `error_class` distinguishable from a provider failure; the operator system log renders a reason for each; a test asserts the recorded class for both paths; any new label is registered in `OBSERVABILITY.md` per AGENTS.md rule 9; and stock restoration and the expiry sweep behave exactly as they do today.
+
+- [ ] **A-269** — Give `checkRateLimit` the injectable clock the rest of the payment path already has.
+      Found by the independent review of A-260 on 2026-09-08 (finding H1), and
+      proved deterministically rather than observed statistically.
+      `src/lib/rate-limit.ts:38` opens with `const now = Date.now()` and derives
+      its fixed window from the real wall clock, ignoring the `now: () => NOW`
+      that every other layer of this path accepts. The capability bound exercised
+      at `src/lib/doku-payment-access.test.ts:929` is 12 requests per 60 s and the
+      test fires 21 in sequence, so when a real minute boundary falls mid-loop
+      the counter resets and the assertion flips. The reviewer shifted only
+      `Date.now` and swept the offset: clean at +3700 ms, failing at +4000,
+      +4150, +4350 and +4500. Measured rate: one failure in fifteen full-suite
+      runs, matching what the mechanism predicts.
+      **This is not an A-260 defect and must not be recorded as one.**
+      `rate-limit.ts` is untouched by `36e3345` and unmodified in the working
+      tree; the test dates to `634181a`, two commits earlier. What makes it worth
+      a queue entry rather than a footnote is what it does to evidence: the
+      delivery ledger treats a passing check as the proof, and a suite that fails
+      one run in fifteen for reasons unrelated to the code under review means a
+      single green run is not reproducible evidence for that file. Every
+      `full-tests PASS` recorded against it carries that caveat until this is
+      fixed.
+      The fix is to thread the clock, the way `handleDokuStatusRequest`,
+      `retryDokuPayment` and `loadDokuPaymentAccess` already do. It is explicitly
+      not to loosen the assertion or widen the window: the test is correct and
+      the production code is what cannot be steered.
+      Risk: R2 — a shared limiter on authenticated and buyer-facing paths; signature change only, no behaviour change when the argument is omitted. Every caller must keep its current semantics.
+      Surface: `src/lib/rate-limit.ts`, `src/lib/rate-limit.test.ts`, `src/lib/doku-payment-access.test.ts`, and each call site that should pass a clock, plus `TASKS.md` and `STATUS.md`.
+      Non-scope: changing any window size or per-order bound, altering what is rate limited, loosening the capability assertion, and reworking the KV storage shape.
+      Primary requirement: REQ-224
+      Constraints: REQ-222, REQ-231
+      Dependencies: none. Independent of A-268, though both touch the DOKU capability surface.
+      Done when: `checkRateLimit` accepts an optional clock and defaults to `Date.now` so no caller changes behaviour; the capability test injects the same fixed clock it already passes elsewhere; the reviewer's offset sweep (+3700 through +4500 ms) passes at every offset; and the full suite runs green fifteen consecutive times, which is the count at which the observed failure rate would have shown once.
 
 - [ ] **A-261** — Decide whether a 62,000-line codebase gets a linter. **Approval: required — adds a toolchain to a repository that has kept dependencies deliberately minimal.**
       Found by the health report of 2026-09-08. There is no `eslint`, `prettier`,
