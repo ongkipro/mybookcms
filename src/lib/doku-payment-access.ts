@@ -895,7 +895,36 @@ function checkoutBody(
   }
 }
 
-function failureClass(error: unknown): string {
+/** The six values `payment_attempts.error_class` permits, per migration `0059`.
+ *  Typed rather than `string` so a code mapped outside the set is a compile
+ *  error instead of a CHECK violation that `recordAttemptFailure` would swallow,
+ *  leaving the column NULL and nobody told — the exact symptom this function
+ *  exists to remove, but undiagnosable. */
+type DokuFailureClass =
+  | "provider"
+  | "authentication"
+  | "signature"
+  | "timeout"
+  | "configuration"
+  | "local_transition";
+
+function failureClass(error: unknown): DokuFailureClass {
+  // A refusal raised before the provider is contacted is not a provider
+  // failure, and recording it as one sends the operator to check DOKU when the
+  // problem is on this side. The default is inverted deliberately: everything
+  // this class raises is local unless it names the provider or the install
+  // configuration, so a code added to the union later is classified correctly
+  // without anyone remembering to come back here.
+  if (error instanceof DokuPaymentAccessError) {
+    if (error.code === "DOKU_PROVIDER_FAILED") return "provider";
+    if (error.code === "DOKU_UNAVAILABLE" || error.code === "DOKU_CHANNEL_DISABLED") {
+      return "configuration";
+    }
+    // DOKU_CONFLICT, DOKU_STOCK_UNAVAILABLE, DOKU_RETRY_NOT_ALLOWED and
+    // DOKU_ACCESS_DENIED are all conditions on this side. None is a provider
+    // failure, and the first version of this branch filed the last three as one.
+    return "local_transition";
+  }
   if (!(error instanceof DokuClientError)) return "provider";
   if (error.status === 401 || error.status === 403) return "authentication";
   if (["DOKU_RESPONSE_HEADERS", "DOKU_RESPONSE_SIGNATURE", "DOKU_AMOUNT_MISMATCH"].includes(error.code)) {
@@ -906,7 +935,25 @@ function failureClass(error: unknown): string {
   return "provider";
 }
 
+/**
+ * Record why an attempt failed, and never let that recording change the answer.
+ *
+ * The call sites rethrow a specific refusal after this returns. If the write
+ * itself threw, that thrown value would replace the refusal and the outer catch
+ * would answer 502 DOKU_PROVIDER_FAILED — telling a buyer the provider failed
+ * because a diagnostic column could not be written. An observability write does
+ * not get to do that.
+ */
 async function recordAttemptFailure(database: D1Database, attemptId: string, error: unknown) {
+  try {
+    await recordAttemptFailureUnguarded(database, attemptId, error);
+  } catch {
+    // Deliberately swallowed: the refusal being recorded is the thing that
+    // matters, and it is already on its way to the caller.
+  }
+}
+
+async function recordAttemptFailureUnguarded(database: D1Database, attemptId: string, error: unknown) {
   await database.prepare(`
     UPDATE payment_attempts
     SET error_class = ?, updated_at = ?
@@ -928,11 +975,30 @@ async function sendRetryAttemptToDoku(
     !DOKU_PAYMENT_CHANNELS.includes(attempt.channel as DokuPaymentChannel) ||
     !config.enabledChannels.includes(attempt.channel as DokuPaymentChannel)
   ) {
-    throw new DokuPaymentAccessError("DOKU_UNAVAILABLE", 503);
+    // Defence in depth. `retryDokuPayment` validates the channel against the
+    // enabled set before it reaches here, so no known route arrives with a bad
+    // one; this stays because the function is reachable from any future caller.
+    const refusal = new DokuPaymentAccessError("DOKU_UNAVAILABLE", 503);
+    await recordAttemptFailure(database, attempt.id, refusal);
+    throw refusal;
   }
-  const origin = requestOrigin(requestUrl);
-  const returnToken = await createDokuReturnToken(rootSecret, attempt.id, order.orderNumber);
-  const rawBody = checkoutBody(order, attempt, origin, returnToken);
+  // Everything above and below this point can refuse before the provider is
+  // contacted, and until A-268 those refusals left `error_class` NULL while a
+  // provider failure set it. The operator system log renders its reason from
+  // that column, so the two refusals an operator is most able to act on — a
+  // disabled channel and a corrupt persisted amount — were the two that arrived
+  // with no reason at all.
+  let origin: string;
+  let returnToken: string;
+  let rawBody: string;
+  try {
+    origin = requestOrigin(requestUrl);
+    returnToken = await createDokuReturnToken(rootSecret, attempt.id, order.orderNumber);
+    rawBody = checkoutBody(order, attempt, origin, returnToken);
+  } catch (error) {
+    await recordAttemptFailure(database, attempt.id, error);
+    throw error;
+  }
   const client = new DokuClient({
     environment: config.environment,
     clientId: config.clientId,

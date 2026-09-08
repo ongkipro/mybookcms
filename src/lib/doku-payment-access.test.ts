@@ -184,16 +184,22 @@ type AttemptFacts = {
   stock_restored_at: string | null;
   expires_at: string | null;
   channel: string | null;
+  error_class: string | null;
 };
 
 async function attemptFacts(token: string) {
   const facts = await database.prepare(`
     SELECT pa.id AS attempt_id, pa.provider_reference, pa.merchant_invoice,
       pa.amount_sen, pa.local_status, o.id AS order_id, o.order_number,
-      o.payment_status, o.stock_restored_at, pa.expires_at, pa.channel
+      o.payment_status, o.stock_restored_at, pa.expires_at, pa.channel,
+      pa.error_class
     FROM payment_attempts pa JOIN orders o ON o.id = pa.order_id
     WHERE o.submit_token = ?
-    ORDER BY pa.created_at DESC, pa.id DESC
+    -- rowid, not id: the ids are a deterministic hash for the seeded attempt
+    -- and random for a retry, so ordering by id tiebreaks lexicographically and
+    -- returns either row when both share an injected fixed clock. rowid is
+    -- insertion order, which is what every caller means by the newest attempt.
+    ORDER BY pa.created_at DESC, pa.rowid DESC
     LIMIT 1
   `).bind(token).first<AttemptFacts>();
   assert.ok(facts);
@@ -737,6 +743,21 @@ test("retry refuses a corrupt persisted money value at the surface, before any p
   assert.equal(response.status, 409);
   assert.match(await response.text(), /DOKU_CONFLICT/);
   assert.equal(providerCalls, 0, "the refusal must land before provider transport");
+  // A-268: a refusal raised before the provider is contacted still owes the
+  // operator a reason. This left `error_class` NULL while a provider failure
+  // set it, so the system log rendered the one an operator could actually fix
+  // with no reason at all. `local_transition` rather than `provider`, because
+  // the corrupt value is on this side and DOKU was never asked.
+  // Read the attempt this retry created, not "the newest": both attempts carry
+  // the same `created_at` because the clock is injected and fixed, so
+  // `attemptFacts` falls through to a lexicographic `id DESC` tiebreak and
+  // returns either one. That made this assertion fail about one run in four.
+  const refused = await database.prepare(`
+    SELECT pa.error_class FROM payment_attempts pa
+    JOIN orders o ON o.id = pa.order_id
+    WHERE o.submit_token = ? AND pa.local_status = 'created'
+  `).bind(token).first<{ error_class: string | null }>();
+  assert.equal(refused?.error_class, "local_transition");
 });
 
 test("retry refuses when the original channel is no longer enabled", async () => {

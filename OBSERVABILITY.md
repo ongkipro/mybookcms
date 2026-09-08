@@ -68,6 +68,15 @@ are registered above and named here because a scanner that reads only literals
 cannot see them — the first version of this registry missed all three for
 exactly that reason.
 
+`failureClass` maps a refusal to one of `provider`, `authentication`,
+`signature`, `timeout`, `configuration`, or `local_transition`. Until A-268 it
+returned `provider` for anything that was not a `DokuClientError`, which meant a
+refusal raised *before* the provider was contacted was filed as a provider
+failure — and the two an operator can actually act on arrived with no
+`error_class` at all, because they threw outside the block that records one. The
+system log renders its reason from that column, so those refusals showed up
+without a reason on the one surface whose purpose is explaining them.
+
 Registry entries carry the label only. Fields stay governed by **Event fields**
 above, and the DOKU and system-event sections below remain authoritative where
 they additionally fix allowed fields and operator decisions for a signal.
@@ -149,6 +158,7 @@ runtime. They are not automated alerts or proof that a responder exists.
 | --- | --- | --- |
 | Configuration is missing, invalid, disabled, or does not match the attempt revision/environment | Payments health plus Order Detail `config_health` | Keep DOKU disabled; replace or re-enable only the reviewed revision. Never copy credentials into logs or tickets. |
 | The storefront offers no online payment while D1 holds an enabled DOKU record | `doku-config-unusable` naming environment, revision, and error class | Inspect the error class/code and redacted configuration health. Causes include malformed configuration, invalid channel policy, corrupt ciphertext, and a missing or mismatched runtime `AUTH_SECRET`; this event alone does not prove a key mismatch. Check the configured secret source without exposing its value before replacing credentials. Buyers correctly see no DOKU until it resolves. |
+| A retry refused before the provider was contacted: `error_class` is `local_transition` and the attempt has no `provider_reference` | Attempt diagnostics plus the operator system log entry, which now renders a reason for it | The refusal is on this side, not DOKU's: a persisted value the request builder would not serialize, so a corrupt amount needs repair on the order rather than another retry. Do not investigate the provider; nothing was sent. A retry refused because the install disabled the committed channel is a different case that records no class — read `retry_blocked_reason` on the payment summary instead, where it appears as `DOKU_CHANNEL_DISABLED`. **Read it the same day.** `expireUninitiatedAttempt` sets `error_class` back to NULL when it expires the attempt, and the system log joins `payment_attempts` live rather than copying the class into `payment_events`, so this reason disappears from every past log line within the retry TTL of one hour. That is true of provider failures too; it is stated here because this row is what promises a reason. |
 | `authentication` or `signature` error class | Redacted attempt plus `doku-reconciliation` outcome | Treat as configuration/integrity failure. Do not mark paid or repeatedly retry by hand; inspect the matching environment and signed transport setup. |
 | `timeout` or `provider` remains retryable | Attempt `next_reconcile_at`, `reconcile_attempts`, and scheduler event | Allow bounded automatic backoff. Investigate only after freshness is overdue or the attempt becomes `attention_required`. |
 | `attention_required`, no next check, or eight reconciliation attempts | Attempt state and chronological events | Owner/Admin reviews provider truth and may run the one idempotent manual check when the UI says it is eligible. Customer Service remains read-only. |

@@ -411,6 +411,35 @@ after `33a29c7`, and it changes no code.
 This remains local evidence. No remote migration, deployment, or provider
 traffic is claimed by it.
 
+## A-268 — pre-provider refusals now name their reason 2026-09-08
+
+A retry refused before DOKU is contacted records an `error_class` the operator
+system log can render, and `failureClass` returns a type matching the six values
+migration `0059` permits rather than a bare `string`. Independently reviewed in
+three passes — the first two returned findings, the third CLEAN — and bound to
+the boundary.
+
+Half the entry's premise turned out stale and is recorded as such: A-245 had
+already moved the disabled-channel refusal ahead of the retry's own attempt row,
+so the guard this task set out to instrument is unreachable; in the
+`DOKU_CHANNEL_DISABLED` branch there is no attempt row to record against at all,
+while the sibling `DOKU_UNAVAILABLE` fires precisely when an active one exists. On the reviewer's advice the
+answer is to point at `retry_blocked_reason`, which already carries that case,
+rather than add a write that is sometimes impossible. Findings taken beyond the original scope: an unguarded diagnostic write could turn a 409 into a
+502 that blamed the provider for a database hiccup; the untyped return would
+have let a future mapping violate the CHECK constraint silently; and three local
+error codes were being filed as provider failures. A flake the work introduced
+was traced to `attemptFacts` tiebreaking on a hashed id against a random one and
+fixed at the helper, which also closed a 6% flake at line 512 that had never
+failed in front of anyone — cleared by SQLite rowid semantics, not by the twelve
+green runs, which could not have cleared a rate that low.
+
+Two caveats belong with this evidence. The suite it rests on carries a
+pre-existing clock-boundary flake in `checkRateLimit`, queued as A-269, failing
+roughly one run in fifteen for reasons outside A-268, so a single green run is
+not reproducible proof. And the CLEAN verdict named three cosmetic wording items
+that were deliberately left open rather than folded into an approved digest.
+
 ## A-270 — local dev served no client assets 2026-09-08
 
 Reported as `/admin/expeditions` rendering blank. The page was never the
