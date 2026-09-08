@@ -514,3 +514,40 @@ A retry that encounters the restriction announces and focuses its explanation
 before hiding the action. Refresh cannot restore a futile retry or overwrite the
 explanation. Transient errors retain the existing retry behavior. All three
 return/result/cancel pages use the same server restriction contract.
+
+
+## ADR-032 — Biome as the lint floor, scoped to TypeScript
+
+- **Status:** Accepted by the owner on 2026-09-09, choosing `biome` from the three options A-261 framed
+- **Requirement:** REQ-231
+
+One dev dependency (`@biomejs/biome`), one `biome.json`, and one line folded into
+the `check` script the developer and CI already run. The `eslint` + `prettier`
+route was declined for its dependency surface, and declining a linter entirely
+was declined because A-256 measured the class of drift no reviewer caught: 980
+raw palette uses against 74 semantic tokens, grown across 22 files.
+
+**The formatter stays off.** Enabling it would rewrite 62,000 lines in one
+commit and bury every future diff under reformatting noise; it also cannot be
+reconciled with `DESIGN-SYSTEM.md` without review. This adopts a lint floor, not
+a house style.
+
+**The rule set is deliberately not `recommended`.** Only rules that catch a
+defect or dead code are enabled: unused variables, imports and parameters;
+`useExhaustiveDependencies` at warn; `noDoubleEquals`, `noDuplicateObjectKeys`,
+`noDuplicateCase`, `noFallthroughSwitchClause`, `noSelfCompare`,
+`noUselessTernary`, `noUselessCatch`. Rules that express taste rather than
+correctness are off, and no enabled rule contradicts `DESIGN-SYSTEM.md`.
+
+**Scope is `src/**/*.ts`, `src/**/*.tsx` and `scripts/**/*.mts`.** Astro and CSS
+files are excluded because Biome's CSS parser rejects the Tailwind at-rules this
+project depends on (`@source`, `@apply`); linting them produced 334 parse
+failures that said nothing about the code. `src/worker-configuration.d.ts` is
+generated and excluded.
+
+**The first run is recorded, not fixed here.** 291 files, 18 findings: 15
+`useExhaustiveDependencies` warnings, 2 `noUnusedVariables` errors, 1
+`noUselessTernary` error. Every one of them is in a React admin component;
+`src/lib` — the payment, order, and schema logic — returned clean. The three
+errors are queued as A-274, which also folds `lint` into `check` so CI never
+gates on a baseline it was born red against.

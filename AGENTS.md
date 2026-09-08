@@ -92,8 +92,16 @@ Never stage the ledger with `git add -f`.
 npm run check
 npm test
 npm run build
+npm run lint            # biome; folded into `check` by A-274, see ADR-032
 npm run test:coverage   # optional; Node's built-in coverage, baseline in docs/DEVELOPMENT-MAP.md
 ```
+
+`npm run lint` reads `biome.json`: a lint floor only, no formatter, and a rule
+set chosen for defects rather than taste. It covers `src/**/*.ts`, `.tsx` and
+`scripts/**/*.mts`; Astro and CSS are excluded because Biome's CSS parser
+rejects this project's Tailwind at-rules. Do not enable the formatter or switch
+the rules to `recommended` without a new decision — ADR-032 records why both are
+off.
 
 Browser-visible changes require a real browser check in addition to compilation.
 

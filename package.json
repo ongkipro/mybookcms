@@ -1,7 +1,7 @@
 {
   "name": "mybookcms",
   "version": "1.4.0",
-  "description": "MyBookCMS \u2014 single-install direct-response commerce CMS for Cloudflare Workers",
+  "description": "MyBookCMS — single-install direct-response commerce CMS for Cloudflare Workers",
   "engines": {
     "node": ">=22",
     "npm": ">=10"
@@ -12,6 +12,7 @@
     "start": "astro dev",
     "build": "astro build",
     "check": "npm run cf:types:check && astro check && tsc --noEmit",
+    "lint": "biome lint",
     "test": "node --experimental-strip-types --test src/lib/*.test.ts",
     "test:coverage": "node --experimental-strip-types --test --experimental-test-coverage --test-coverage-exclude='**/*.test.ts' src/lib/*.test.ts",
     "cf:types": "wrangler types src/worker-configuration.d.ts --env-interface Env --include-runtime false --strict-vars false",
@@ -55,6 +56,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
+    "@biomejs/biome": "^2.5.12",
     "@cloudflare/workers-types": "^5.20260804.1",
     "@types/node": "^22.13.4",
     "@types/qrcode": "^1.5.6",

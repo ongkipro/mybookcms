@@ -1422,6 +1422,73 @@ Surface, and obtain the independent correctness/security review required by
       Constraints: REQ-186, REQ-196
       Dependencies: the designer/vision handoff, completed. The owner's answer to the three questions above, before step 3 of the conversion order.
       Done when: no admin component references a raw palette shade for a colour the semantic layer names, verified by a grep guard that is mutation-proved before it is trusted and that allowlists the seventeen pinned occurrences by path with their A-234 citation; the `zinc` vocabulary is gone; one card radius, one shadow scale and one padding rhythm are in force; `admin.css`'s literal-class selectors are replaced before any `bg-white` sweep; and a real browser confirms each converted surface at 390 px and 1280 px with no new overflow and no regression against the REQ-186 baseline.
+- [ ] **A-274** — Clear the three errors Biome's first run found, then let `check` gate on it.
+      The baseline ADR-032 recorded, kept separate from the commit that adopted
+      the tool because A-261 required exactly that. 291 files, 18 findings, all
+      of them in React admin components: `src/lib` — every payment, order and
+      schema path — returned clean on the first run, which is the useful half of
+      the measurement.
+      The three errors are one-token edits and none of them changes behaviour.
+      `LandingPageCatalog.tsx:79` and `:96` bind `catch (err)` and never read it;
+      the binding is droppable because both blocks already surface the failure
+      through `toast`. `ProductCatalog.tsx:169` writes
+      `useState(initialProducts ? false : true)`, which is `useState(!initialProducts)`.
+      Check, rather than assume, that dropping the two bindings does not remove
+      the only reference to a caught error — if either block turns out to want
+      the message, logging it is the fix and the rule is satisfied either way.
+      The 15 `useExhaustiveDependencies` warnings are **not** in scope and must
+      not be swept in. Each one is a React hook whose dependency array is
+      genuinely under-specified or genuinely intentional, and telling those apart
+      needs the component's data flow read one at a time; a blanket fix would
+      either add re-render loops or add a lie to a suppression comment. They stay
+      warnings until someone reads them, which is why the rule is set to `warn`
+      rather than off — off would hide the count.
+      `check` gains `npm run lint` only once the three errors are gone, so CI is
+      never red on a baseline it inherited.
+      Risk: R1 — three one-token edits in admin components plus one script line; no runtime contract changes.
+      Surface: `src/components/admin/LandingPageCatalog.tsx`, `src/components/admin/ProductCatalog.tsx`, `package.json`, `.github/workflows/ci.yml` if the step name no longer describes what runs, `TASKS.md`, `STATUS.md`.
+      Non-scope: the 15 `useExhaustiveDependencies` warnings, enabling the formatter, widening the rule set, and any change to what the two components render.
+      Primary requirement: REQ-231
+      Constraints: none.
+      Dependencies: A-261.
+      Done when: `npm run lint` exits 0 with the 15 warnings still reported, `npm run check` runs it, CI's static-analysis step therefore gates on it, and a real browser confirms the two admin surfaces still render and still report their failures.
+
+- [ ] **A-275** — Stop `npm test` from failing on a wrangler port collision, and stop that failure from hiding its own name.
+      This closes an open debt. A `npm test` exit 1 was recorded as
+      **unattributed** on 2026-09-08 after six clean reruns failed to reproduce
+      it and the failing test name was never captured. It reproduced on
+      2026-09-09 and the name was captured, so the entry can now say what it is.
+      The failure is `shipping-bootstrap.test.ts`, and it is not a test failing.
+      Its `before()` hook applies the whole migration chain to a fresh temporary
+      state directory through `wrangler d1 migrations apply --local`. Wrangler
+      reported `Migration 0034_remove_foreign_sample_product.sql failed with the
+      following errors: [ERROR] bad port`. That is not a SQL error and 0034 is
+      not implicated: `bad port` is Miniflare failing to bind its local server,
+      and 0034 is merely where the chain happened to be when the connection died.
+      Any migration in the chain can carry the message.
+      **The second half of this entry is why it went unattributed for a day.** The
+      failure is in a hook, not a test, so the runner emits no `not ok` line
+      naming anything; the tail of the output is a stack from `runWrangler` and a
+      20 MB `execFileSync` payload of wrangler's own table-drawing. A session
+      reading `tail` sees a migration name and a SQL-shaped word, and concludes
+      the schema broke. Fixing the flake without fixing the reporting leaves the
+      next intermittent hook failure just as anonymous.
+      The file's own comment records that two tests each spawning their own
+      wrangler already raced once and were consolidated into one `before` for
+      that reason. This is the same class of problem surviving the previous fix,
+      so a second consolidation is not the answer — the hook needs to either
+      retry a bind failure or fail with a message that names itself.
+      Distinguish the two before choosing: a port collision from something else
+      on the machine argues for a retry, and a collision with this repository's
+      own concurrent wrangler argues for serialisation.
+      Risk: R1 — a test hook and its diagnostics; no source file, no schema, no runtime path.
+      Surface: `src/lib/shipping-bootstrap.test.ts`, `package.json` if the runner's reporter changes, `AGENTS.md` if the next session needs to be told how to read a hook failure, `TASKS.md`, `STATUS.md`.
+      Non-scope: changing any migration, changing what the test asserts about Malaysia shipping policy, and adding a retry to tests that are not failing on a bind.
+      Primary requirement: REQ-231
+      Constraints: none.
+      Dependencies: none.
+      Done when: a bind failure in the hook either recovers or fails with a message that names `shipping-bootstrap` and `bad port` without a session needing to decode an `execFileSync` payload; the migration chain is no longer implicated by the wording; and a deliberate reproduction — an occupied port, not a rerun — shows the new behaviour rather than a green run being taken as proof.
+
 - [ ] **MYS-5** — Release readiness for a specific install. **Approval: required — never run autonomously.**
       Carried over from the retired `UNIMPLEMENTED_SPECS.md`. This is not a product gap: the product does not depend on any external courier or payment service, and a missing provider contract must never be converted into a blocker. Nothing has been deployed to Cloudflare; the local database is the only one that exists.
       Risk: R4 — production deployment.

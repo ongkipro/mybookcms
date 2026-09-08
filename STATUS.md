@@ -411,6 +411,51 @@ after `33a29c7`, and it changes no code.
 This remains local evidence. No remote migration, deployment, or provider
 traffic is claimed by it.
 
+## A-261 — Biome adopted as a lint floor 2026-09-09
+
+The owner chose `biome` from the three options A-261 framed. One dev dependency,
+one `biome.json`, one `npm run lint`. ADR-032 records why the formatter stays
+off — enabling it rewrites 62,000 lines and buries every future diff — and why
+the rule set is not `recommended`: only rules that catch a defect or dead code
+are on, and none of them contradicts `DESIGN-SYSTEM.md`.
+
+Scope is TypeScript only. Running over `src` and `scripts` wholesale produced
+334 errors that were almost entirely Biome's CSS parser rejecting this project's
+Tailwind at-rules — `@source`, `@apply` — which says nothing about the code.
+Narrowed to `src/**/*.ts`, `.tsx` and `scripts/**/*.mts`, the first run checks
+291 files in 132 ms.
+
+**First run: 18 findings, and all of them are in React admin components.**
+Fifteen `useExhaustiveDependencies` warnings, two `noUnusedVariables` errors, one
+`noUselessTernary` error. `src/lib` — every payment, order, and schema path —
+returned clean. That is the useful half of the measurement and it is the reason
+the tool is cheap here: it is not being adopted to dig out a backlog.
+
+The three errors are **not** fixed in this commit, because A-261 required
+exactly that separation. They are queued as A-274, which also folds `lint` into
+`check` so CI never gates on a baseline it inherited red. The first run is
+recorded in the ledger as `lint-baseline-first-run=FAIL` — an executed red, kept
+red, rather than a green derived from a command chosen to pass.
+
+## A-275 — an unattributed test failure now has a name 2026-09-09
+
+A `npm test` exit 1 was recorded as unattributed on 2026-09-08 after six clean
+reruns and no captured test name. It reproduced today and the name was captured:
+`shipping-bootstrap.test.ts`, and it is not a test failing. Its `before()` hook
+applies the migration chain through wrangler, which reported `Migration
+0034_remove_foreign_sample_product.sql failed with the following errors: [ERROR]
+bad port`.
+
+That message is misleading in a specific way worth recording. `bad port` is
+Miniflare failing to bind its local server; 0034 is not implicated and any
+migration in the chain can carry the wording. And because the failure is in a
+hook rather than a test, the runner emits no `not ok` line naming anything — the
+tail of the output is a `runWrangler` stack and a 20 MB `execFileSync` payload.
+A session reading that tail sees a migration name beside a SQL-shaped word and
+concludes the schema broke. **That is why it went unattributed for a day, and it
+is half of what A-275 has to fix.** 530 tests pass on rerun; the flake is a bind,
+not a regression.
+
 ## A-256 — designer handoff completed, two premises corrected 2026-09-08
 
 The designer/vision handoff A-256 required is done, and it corrected the entry
