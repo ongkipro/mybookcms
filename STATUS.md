@@ -411,6 +411,38 @@ after `33a29c7`, and it changes no code.
 This remains local evidence. No remote migration, deployment, or provider
 traffic is claimed by it.
 
+## A-269 — the rate limiter takes the clock it is given 2026-09-08
+
+`checkRateLimit` derived its fixed window from real `Date.now()` while every
+other layer of the DOKU capability path accepted an injected clock, so a test
+freezing time everywhere else still had this one function reading wall time. It
+now takes an optional `clock` defaulting to `Date.now` — no caller changes
+behaviour — and `enforceCapabilityRateLimit` threads the `now` its handlers
+already receive.
+
+The proof is structural rather than statistical, which is the stronger form
+here: the limiter's KV key carries its window bucket, so the capability test
+asserts every key it wrote derives from the injected clock, and un-threading the
+clock fails that assertion with the wall-clock bucket in the message. Two probes I
+built to reproduce the flake myself failed even with the fix reverted, and I
+first recorded that as the probes not working on this defect. The reviewer
+checked instead of accepting it, reconstructed the pre-fix tree, and reproduced
+the flake with the same clock-shift method at three of four offsets. The method
+is sound and my parameterisation was wrong; why it was wrong is the reviewer's
+hedged inference rather than a measurement, since it never saw my probe code —
+most probably that the offset is counted from process start, so running one
+test by name puts the loop elsewhere in wall time. It then swept seven offsets against the fixed tree and all seven pass,
+which is better end-to-end evidence than either probe I attempted. Two separate
+measurements sit behind H1 and are not one thing: a deterministic reproduction
+by clock-shifting, and a statistical rate of one failure in fifteen runs. The
+H1 cause is removed on the DOKU capability path and structurally proved there,
+so the caveat it justified is retired for that path — explicitly not a claim
+that the suite has no other flake. That scoping earned itself immediately: on
+the fifth validation run afterwards, `checkout-lead.test.ts` failed on
+`public capture enforces the 30 per minute IP limit with retry headers`, which
+fires thirty requests against a thirty-per-minute bound through a route that
+does not inject a clock. Same mechanism, different caller. Queued as A-272.
+
 ## A-271 — the schema log entry has nowhere to go 2026-09-08
 
 Queued after a request to add an action button to the system log. The button

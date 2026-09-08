@@ -939,6 +939,20 @@ test("the buyer-facing capability endpoints stop spending provider calls without
   for (let index = 0; index < 20; index += 1) statuses.push((await attempt()).status);
 
   assert.ok(statuses.includes(429), "an unbounded loop was never refused");
+  // A-269: the limiter's window must come from the injected clock, not the wall
+  // clock. Its KV key is `${key}:${windowStart}`, so the bucket is readable —
+  // and before the clock was threaded this loop's outcome depended on whether a
+  // real minute boundary happened to fall inside it, which failed roughly one
+  // full-suite run in fifteen for reasons unrelated to this path.
+  // Non-vacuity, stated rather than inherited: `every()` passes on an empty map,
+  // and today the 429 assertion above guarantees twelve writes happened first.
+  // That is statement order, which an edit could silently break.
+  assert.ok(store.size > 0, "the limiter wrote nothing, so the bucket assertion would pass vacuously");
+  const windowStart = Math.floor(NOW.getTime() / 60_000) * 60_000;
+  assert.ok(
+    [...store.keys()].every((key) => key.endsWith(`:${windowStart}`)),
+    `limiter bucketed against wall time instead of the injected clock: ${[...store.keys()].join(", ")}`,
+  );
   // The bound is what protects the quota, so the provider must stop being
   // reached once it bites — not merely have its answer discarded.
   assert.ok(

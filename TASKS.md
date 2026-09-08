@@ -1163,7 +1163,18 @@ Surface, and obtain the independent correctness/security review required by
       Dependencies: A-260, committed as `36e3345`.
       Done when: both pre-provider refusals record a bounded `error_class` distinguishable from a provider failure; the operator system log renders a reason for each; a test asserts the recorded class for both paths; any new label is registered in `OBSERVABILITY.md` per AGENTS.md rule 9; and stock restoration and the expiry sweep behave exactly as they do today.
 
-- [ ] **A-269** — Give `checkRateLimit` the injectable clock the rest of the payment path already has.
+- [x] **A-269** — Give `checkRateLimit` the injectable clock the rest of the payment path already has. **Done locally 2026-09-08.** `checkRateLimit` takes an optional `clock` defaulting to `Date.now`, so no caller changes behaviour, and `enforceCapabilityRateLimit` threads the `now` the DOKU handlers already receive. That was the last place an uninjected clock affected an assertion on that path — not the last uninjected read: `rateLimitHeaders` still derives `Retry-After` from wall time, and `recordAttemptFailure` stamps `updated_at` from it, both correct in production where the two clocks agree, and harmless here only because `Retry-After` is clamped to `1` under an injected clock rather than merely imprecise — a value anyone asserting on it later would find confidently wrong.
+      **Proved by construction, not by run counts, and the difference matters here.** The limiter's KV key is `${key}:${windowStart}`, so which clock produced the bucket is directly readable: the capability test now asserts every key it wrote ends in the bucket derived from the injected `NOW`. One mutation proves both: replacing `const now = clock()` with `Date.now()` inside the limiter is observationally identical to un-threading, since it reads wall time either way, and it fails the capability assertion with the real wall-clock bucket in the message as well as the new unit test.
+      **My own probes failed, and the reason is not the one I first recorded.** I tried twice to reproduce the flake directly — shifting `Date.now` so a real minute boundary lands at a chosen offset, then crossing a boundary after N limiter-scoped clock reads — and neither reproduced it even with the fix reverted. I reported that as "the probes do not work on this defect". The reviewer checked rather than accepted it, reconstructed the pre-fix tree, and reproduced the flake with the clock-shift method at three of four offsets. **The method is sound; my parameterisation was wrong.** The reviewer's likely explanation, hedged as such because it never saw my probe code and said so: the offset is measured from process start, so running a single test by name most probably put the rate-limited loop at a different point in wall time than a full-file run does. What it did verify is that the method works when parameterised correctly — the cause of my failure is inference, not measurement. Recorded this way because the earlier wording would have left a reader believing the defect resists clock-shift reproduction, and it does not.
+      Two separate measurements sit behind H1 and should not be fused: a *deterministic* reproduction by clock-shifting, and a *statistical* rate of one failure in fifteen full-suite runs. The reviewer then swept seven offsets against the fixed tree — every one that broke the pre-fix tree, plus three more — and all seven pass. That is end-to-end validation, and it is better evidence than either probe I attempted.
+      The structural assertion still supersedes both, for a reason worth naming: a timing probe can only sample the failure, while asserting which clock produced the KV bucket tests the mechanism and therefore fails every time under the defect. It converts a one-in-fifteen timing defect into a one-in-one.
+      Risk: R3 — declared R2, because the parameter is optional and appended last so no existing caller changes, but the boundary classifier resolved R3 for the payment path it threads. The record follows the classifier rather than the declaration. The parameter is optional and appended last, so every existing call site keeps its exact semantics; only the DOKU capability path passes a clock.
+      Surface: `src/lib/rate-limit.ts`, `src/lib/rate-limit.test.ts`, `src/lib/doku-payment-access.ts`, `src/lib/doku-payment-access.test.ts`, `TASKS.md`, `STATUS.md`.
+      Non-scope: window sizes and per-order bounds, what is rate limited, the KV storage shape, loosening the capability assertion, and threading a clock into the six API routes and two admin-login call sites that do not inject one, and the two remaining wall-clock reads named above.
+      Primary requirement: REQ-224
+      Constraints: REQ-222, REQ-231
+      Dependencies: none.
+      Done when: `checkRateLimit` accepts an optional clock defaulting to `Date.now`; the capability path passes the clock its handlers already receive; a test asserts the limiter bucketed against the injected clock rather than wall time, and fails when the clock is un-threaded; and the unit test fails when the limiter ignores its clock argument.
       Found by the independent review of A-260 on 2026-09-08 (finding H1), and
       proved deterministically rather than observed statistically.
       `src/lib/rate-limit.ts:38` opens with `const now = Date.now()` and derives
@@ -1253,6 +1264,39 @@ Surface, and obtain the independent correctness/security review required by
       Constraints: REQ-186, REQ-224, REQ-231
       Dependencies: the designer/vision handoff for the visual half. The data half depends on that half landing first.
       Done when: an operator following the `schema` entry reaches a surface that states expected version, applied version, mismatch state and error code, and what to do next; `src/lib/system-log.ts` no longer returns `href: null` for a source that has a destination; the role allowed to follow it is decided and asserted; a test pins the destination so it cannot silently return to null; and a real browser confirms the surface at 390 px and 1280 px.
+
+- [ ] **A-272** — Thread the clock into the remaining rate-limited routes, starting with the one that is already flaking.
+      Found 2026-09-08 while validating A-269, on the fifth full-suite run after
+      claiming H1 was closed. `checkout-lead.test.ts` failed on "public capture
+      enforces the 30 per minute IP limit with retry headers": it fires exactly
+      thirty requests against a thirty-per-minute bound and then asserts the
+      thirty-first is refused, through `POST /api/checkout-lead`, which calls
+      `checkRateLimit` without a clock. When a real minute boundary lands inside
+      those thirty-one requests the counter resets and the refusal never comes.
+      Identical mechanism to H1, different caller — and the exact thing the
+      reviewer's insistence on scoping ("that is not a claim the suite has no
+      other flake") was protecting against. A-269 threaded the clock through the
+      DOKU capability path only; six API routes and two admin-login call sites
+      still read wall time.
+      The fix is the pattern A-269 established and needs no new design:
+      `checkRateLimit` already accepts an optional clock, so each route passes
+      the clock its handler receives and each test injects a fixed one. The
+      value is not tidiness — it is that a bound asserted against wall time is
+      not a bound anyone can prove. Prioritise `checkout-lead`, which is failing
+      now; the rest are latent in exactly the same way and differ only in how
+      close their test loop runs to the bound.
+      Take the A-269 evidence pattern with it. Assert the mechanism rather than
+      the timing: the limiter's KV key is `${key}:${windowStart}`, so a test can
+      assert the bucket came from the injected clock and fail every time under
+      the defect, instead of sampling a boundary crossing that appears in one
+      run of fifteen.
+      Risk: R2 — a shared limiter reached from buyer-facing and authenticated routes. The parameter is optional and already exists, so a route that does not pass one is unchanged; each route added is one argument and one test injection.
+      Surface: `src/pages/api/checkout-lead.ts`, `src/lib/checkout-lead.test.ts`, then `src/pages/api/locations.ts`, `src/pages/api/meta-event.ts`, `src/pages/api/shipping-rates.ts`, `src/pages/api/submit-order.ts`, `src/pages/api/v1/checkout.ts` and the two admin-login call sites in `src/lib/rate-limit.ts`, with their tests. `TASKS.md`, `STATUS.md`.
+      Non-scope: changing any window size or bound, what is rate limited, the KV storage shape, `rateLimitHeaders` deriving `Retry-After` from wall time (harmless, clamped, and correct in production), and loosening any assertion to make a flake disappear.
+      Primary requirement: REQ-224
+      Constraints: REQ-222, REQ-231
+      Dependencies: A-269, which added the optional clock this uses.
+      Done when: `POST /api/checkout-lead` passes a clock and its limit test injects one; that test asserts the limiter bucketed against the injected clock rather than only asserting the refusal; the remaining routes are either threaded or recorded as deliberately left; and no rate-limit assertion in the suite depends on where a real minute boundary falls.
 
 - [ ] **A-261** — Decide whether a 62,000-line codebase gets a linter. **Approval: required — adds a toolchain to a repository that has kept dependencies deliberately minimal.**
       Found by the health report of 2026-09-08. There is no `eslint`, `prettier`,

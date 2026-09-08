@@ -32,8 +32,19 @@ export async function checkRateLimit(
   limit: number,
   windowMs: number,
   consume = true,
+  /**
+   * The clock. Defaults to the real one, so no caller changes behaviour.
+   *
+   * It is injectable because the window is a fixed bucket derived from it:
+   * `floor(now / windowMs)`. A test that injects a frozen clock everywhere else
+   * on a path still had this function reading wall time, so a real minute
+   * boundary landing mid-test reset the counter and flipped the assertion —
+   * roughly one full-suite run in fifteen, for reasons that had nothing to do
+   * with the code under test.
+   */
+  clock: () => number = Date.now,
 ): Promise<RateLimitResult> {
-  const now = Date.now();
+  const now = clock();
   // Without KV there is nothing shared to count in; fail open rather than block
   // every order because a binding is missing.
   if (!sessions) return { allowed: true, remaining: limit - 1, resetAt: now + windowMs };

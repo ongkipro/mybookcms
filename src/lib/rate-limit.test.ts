@@ -198,3 +198,28 @@ test('the identifier ceiling still closes an address once it has failed here', a
   await recordAdminLoginFailure(kv, 'operator', fresh);
   assert.equal((await checkAdminLoginRateLimit(kv, 'operator', fresh)).allowed, false);
 });
+
+test("the window derives from the injected clock, not wall time", async () => {
+  // A-269. The bucket is `floor(now / windowMs)`, so a caller that freezes its
+  // clock everywhere else still saw the counter reset when a real window
+  // boundary passed mid-test. That made a capability assertion in
+  // doku-payment-access.test.ts fail about one full-suite run in fifteen for
+  // reasons unrelated to the code under test.
+  const { kv } = createKv();
+  const fixed = 1_800_000_000_000;
+    // Twelve allowed, thirteenth refused, all on one frozen instant.
+  for (let index = 0; index < 12; index += 1) {
+    assert.equal((await checkRateLimit(kv, "clock", 12, 60_000, true, () => fixed)).allowed, true);
+  }
+  assert.equal((await checkRateLimit(kv, "clock", 12, 60_000, true, () => fixed)).allowed, false);
+
+    // The same call one window later is a different bucket and is allowed
+    // again — which is exactly what a real boundary used to do mid-test.
+  assert.equal(
+    (await checkRateLimit(kv, "clock", 12, 60_000, true, () => fixed + 60_000)).allowed,
+    true,
+  );
+    // And a real boundary can no longer reach a caller that injects a clock:
+    // the refusal above still refuses however long the wall clock has moved.
+  assert.equal((await checkRateLimit(kv, "clock", 12, 60_000, true, () => fixed)).allowed, false);
+});

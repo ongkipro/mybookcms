@@ -1290,6 +1290,10 @@ async function enforceCapabilityRateLimit(
   clientIp: string,
   orderNumber: string,
   scope: "status" | "retry",
+  // Threaded so this path uses one clock throughout. Every other layer here
+  // already accepts `now`; the limiter reading wall time instead was the last
+  // place a test's frozen clock did not reach.
+  now?: () => Date,
 ): Promise<Response | null> {
   const limits = scope === "retry"
     // Retry creates an attempt and reserves stock, so it is held much tighter
@@ -1301,7 +1305,14 @@ async function enforceCapabilityRateLimit(
     [`doku-${scope}-order:${orderNumber}`, limits.perOrder],
     [`doku-${scope}-ip:${clientIp}`, limits.perAddress],
   ] as const) {
-    const result = await checkRateLimit(sessions, key, limit, limits.windowMs);
+    const result = await checkRateLimit(
+      sessions,
+      key,
+      limit,
+      limits.windowMs,
+      true,
+      now ? () => now().getTime() : undefined,
+    );
     if (!result.allowed) {
       return new Response(
         JSON.stringify({
@@ -1342,6 +1353,7 @@ export async function handleDokuStatusRequest(input: {
       input.clientIp,
       access.orderNumber,
       "status",
+      input.now,
     );
     if (limited) return limited;
     const payment = await reconcileDokuPaymentStatus(input.database, input.rootSecret, access, {
@@ -1377,6 +1389,7 @@ export async function handleDokuRetryRequest(input: {
       input.clientIp,
       access.orderNumber,
       "retry",
+      input.now,
     );
     if (limited) return limited;
     const retry = await retryDokuPayment(input.database, input.rootSecret, access, {
