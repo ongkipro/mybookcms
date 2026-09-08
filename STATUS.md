@@ -411,6 +411,34 @@ after `33a29c7`, and it changes no code.
 This remains local evidence. No remote migration, deployment, or provider
 traffic is claimed by it.
 
+## A-256 — designer handoff completed, two premises corrected 2026-09-08
+
+The designer/vision handoff A-256 required is done, and it corrected the entry
+it was commissioned from. The component-library half is already finished: three
+admin components import no shadcn primitive, not seventeen, and `table` has 4
+consumers, `badge` 4, `dialog` 7, `card` 7. My own first re-count appeared to
+confirm the stale figure and was wrong — it matched single-quoted imports only,
+while `OrdersTable` and others import with double quotes. A-256 is a token and
+geometry task, not a component-library task. Second correction: the declared
+Surface omits `src/pages/admin/**`, which carries ~272 more raw palette uses,
+and `AdminLayout.astro`, which sets the admin ink default in raw palette on
+`<body>` — so "one vocabulary across the admin" would have been false on ten
+routes the moment it was claimed.
+
+Two findings are worth more than the mapping itself. The contrast question
+dissolved under measurement: `--muted-foreground` resolves to `#5f6a77` and
+measures 5.50 on a white card, 5.13 and 5.09 on the two page grounds, 5.05 on a
+muted panel and 5.26 on a table header — all pass AA, so the rule is
+unconditional and no occurrence needs classifying. And a mechanical `bg-white`
+to `bg-card` sweep would have removed card geometry from 15 sections, because
+`admin.css:240` matches on the literal class string `section.bg-white`; the
+stylesheet must change before or with the sweep, never after. Both verified
+against disk here rather than taken on trust.
+
+Three questions were put to the owner rather than decided: whether the admin
+pages join this task, whether the admin keeps two ink levels or gains a third,
+and whether it keeps one recessed ground or two.
+
 ## A-272 — checkout-lead buckets against its injected clock 2026-09-08
 
 `POST /api/checkout-lead` takes an optional clock and its limit test freezes
