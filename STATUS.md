@@ -437,6 +437,58 @@ exactly that separation. They are queued as A-274, which also folds `lint` into
 recorded in the ledger as `lint-baseline-first-run=FAIL` — an executed red, kept
 red, rather than a green derived from a command chosen to pass.
 
+## A-273 — the review gate now has to say what it found 2026-09-09
+
+`AGENTS.md` rule 10 states that a bound `boundary_review` does not by itself
+satisfy the review gate, and requires the findings as a `verification` check
+beside it. The event has no field for findings — reviewer, model, provider,
+effort, hashes, risk, route, `APPROVED`, and nothing else — so on its own it
+proves a review was claimed, never that one happened.
+
+**The rule is keyed to the boundary's answer, not to R3 as the entry proposed.**
+A-274 was declared R1, escalated to R2 by `check-boundary`, and its review
+changed four documented claims. An R3-only rule would have skipped the very run
+that demonstrated the rule's worth.
+
+Statistics re-measured rather than carried forward: 64 bound reviews across 53
+runs, 7 reviewer identities with three reused 24, 17 and 15 times, median 9.3
+minutes from run start to bound review, twelve inside three minutes, the fastest
+at 0.7. One figure is new and softens the audit's framing honestly — 33 of the 53
+reviewed runs already recorded a review-named verification check, so the rule
+formalises a majority practice rather than inventing one. None of this accuses
+any past review; the ledger cannot distinguish a real review from a renamed one,
+which the shared contract says outright.
+
+## DOKU sandbox is configured, and A-221 is less blocked than this file said 2026-09-09
+
+Recorded because the previous claim was wrong, not because anything was built.
+A-221 was described in conversation as impossible regardless of delegation, for
+want of an account and credentials. Both exist.
+
+Four `DOKU_SANDBOX_*` names are present in `~/.config/ai-local/secrets.env`
+(names only were read; no value was printed, and none is recorded here). The
+local D1 carries one `payment_provider_configs` row — provider `doku`,
+environment `sandbox`, `is_enabled` 1, `config_revision` 2, saved 2026-09-07
+through the admin CMS — with all three credential columns non-null and five
+channels enabled: `INTERNET_BANKING_FPX`, `EWALLET_TNG`, `EWALLET_GRABPAY`,
+`EWALLET_SHOPEEPAY`, `CREDIT_CARD`. Only column presence and non-secret values
+were read. A-221's whole dependency chain — A-210 through A-220 and A-221R — is
+closed.
+
+**What actually blocks A-221 is narrower than "no credentials", and splits in
+two.** The outbound half — signed create and retrieve against DOKU sandbox, and
+the `payment.channel` string DOKU returns for each enabled channel — needs only
+outbound HTTPS and explicit R4 approval for vendor traffic. That half would
+answer the highest-value open question in the payment integration: A-242's review
+left `CREDIT_CARD` channel-string confirmation to A-221, and A-221's own Done-when
+names it as the mismatch that would strand a paid order as
+`DOKU_PAYMENT_MISMATCH`. The inbound half — signed notification, duplicate
+delivery, reconciliation — cannot run locally at all, because DOKU must POST to a
+publicly reachable HTTPS URL registered in its Back Office. That needs a deployed
+install or a tunnel, and a tunnel exposing a local admin is its own decision.
+
+No provider request was made and no approval is assumed by this entry.
+
 ## A-256 — the three design questions answered, and one premise corrected 2026-09-09
 
 The handoff left three questions for the owner. All three are now decided, under

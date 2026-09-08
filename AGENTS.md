@@ -77,16 +77,42 @@ Never stage the ledger with `git add -f`.
    what an operator can observe; an unregistered label is a signal the contract
    does not define, and `doku-config-unusable` shipped that way for a day before
    anyone noticed.
-10. An R3 run records what its independent review found, as a `verification`
-    check beside the `boundary_review` event. The event itself has no field for
-    findings — it stores reviewer, route, digests and `APPROVED`, and nothing
-    else — so on its own it proves a review was claimed, not that one happened.
-    Across 62 bound reviews here, five reviewer identities appear, three of them
-    reused 24, 17 and 15 times, with a median of 9.2 minutes from run start to
-    approval and twelve bound inside three minutes. That is not an accusation:
-    the ledger cannot tell a real review from a renamed one, which the shared
-    contract says outright. Recording the findings is what closes the gap, and
-    it costs one `record --check` per review.
+10. **A bound `boundary_review` does not, by itself, satisfy the review gate.**
+    Any run whose `check-boundary` returns `REVIEW_REQUIRED` also records what
+    the review examined and what it found, as a `verification` check beside the
+    `boundary_review` event. A review that found nothing still records what it
+    looked at; "CLEAN" with no surface named is not a finding, it is a shrug.
+    The trigger is the boundary's answer, not the declared risk. A-274 was
+    declared R1, escalated to R2 by `check-boundary`, and its review changed
+    four documented claims — a rule keyed to R3 would have skipped it.
+    The reason, so this is not read as ceremony: the `boundary_review` event has
+    no field for findings. It stores reviewer, model, provider, reasoning
+    effort, the boundary hash, the surface digest, the effective risk, the
+    implementer route, and `status: APPROVED`. There is nowhere to say what was
+    examined, what was found, or whether anything was found at all. So the event
+    proves a review was *claimed*; only the verification check can show one
+    *happened*.
+    Measured across `.delivery/runs/` on 2026-09-09: 64 bound reviews over 53
+    runs, carrying 7 reviewer identities, three of them reused 24, 17 and 15
+    times — one is named `a210_review_retry` and signed off A-211 through A-221.
+    Median gap from run start to bound review is 9.3 minutes, implementation
+    included; twelve were bound inside three minutes, the fastest at 0.7. And 33
+    of the 53 reviewed runs recorded a review-named verification check, so this
+    rule formalises a practice that already holds in most runs rather than
+    inventing one. None of that proves self-review and none of it is an
+    accusation: the ledger cannot distinguish a real review from a renamed one,
+    which `~/dotfiles/docs/task-change-boundary.md` states outright. The
+    contract is sound; what was recorded against it was thin.
+    The contrast is the argument. The four reviews bound by
+    `independent-doku-reviewer` on 2026-09-08 changed the code four times, and
+    the review bound on 2026-09-09 caught two fabricated claims in this
+    repository's own documentation. A gate that cannot tell those apart from a
+    0.7-minute approval is not measuring what it is relied on to measure.
+    Prefer `record --command` for the checks the review asks you to re-run: the
+    `verification` event carries an `executed` field, and executed evidence is
+    the difference between a check that ran and a check that was typed.
+    Widening `boundary_review` itself belongs to `delivery-ledger` in dotfiles
+    and is out of scope here.
 11. `delivery-ledger check-boundary` runs **before** `git commit`, not after.
     The boundary is evaluated against the HEAD captured at `start`; committing
     first moves HEAD past it and the check can then only report `repository HEAD
