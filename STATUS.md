@@ -437,6 +437,43 @@ exactly that separation. They are queued as A-274, which also folds `lint` into
 recorded in the ledger as `lint-baseline-first-run=FAIL` — an executed red, kept
 red, rather than a green derived from a command chosen to pass.
 
+## A-256 — the three design questions answered, and one premise corrected 2026-09-09
+
+The handoff left three questions for the owner. All three are now decided, under
+one principle: name what is a real tier, collapse what is only a repetition.
+
+`src/pages/admin/**` splits out as **A-276**, except `AdminLayout.astro`, which
+stays in A-256 because the body ink default is the root every component inherits
+— converting children under a raw-palette parent produces the exact mismatch both
+entries exist to remove. A-256's Done-when is narrowed to "no admin *component*"
+as a result, which resolves its own Correction 2 by making the claim true rather
+than by widening one R2 run to cover two failure modes under one review.
+
+The admin gains a third ink level, `--foreground-subtle`. **The premise this
+decision rested on did not reproduce and the decision had to be re-derived.** The
+handoff said collapsing `text-slate-700` "darkens 100 nodes on the most-used
+screen". On disk it is 110 occurrences — 73 in `src/components/admin`, 35 in
+`src/pages/admin`, none in `src/components/ui` or `src/layouts` — spread over
+many files, the busiest single one being `settings/store.astro` at 21. No screen
+carries 100. The decision holds on the corrected figures: 73 in components alone
+is a tier the token layer failed to name, and pinning them the way A-234 pinned
+seventeen `text-slate-600` pairs would make the allowlist larger than the rule
+and leave the grep guard unable to catch a `text-slate-700` that is genuinely
+wrong.
+
+One recessed ground, not two. The muted panel measures 5.05 and the table header
+5.26 against `#5f6a77`: a difference no operator can perceive and every
+implementer must decide between. Both pass AA, so collapsing costs nothing in
+accessibility, and a table header is not semantically more recessed than a muted
+panel — it is the same idea drawn twice. That ambiguity is the mechanism that
+produced 980 raw palette uses.
+
+A-276 was measured rather than estimated before being queued: 184 occurrences of
+A-256's four counted shades under `src/pages/admin`, plus the 35 above. It also
+inherits a hazard worth stating — ADR-032 records that `.astro` frontmatter
+cannot be usefully linted, so the extended A-256 grep guard is the only automated
+check those ten routes will ever have.
+
 ## A-274 — the lint baseline cleared, and `check` now gates on it 2026-09-09
 
 The three errors ADR-032 recorded are gone and `npm run lint` is folded into
