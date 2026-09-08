@@ -5,6 +5,7 @@ import {
   CreditCard,
   Database,
   Info,
+  History,
   Megaphone,
   RefreshCw,
   ShoppingBag,
@@ -22,7 +23,7 @@ import {
  */
 
 type Severity = "info" | "warning" | "error";
-type Source = "schema" | "ads" | "payment" | "order" | "api";
+type Source = "schema" | "ads" | "payment" | "order" | "api" | "audit";
 
 type Entry = {
   source: Source;
@@ -31,6 +32,7 @@ type Entry = {
   occurred_at: string;
   correlation: string;
   href: string | null;
+  actor?: string;
 };
 
 type Meta = {
@@ -46,6 +48,7 @@ const SOURCE_LABEL: Record<Source, string> = {
   payment: "Pembayaran",
   order: "Pesanan",
   api: "Headless API",
+  audit: "Aktivitas sistem",
 };
 
 const SOURCE_ICON: Record<Source, typeof Database> = {
@@ -54,6 +57,7 @@ const SOURCE_ICON: Record<Source, typeof Database> = {
   payment: CreditCard,
   order: ShoppingBag,
   api: CodeXml,
+  audit: History,
 };
 
 const SEVERITY_ICON: Record<Severity, typeof Info> = {
@@ -75,7 +79,7 @@ const SEVERITY_LABEL: Record<Severity, string> = {
   error: "Perlu tindakan",
 };
 
-const SOURCE_ORDER: Source[] = ["schema", "payment", "order", "ads", "api"];
+const SOURCE_ORDER: Source[] = ["schema", "payment", "order", "ads", "api", "audit"];
 
 function formatWhen(iso: string): string {
   const parsed = new Date(iso);
@@ -275,6 +279,12 @@ export function SystemLogPanel() {
                         <span>{SOURCE_LABEL[entry.source]}</span>
                         <span aria-hidden="true">·</span>
                         <time dateTime={entry.occurred_at}>{formatWhen(entry.occurred_at)}</time>
+                        {entry.source === "audit" && entry.actor && (
+                          <>
+                            <span aria-hidden="true">·</span>
+                            <span className="break-all">Oleh: {entry.actor}</span>
+                          </>
+                        )}
                         {entry.correlation && (
                           <>
                             <span aria-hidden="true">·</span>

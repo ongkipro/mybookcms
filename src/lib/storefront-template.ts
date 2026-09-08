@@ -1,3 +1,4 @@
+import { commitSystemMutation } from "./system-events.ts";
 import { z } from "zod";
 
 const templateIdSchema = z
@@ -108,16 +109,18 @@ export async function addStorefrontTemplate(
   database: D1Database,
   storeId: number,
   value: unknown,
+  actor?: string,
 ): Promise<StorefrontTemplateDefinition> {
   const definition = validateStorefrontTemplateDefinition(value);
-  await database
+  const statement = database
     .prepare(
       `INSERT INTO storefront_templates (
          store_id, template_id, definition_json, created_at, updated_at
        ) VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
     )
-    .bind(storeId, definition.id, JSON.stringify(definition))
-    .run();
+    .bind(storeId, definition.id, JSON.stringify(definition));
+  if (actor === undefined) await statement.run();
+  else await commitSystemMutation(database, statement, { action: "store.template.added", actor, targetId: storeId });
   return definition;
 }
 

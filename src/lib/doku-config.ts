@@ -1,3 +1,4 @@
+import { commitSystemMutation } from "./system-events.ts";
 import { decryptSecret, encryptSecret } from "./encrypted-secret.ts";
 
 export const DOKU_PAYMENT_CHANNELS = [
@@ -182,6 +183,7 @@ export async function replaceDokuConfigDraft(
   rootSecret: string,
   draft: DokuConfigDraft,
   expectedRevision: number | null,
+  actor?: string,
 ): Promise<void> {
   const normalized = normalizeDokuConfigDraft(draft);
   const [apiKeyCiphertext, secretKeyCiphertext, storeId] = await Promise.all([
@@ -227,7 +229,7 @@ export async function replaceDokuConfigDraft(
         storeId,
         expectedRevision,
       );
-  const result = await statement.run();
+  const result = actor === undefined ? await statement.run() : await commitSystemMutation(database, statement, { action: "payment.config.saved", actor, targetId: storeId });
   if ((result.meta?.changes ?? 0) !== 1) {
     throw await mutationConflict(database, expectedRevision);
   }
@@ -245,10 +247,11 @@ export async function saveDokuConfigDraft(
 export async function clearDokuConfigDraft(
   database: D1Database,
   expectedRevision?: number,
+  actor?: string,
 ): Promise<void> {
   const revision = expectedRevision ?? (await readRow(database))?.config_revision ?? null;
   if (revision === null) throw new DokuConfigError("DOKU_CONFIG_STALE");
-  const result = await database
+  const statement = database
     .prepare(`
       UPDATE payment_provider_configs SET
         client_id = NULL,
@@ -266,8 +269,8 @@ export async function clearDokuConfigDraft(
             AND local_status IN ('created', 'pending', 'attention_required')
         )
     `)
-    .bind(revision)
-    .run();
+    .bind(revision);
+  const result = actor === undefined ? await statement.run() : await commitSystemMutation(database, statement, { action: "payment.config.cleared", actor, targetId: await firstStoreId(database) });
   if ((result.meta?.changes ?? 0) !== 1) throw await mutationConflict(database, revision);
 }
 
@@ -276,6 +279,7 @@ export async function setDokuConfigEnabled(
   rootSecret: string,
   expectedRevision: number,
   enabled: boolean,
+  actor?: string,
 ): Promise<void> {
   const status = await getDokuConfigStatus(database, rootSecret);
   if (status.configRevision !== expectedRevision) {
@@ -284,13 +288,14 @@ export async function setDokuConfigEnabled(
   if (enabled && (status.health !== "ready" || !status.configured)) {
     throw new DokuConfigError("DOKU_CONFIG_NOT_READY");
   }
-  const result = await database.prepare(`
+  const statement = database.prepare(`
     UPDATE payment_provider_configs SET is_enabled = ?, updated_at = CURRENT_TIMESTAMP
     WHERE provider = 'doku' AND config_revision = ?
       AND client_id IS NOT NULL AND api_key_ciphertext IS NOT NULL
       AND secret_key_ciphertext IS NOT NULL
       AND json_array_length(enabled_channels_json) > 0
-  `).bind(enabled ? 1 : 0, expectedRevision).run();
+  `).bind(enabled ? 1 : 0, expectedRevision);
+  const result = actor === undefined ? await statement.run() : await commitSystemMutation(database, statement, { action: enabled ? "payment.config.enabled" : "payment.config.disabled", actor, targetId: await firstStoreId(database) });
   if ((result.meta?.changes ?? 0) !== 1) {
     const current = await readRow(database);
     throw new DokuConfigError(

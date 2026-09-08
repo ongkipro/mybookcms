@@ -18,7 +18,10 @@ table rebuild. One read-only Merchant-compatible catalog URL is shared by Google
 and Meta.
 
 No remote D1 migration or deployment has been performed for this install.
-Therefore no hosted or production behaviour is claimed.
+Therefore no deployed storefront or production behaviour is claimed.
+
+Hosted CI is separately verified: A-204 passed GitHub check/test/build on
+`b093cb82ba14124288e445e7fab112b4fdf5ec49` on 2026-09-08; see the exact run below.
 
 A-220 and A-221R are complete locally. The operator accepted the exact
 Malay/English DOKU disclosure and the endpoint-specific response profile in
@@ -330,8 +333,8 @@ The remaining queue is intentionally gate-led. A-240 now implements ADR-027's
 accepted 24-hour DOKU return-capability lifetime. ADR-026 accepts Owner/Admin
 COD control and A-232 now has verified local implementation. A-234 now has its
 designer-approved switch and desktop contrast fixes with passing browser and
-Lighthouse checks at both required widths. A-226 cannot begin unless the user accepts proposal REQ-230. A-204, A-221,
-A-222, A-223, G-1, and MYS-5 remain explicit external or production approvals.
+Lighthouse checks at both required widths. REQ-230 and the six-path A-226 expansion are accepted; A-226 is verified locally with all named mutations and the operator panel integrated. A-204 is closed by the successful hosted run on `b093cb8`. A-221, A-222,
+A-223, G-1, and MYS-5 remain explicit external or production approvals.
 No deployment or hosted behaviour is claimed by A-240's local evidence.
 
 An independent audit of the pre-existing payment, order and authorization core
@@ -348,7 +351,7 @@ audit confirmed those boundaries hold.
 
 ## Verified local evidence
 
-- The clean isolated D1 chain is at schema version 60 with 2,931 official Malaysia postcode rows,
+- The clean isolated D1 chain is at schema version 62 with 2,931 official Malaysia postcode rows,
   four active zones/ranges, complete directory coverage including Kalabakan
   `91400`, 16 active state/WP first-kilogram reference rates, five contiguous
   fallback bands in each zone, and the restored `orders.ad_click_ids` column.
@@ -613,8 +616,9 @@ commands above; it is not a production penetration-test claim.
 
 ## Open delivery evidence
 
-- Remote migration, hosted CI, deployment, and production smoke checks require
-  separate approval and have not been performed.
+- Hosted CI passed on `b093cb8`; A-204 records the exact GitHub run and steps.
+- Remote migration, deployment, and production smoke checks remain unperformed
+  and require their separately approved target/action.
 
 `TASKS.md` is the canonical execution queue. `BUILD-LOG.md` is historical
 evidence, not a statement of current behaviour.
@@ -887,3 +891,136 @@ mocked; initial rendering uses the actual built Worker and fictional D1 data.
 Tracking/contact keyboard navigation, focus transfer, hidden actions and no
 horizontal overflow were checked. Four screenshots passed independent visual
 critique. No sandbox lifecycle or production deployment is claimed.
+
+
+## A-204 — hosted CI closure (2026-09-08)
+
+[GitHub Actions run 34147093570](https://github.com/ongkipro/mybookcms/actions/runs/34147093570)
+completed successfully for `b093cb82ba14124288e445e7fab112b4fdf5ec49` on
+`malaysia-market-audit`. The real runner completed checkout, Node setup,
+dependency installation, typecheck/static analysis, tests and build successfully.
+This is a fresh workflow dispatch, not an inference from local checks or the
+old billing-failed runs. Repository visibility remains private; no billing,
+workflow, default branch, history or deployment settings were changed.
+
+Delivery run `RUN-20260907T171900Z-d90cd59d` verifies the exact revision,
+completed/successful run and job, and each required step's successful completion
+against GitHub's API. CI completion does not close provider sandbox proof,
+production activation, publication, or the pending A-226 implementation scope.
+
+
+## A-226 — historical partial checkpoint (2026-09-08)
+
+Owner-accepted REQ-230 is in progress under
+`RUN-20260907T172505Z-90da78b5`. Migration 0061 adds the append-only
+`system_events` table and schemaVersion 62. The real scheduled handler records
+payload-free CAPI/DOKU job failures independently and prunes at most 1,000 rows
+strictly older than 90 days per tick. Login recording exists as an unwired helper.
+
+Direct store-profile, COD, embed-origin, headless-origin and CRM settings saves now
+commit an actor/action/target event in the same D1 transaction as their update.
+A failed audit insert rolls back the update; rejected inputs create no event.
+Changed values are excluded from the audit schema and writer. Workerd-backed D1
+checks cover clean migrations, both transaction failure directions, insert
+correlation, each action's redaction, immutability, exact retention boundaries,
+the actual scheduled handler's independent failure handling, and the real
+settings handler's five direct save paths.
+
+A-226 remains open. Ads, API-key, operator, credential/payment/template and login
+integration, plus reading the new source in the existing log panel, are not all
+connected. Five exact helper/panel paths are listed as a requested, unapproved
+Surface expansion in TASKS.md; none has been edited. The current branch has not
+been remotely migrated or deployed. Hosted CI evidence for b093cb8 predates this
+local implementation and is not proof of these uncommitted changes.
+
+Verification checkpoint: typecheck passes; the full suite reports 495/496 passing.
+The sole failure is the pre-existing COD route fixture, which supplies neither
+authenticated admin identity nor D1 batch support. Updating
+`src/lib/payment-availability.test.ts` requires its separately requested Surface
+expansion. The seven real-D1 audit tests pass, as do the 20 focused audit/schema/map
+checks and a separate fresh production build. The earlier core-only full suite
+pass does not replace the latest full-suite failure. This checkpoint is not a
+completed release.
+
+
+### A-226 historical checkpoint — direct mutations and login (2026-09-08)
+
+The same active run now connects Meta/Google configuration saves, API-key
+issue/policy/revoke, and operator create/update/delete to the atomic audit
+writer. Operator sessions are revoked only after D1 succeeds. Generated API-key
+secrets, password hashes, submitted Ads tokens, encrypted token blobs and contact
+fields never enter the audit row. Existing role and validation rules remain.
+
+The login boundary records only the transition after an admitted failure reaches
+its existing KV limit. Already-denied requests produce no audit writes. Audit
+sink and diagnostic recheck failures preserve the failed-login response. KV's
+existing non-atomic windows remain; this is not a global exactly-once guarantee.
+The new executable frontmatter test uses real D1/KV and existing login helpers.
+
+The previous partial checkpoint is historical evidence. Payment configuration,
+self-service credential updates, template insertion and the log panel remain
+unwired, and their requested Surface paths remain untouched. The separately
+requested COD fixture update is still pending, so A-226 is not complete.
+
+
+Latest continuation evidence: `npm run check` and a separate fresh build pass;
+`npm test` reports 499/500, with only the unchanged COD fixture failing. All 11
+system-events tests pass, including the actual login frontmatter and real D1/KV
+mutation/session behavior. Separate-agent review found no blocking issue in the
+implemented slice. The reviewer caught and removed a flaky test canary: the
+street-number fragment could match a timestamp; checks now use complete tokens,
+email, phone and street-address markers instead.
+
+A fresh isolated built Worker and real Chrome pass login checks at 390/1280 px:
+ten wrong-password attempts produce the existing 401, four repeated denied
+submissions produce 429, and D1 contains exactly two anonymous lockout events.
+No runtime exception or failed network request was observed. Screenshots remain
+in `/tmp/mybookcms-a226-browser-LK9dTm`; executable audit is
+`/tmp/mybookcms-a226-browser.mts`. Fictional fixture only; no provider calls,
+remote migration or deployment. This evidence does not close pending integration.
+
+The prepared COD fixture patch was applied only to an isolated temporary copy;
+all 11 tests in that copy pass against the current implementation. This proves
+the proposed fixture correction, not a green repository suite. The canonical
+`src/lib/payment-availability.test.ts` remains untouched pending its requested
+Surface expansion. Patch: `/tmp/mybookcms-a226-payment-fixture.patch`.
+
+
+## A-226 — verified local completion (2026-09-08)
+
+This closure supersedes the historical partial checkpoints above. The owner
+instructed continuation after the six exact scope paths were presented; all six
+were recorded in the task boundary and integrated. The former COD fixture
+failure is resolved in the repository, not only in a temporary copy.
+
+Migration 0061/schemaVersion 62 and the fixed audit writer cover the privileged
+HTTP store-settings, payment configuration, Ads, API-key, operator, credential
+and template paths. Mutation/audit failures roll back together. Credential
+changes retain the pre-rename actor; target sessions are revoked only after
+successful persistence. Login lockout transitions and scheduler failures are
+redacted best-effort records; 90-day pruning remains bounded to 1,000 rows/tick.
+The read-only panel projects all 22 known actions, validated principals, fixed
+labels and safe links through the existing Owner/Admin boundary. Direct
+bootstrap/test configuration and template helper calls without an actor are
+outside the privileged HTTP audit scope. Existing non-atomic KV login windows
+do not guarantee globally exactly-once transition records.
+
+Run `RUN-20260907T172505Z-90da78b5`: `npm run check`, all 504 tests, and a fresh
+build pass. Workerd D1/KV tests exercise actual routes, rollback, redaction,
+correlation, retention and session revocation. Real Chrome on the fresh isolated
+Worker passes Owner/Admin panel checks at 390/1280 px for all 22 action labels,
+actor variants, keyboard filtering and a 64-character username. Both restricted
+roles receive 403; the API is no-store. Login tests produce ten 401 failures,
+four repeated 429 denials and exactly two anonymous transition events. No browser
+runtime exception or failed network request was observed. Designer inspection
+passes the panel and long-actor screenshots in
+`/tmp/mybookcms-a226-browser-LYYhMt`; the executable audit is
+`/tmp/mybookcms-a226-browser.mts`.
+
+The first keyboard harness omitted native Enter text/focus and failed its
+activation assertion; foregrounding the page and sending the complete native
+Enter event resolved the harness, with no product workaround. Earlier failed
+checks remain historical evidence. No sandbox provider call, remote migration,
+deployment, publication, commit or push was performed for this closure.
+A-221 still needs the approved public HTTPS sandbox origin and DOKU Dashboard
+setup; production activation/observation and publication remain separate gates.

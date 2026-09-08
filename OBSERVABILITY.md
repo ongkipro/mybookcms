@@ -141,8 +141,8 @@ A source that fails is skipped rather than fatal, logged as
 `system-log-source-failed` with a bounded `error_class`, so one missing table
 cannot blank the panel for an operator working an incident. Each source is also
 capped at its own share of the total, so a burst from one cannot push the others
-out of the merged result. Events that exist only as Worker logs are out of reach
-here; giving them a store is A-226.
+out of the merged result. Free-form Worker logs are not imported. A-226 supplies durable, fixed events
+for the named admin, login and scheduler boundaries described below.
 
 Three of the four reads currently cost a table scan, measured with
 `EXPLAIN QUERY PLAN`: `capi_event_outbox` and `notifications` have no index
@@ -188,3 +188,48 @@ this before interaction, and status refresh returns the same projection. Buyer
 tracking and merchant contact remain available; the operator can inspect the
 existing order and use its existing permitted cancellation flow. No order,
 stock, attempt, channel or provider state changes merely to display this reason.
+
+
+### A-226 audit persistence and operator projection
+
+`system_events` is an append-only audit/diagnostic table with a 90-day retention
+policy. Admin audit helpers accept only a fixed action, authenticated operator
+username and internal numeric target. Labels are selected from a fixed catalog;
+`detail` is constrained to `{}` at both writer and database boundaries. Neither
+changed values nor request/provider/error payloads are accepted. The direct store-profile, COD, embed-origin, headless-origin and CRM settings writes
+fail closed with their audit in the same D1 batch; zero-row optimistic mutations
+produce no successful event. Meta/Google config, API-key issue/policy/revoke and operator create/update/delete
+use the same transaction. Payment configuration, credential and template mutations use their existing
+helpers and the same transaction; the panel remains a read-only projection.
+The privileged HTTP mutations named in REQ-230 are audited; direct bootstrap/test
+configuration and template helper calls without an actor are outside that boundary.
+
+Scheduler failures use actor `system`, source `scheduler`, error severity and
+`scheduler.capi.failed` or `scheduler.doku.failed`. The existing scheduled jobs
+remain independent `waitUntil` work. Their failures emit only fixed outcome/class
+fields; audit sink failures emit `system-event-write-failed` with source only and
+never fail the scheduled job. The login writer uses actor `anonymous`, never a
+submitted username. The login boundary writes only after an admitted failed
+attempt becomes denied by the existing KV limiter. Sequential pre-denied 429s
+are write-free; audit sink or diagnostic recheck failure preserves the 401
+result. Existing non-atomic KV windows do not guarantee exactly-once emission
+under concurrent requests.
+
+The existing one-minute schedule also deletes at most 1,000 rows strictly older
+than 90 days; a backlog is drained on subsequent ticks. Exact-cutoff/newer rows
+remain. Retention failures emit `system-events-retention-failed` with fixed
+`error_class: local_transition`. There is no API to modify or remove an audit.
+
+References checked 2026-09-08: [D1 batch transactions](https://developers.cloudflare.com/d1/worker-api/d1-database/#batch),
+[SQLite changes/row IDs](https://www.sqlite.org/lang_corefunc.html), and
+[Workers lifecycle practices](https://developers.cloudflare.com/workers/best-practices/workers-best-practices/).
+
+
+The read-only system log adds source `audit` to its existing five sources. It
+selects only action, principal, source, safe correlation and occurrence time;
+labels and severity are rebuilt from the fixed catalog, never stored free-form
+text. Invalid actor/source/action/target combinations are dropped. Owner/Admin
+can read the source; restricted roles remain denied by the existing API guard.
+Operator-management links are omitted for non-Owner readers. Each source receives
+33 slots within the existing 200-row/30-day maximum, so a burst cannot displace
+all other sources. The panel shows `Oleh:` and an `Aktivitas sistem` filter.

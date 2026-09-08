@@ -60,7 +60,20 @@ function createDatabase() {
     "utf8",
   );
   for (const statement of splitMigrationStatements(migration)) sqlite.exec(statement);
+  for (const statement of splitMigrationStatements(readFileSync(new URL("../db/migrations/0061_system_events.sql", import.meta.url), "utf8"))) sqlite.exec(statement);
   const database = {
+    async batch(statements: SqliteD1Statement[]) {
+      sqlite.exec("BEGIN");
+      try {
+        const results = [];
+        for (const statement of statements) results.push(await statement.run());
+        sqlite.exec("COMMIT");
+        return results;
+      } catch (error) {
+        sqlite.exec("ROLLBACK");
+        throw error;
+      }
+    },
     prepare(sql: string) {
       return new SqliteD1Statement(sqlite.prepare(sql));
     },

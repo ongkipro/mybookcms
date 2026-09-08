@@ -5,10 +5,12 @@ import {
   revokeAdminSessions,
   validateAdminUsername,
   validateNewAdminPassword,
-} from "../../../lib/admin-credentials";
-import { jsonError, jsonOk } from "../../../lib/api";
-import { getRuntimeEnv } from "../../../lib/env";
-import { isAdminRole } from "../../../lib/auth";
+} from "../../../lib/admin-credentials.ts";
+import { jsonError, jsonOk } from "../../../lib/api.ts";
+import { getRuntimeEnv } from "../../../lib/env.ts";
+import { isAdminRole } from "../../../lib/auth.ts";
+
+import { commitSystemMutation } from "../../../lib/system-events.ts";
 
 export const prerender = false;
 
@@ -85,15 +87,14 @@ export const POST: APIRoute = async ({ request, locals }) => {
   try {
     const passwordHash = await hashAdminPassword(password);
     const now = new Date().toISOString();
-    const result = await database
+    const result = await commitSystemMutation(database, database
       .prepare(
         `INSERT INTO admin_credentials (
           username, display_name, email, role, password_hash,
           must_change_password, updated_at
         ) VALUES (?, ?, ?, ?, ?, 1, ?)`,
       )
-      .bind(username, displayName, email || null, role, passwordHash, now)
-      .run();
+      .bind(username, displayName, email || null, role, passwordHash, now), { action: "operator.created", actor: locals.admin.username });
     if (!result.success) throw new Error("D1 rejected user creation.");
     return jsonOk(
       {
@@ -212,12 +213,11 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
     params.push(now);
     params.push(id);
 
-    await database
+    await commitSystemMutation(database, database
       .prepare(
         `UPDATE admin_credentials SET ${updates.join(", ")} WHERE id = ? AND role != 'owner'`,
       )
-      .bind(...params)
-      .run();
+      .bind(...params), { action: "operator.updated", actor: locals.admin.username, targetId: id });
 
     await revokeAdminSessions(sessions, existing.username);
 
@@ -266,10 +266,9 @@ export const DELETE: APIRoute = async ({ request, locals }) => {
     if (row.role === "owner") {
       return jsonError("Akun owner tidak dapat dihapus dari halaman ini.", 409);
     }
-    const result = await database
+    const result = await commitSystemMutation(database, database
       .prepare("DELETE FROM admin_credentials WHERE id = ? AND role != 'owner'")
-      .bind(id)
-      .run();
+      .bind(id), { action: "operator.deleted", actor: locals.admin.username, targetId: id });
     if (result.meta.changes !== 1) {
       return jsonError("Pengguna tidak ditemukan.", 404);
     }

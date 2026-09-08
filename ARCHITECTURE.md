@@ -277,3 +277,30 @@ production activation and observation.
 ADR-026 accepts Owner/Admin control of COD and makes A-232 the remaining
 end-to-end enforcement work. ADR-027's 24-hour DOKU return-capability lifetime
 is implemented locally by A-240; deployment remains separately gated.
+
+
+## A-226 audit persistence and operator projection
+
+Migration `0061_system_events.sql` adds `system_events`; schemaVersion is 62.
+The core writer commits one privileged mutation and a minimized actor/action/
+target audit in a single D1 batch, skipping the event if the mutation changed no
+row. Audit write failure rolls back the mutation. The table rejects updates and
+free-form detail payloads. The direct store-profile, COD, embed-origin, headless-origin
+and CRM settings writes use this transaction, as do Meta/Google configuration,
+API-key issue/policy/revoke, and operator create/update/delete. Operator session
+revocation follows the successful D1 transaction. The login boundary records a
+lockout after an admitted failure crosses its existing KV limit; already-denied
+requests do not write events. This retains KV concurrency limitations and is not
+an exactly-once distributed audit. Payment configuration routes pass their
+authenticated actor into the existing configuration helpers; self-service
+credential changes record the pre-rename identity; template insertion records
+the acting operator. Bootstrap/test-only direct configuration and template
+helpers may omit an actor and are outside the privileged HTTP audit boundary.
+The existing log panel reads a sixth audit source with fixed labels and validated
+principals, displays actor metadata, and filters it as Aktivitas sistem.
+
+The existing one-minute Worker schedule wraps CAPI and DOKU jobs independently
+with best-effort, payload-free failure recording. A separate best-effort prune
+removes up to 1,000 rows older than 90 days per tick. These diagnostics cannot
+make a successful business job fail. No remote migration or deployment is
+claimed by the local schema/core change.

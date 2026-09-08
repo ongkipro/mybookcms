@@ -112,8 +112,8 @@ blocked by a decision recorded elsewhere rather than by code.
 **Read these before executing anything in this queue.** `PRD.md` is the only
 authority for whether a requirement is accepted. A-248/REQ-211/REQ-212 are now
 accepted and verified locally under ADR-030. A-245/REQ-232 is implemented under
-ADR-031. A-226/REQ-230 still requires its accepted implementation contract to be
-recorded before execution. `DECISIONS.md` carries the accepted architecture decisions those
+ADR-031. A-226/REQ-230 is accepted, including the six-path expansion authorized on
+2026-09-08; implementation is verified locally with complete audit and panel coverage. `DECISIONS.md` carries the accepted architecture decisions those
 entries build on, most recently ADR-026 for COD and ADR-027 for capability
 lifetime. `OBSERVABILITY.md` fixes every stable signal name and its allowed
 fields; anything that adds a production log line is incomplete until it is
@@ -143,8 +143,8 @@ Decision follow-through after the owner authorized the blocked tasks:
    disabled-channel recovery without changing the committed channel.
 5. **REQ-211/REQ-212** in `PRD.md` — accepted under ADR-030 and implemented
    locally by **A-248**, with bilingual content and first-collection links verified.
-6. **REQ-230** in `PRD.md` — **A-226** remains deliberately blocked until it is
-   accepted; acceptance is a product decision, not a documentation change.
+6. **REQ-230** in `PRD.md` — accepted for **A-226**. The owner approved the six-path
+   expansion; implementation and verification cover the complete audit flow.
 
 Then the implementation work that already has its decision:
 
@@ -159,7 +159,8 @@ Then the implementation work that already has its decision:
 External, production, and approval gates keep their explicit approvals and are
 not reordered by anything above:
 
-9. **A-204**, **A-221**, **A-222**, **A-223**, and **G-1**. A-221 must precede
+9. **A-221**, **A-222**, **A-223**, and **G-1** remain external/release work.
+   **A-204** now has a successful hosted run on `b093cb8`. A-221 must precede
    A-222, and A-222 must precede A-223. Read `RELEASE.md` before any of them, and
    note that A-221 now also owns confirming the exact `payment.channel` string
    DOKU returns per channel — `CREDIT_CARD` most of all, because a mismatch there
@@ -194,7 +195,7 @@ is near it. It is an accepted corner, not an open gap.
         2. `git push --force-with-lease origin malaysia-market-audit` succeeds.
         3. The retired fixtures are gone from every reachable commit. Search for the operator's own name and mobile as they appear in the store database — do not write either into this file or any other, or the check becomes the leak it is meant to prevent.
         4. Only then the repository visibility is changed, and `gh api repos/ongkipro/mybookcms --jq .visibility` reports `public`.
-      Note for whoever runs this: making the repository public also makes `DEFAULT_ADMIN_PASSWORD_HASH` and the documented `admin`/`admin` first-run behaviour publicly readable. That is already mitigated by `LOGIN-3`, but it becomes trivially discoverable. It also unblocks GitHub Actions, which has never run here — see `A-204`.
+      Note for whoever runs this: making the repository public also makes `DEFAULT_ADMIN_PASSWORD_HASH` and the documented `admin`/`admin` first-run behaviour publicly readable. That is already mitigated by `LOGIN-3`, but it becomes trivially discoverable. Publication is no longer a prerequisite for GitHub Actions: A-204 has a successful private-repository run on `b093cb8`.
 
 - [x] **A-200** — A seeded local store cannot save its own settings. **Done 2026-09-01** — `save-store` re-validated `site_url` on every submit, but the local seed writes a plain-http address straight into the row, bypassing that rule. So the settings form refused *every* save — pickup address, tagline, logo — with `Alamat toko harus memakai https`, an error naming a field the operator had not touched. The decision moved out of the route into `resolveStoreSiteUrl`, which grandfathers a value identical to the stored one and applies the https rule the moment it actually changes, which is the only time it can be wrong on purpose.
       Risk: R1 — one validation path, no schema or auth change.
@@ -238,14 +239,19 @@ is near it. It is an accepted corner, not an open gap.
       Dependencies: none
       Done when: the statutory text is cited from a primary source, the conflict with `REQ-185` is stated plainly, and either a `Proposal` requirement is recorded or the question is closed with reasoning. Recorded as `REQ-211` and `REQ-212`, both `Proposal`.
 
-- [ ] **A-204** — Get hosted CI to actually run. **Blocked externally; not a code defect.**
-      Both CI runs on `main` failed in about four seconds with `The job was not started because recent account payments have failed or your spending limit needs to be increased`. No job has ever executed, so no green CI has ever existed for this repository and local verification is the only real evidence. Nothing in `ci.yml` is wrong; it is verification-only and deploys nothing.
-      Risk: R0 for the repository; the blocker is account billing and is the user's to clear.
-      Surface: `.github/workflows/ci.yml` only if a real defect is found after runs start.
+- [x] **A-204** — Get hosted CI to actually run. **Verified on GitHub 2026-09-08.**
+      The two 2026-08-25 runs never started because of account billing. A fresh
+      workflow dispatch on `b093cb82ba14124288e445e7fab112b4fdf5ec49` now passes
+      checkout, Node setup, dependency installation, check, tests and build on
+      GitHub's runner. The private repository and verification-only workflow
+      were unchanged. This replaces the old external-blocker claim for A-204.
+      Evidence: [CI run 34147093570](https://github.com/ongkipro/mybookcms/actions/runs/34147093570), delivery run `RUN-20260907T171900Z-d90cd59d`.
+      Risk: R0 — bounded verification workflow and completion evidence.
+      Surface: `TASKS.md`, `STATUS.md` for canonical completion evidence; `.github/workflows/ci.yml` only if a real defect is found after runs start.
       Non-scope: adding a deploy step; moving CI to another provider; disabling checks to make the badge green.
       Primary requirement: REQ-200
       Constraints: none
-      Dependencies: none — but note `G-1` would resolve it incidentally, since public repositories get free Actions minutes.
+      Dependencies: none; repository publication is not required for this verified run.
       Done when: one CI run completes on a real commit and its check/test/build steps are observed to pass or fail on their own merits rather than never starting.
 
 - [x] **A-205** — Adapt PermataMall's proven Meta/Google identity hardening to the Malaysia signal contract without importing its Indonesia order taxonomy. **Done locally 2026-09-01.** Paid-click identity now survives UTM-only follow-ups and is replaced only by a new paid click; Pixel and CAPI share one random first-party Meta visitor identity; regional Google Consent Mode precedes tag configuration; and direct Google Purchase receives Malaysia-normalized enhanced-conversion matching without changing accepted-order timing, MYR merchandise value, or transaction identity. The Indonesia offline-conversion outbox was deliberately not ported because it would create a second Purchase owner under this product's taxonomy.
@@ -477,10 +483,12 @@ Surface, and obtain the independent correctness/security review required by
       Dependencies: none. Designer handoff before the first visual edit, as for every browser-visible admin change.
       Done when: `GET /api/admin/system-log` returns `no-store` JSON bounded to the newest 200 events within 30 days, each carrying `source`, `severity`, `label`, `occurred_at`, a safe correlation id, and an admin `href`; Owner and Admin see the header button, the settings card, and the panel at 390 px and 1280 px with loading, empty, and error states; Customer Service and Advertiser receive `403` from the API and see no button; a `system-log.test.ts` fixture containing a token, a phone number, and a street address proves none of them reach the response; `npm run check`, `npm test`, and a real-browser keyboard pass show no console or failed-request errors.
 
-- [ ] **A-226** — Record privileged admin mutations and scheduler failures as append-only system events. **Blocked until REQ-230 is accepted. Do not start from this entry while its PRD row reads `Proposal`.**
-      Today a store-settings save, a payment configuration revision, an Ads credential save, an API key issue or revoke, an operator role or password change, and a login lockout leave no D1 record naming who did it and when; a scheduler failure leaves only a Worker log. A-225 cannot show what was never written. This task adds migration `0060_system_events.sql`, one append-only table with actor, source, label, severity, safe correlation id, redacted detail JSON, and `occurred_at`; writes a row inside the same D1 batch as each privileged mutation it names; writes best-effort rows for scheduler-level failures; prunes rows older than 90 days from the existing one-minute schedule; and makes the A-225 panel read it as one more source.
+- [x] **A-226** — Record privileged admin mutations and scheduler failures as append-only system events. **Done locally 2026-09-08.** Owner-authorized scope expansion completed the payment, credential, template, panel and fixture integration. Migration 0061/schemaVersion 62, atomic privileged HTTP audits, best-effort login/scheduler diagnostics, 90-day retention, and the existing operator log projection are verified. All 504 tests, check and build pass. Real Chrome at 390/1280 px shows all 22 fixed action labels and actors for Owner/Admin, keyboard filtering and long-username wrapping; restricted roles receive 403. Run `RUN-20260907T172505Z-90da78b5` owns executable checks and independent review. Bootstrap/test-only actorless configuration/template helpers remain outside the privileged HTTP audit boundary; no provider or production behavior is claimed.
+      Original gap: a store-settings save, a payment configuration revision, an Ads credential save, an API key issue or revoke, an operator role or password change, and a login lockout left no D1 record naming who did it and when; a scheduler failure left only a Worker log. The implemented slice is recorded above; approved helper/panel paths are listed below. A-225 cannot show what was never written. This task adds migration `0061_system_events.sql`, one append-only table with actor, source, label, severity, safe correlation id, redacted detail JSON, and `occurred_at`; writes a row inside the same D1 batch as each privileged mutation it names; writes best-effort rows for scheduler-level failures; prunes rows older than 90 days from the existing one-minute schedule; and makes the A-225 panel read it as one more source.
       Risk: R3 — new schema, a write on every privileged admin path, and a retention job; touches the same handlers as credentials, payment configuration, and API keys.
-      Surface: `PRD.md`, `TASKS.md`, `STATUS.md`, `BUILD-LOG.md`, `OBSERVABILITY.md`, `ARCHITECTURE.md`, `docs/CODE-MAP.md`, `src/db/migrations/0060_system_events.sql`, `src/lib/version.ts`, `src/lib/system-events.ts`, `src/lib/system-events.test.ts`, `src/lib/system-log.ts`, `src/lib/system-log.test.ts`, `src/worker.ts`, `src/pages/api/admin/settings.ts`, `src/pages/api/admin/payments.ts`, `src/pages/api/admin/ads.ts`, `src/pages/api/admin/settings/developer.ts`, `src/pages/api/admin/access.ts`, `src/pages/api/admin/profile.ts`, `src/pages/hello.astro`.
+      Surface: `PRD.md`, `TASKS.md`, `STATUS.md`, `BUILD-LOG.md`, `OBSERVABILITY.md`, `ARCHITECTURE.md`, `docs/CODE-MAP.md`, `src/db/migrations/0061_system_events.sql`, `src/lib/version.ts`, `src/lib/system-events.ts`, `src/lib/system-events.test.ts`, `src/lib/system-log.ts`, `src/lib/system-log.test.ts`, `src/worker.ts`, `src/pages/api/admin/settings.ts`, `src/pages/api/admin/payments.ts`, `src/pages/api/admin/ads.ts`, `src/pages/api/admin/settings/developer.ts`, `src/pages/api/admin/access.ts`, `src/pages/api/admin/profile.ts`, `src/pages/hello.astro`, `src/lib/doku-config.ts`, `src/lib/doku-config.test.ts`, `src/lib/admin-credentials.ts`, `src/lib/storefront-template.ts`, `src/components/admin/SystemLogPanel.tsx`, `src/lib/payment-availability.test.ts`.
+      Approved Surface expansion (2026-09-08 continuation): `src/lib/doku-config.ts`, `src/lib/doku-config.test.ts`, `src/lib/admin-credentials.ts`, `src/lib/storefront-template.ts`, `src/components/admin/SystemLogPanel.tsx`. Existing helpers own the actual mutations; the existing panel must understand the additional source. The owner instructed continuation after this exact blocker was presented.
+      Approved fixture Surface: `src/lib/payment-availability.test.ts`. Its existing COD route fixture lacks authenticated admin identity and D1 batch support; the fixture now supplies the authenticated actor and transaction batch. No production fallback bypasses auditing.
       Non-scope: recording buyer or storefront traffic; recording order edits, whose rows already carry their lifecycle; placing a value, secret, token, password hash, or customer field in `detail`; any UI beyond what A-225 renders; export; alerting; editing or deleting an event through any API; changing any mutation's authorization or validation.
       Primary requirement: REQ-230
       Constraints: REQ-182, REQ-197, REQ-198, REQ-201, REQ-217, LOGIN-3

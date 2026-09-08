@@ -14,6 +14,8 @@ import {
   type StorefrontTemplateDefinition,
 } from "../../../lib/storefront-template.ts";
 
+import { commitSystemMutation } from "../../../lib/system-events.ts";
+
 export const prerender = false;
 const MALAYSIA_PHONE = /^\+?60\d{8,10}$/;
 const CRM_KEYS = ["welcome", "1", "2", "3", "4", "5", "6", "7", "8", "9", "redirect"] as const;
@@ -147,8 +149,8 @@ export const PUT: APIRoute = async ({ request, locals }) => {
       if (typeof body.cod_enabled !== "boolean") {
         return jsonError("Status COD harus berupa boolean.", 400);
       }
-      await database.prepare("UPDATE stores SET is_cod_enabled = ? WHERE id = ?")
-        .bind(body.cod_enabled ? 1 : 0, current.id).run();
+      await commitSystemMutation(database, database.prepare("UPDATE stores SET is_cod_enabled = ? WHERE id = ?")
+        .bind(body.cod_enabled ? 1 : 0, current.id), { action: "store.cod.updated", actor: locals.admin?.username ?? "", targetId: current.id });
       return jsonOk({
         message: body.cod_enabled
           ? "COD diaktifkan untuk checkout baru."
@@ -160,16 +162,16 @@ export const PUT: APIRoute = async ({ request, locals }) => {
     if (body.action === "save-embed-origins") {
       const policy = parseEmbedAllowedOrigins(body.embed_allowed_origins);
       if (!policy.valid) return jsonError("Origin embed HTTPS tidak valid.", 400);
-      await database.prepare("UPDATE stores SET embed_allowed_origins = ? WHERE id = ?")
-        .bind(policy.origins.join(","), current.id).run();
+      await commitSystemMutation(database, database.prepare("UPDATE stores SET embed_allowed_origins = ? WHERE id = ?")
+        .bind(policy.origins.join(","), current.id), { action: "store.embed.updated", actor: locals.admin?.username ?? "", targetId: current.id });
       return jsonOk({ message: "Daftar origin embed disimpan.", data: { embed_allowed_origins: policy.origins } });
     }
 
     if (body.action === "save-headless-origins") {
       const policy = parseHeadlessAllowedOrigins(body.headless_allowed_origins);
       if (!policy.valid) return jsonError("Origin Headless API tidak valid.", 400);
-      await database.prepare("UPDATE stores SET headless_allowed_origins = ? WHERE id = ?")
-        .bind(policy.patterns.join(","), current.id).run();
+      await commitSystemMutation(database, database.prepare("UPDATE stores SET headless_allowed_origins = ? WHERE id = ?")
+        .bind(policy.patterns.join(","), current.id), { action: "store.headless.updated", actor: locals.admin?.username ?? "", targetId: current.id });
       return jsonOk({ message: "Allowlist Headless API disimpan.", data: { headless_allowed_origins: policy.patterns } });
     }
 
@@ -181,7 +183,7 @@ export const PUT: APIRoute = async ({ request, locals }) => {
         return jsonError("Definisi template tidak valid.", 400);
       }
       try {
-        await addStorefrontTemplate(database, current.id, definition);
+        await addStorefrontTemplate(database, current.id, definition, locals.admin?.username ?? "");
       } catch (error) {
         if (error instanceof Error && /unique constraint failed/i.test(error.message)) {
           return jsonError("ID template sudah digunakan.", 409);
@@ -215,7 +217,7 @@ export const PUT: APIRoute = async ({ request, locals }) => {
       if (pickup.value && !(await resolveStorePickup(database, pickup.value))) {
         return jsonError("Poskod alamat pickup tidak dikenali.", 400);
       }
-      await database.prepare(`
+      await commitSystemMutation(database, database.prepare(`
         UPDATE stores SET name = ?, support_whatsapp = ?, site_url = ?,
           description = ?, tagline = ?, logo = ?, storefront_template = ?,
           pickup_name = ?, pickup_phone = ?, pickup_address = ?, pickup_postcode = ?
@@ -233,14 +235,14 @@ export const PUT: APIRoute = async ({ request, locals }) => {
         pickup.value?.address ?? null,
         pickup.value?.postcode ?? null,
         current.id,
-      ).run();
+      ), { action: "store.profile.updated", actor: locals.admin?.username ?? "", targetId: current.id });
       return jsonOk({ message: "Profil store disimpan." });
     }
 
     if (body.action === "save-crm") {
       const templates = normalizeTemplates(body.crm_templates);
-      await database.prepare("UPDATE stores SET crm_templates = ? WHERE id = ?")
-        .bind(JSON.stringify(templates), current.id).run();
+      await commitSystemMutation(database, database.prepare("UPDATE stores SET crm_templates = ? WHERE id = ?")
+        .bind(JSON.stringify(templates), current.id), { action: "store.crm.updated", actor: locals.admin?.username ?? "", targetId: current.id });
       return jsonOk({ message: "Template CRM disimpan." });
     }
 

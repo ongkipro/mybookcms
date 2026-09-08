@@ -5840,3 +5840,98 @@ mobile-menu headings. Fresh Lighthouse 13.4.1 scores accessibility 100 / contras
 at 390/1280 px; rendered ratios are 7.26, 5.95, 7.58 respectively. Full check/test/build,
 16 switch scenarios, three shell states and independent visual critique pass.
 Run `RUN-20260907T163554Z-7edbd892` retains the earlier failed/blocked evidence.
+
+
+## 2026-09-08 — A-226 audit core and direct settings integration
+
+Owner-accepted REQ-230 is in progress under
+`RUN-20260907T172505Z-90da78b5`. Migration 0061 adds the append-only
+`system_events` table and schemaVersion 62. The real scheduled handler records
+payload-free CAPI/DOKU job failures independently and prunes at most 1,000 rows
+strictly older than 90 days per tick. Login recording exists as an unwired helper.
+
+Direct store-profile, COD, embed-origin, headless-origin and CRM settings saves now
+commit an actor/action/target event in the same D1 transaction as their update.
+A failed audit insert rolls back the update; rejected inputs create no event.
+Changed values are excluded from the audit schema and writer. Workerd-backed D1
+checks cover clean migrations, both transaction failure directions, insert
+correlation, each action's redaction, immutability, exact retention boundaries,
+the actual scheduled handler's independent failure handling, and the real
+settings handler's five direct save paths.
+
+A-226 remains open. Ads, API-key, operator, credential/payment/template and login
+integration, plus reading the new source in the existing log panel, are not all
+connected. Five exact helper/panel paths are listed as a requested, unapproved
+Surface expansion in TASKS.md; none has been edited. The current branch has not
+been remotely migrated or deployed. Hosted CI evidence for b093cb8 predates this
+local implementation and is not proof of these uncommitted changes.
+
+Verification checkpoint: typecheck passes; the full suite reports 495/496 passing.
+The sole failure is the pre-existing COD route fixture, which supplies neither
+authenticated admin identity nor D1 batch support. Updating
+`src/lib/payment-availability.test.ts` requires its separately requested Surface
+expansion. The seven real-D1 audit tests pass, as do the 20 focused audit/schema/map
+checks and a separate fresh production build. The earlier core-only full suite
+pass does not replace the latest full-suite failure. This checkpoint is not a
+completed release.
+
+
+### A-226 continuation — remaining direct mutations and login (2026-09-08)
+
+The same active run now connects Meta/Google configuration saves, API-key
+issue/policy/revoke, and operator create/update/delete to the atomic audit
+writer. Operator sessions are revoked only after D1 succeeds. Generated API-key
+secrets, password hashes, submitted Ads tokens, encrypted token blobs and contact
+fields never enter the audit row. Existing role and validation rules remain.
+
+The login boundary records only the transition after an admitted failure reaches
+its existing KV limit. Already-denied requests produce no audit writes. Audit
+sink and diagnostic recheck failures preserve the failed-login response. KV's
+existing non-atomic windows remain; this is not a global exactly-once guarantee.
+The new executable frontmatter test uses real D1/KV and existing login helpers.
+
+The previous partial checkpoint is historical evidence. Payment configuration,
+self-service credential updates, template insertion and the log panel remain
+unwired, and their requested Surface paths remain untouched. The separately
+requested COD fixture update is still pending, so A-226 is not complete.
+
+
+Continuation verification: all 11 real-D1/KV audit tests pass; typecheck and
+fresh build pass; the full suite is 499/500, retaining the one pending COD mock
+update. Review corrected short redaction canaries that could match timestamps.
+Real Chrome plus a freshly built isolated Worker passes 390/1280 px login POST
+checks: ten failures return 401, four subsequent denials return 429, and exactly
+two anonymous lockout events persist without request data. No runtime exceptions
+or failed network requests were observed. A-226 remains open for the documented
+helper/panel/fixture integration; no live mutation or release was performed.
+
+The prepared COD fixture patch was applied only to an isolated temporary copy;
+all 11 tests in that copy pass against the current implementation. This proves
+the proposed fixture correction, not a green repository suite. The canonical
+`src/lib/payment-availability.test.ts` remains untouched pending its requested
+Surface expansion. Patch: `/tmp/mybookcms-a226-payment-fixture.patch`.
+
+
+## 2026-09-08 — A-226 completed after owner-authorized scope expansion
+
+The owner instructed continuation after the six-path blocker was presented.
+Payment, credential and template helpers now audit their privileged HTTP callers
+atomically; the COD fixture supplies authenticated identity and D1 batch support.
+The existing panel adds Aktivitas sistem and actor metadata, backed by a minimal,
+validated projection that never reads stored free-form labels/details. Earlier
+partial/blocked checkpoints are superseded, not erased.
+
+Run `RUN-20260907T172505Z-90da78b5` passes check, all 504 tests and fresh build.
+Real D1/KV regressions prove rollback, original actor identity, session effects,
+redaction, retention, and the Owner-only operator link. Fresh Chrome at 390/1280 px
+renders all 22 actions for Owner/Admin; restricted roles get 403. Keyboard filters
+and long actors pass behavior and designer screenshot review. Login transitions
+produce two anonymous events for ten failed attempts plus four later denials.
+The first keyboard harness lacked complete native Enter dispatch; corrected
+harness passes without a product change. Final screenshots:
+`/tmp/mybookcms-a226-browser-LYYhMt`.
+
+Direct actorless bootstrap/test configuration/template helpers are outside the
+privileged HTTP audit scope; KV retains its documented concurrency limitation.
+No live provider, remote migration, deployment, publication, commit or push was
+performed. The remaining sandbox/publication/production gates are unchanged.

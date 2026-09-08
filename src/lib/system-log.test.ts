@@ -36,6 +36,7 @@ type Rows = Record<string, unknown[]>;
  */
 function fakeDatabase(rows: Rows, failing = new Set<string>()): D1Database {
   const pick = (sql: string) => {
+    if (sql.includes("system_events")) return "audit";
     if (sql.includes("capi_event_outbox")) return "capi";
     if (sql.includes("payment_events")) return "payments";
     if (sql.includes("notifications")) return "notifications";
@@ -215,16 +216,15 @@ test("a noisy source is bounded and does not crowd out the others", async () => 
   // saturated here, so the total is small on purpose — asserting a large total
   // would be asserting the fixture, not the behaviour.
   const noisy = entries.filter((entry) => entry.source === "api").length;
-  const share = SYSTEM_LOG_MAX_ENTRIES / 5;
+  const share = Math.floor(SYSTEM_LOG_MAX_ENTRIES / 6);
   assert.equal(
     noisy,
     share,
     `a noisy source should contribute exactly its share (${share}), got ${noisy}`,
   );
-  // Five sources at that share fill the budget exactly: nothing is wasted, and
-  // no source can take another's. An earlier ceiling of an eighth made the
-  // response unable to reach half its stated maximum.
-  assert.equal(share * 5, SYSTEM_LOG_MAX_ENTRIES);
+  // Six sources keep their bounded share; integer rounding leaves two slots.
+  assert.ok(share * 6 <= SYSTEM_LOG_MAX_ENTRIES);
+  assert.ok(SYSTEM_LOG_MAX_ENTRIES - share * 6 < 6);
 
   // The point of a per-source ceiling. An earlier version set it equal to the
   // total, so 200 API rows filled the response and every schema, payment, order
@@ -262,4 +262,34 @@ test("an unknown status is treated as noteworthy rather than silently fine", asy
   const ads = entries.find((entry) => entry.source === "ads");
   assert.ok(ads);
   assert.equal(ads.severity, "warning", "an unmapped status defaulted to info");
+});
+
+
+test("audit projection uses fixed labels and validates principal/action/target without stored payloads", async () => {
+  const valid = { actor: "fixture_owner", source: "admin", action: "payment.config.saved", correlation: "payment:1", occurred_at: RECENT, label: SECRET_TOKEN, detail: CUSTOMER_PHONE + CUSTOMER_ADDRESS };
+  const database = fakeDatabase({ audit: [valid,
+    { ...valid, action: "unrecognized" }, { ...valid, actor: SECRET_TOKEN + "@example.com" },
+    { ...valid, correlation: "https://secret.invalid" }, { ...valid, source: "auth" },
+    { ...valid, action: "login.lockout", source: "auth", actor: "anonymous", correlation: "login" },
+    { ...valid, action: "scheduler.capi.failed", source: "scheduler", actor: "system", correlation: "scheduler:capi" },
+    { ...valid, action: "scheduler.capi.failed", source: "scheduler", correlation: "scheduler:capi" },
+  ] });
+  const entries = (await loadSystemLog(localsWith(database), database, NOW)).filter(row => row.source === "audit");
+  assert.equal(entries.length, 3);
+  assert.equal(entries[0].label, "Revisi konfigurasi pembayaran disimpan.");
+  assert.equal(entries[0].href, "/admin/payments");
+  assert.deepEqual(entries.map(row => row.actor), ["fixture_owner", "anonymous", "system"]);
+  for (const value of [SECRET_TOKEN, CUSTOMER_PHONE, CUSTOMER_ADDRESS]) assert.ok(!JSON.stringify(entries).includes(value));
+});
+
+
+test("operator audit links are exposed only to Owner readers", async () => {
+  const database = fakeDatabase({ audit: [{ actor: "fixture_owner", source: "admin", action: "operator.updated", correlation: "operator:1", occurred_at: RECENT }] });
+  for (const role of ["owner", "admin"]) {
+    const locals = { ...localsWith(database), admin: { username: "fixture_reader", role } } as unknown as App.Locals;
+    const row = (await loadSystemLog(locals, database, NOW)).find(entry => entry.source === "audit");
+    assert.ok(row);
+    assert.equal(row.href, role === "owner" ? "/admin/settings/access" : null);
+    assert.equal(row.actor, "fixture_owner");
+  }
 });

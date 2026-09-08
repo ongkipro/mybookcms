@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { jsonError, jsonOk } from "../../../../lib/api";
+import { jsonError, jsonOk } from "../../../../lib/api.ts";
 import {
   generateApiKeySecret,
   hashApiKeySecret,
@@ -8,8 +8,10 @@ import {
   normalizeApiKeyName,
   normalizeApiKeyPolicy,
   parseStoredApiKeyScopes,
-} from "../../../../lib/developer-api-keys";
-import { getRuntimeEnv } from "../../../../lib/env";
+} from "../../../../lib/developer-api-keys.ts";
+import { getRuntimeEnv } from "../../../../lib/env.ts";
+
+import { commitSystemMutation } from "../../../../lib/system-events.ts";
 
 export const prerender = false;
 
@@ -113,7 +115,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const secretHash = await hashApiKeySecret(secret);
     const keyPreview = maskApiKeySecret(secret);
     const now = new Date().toISOString();
-    const result = await database
+    const result = await commitSystemMutation(database, database
       .prepare(
         `INSERT INTO developer_api_keys (
           name, key_hash, key_preview, created_by, created_at,
@@ -129,8 +131,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         policy.scopes.join(","),
         policy.rateLimitPerMinute,
         policy.dailyQuota,
-      )
-      .run();
+      ), { action: "api_key.issued", actor: createdBy });
 
     if (!result.success || !result.meta.last_row_id) {
       throw new Error("D1 rejected API key creation.");
@@ -183,7 +184,7 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
   const policy = policyResult.policy;
 
   try {
-    const result = await database
+    const result = await commitSystemMutation(database, database
       .prepare(
         `UPDATE developer_api_keys
         SET scopes = ?, rate_limit_per_minute = ?, daily_quota = ?
@@ -194,8 +195,7 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
         policy.rateLimitPerMinute,
         policy.dailyQuota,
         id,
-      )
-      .run();
+      ), { action: "api_key.updated", actor: locals.admin.username, targetId: id });
     if (result.meta.changes !== 1) {
       return jsonError("API key tidak ditemukan atau sudah dicabut.", 404);
     }
@@ -230,14 +230,13 @@ export const DELETE: APIRoute = async ({ request, locals }) => {
 
   try {
     const revokedAt = new Date().toISOString();
-    const result = await database
+    const result = await commitSystemMutation(database, database
       .prepare(
         `UPDATE developer_api_keys
         SET revoked_at = ?, revoked_by = ?
         WHERE id = ? AND revoked_at IS NULL`,
       )
-      .bind(revokedAt, revokedBy, id)
-      .run();
+      .bind(revokedAt, revokedBy, id), { action: "api_key.revoked", actor: revokedBy, targetId: id });
 
     if (result.meta.changes !== 1) {
       return jsonError("API key tidak ditemukan atau sudah dicabut.", 404);

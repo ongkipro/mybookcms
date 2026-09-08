@@ -101,6 +101,11 @@ test("only Owner and Admin can reach the COD settings mutation route", () => {
 test("COD settings action validates a boolean and returns the saved state", async () => {
   let saved: number | null = null;
   const database = {
+    async batch(statements: { run: () => Promise<unknown> }[]) {
+      const results = [];
+      for (const statement of statements) results.push(await statement.run());
+      return results;
+    },
     prepare(sql: string) {
       const statement = {
         values: [] as unknown[],
@@ -113,6 +118,11 @@ test("COD settings action validates a boolean and returns the saved state", asyn
           return { id: 1, is_cod_enabled: 1 };
         },
         async run() {
+          if (/INSERT INTO system_events/.test(sql)) {
+            assert.equal(this.values[0], "fixture_owner");
+            assert.equal(this.values[1], "store.cod.updated");
+            return { success: true, meta: { changes: 1 } };
+          }
           if (!/UPDATE stores SET is_cod_enabled/.test(sql)) {
             throw new Error(`Unexpected run query: ${sql}`);
           }
@@ -123,7 +133,7 @@ test("COD settings action validates a boolean and returns the saved state", asyn
       return statement;
     },
   } as unknown as D1Database;
-  const locals = { runtimeEnv: { OMS_DB: database } } as unknown as App.Locals;
+  const locals = { runtimeEnv: { OMS_DB: database }, admin: { username: "fixture_owner", role: "owner" } } as unknown as App.Locals;
 
   const invalid = await updateSettings({
     request: new Request("https://shop.example/api/admin/settings", {

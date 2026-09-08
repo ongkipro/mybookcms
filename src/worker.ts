@@ -2,25 +2,20 @@ import type { ExportedHandler } from "@cloudflare/workers-types";
 import { handle } from "@astrojs/cloudflare/handler";
 import { drainConfiguredCapiOutbox } from "./lib/capi-outbox.ts";
 import { reconcileDueDokuPayments } from "./lib/doku-reconciliation.ts";
+import { pruneSystemEvents, runScheduledSystemJob } from "./lib/system-events.ts";
 
 export default {
   fetch: handle,
   scheduled(_controller, env, ctx) {
     ctx.waitUntil(
-      drainConfiguredCapiOutbox(env).catch((error) => {
-        console.error("capi-outbox-scheduled", {
-          error: error instanceof Error ? error.message : String(error),
-        });
-      }),
+      runScheduledSystemJob(env.OMS_DB, "capi", () => drainConfiguredCapiOutbox(env)),
     );
     ctx.waitUntil(
-      reconcileDueDokuPayments(env).catch(() => {
-        console.error("doku-reconciliation-scheduled", {
-          outcome: "scheduler_failed",
-          error_class: "local_transition",
-        });
-      }),
+      runScheduledSystemJob(env.OMS_DB, "doku", () => reconcileDueDokuPayments(env)),
     );
+    ctx.waitUntil(pruneSystemEvents(env.OMS_DB).catch(() => {
+      console.error("system-events-retention-failed", { error_class: "local_transition" });
+    }));
   },
 } satisfies {
   fetch: typeof handle;

@@ -14,6 +14,8 @@ import { getEnvValue, getRuntimeEnv } from "../../../lib/env.ts";
 import { prepareMetaCapiPayload, sendPreparedMetaCapi } from "../../../lib/meta-capi.ts";
 import { getClientIp } from "../../../lib/rate-limit.ts";
 
+import { commitSystemMutation } from "../../../lib/system-events.ts";
+
 export const prerender = false;
 
 const bodySchema = z.object({
@@ -107,12 +109,14 @@ export const PUT: APIRoute = async ({ request, locals }) => {
         const authSecret = getEnvValue("AUTH_SECRET", getRuntimeEnv(locals));
         storedToken = await encryptAdsSecret(submittedToken, authSecret);
       }
+      const store = await database.prepare("SELECT id FROM stores ORDER BY id LIMIT 1").first<{ id: number }>();
+      if (!store) return json({ success: false, error: "Store belum tersedia." }, 404);
       if (storedToken === undefined) {
-        await database.prepare(`UPDATE stores SET meta_pixel_id = ? WHERE id = (SELECT id FROM stores ORDER BY id LIMIT 1)`)
-          .bind(pixelId || null).run();
+        await commitSystemMutation(database, database.prepare(`UPDATE stores SET meta_pixel_id = ? WHERE id = ?`)
+          .bind(pixelId || null, store.id), { action: "ads.meta.updated", actor: locals.admin?.username ?? "", targetId: store.id });
       } else {
-        await database.prepare(`UPDATE stores SET meta_pixel_id = ?, meta_capi_token = ? WHERE id = (SELECT id FROM stores ORDER BY id LIMIT 1)`)
-          .bind(pixelId || null, storedToken).run();
+        await commitSystemMutation(database, database.prepare(`UPDATE stores SET meta_pixel_id = ?, meta_capi_token = ? WHERE id = ?`)
+          .bind(pixelId || null, storedToken, store.id), { action: "ads.meta.updated", actor: locals.admin?.username ?? "", targetId: store.id });
       }
     }
 
@@ -124,10 +128,12 @@ export const PUT: APIRoute = async ({ request, locals }) => {
       if (gtmId && !GOOGLE_TAG_MANAGER_ID_PATTERN.test(gtmId)) return json({ success: false, error: "GTM Container ID harus berformat GTM-XXXXXXX." }, 422);
       if (adsId && !GOOGLE_ADS_ID_PATTERN.test(adsId)) return json({ success: false, error: "Google Ads Conversion ID harus berformat AW-XXXXXXXXX." }, 422);
       if (label && !GOOGLE_ADS_LABEL_PATTERN.test(label)) return json({ success: false, error: "Google Ads Purchase Label tidak valid." }, 422);
-      await database.prepare(`
+      const store = await database.prepare("SELECT id FROM stores ORDER BY id LIMIT 1").first<{ id: number }>();
+      if (!store) return json({ success: false, error: "Store belum tersedia." }, 404);
+      await commitSystemMutation(database, database.prepare(`
         UPDATE stores SET google_tag_manager_id = ?, google_ads_conversion_id = ?, google_ads_conversion_label = ?
-        WHERE id = (SELECT id FROM stores ORDER BY id LIMIT 1)
-      `).bind(gtmId || null, adsId || null, label || null).run();
+        WHERE id = ?
+      `).bind(gtmId || null, adsId || null, label || null, store.id), { action: "ads.google.updated", actor: locals.admin?.username ?? "", targetId: store.id });
     }
 
     const updated = await getStoreAdsConfig(locals);

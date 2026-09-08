@@ -33,7 +33,7 @@ Every request passes through the same chain before a page or API handler runs.
 
 | Step | File | What it decides |
 | --- | --- | --- |
-| Worker entry | `src/worker.ts` | `fetch` hands off to Astro. `scheduled` (cron `* * * * *`) drains the Meta CAPI outbox and reconciles due DOKU payments. |
+| Worker entry | `src/worker.ts` | `fetch` hands off to Astro. `scheduled` (cron `* * * * *`) drains the Meta CAPI outbox, reconciles due DOKU payments, records best-effort scheduler failures and prunes expired system events. |
 | Middleware | `src/middleware.ts` | Schema upgrade gate (503 when D1 is behind), `www` -> canonical 301, installer redirect when no store row, native landing-page takeover 308, embed `frame-ancestors` CSP, admin session + role + password-rotation gate, CSRF origin check on unsafe `/api/admin` methods, security headers, click-id cookie capture. |
 | Layouts | `src/layouts/BaseLayout.astro` (public), `AdminLayout.astro` (admin, `noindex`), `EmbedLayout.astro` (iframe form, `noindex`) | BaseLayout owns SEO meta, JSON-LD, header/footer, and the single ads tracking loader. |
 | Bindings | `wrangler.jsonc`, `src/worker-configuration.d.ts` (generated), `src/env.d.ts` (hand-written extras) | `OMS_DB` (D1), `SESSION` (KV), `ASSET_BUCKET` (R2), `AI`, `ASSETS`. Secrets `AUTH_SECRET`, `INSTALL_TOKEN`. |
@@ -199,15 +199,15 @@ All under `/api/admin`, session-gated by middleware, CSRF-checked on unsafe meth
 | `/api/admin/landing-pages/[id]` | `pages/api/admin/landing-pages/[id].ts` | GET, PUT, DELETE | `landing-pages` | same |
 | `/api/admin/content` | `pages/api/admin/content.ts` | GET, PUT | `storefront-content`, `ai-content-instructions` (Workers AI) | `storefront_content`, `products`, `product_variants`, `stores` |
 | `/api/admin/expeditions` | `pages/api/admin/expeditions.ts` | GET, POST, PATCH | `malaysia-states` | `shipping_zones`, `shipping_postcode_ranges`, `shipping_rate_rules` |
-| `/api/admin/ads` | `pages/api/admin/ads.ts` | GET, PUT | `ads-config`, `ads-secret`, `meta-capi`, `rate-limit` | `stores` |
+| `/api/admin/ads` | `pages/api/admin/ads.ts` | GET, PUT | `ads-config`, `ads-secret`, `meta-capi`, `rate-limit`, `system-events` | `stores`, `system_events` |
 | `/api/admin/ads/google-catalog` | `pages/api/admin/ads/google-catalog.ts` | GET | `google-catalog`, `catalog` | read-only feed diagnostics |
-| `/api/admin/payments` | `pages/api/admin/payments.ts` | GET, PUT, PATCH, DELETE | `doku-config` | `stores`, `payment_provider_configs` |
+| `/api/admin/payments` | `pages/api/admin/payments.ts` | GET, PUT, PATCH, DELETE | `doku-config`, `system-events` | `stores`, `payment_provider_configs`, `system_events` |
 | `/api/admin/seller-bank-accounts` | `pages/api/admin/seller-bank-accounts.ts` | GET, POST, PUT, DELETE | `seller-bank-account` | `seller_bank_accounts`, `stores` |
-| `/api/admin/settings` | `pages/api/admin/settings.ts` | GET, PUT, POST | `store-site-url`, `store-pickup`, `embed-security`, `headless-api`, `crm-template`, `storefront-template` | `stores` |
-| `/api/admin/settings/developer` | `pages/api/admin/settings/developer.ts` | GET, POST, PATCH, DELETE | `developer-api-keys` | `developer_api_keys`, `headless_api_audit_events` |
-| `/api/admin/access` | `pages/api/admin/access.ts` | GET, POST, PATCH, DELETE | `admin-credentials`, `auth` | `admin_credentials` |
-| `/api/admin/system-log` | `pages/api/admin/system-log.ts` | GET | `system-log`, `schema-version` | reads `capi_event_outbox`, `payment_events`, `payment_attempts`, `orders`, `notifications`, `headless_api_audit_events`; writes nothing |
-| `/api/admin/profile` | `pages/api/admin/profile.ts` | GET, PUT | `admin-credentials`, `auth` | `admin_credentials` |
+| `/api/admin/settings` | `pages/api/admin/settings.ts` | GET, PUT, POST | `store-site-url`, `store-pickup`, `embed-security`, `headless-api`, `crm-template`, `storefront-template`, `system-events` | `stores`, `system_events` |
+| `/api/admin/settings/developer` | `pages/api/admin/settings/developer.ts` | GET, POST, PATCH, DELETE | `developer-api-keys`, `system-events` | `developer_api_keys`, `headless_api_audit_events`, `system_events` |
+| `/api/admin/access` | `pages/api/admin/access.ts` | GET, POST, PATCH, DELETE | `admin-credentials`, `auth`, `system-events` | `admin_credentials`, `system_events` |
+| `/api/admin/system-log` | `pages/api/admin/system-log.ts` | GET | `system-log`, `system-events`, `schema-version` | reads `system_events`, `capi_event_outbox`, `payment_events`, `payment_attempts`, `orders`, `notifications`, `headless_api_audit_events`; writes nothing |
+| `/api/admin/profile` | `pages/api/admin/profile.ts` | GET, PUT | `admin-credentials`, `auth`, `system-events` | `admin_credentials`, `system_events` |
 | `/api/admin/notifications` | `pages/api/admin/notifications.ts` | GET, POST | `notifications` | `notifications`, `notification_reads` |
 | `/api/admin/logout` | `pages/api/admin/logout.ts` | POST | `auth` | KV session delete |
 
@@ -263,7 +263,7 @@ Each module has a sibling `*.test.ts` unless marked (no test). Run all with `npm
 
 | Domain | Modules |
 | --- | --- |
-| Auth and admin | `auth` (JWT HS256, roles, route grants), `admin-credentials`, `rate-limit` (KV window + login lockout), `admin-upload`, `admin-date-filter`, `admin-order-status`, `admin-order-delivery`, `notifications`, `notification-chime`, `system-log` (read-only merged operator event view), `operational-alerts` (no test; webhook alerts) |
+| Auth and admin | `auth` (JWT HS256, roles, route grants), `admin-credentials`, `system-events` (append-only audit persistence and retention), `rate-limit` (KV window + login lockout), `admin-upload`, `admin-date-filter`, `admin-order-status`, `admin-order-delivery`, `notifications`, `notification-chime`, `system-log` (read-only merged operator event view), `operational-alerts` (no test; webhook alerts) |
 | Tenant and install | `tenant` (store row -> `locals.tenant`), `tenant-contract` (no test), `tenant-content` (no test), `install`, `store-site-url`, `store-pickup`, `storefront-template`, `schema-version` (migration gate), `bundled-migrations` (no test), `version` (no test; `CMS_VERSION.schemaVersion` must match latest migration), `env` (no test) |
 | Catalog and content | `catalog` (no test; public projection), `catalog-data` (admin rows), `catalog-id` (no test; `p{id}-v{id}`), `product-mutation`, `storefront-content` (home/product published copy), `ai-content-instructions`, `storefront-locale` (`formatMyr`), `image-derivative`, `daily-rotation` |
 | Landing pages | `landing-pages` (CMS pages + shortcodes, 869 lines), `native-landing-pages` (register validation), `embed-markup` (snippet + version), `embed-security` (frame-ancestors), `form-config` |
@@ -275,9 +275,9 @@ Each module has a sibling `*.test.ts` unless marked (no test). Run all with `npm
 
 Test-only modules with no runtime sibling: `code-map` (guards this file), `decision-records` (guards ADR citations), `admin-analytics`, `admin-bootstrap`, `admin-navigation`, `admin-orders-list`, `brand-contamination`, `doku-schema`, `expedition-settings`, `full-form-cutover`, `legal-content`, `malaysia-market`, `meta-event`, `middleware-path-source`, `mobile-layout-guard`, `sample-product-removal`, `shipping-bootstrap`, `shipping-queue`, `submit-middle-order`, `system-precision`, `task-queue`.
 
-## 10. Database (D1, 25 live tables)
+## 10. Database (D1, 26 live tables)
 
-Schema is the migration chain `src/db/migrations/0000` through `0059`. Tables created and later dropped (`courier_rules`, `warehouses`, `pickup_schedules`, `payment_transactions`, `provider_dispatch_locks`, `payment_reconciliation_audits`, `orders_mybookcms_cutover`) are not listed.
+Schema is the migration chain `src/db/migrations/0000` through `0061`. Tables created and later dropped (`courier_rules`, `warehouses`, `pickup_schedules`, `payment_transactions`, `provider_dispatch_locks`, `payment_reconciliation_audits`, `orders_mybookcms_cutover`) are not listed.
 
 | Table | Created in | Owning code |
 | --- | --- | --- |
@@ -298,6 +298,7 @@ Schema is the migration chain `src/db/migrations/0000` through `0059`. Tables cr
 | `malaysia_postcodes` | 0050 | `malaysia-locations` |
 | `capi_event_outbox` | 0026, restored 0055 | `capi-outbox`, `/api/meta-event` |
 | `payment_provider_configs`, `payment_attempts`, `payment_events` | 0059 | `doku-config`, `doku-checkout`, `doku-payment-lifecycle`, `doku-reconciliation` |
+| `system_events` | 0061 | `system-events` audit core, direct admin mutations, login transitions and scheduled retention/failures; privileged mutation helpers and existing system-log panel integrated |
 
 Local commands: `npm run db:migrate:local`, `npm run db:seed:malaysia:local`, `npm run db:seed:preview:local`.
 
@@ -349,7 +350,7 @@ Local commands: `npm run db:migrate:local`, `npm run db:seed:malaysia:local`, `n
 | Add an admin page | `pages/admin/<x>.astro` + island in `components/admin/`, grant in `lib/auth.ts` route tables, entry in `components/admin/admin-navigation.ts` |
 | Add an admin API | `pages/api/admin/<x>.ts`, grant in `lib/auth.ts` `ADMIN_API_ROUTES` / `ROLE_API_ROUTES` |
 | Add a native landing page | copy `pages/contoh-landing.astro`, register in `data/native-landing-pages.ts`, read `docs/LANDING-PAGES.md` |
-| Add a DB column | new migration `src/db/migrations/0060_*.sql`, bump `lib/version.ts` `schemaVersion` |
+| Add a DB column | next forward migration in `src/db/migrations/`, bump `lib/version.ts` `schemaVersion` |
 | Touch DOKU | `lib/doku-*.ts`, `pages/api/payments/doku/`, `pages/payment/doku/`, `PLAN.md`, ADR-021 |
 | Touch Meta/Google tracking | `components/storefront/tracking/AdsBase.astro`, `lib/meta-capi.ts`, `lib/capi-outbox.ts`, `pages/api/meta-event.ts`, `lib/google-catalog.ts` |
 | Change public copy or legal text | `data/legal.ts`, `lib/storefront-content.ts`, `/admin/content` |

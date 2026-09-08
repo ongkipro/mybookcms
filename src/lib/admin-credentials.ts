@@ -1,3 +1,4 @@
+import { commitSystemMutation } from "./system-events.ts";
 import { isAdminRole, secureEqual, verifyPasswordHash } from './auth.ts';
 import type { AdminRole } from './auth.ts';
 
@@ -156,7 +157,7 @@ export async function updateAdminCredential(
 
   const passwordHash = await hashAdminPassword(newPassword);
   const updatedAt = new Date().toISOString();
-  const result = await database.prepare(`
+  const result = await commitSystemMutation(database, database.prepare(`
     UPDATE admin_credentials
     SET username = ?, password_hash = ?, must_change_password = 0, updated_at = ?
     WHERE id = ? AND password_hash = ?
@@ -166,7 +167,7 @@ export async function updateAdminCredential(
     updatedAt,
     current.id,
     current.passwordHash,
-  ).run();
+  ), { action: "operator.credentials.updated", actor: actorUsername, targetId: current.id });
   if (result.meta.changes !== 1) {
     return { ok: false as const, error: 'Kredensial berubah di sesi lain. Muat ulang halaman dan coba kembali.' };
   }

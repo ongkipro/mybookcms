@@ -3,10 +3,10 @@ import {
   getAdminCredential,
   revokeAdminSessions,
   updateAdminCredential,
-} from '../../../lib/admin-credentials';
-import { jsonError, jsonOk } from '../../../lib/api';
-import { SESSION_COOKIE_NAME } from '../../../lib/auth';
-import { getRuntimeEnv } from '../../../lib/env';
+} from '../../../lib/admin-credentials.ts';
+import { jsonError, jsonOk } from '../../../lib/api.ts';
+import { SESSION_COOKIE_NAME } from '../../../lib/auth.ts';
+import { getRuntimeEnv } from '../../../lib/env.ts';
 
 export const prerender = false;
 

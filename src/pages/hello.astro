@@ -24,6 +24,8 @@ import {
   recordAdminLoginFailure,
 } from '../lib/rate-limit';
 
+import { recordLoginLockout } from '../lib/system-events';
+
 export const prerender = false;
 
 let errorMessage = '';
@@ -119,6 +121,14 @@ if (Astro.request.method === 'POST' && crossSiteLogin) {
         }
 
         await recordAdminLoginFailure(sessions, username, clientIp);
+        // Record the transition after an admitted failure, never every denied
+        // request. KV's existing non-atomic window is not an exactly-once audit.
+        try {
+          const afterFailure = await checkAdminLoginRateLimit(sessions, username, clientIp);
+          if (!afterFailure.allowed) await recordLoginLockout(database);
+        } catch {
+          console.error('system-event-write-failed', { source: 'auth' });
+        }
         Astro.response.status = 401;
         focusPassword = true;
         errorMessage = 'Username atau password salah.';

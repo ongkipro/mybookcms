@@ -110,7 +110,7 @@ export const PUT: APIRoute = async ({ request, locals }) => {
       apiKey: parsed.data.api_key,
       secretKey: parsed.data.secret_key,
       enabledChannels: parsed.data.enabled_channels,
-    }, parsed.data.expected_revision);
+    }, parsed.data.expected_revision, locals.admin?.username ?? "");
     return json({
       success: true,
       message: "Draft DOKU tersimpan dalam keadaan nonaktif.",
@@ -129,7 +129,7 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
   if (!parsed.success) return json({ success: false, error: "Perubahan status DOKU tidak valid." }, 400);
   try {
     const enabled = parsed.data.action === "enable";
-    await setDokuConfigEnabled(database, rootSecret, parsed.data.expected_revision, enabled);
+    await setDokuConfigEnabled(database, rootSecret, parsed.data.expected_revision, enabled, locals.admin?.username ?? "");
     return json({
       success: true,
       message: enabled ? "DOKU diaktifkan tanpa menghubungi provider." : "DOKU dinonaktifkan untuk checkout baru.",
@@ -147,7 +147,7 @@ export const DELETE: APIRoute = async ({ request, locals }) => {
   const parsed = deleteSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return json({ success: false, error: "Permintaan penghapusan DOKU tidak valid." }, 400);
   try {
-    await clearDokuConfigDraft(database, parsed.data.expected_revision);
+    await clearDokuConfigDraft(database, parsed.data.expected_revision, locals.admin?.username ?? "");
     return json({
       success: true,
       message: "Kredensial DOKU dihapus dan integrasi tetap nonaktif.",

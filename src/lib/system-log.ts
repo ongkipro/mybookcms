@@ -1,3 +1,4 @@
+import { SYSTEM_EVENT_LABELS, type SystemEventAction } from "./system-events.ts";
 import { getSchemaVersionStatus } from "./schema-version.ts";
 
 /**
@@ -26,10 +27,12 @@ import { getSchemaVersionStatus } from "./schema-version.ts";
  * a provider body, it does not appear here.
  */
 
-export type SystemLogSource = "schema" | "ads" | "payment" | "order" | "api";
+export type SystemLogSource = "schema" | "ads" | "payment" | "order" | "api" | "audit";
 export type SystemLogSeverity = "info" | "warning" | "error";
 
 export type SystemLogEntry = {
+  /** Validated audit principal; absent for legacy diagnostic sources. */
+  actor?: string;
   source: SystemLogSource;
   severity: SystemLogSeverity;
   /** Indonesian operator copy, composed here from structured columns only. */
@@ -51,8 +54,8 @@ export const SYSTEM_LOG_MAX_ENTRIES = 200;
 /** Nothing older than this is listed, whatever its source retains. */
 export const SYSTEM_LOG_WINDOW_DAYS = 30;
 
-/** Schema, ads, payment, order, api. */
-const SOURCE_COUNT = 5;
+/** Schema, ads, payment, order, api, audit. */
+const SOURCE_COUNT = 6;
 
 /**
  * Per-source ceiling, sized so the final slice can never drop anything.
@@ -65,8 +68,8 @@ const SOURCE_COUNT = 5;
  * events instead of a month of them.
  *
  * Dividing by the source count is the honest bound. `SOURCE_COUNT * this` is
- * exactly the total, so every source keeps its full share, nothing is wasted,
- * and no source can take another's.
+ * bounded by the total, so every source keeps its full share and no source
+ * can take another's. Integer division may leave fewer than six slots unused.
  */
 const PER_SOURCE_LIMIT = Math.floor(SYSTEM_LOG_MAX_ENTRIES / SOURCE_COUNT);
 
@@ -326,6 +329,42 @@ async function readApi(database: D1Database, since: string): Promise<SystemLogEn
   return entries;
 }
 
+const AUDIT_HREF: Record<string, string> = {
+  store: "/admin/settings", payment: "/admin/payments",
+  ads: "/admin/ads/meta", api_key: "/admin/settings/developer",
+  operator: "/admin/settings/access",
+};
+
+async function readAudit(database: D1Database, since: string, role?: string): Promise<SystemLogEntry[]> {
+  const rows = await database.prepare(`
+    SELECT actor, source, action, correlation, occurred_at FROM system_events
+    WHERE occurred_at >= ? ORDER BY occurred_at DESC, id DESC LIMIT ?
+  `).bind(since, PER_SOURCE_LIMIT).all<{
+    actor: string; source: string; action: string; correlation: string; occurred_at: string;
+  }>();
+  return (rows.results ?? []).flatMap((row): SystemLogEntry[] => {
+    if (!Object.hasOwn(SYSTEM_EVENT_LABELS, row.action)) return [];
+    const action = row.action as SystemEventAction;
+    const scheduled = action.startsWith("scheduler.");
+    const login = action === "login.lockout";
+    const source = scheduled ? "scheduler" : login ? "auth" : "admin";
+    const prefix = action.split(".")[0];
+    const expectedCorrelation = scheduled ? `scheduler:${action.split(".")[1]}` : login ? "login" : null;
+    const validCorrelation = expectedCorrelation ? row.correlation === expectedCorrelation
+      : typeof row.correlation === "string" && row.correlation.startsWith(`${prefix}:`) && /^[a-z_]+:[1-9][0-9]*$/.test(row.correlation);
+    const occurred = toIso(row.occurred_at);
+    if (!occurred || row.source !== source || !validCorrelation || typeof row.actor !== "string"
+      || !/^[a-z0-9._-]{3,64}$/.test(row.actor)
+      || (scheduled && row.actor !== "system") || (login && row.actor !== "anonymous")) return [];
+    return [{
+      source: "audit", actor: row.actor, label: SYSTEM_EVENT_LABELS[action],
+      severity: scheduled ? "error" : login ? "warning" : "info",
+      correlation: row.correlation, occurred_at: occurred,
+      href: prefix === "operator" && role !== "owner" ? null : action === "ads.google.updated" ? "/admin/ads/google" : AUDIT_HREF[prefix] ?? null,
+    }];
+  });
+}
+
 /**
  * Merge every source, newest first, bounded by age and count.
  *
@@ -345,6 +384,7 @@ export async function loadSystemLog(
           collect("payment", () => readPayments(database, since)),
           collect("order", () => readOrders(database, since)),
           collect("api", () => readApi(database, since)),
+          collect("audit", () => readAudit(database, since, locals.admin?.role)),
         ]
       : []),
   ]);
