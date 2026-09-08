@@ -73,7 +73,17 @@ Never stage the ledger with `git add -f`.
    Mode and to `task-queue.test.ts`, which validates the queue alone. Confirm the
    section after inserting; a green test is not confirmation.
 9. A new `console.error` label is registered in `OBSERVABILITY.md` in the same
-   change, under the emitted signal registry. That document is the contract for
+   change, under the emitted signal registry.
+10. An R3 run records what its independent review found, as a `verification`
+    check beside the `boundary_review` event. The event itself has no field for
+    findings — it stores reviewer, route, digests and `APPROVED`, and nothing
+    else — so on its own it proves a review was claimed, not that one happened.
+    Across 62 bound reviews here, five reviewer identities appear, three of them
+    reused 24, 17 and 15 times, with a median of 9.2 minutes from run start to
+    approval and twelve bound inside three minutes. That is not an accusation:
+    the ledger cannot tell a real review from a renamed one, which the shared
+    contract says outright. Recording the findings is what closes the gap, and
+    it costs one `record --check` per review. That document is the contract for
    what an operator can observe; an unregistered label is a signal the contract
    does not define, and `doku-config-unusable` shipped that way for a day before
    anyone noticed.

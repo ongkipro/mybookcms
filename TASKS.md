@@ -1298,6 +1298,55 @@ Surface, and obtain the independent correctness/security review required by
       Dependencies: A-269, which added the optional clock this uses.
       Done when: `POST /api/checkout-lead` passes a clock and its limit test injects one; that test asserts the limiter bucketed against the injected clock rather than only asserting the refusal; the remaining routes are either threaded or recorded as deliberately left; and no rate-limit assertion in the suite depends on where a real minute boundary falls.
 
+- [ ] **A-273** — Make an independent review record what it found, because today it records only that it happened. **Approval: required — changes what this repository accepts as a completed R3.**
+      Audited 2026-09-08 across all 62 bound reviews in `.delivery/runs/`. The
+      shared contract in `~/dotfiles/docs/task-change-boundary.md` is not the
+      problem and was checked first: it requires a separate actual agent, allows
+      any model or provider including the implementer's, treats model and
+      provider as truthful provenance rather than eligibility, and states plainly
+      that *"merely renaming self-review is invalid: the orchestrator must obtain
+      a real separate-agent review, which the ledger cannot prove from identity
+      strings alone."* The policy is sound. The practice recorded against it is
+      what does not hold up.
+      **The `boundary_review` event has no field for findings.** Its keys are
+      reviewer, model, provider, reasoning effort, the boundary hash, the surface
+      digest, the effective risk, the implementer route, and `status: APPROVED`.
+      There is nowhere to say what was examined, what was found, or that anything
+      was found at all. So the gate proves a review was *claimed*, never that one
+      *happened* — and every downstream reader, including this file, has been
+      treating APPROVED as though it meant the second.
+      **The usage pattern is indistinguishable from a rubber stamp.** Sixty-two
+      bound reviews carry five distinct reviewer identities, three of them reused
+      24, 17 and 15 times — one is literally named `a210_review_retry` and signed
+      off A-211 through A-221. The median gap from run start to bound review is
+      9.2 minutes, implementation included; twelve were bound inside three
+      minutes of their run starting, the fastest at 0.7. Several tasks bound the
+      same review two or three times within one minute. None of this proves
+      self-review, and it is not an accusation of one — the ledger cannot
+      distinguish the two, which is exactly the hole the shared doc names.
+      The contrast is the argument. The four reviews bound on 2026-09-08 by
+      `independent-doku-reviewer` were a genuinely separate agent, and they
+      changed the code four times: a byte-equality assertion that compared the
+      builder to itself, an `OBSERVABILITY.md` row promising a class the code
+      could not produce, three error codes filed as provider failures, and a
+      closure entry that inflated its own review coverage. A gate that cannot
+      tell that apart from a 0.7-minute approval is not measuring what it is
+      relied on to measure.
+      The fix in this repository is small and does not need the tool to change:
+      require that an R3 run record its review as a `verification` check whose
+      detail states what was examined and what was found, alongside the
+      `boundary_review` event. That is already what the A-260, A-268 and A-269
+      runs did. Making it a rule turns one session's habit into the repository's
+      contract. Widening `boundary_review` itself belongs to `delivery-ledger`
+      in dotfiles and is explicitly out of scope here.
+      Risk: R1 — one rule in `AGENTS.md` and its statement in this file; no runtime change. It raises the bar for closing an R3, which is the point and the reason it needs approval.
+      Surface: `AGENTS.md`, `TASKS.md`, `STATUS.md`.
+      Non-scope: changing `delivery-ledger` or the shared dotfiles contract, re-opening or re-reviewing the 58 historical reviews, accusing any specific past review of being a rubber stamp, and adding a second approval step to R1 or R2 work.
+      Primary requirement: REQ-231
+      Constraints: none.
+      Dependencies: none.
+      Done when: `AGENTS.md` states that an R3 run records its review findings as a verification check and that `boundary_review` alone does not satisfy the gate; the rule names why, so the next session does not read it as ceremony; and no open entry claims a review gate stronger than what the ledger actually stores.
+
 - [ ] **A-261** — Decide whether a 62,000-line codebase gets a linter. **Approval: required — adds a toolchain to a repository that has kept dependencies deliberately minimal.**
       Found by the health report of 2026-09-08. There is no `eslint`, `prettier`,
       or `biome` configuration anywhere in the repository. `tsconfig.json` has

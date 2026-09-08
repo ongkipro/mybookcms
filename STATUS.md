@@ -411,6 +411,30 @@ after `33a29c7`, and it changes no code.
 This remains local evidence. No remote migration, deployment, or provider
 traffic is claimed by it.
 
+## Review gate audited 2026-09-08
+
+All 62 bound reviews in `.delivery/runs/` were examined after the owner
+suspected the reviewer setup was wrong. The shared contract in dotfiles was
+checked first and is sound: it requires a separate actual agent, allows any
+model or provider, and states that renaming self-review is invalid because the
+ledger cannot prove the difference from identity strings. The gap is in what
+the ledger stores. `boundary_review` has no field for findings — reviewer,
+route, digests, `APPROVED`, nothing more — so it proves a review was claimed,
+never that one happened.
+
+The usage pattern cannot be distinguished from a rubber stamp: five reviewer
+identities across 62 reviews, three reused 24, 17 and 15 times, one named
+`a210_review_retry` signing off A-211 through A-221; a median of 9.2 minutes
+from run start to approval with implementation included, and twelve bound
+within three minutes. That is not an accusation of self-review, because the
+ledger cannot tell the two apart. The contrast is the argument: the four
+reviews bound by a genuinely separate agent on 2026-09-08 changed the code four
+times, including catching a closure entry that inflated its own review
+coverage. `AGENTS.md` rule 10 now requires an R3 run to record its review
+findings as a verification check; A-273 carries the reasoning and needs the
+owner's approval because it raises what this repository accepts as a completed
+R3.
+
 ## A-269 — the rate limiter takes the clock it is given 2026-09-08
 
 `checkRateLimit` derived its fixed window from real `Date.now()` while every
