@@ -27,6 +27,16 @@ npm run cf:dev
 
 Use `npm run cf:dev` for flows requiring D1, KV, or R2 bindings. `npm run dev`
 is suitable only for rendering work that does not use Worker bindings.
+**`--assets dist/client` is not optional.** The generated
+`dist/server/wrangler.json` declares `assets.directory` as the relative
+`../client`, and Wrangler resolves that against the root `wrangler.jsonc` it
+discovers rather than against the `--config` file it was handed — so it looks
+for `../client` beside the repository and finds nothing. Every `/_astro/*`
+chunk then answers a bare 404 with no error logged anywhere, no admin island
+hydrates, and each admin page renders as a shell: a working header above an
+empty body. That is what it looks like from the browser, and it is why the flag
+is in the script. Found by A-270 after `/admin/expeditions` was reported blank.
+
 `cf:dev` builds first, serves Astro's generated asset binding, and pins local
 bindings to the repository-owned `.wrangler/state`. To expose the preview on an
 approved private interface, append Wrangler arguments, for example

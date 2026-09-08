@@ -411,6 +411,28 @@ after `33a29c7`, and it changes no code.
 This remains local evidence. No remote migration, deployment, or provider
 traffic is claimed by it.
 
+## A-270 — local dev served no client assets 2026-09-08
+
+Reported as `/admin/expeditions` rendering blank. The page was never the
+problem. `npm run cf:dev` hands Wrangler the generated
+`dist/server/wrangler.json`, whose `assets.directory` is the relative
+`../client`; Wrangler resolved it against the root `wrangler.jsonc` it
+discovered instead, looked beside the repository, found nothing, and answered
+every `/_astro/*` request with a bare 404. No console error, no exception, no
+failed API call — the island chunk simply never arrived, so React never
+hydrated and each admin page rendered its server shell above an empty body.
+Every admin page was affected, not just expeditions; the storefront looked
+healthy only because Astro inlines its checkout script rather than emitting a
+separate chunk. Both dev scripts now pass `--assets dist/client`, verified 404
+without and 200 with, and `INSTALLATION.md` records what the absence looks like.
+
+`scripts/verify-expeditions-page.mts` is the regression check, and it asserts
+the chunk is served before it asserts anything about the page, because a blank
+page is a confusing way to learn that assets are unmounted. Its first draft was
+itself a false positive: it waited for page text containing `Zon`, which the
+header `Zona & tarif pengiriman` satisfies before the island mounts, so a
+healthy page measured as blank. It now keys on a marker only the island renders.
+
 ## A-260 review bound, and a flaky-evidence finding queued 2026-09-08
 
 The independent reviewer approved the A-260 surface for an R3 payment-path
