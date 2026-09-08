@@ -1,15 +1,26 @@
-import type { APIRoute } from 'astro';
+import type { APIContext, APIRoute } from 'astro';
 import { jsonError, jsonOk, methodNotAllowed } from '../../lib/api.ts';
 import { getRuntimeEnv } from '../../lib/env.ts';
 import { captureCheckoutLead, captureLeadSchema, CheckoutLeadError } from '../../lib/checkout-lead.ts';
 import { checkRateLimit, getClientIp, rateLimitHeaders } from '../../lib/rate-limit.ts';
 
 export const prerender = false;
-export const POST: APIRoute = async ({ request, locals }) => {
+// A-272. The rate-limit window is `floor(now / windowMs)`, so a test firing
+// thirty requests at a thirty-per-minute bound flips whenever a real minute
+// boundary lands mid-loop — roughly one run in forty. `clock` makes that
+// injectable and defaults to the real one, so production is byte-identical:
+// Astro's endpoint dispatcher calls the handler with exactly one argument.
+//
+// Split into a handler plus an annotated export deliberately. Putting the extra
+// parameter on a value annotated `: APIRoute` would have dropped the only
+// compile-time contract this route has — Astro does not type-validate endpoint
+// exports, so a later edit returning a non-Response would pass `npm run check`
+// and fail at runtime on a buyer-facing path. The test imports `handler`.
+const handler = async ({ request, locals }: APIContext, clock: () => number = Date.now) => {
   const origin = request.headers.get('origin');
   if ((origin && origin !== new URL(request.url).origin) || request.headers.get('sec-fetch-site') === 'cross-site') return jsonError('Forbidden request origin', 403);
   const env = getRuntimeEnv(locals);
-  const rate = await checkRateLimit(env?.SESSION as KVNamespace | undefined, `checkout-lead:${getClientIp(request.headers)}`, 30, 60_000);
+  const rate = await checkRateLimit(env?.SESSION as KVNamespace | undefined, `checkout-lead:${getClientIp(request.headers)}`, 30, 60_000, true, clock);
   if (!rate.allowed) return new Response(JSON.stringify({success: false, error: 'Cuba lagi sebentar.'}), {status: 429, headers: {'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...rateLimitHeaders(rate.remaining, rate.resetAt)}});
   // Bound streamed bytes too; Content-Length alone is not authoritative.
   const reader = request.body?.getReader();
@@ -31,4 +42,6 @@ export const POST: APIRoute = async ({ request, locals }) => {
   try { await captureCheckoutLead(database, parsed.data); return jsonOk({}); }
   catch (error) { return jsonError(error instanceof CheckoutLeadError ? error.message : 'Maklumat belum dapat disimpan.', error instanceof CheckoutLeadError ? error.status : 500); }
 };
+export const POST: APIRoute = (context) => handler(context);
 export const ALL: APIRoute = () => methodNotAllowed('POST');
+export { handler as captureHandler };

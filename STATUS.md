@@ -411,6 +411,36 @@ after `33a29c7`, and it changes no code.
 This remains local evidence. No remote migration, deployment, or provider
 traffic is claimed by it.
 
+## A-272 — checkout-lead buckets against its injected clock 2026-09-08
+
+`POST /api/checkout-lead` takes an optional clock and its limit test freezes
+one, asserting the limiter's KV bucket rather than the timing — mutation-proved
+to fail when the route ignores the clock. An audit of every call site corrected
+the entry's own premise twice. The flake is latent at about one run in forty,
+not the deterministic break "already failing" implied; and five routes were
+deliberately left unthreaded. The first account of why was wrong and the review
+caught it: `meta-event` is imported and called by two tests. The conclusion
+holds for a different reason — those fixtures bind no `SESSION`, so the limiter
+fails open before it computes a window — while the other four are genuinely
+never invoked, so threading any of them would add a parameter with no consumer.
+The route also keeps its `APIRoute` annotation through a delegating export,
+because moving the extra parameter onto the annotated value would have removed
+the only compile-time contract this buyer-facing handler has. The admin-login trio in
+`rate-limit.ts` is real but deferred at roughly one run in seven hundred, and is
+recorded with the detail that `clearAdminLoginFailures` computes its own
+`windowStart` — so any future threading must cover all three or `clear` deletes
+the wrong bucket.
+
+One `npm test` during validation exited 1 and could not be reproduced across
+six clean runs, so it is recorded as unattributed rather than assumed to be the
+clock class this task fixed. It is excluded from that class for a stated
+reason: the diff touches one test whose KV key is unique in the repository,
+alters no shared or module-level state, and leaves the production path
+unchanged. The surviving wall-clock candidates are the deferred admin-login
+trio and `route-surface.test.ts`'s build-and-harness `before` hook. The real
+gap is that the failing test name was never captured before rerunning; next
+occurrence, capture first.
+
 ## Review gate audited 2026-09-08
 
 All 62 bound reviews in `.delivery/runs/` were examined after the owner

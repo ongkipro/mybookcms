@@ -6,7 +6,7 @@ import {join} from 'node:path';
 import {getPlatformProxy, type PlatformProxy} from 'wrangler';
 import {splitMigrationStatements} from './schema-version.ts';
 import {captureCheckoutLead, captureLeadSchema, convertCheckoutLead, convertLeadSchema} from './checkout-lead.ts';
-import {POST as capture, ALL as captureMethod} from '../pages/api/checkout-lead.ts';
+import {captureHandler as capture, POST as capturePost, ALL as captureMethod} from '../pages/api/checkout-lead.ts';
 import {GET, POST, PATCH} from '../pages/api/admin/orders/leads.ts';
 import {persistOrder} from './order-persistence.ts';
 import {canAccessAdminRoute} from './auth.ts';
@@ -110,11 +110,31 @@ test('admin lead routes allow operational roles, deny advertiser, and never expo
 
 test('public capture enforces the 30 per minute IP limit with retry headers', async () => {
   const input={...identity,submit_token:token()}, headers={'CF-Connecting-IP':'192.0.2.250'};
-  for(let i=0;i<30;i++) assert.equal((await capture(captureContext(input,headers))).status,200);
+  // A-272. 1_800_000_000_000 is an exact multiple of the 60s window, so it is
+  // its own windowStart. Freezing it means no real minute boundary can reset
+  // the counter mid-loop, which is what made this fail about one run in forty.
+  const frozen=1_800_000_000_000, clock=()=>frozen;
+  for(let i=0;i<30;i++) assert.equal((await capture(captureContext(input,headers),clock)).status,200);
   const before=await counts();
-  const denied=await capture(captureContext({...input,submit_token:token()},headers));
+  const denied=await capture(captureContext({...input,submit_token:token()},headers),clock);
   assert.equal(denied.status,429);assert.equal(denied.headers.get('cache-control'),'no-store');
   assert.equal(denied.headers.get('X-RateLimit-Remaining'),'0');
+  // `Retry-After` still derives from wall time while `resetAt` comes from the
+  // frozen clock, which is roughly 129 days in the future — so this header is a
+  // very large number here, not the clamped 1 an earlier version of this
+  // comment claimed. Asserted for presence only, because under a frozen clock
+  // its value means nothing.
   assert.ok(Number(denied.headers.get('Retry-After'))>0);
+  // The mechanism rather than the timing: the bucket the route spent is the one
+  // the injected clock names. If the route ignored the clock it would write a
+  // wall-clock bucket and this read returns null, failing every time instead of
+  // one run in forty.
+  const sessions=locals().runtimeEnv?.SESSION as KVNamespace | undefined;
+  assert.ok(sessions,'the fixture must bind SESSION, or the limiter fails open and this asserts nothing');
+  assert.equal(await sessions.get(`checkout-lead:192.0.2.250:${frozen}`),'30');
   assert.deepEqual(await counts(),before);
+  // The delegating `POST` export is what Astro actually dispatches; the rest of
+  // this test drives `captureHandler` directly, so without this line nothing
+  // would catch a delegation that dropped the context or passed a wrong clock.
+  assert.equal((await capturePost(captureContext({...identity,submit_token:token()},{'CF-Connecting-IP':'192.0.2.251'}) as never)).status,200);
 });
