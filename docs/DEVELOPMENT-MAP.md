@@ -23,6 +23,14 @@ Lighthouse accessibility/contrast checks at 390/1280 px. Old lineage identifiers
 
 ## Buyer and public pages
 
+### Checkout recovery (A-250)
+
+| Route | Automated evidence and limit | Browser evidence and limit | Open gap or bounded state |
+| --- | --- | --- | --- |
+| `/api/checkout-lead` | [checkout-lead.test.ts](../src/lib/checkout-lead.test.ts): real D1 capture, bounds, replay and late requests. | Built-Worker Chromium passed at 390/1280 px on 2026-09-08. | Local implementation; no live provider. |
+| `/api/admin/orders/leads` | [checkout-lead.test.ts](../src/lib/checkout-lead.test.ts): role grants, follow-up, conversion races and rollback. | Built-Worker Chromium passed at 390/1280 px on 2026-09-08. | COD conversion only; quantity 1. |
+| `/admin/orders/abandoned` | API behavior covered by [checkout-lead.test.ts](../src/lib/checkout-lead.test.ts). | Built-Worker Chromium passed at 390/1280 px on 2026-09-08. | New lead workspace. |
+
 | Route | Automated evidence and limit | Browser evidence and limit | Open gap or bounded state |
 | --- | --- | --- | --- |
 | `/404` | No direct route evidence cited; lower-level coverage not assessed here. | No browser verdict cited. | No open page-specific verdict claimed. |
@@ -161,3 +169,8 @@ that evidence changes. This rule also appears at the TASKS queue entrypoint and
 in CODE-MAP. Run `node --experimental-strip-types --test src/lib/development-map.test.ts src/lib/code-map.test.ts` to check inventory and local citation integrity.
 The guard checks documentation structure, not behavioral adequacy or historical
 browser artifacts; those still require review and the cited task's evidence.
+
+A-251 / REQ-234 complete landing builder: `src/components/admin/LandingPageEditor.tsx`,
+`src/lib/landing-content.ts`, and `src/lib/landing-pages.ts` own authoring and typed
+persistence. `docs/LANDING-PAGES.md` describes the operator contract; the runnable
+browser regression is `scripts/verify-landing-builder.mts` after build.

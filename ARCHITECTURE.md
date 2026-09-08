@@ -1,6 +1,6 @@
 # MyBookCMS Architecture
 
-> Verified against disk: 2026-09-07 @ MyBookCMS working tree
+> Verified against disk: 2026-09-08 @ MyBookCMS working tree
 
 MyBookCMS is a single-store commerce CMS for Malaysia. One install owns one
 Cloudflare Worker, D1 database, KV namespace, R2 bucket, domain, and operator
@@ -304,3 +304,28 @@ with best-effort, payload-free failure recording. A separate best-effort prune
 removes up to 1,000 rows older than 90 days per tick. These diagnostics cannot
 make a successful business job fail. No remote migration or deployment is
 claimed by the local schema/core change.
+
+## Checkout recovery
+
+`POST /api/checkout-lead` captures a validated partial full checkout using its
+existing cryptographic submit token. `checkout_leads` stores buyer identity,
+variant, explicit follow-up status/note/actor/time, and conversion timestamps.
+Capture never enters order accounting, stock, payments, or advertising outboxes.
+The order INSERT trigger in migration 0062 atomically marks matching leads
+converted within the existing persistence batch; rollback restores the lead,
+and converted tokens cannot create a second order or reopen after deletion.
+`/api/admin/orders/leads` restricts listing, follow-up, and COD conversion to
+Owner/Admin/CS. Conversion validates the current trusted location and shipping
+quote before invoking existing stock-reserving persistence. Public capture
+has no lookup capability, returns only success, and bounds request size/rate.
+The full form and privacy page disclose capture before valid identity is saved.
+
+### Complete CMS landing authoring (A-251 / REQ-234)
+
+Seven section types share one D1 section table and ordered batch persistence.
+Migration 0063 rebuilds only the section type constraint and adds content_config,
+preserving legacy IDs/content/order/timestamps. Typed content validation/rendering
+is shared by the React editor and Astro public route. Product/variant membership
+is validated before writes. Image uploads reuse the existing media boundary;
+checkout continues through GeoIpResolvedForm and MalaysiaCheckoutForm. Preview
+requires current Owner/Admin/Advertiser identity for unpublished pages.

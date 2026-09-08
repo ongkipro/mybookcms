@@ -71,7 +71,7 @@ All use `BaseLayout` unless noted. `GeoIpResolvedForm` is a thin wrapper around 
 | `/` | `pages/index.astro` | `templates/CompactMarketHome` -> `home/HeroSection`, `ProductsSection`, `LandingPagesSection` | `catalog`, `tenant-content`, `storefront-template`, `daily-rotation` | Unknown template id renders 503. |
 | `/produk` | `pages/produk/index.astro` | `PageIntro`, `ProductListItem` | `catalog`, `storefront-locale` | Catalog list. |
 | `/produk/[slug]` | `pages/produk/[slug].astro` | `ProductImageGallery`, `Breadcrumb`, `RatingStars`, `GeoIpResolvedForm` | `catalog`, `landing-pages`, `storefront-locale` | PDP with inline checkout. `?variant_id=` preselects (feed links land here). Emits ViewContent through BaseLayout. |
-| `/[slug]` | `pages/[slug].astro` | CMS landing page sections + `GeoIpResolvedForm` | `landing-pages` (`getLandingPageBySlug`, `parseShortcodes`), `catalog`, `auth` (for `?preview=1`) | Unknown slug that matches a product -> 308 to `/produk/{slug}`; inactive page -> 404 unless an admin previews; product-page takeover -> 308 to the product URL. Imports `styles/landing-pages/landing.css`. |
+| `/[slug]` | `pages/[slug].astro` | Seven CMS section types + `GeoIpResolvedForm` | `landing-pages` (`getLandingPageBySlug`, `parseShortcodes`), `landing-content` (typed renderer), `catalog`, `auth` (for `?preview=1`) | Unknown slug that matches a product -> 308 to `/produk/{slug}`; inactive page -> 404 unless an admin previews; product-page takeover -> 308 to the product URL. Imports `styles/landing-pages/landing.css`. |
 | `/halaman` | `pages/halaman/index.astro` | `PageIntro`, `Icon` | `landing-pages` | Public list of active landing pages. Read-only. |
 | `/contoh-landing` | `pages/contoh-landing.astro` | `RatingStars`, `GeoIpResolvedForm` | `catalog`, `landing-pages` | Sample native Astro landing page, `noindex`. Copy it to make a real one, then register in `data/native-landing-pages.ts`. |
 | `/full-form` | `pages/full-form.astro` | `GeoIpResolvedForm` | `catalog`, `form-config` | The only executable checkout URL. No product -> redirect `/produk`. |
@@ -125,6 +125,7 @@ All use `BaseLayout` unless noted. `GeoIpResolvedForm` is a thin wrapper around 
 
 | Route | File | Methods | Libs | Notes |
 | --- | --- | --- | --- | --- |
+| `/api/checkout-lead` | `pages/api/checkout-lead.ts` | POST, ALL | `checkout-lead`, `rate-limit` | `checkout_leads`; bounded anonymous capture, no response identity. |
 | `/api/submit-order` | `pages/api/submit-order.ts` | POST, ALL | `order-schema`, `validation`, `malaysia-locations`, `malaysia-shipping`, `order-persistence`, `doku-checkout`, `click-ids`, `accepted-order-meta`, `rate-limit` | The checkout. Re-quotes shipping from D1, persists order + items + stock decrement + CAPI outbox in one batch. DOKU choice creates the hosted checkout after persistence. |
 | `/api/shipping-rates` | `pages/api/shipping-rates.ts` | GET | `malaysia-shipping`, `rate-limit` | Quote by trusted location id + cart weight. |
 | `/api/shipping-options` | `pages/api/shipping-options.ts` | GET | re-exports `shipping-rates` | Alias. |
@@ -161,14 +162,15 @@ All use `AdminLayout` (sidebar from `components/admin/admin-navigation.ts`, shel
 | --- | --- | --- | --- | --- |
 | `/admin/dashboard` | `pages/admin/dashboard.astro` | `AnalyticsDashboard` (`client:only`) | `/api/admin/analytics` | all |
 | `/admin/orders` | `pages/admin/orders/index.astro` | `OrdersTable` | `/api/admin/orders` | owner, admin, CS |
+| `/admin/orders/abandoned` | `pages/admin/orders/abandoned.astro` | `AbandonedOrders` | `/api/admin/orders/leads` | owner, admin, CS |
 | `/admin/orders/[invoice]` | `pages/admin/orders/[invoice].astro` | `OrderDetail` | `/api/admin/orders/{invoice}` | owner, admin, CS |
 | `/admin/shipping` | `pages/admin/shipping.astro` | `ShippingOperations` | `/api/admin/shipping`, `/api/admin/orders` | owner, admin, CS |
 | `/admin/products` | `pages/admin/products.astro` | `ProductCatalog` | `/api/admin/products` | owner, admin, advertiser |
 | `/admin/products/new` | `pages/admin/products/new.astro` | `ProductForm` | `/api/admin/products`, `/api/admin/media` | owner, admin, advertiser |
 | `/admin/products/edit?id=` | `pages/admin/products/edit.astro` | `ProductForm` | same | owner, admin, advertiser |
 | `/admin/landing-pages` | `pages/admin/landing-pages/index.astro` | `LandingPageCatalog` | `/api/admin/landing-pages` | owner, admin, advertiser |
-| `/admin/landing-pages/new` | `pages/admin/landing-pages/new.astro` | `LandingPageEditor` (`client:only`) | `/api/admin/landing-pages`, `/api/admin/products` | owner, admin, advertiser |
-| `/admin/landing-pages/[id]/edit` | `pages/admin/landing-pages/[id]/edit.astro` | `LandingPageEditor` (`client:only`) | `/api/admin/landing-pages/{id}` | owner, admin, advertiser |
+| `/admin/landing-pages/new` | `pages/admin/landing-pages/new.astro` | `LandingPageEditor` (`client:load`) | `/api/admin/landing-pages`, `/api/admin/products` | owner, admin, advertiser |
+| `/admin/landing-pages/[id]/edit` | `pages/admin/landing-pages/[id]/edit.astro` | `LandingPageEditor` (`client:load`) | `/api/admin/landing-pages/{id}` | owner, admin, advertiser |
 | `/admin/content` | `pages/admin/content.astro` | `ContentWorkbench` | `/api/admin/content`, `/api/admin/media` | owner, admin, advertiser. Deliberately absent from the sidebar and entered from `/admin/settings/store`; ADR-025 records why, and a navigation test pins it. |
 | `/admin/expeditions` | `pages/admin/expeditions.astro` | `ExpeditionSettings` | `/api/admin/expeditions` | owner, admin. `?panel=states\|zones\|fallback` selects the job. |
 | `/admin/ads` | `pages/admin/ads.astro` | inline script hub | `/api/admin/ads` | owner, admin, advertiser |
@@ -191,6 +193,7 @@ All under `/api/admin`, session-gated by middleware, CSRF-checked on unsafe meth
 | --- | --- | --- | --- | --- |
 | `/api/admin/analytics` | `pages/api/admin/analytics.ts` | GET | `admin-date-filter` | `orders` |
 | `/api/admin/orders` | `pages/api/admin/orders/index.ts` | GET, POST, DELETE | `admin-order-status`, `order-lifecycle`, `crm-template`, `admin-date-filter` | `orders`, `order_items`, `products`, `product_variants`, `stores` |
+| `/api/admin/orders/leads` | `pages/api/admin/orders/leads.ts` | GET, POST, PATCH, ALL | `checkout-lead`, `order-persistence` | Pending leads, explicit follow-up, COD conversion; Owner/Admin/CS. |
 | `/api/admin/orders/[id]` | `pages/api/admin/orders/[id].ts` | GET, POST, PATCH, DELETE | `order-lifecycle`, `admin-order-delivery`, `malaysia-locations`, `malaysia-shipping`, `payment-operations`, `doku-reconciliation`, `notifications`, `crm-template` | same + `malaysia_postcodes` |
 | `/api/admin/shipping` | `pages/api/admin/shipping.ts` | GET, PATCH | `admin-order-delivery`, `malaysia-shipping`, `order-lifecycle` | `orders`, `order_items`, `malaysia_postcodes` |
 | `/api/admin/products` | `pages/api/admin/products.ts` | GET, POST, PATCH, PUT, DELETE | `catalog-data`, `product-mutation` | `products`, `product_variants`, `order_items`, `stores` |
@@ -229,7 +232,7 @@ All under `/api/admin`, session-gated by middleware, CSRF-checked on unsafe meth
 | `ProductCatalog.tsx` | 1232 | products | `/api/admin/products`; embed snippet via `lib/embed-markup` |
 | `ProductForm.tsx` | 696 | products new/edit | `/api/admin/products`, `/api/admin/media` |
 | `LandingPageCatalog.tsx` | 968 | landing pages | `/api/admin/landing-pages` |
-| `LandingPageEditor.tsx` | 839 | landing page new/edit | `/api/admin/landing-pages/{id}`, `/api/admin/products` |
+| `LandingPageEditor.tsx` | 307 | landing page new/edit | `/api/admin/landing-pages/{id}`, `/api/admin/products` |
 | `ContentWorkbench.tsx` | 317 | content | `/api/admin/content`, `/api/admin/media` |
 | `ExpeditionSettings.tsx` | 870 | expeditions | `/api/admin/expeditions`; three `?panel=` addressable jobs, sheets with dirty-close protection |
 | `SellerBankAccounts.tsx` | 449 | payments | `/api/admin/seller-bank-accounts`; `lib/payment-brand` |
@@ -275,12 +278,13 @@ Each module has a sibling `*.test.ts` unless marked (no test). Run all with `npm
 
 Test-only modules with no runtime sibling: `code-map` (guards this file), `decision-records` (guards ADR citations), `admin-analytics`, `admin-bootstrap`, `admin-navigation`, `admin-orders-list`, `brand-contamination`, `doku-schema`, `expedition-settings`, `full-form-cutover`, `legal-content`, `malaysia-market`, `meta-event`, `middleware-path-source`, `mobile-layout-guard`, `sample-product-removal`, `shipping-bootstrap`, `shipping-queue`, `submit-middle-order`, `system-precision`, `task-queue`.
 
-## 10. Database (D1, 26 live tables)
+## 10. Database (D1, 27 live tables)
 
-Schema is the migration chain `src/db/migrations/0000` through `0061`. Tables created and later dropped (`courier_rules`, `warehouses`, `pickup_schedules`, `payment_transactions`, `provider_dispatch_locks`, `payment_reconciliation_audits`, `orders_mybookcms_cutover`) are not listed.
+Schema is the migration chain `src/db/migrations/0000` through `0062`. Tables created and later dropped (`courier_rules`, `warehouses`, `pickup_schedules`, `payment_transactions`, `provider_dispatch_locks`, `payment_reconciliation_audits`, `orders_mybookcms_cutover`) are not listed.
 
 | Table | Created in | Owning code |
 | --- | --- | --- |
+| `checkout_leads` | 0062 | `checkout-lead`; order insert trigger atomically resolves capture without altering order taxonomy |
 | `stores` | 0000 (+45 ALTERs) | `tenant`, `settings`, `ads-config`, `doku-config`, `embed-security`, `store-pickup` |
 | `products`, `product_variants` | 0000 | `catalog`, `catalog-data`, `product-mutation` |
 | `orders` | 0000, rebuilt 0049, `ad_click_ids` restored 0057 | `order-persistence`, `order-lifecycle`, `order-status`, admin orders/shipping |
@@ -288,7 +292,7 @@ Schema is the migration chain `src/db/migrations/0000` through `0061`. Tables cr
 | `admin_credentials` | 0007 | `admin-credentials`, `auth`, middleware |
 | `storefront_content` | 0012 | `storefront-content`, `tenant-content` |
 | `seller_bank_accounts` | 0023 | `seller-bank-account`, `/api/payment-methods` |
-| `landing_pages`, `landing_sections` | 0027 | `landing-pages`, middleware takeover read |
+| `landing_pages`, `landing_sections` | 0027, 0063 | `landing-pages`, middleware takeover read |
 | `developer_api_keys` | 0030 | `developer-api-keys`, `headless-api` |
 | `order_number_counters` | 0037 | `order-persistence` |
 | `developer_api_key_usage`, `headless_api_audit_events` | 0038 | `headless-api` |
@@ -358,3 +362,5 @@ Local commands: `npm run db:migrate:local`, `npm run db:seed:malaysia:local`, `n
 | Change which payment methods an install offers | `lib/payment-availability.ts` — both the hosted and headless reads go through it |
 | Add a source to the system log | `lib/system-log.ts` — every label is composed from structured columns, never stored prose |
 | Change session, login, or roles | `lib/auth.ts`, `lib/admin-credentials.ts`, `pages/hello.astro`, `src/middleware.ts` |
+
+A-251: `0063_landing_content.sql` adds bounded typed section JSON alongside legacy HTML/form data. The new/edit landing editor uses `client:load`; `scripts/verify-landing-builder.mts` covers its isolated browser lifecycle.

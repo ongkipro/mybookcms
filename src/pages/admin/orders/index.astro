@@ -19,6 +19,7 @@ const adminRole = Astro.locals.admin?.role ?? 'customer_service';
       description="Validasi pembayaran, alamat Malaysia, dan pemenuhan pesanan manual."
     >
       <div slot="actions" class="grid grid-cols-2 gap-2 sm:flex">
+        <a href="/admin/orders/abandoned" class="btn-secondary min-h-11 px-4 text-xs">Pesanan tertinggal</a>
         <a href="/admin/expeditions" class="btn-secondary min-h-11 px-4 text-xs">Tarif Malaysia</a>
         <a href="/admin/shipping" class="btn-primary min-h-11 px-4 text-xs">Pengiriman</a>
       </div>

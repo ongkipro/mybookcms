@@ -62,6 +62,21 @@ Never stage the ledger with `git add -f`.
 6. Adding, removing, or repointing a route, an API endpoint, or a migration
    makes `docs/CODE-MAP.md` wrong. Update it in the same change and name it in
    the task `Surface`. Nothing else in that file needs touching.
+7. A new task entry gets its id from the highest `A-` number anywhere in
+   `TASKS.md` **and** in `.delivery/runs/*.jsonl`, plus one. Two sessions each
+   allocated `A-255`, `A-258`, `A-263`, and `A-264` on 2026-09-08 by reading only one of those, and
+   the loser's task was overwritten or marked complete unworked. Write the entry
+   before starting the run, so the id is claimed where the other session reads.
+8. A new task entry goes under `## Open queue`, inserted after the queue's last
+   entry — never anchored on `MYS-5`, which is the last entry of `## Release
+   gate`. Nine tasks landed in the wrong section that way, invisible to Goal
+   Mode and to `task-queue.test.ts`, which validates the queue alone. Confirm the
+   section after inserting; a green test is not confirmation.
+9. A new `console.error` label is registered in `OBSERVABILITY.md` in the same
+   change, under the emitted signal registry. That document is the contract for
+   what an operator can observe; an unregistered label is a signal the contract
+   does not define, and `doku-config-unusable` shipped that way for a day before
+   anyone noticed.
 
 ```bash
 npm run check

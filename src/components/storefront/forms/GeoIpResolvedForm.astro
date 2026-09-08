@@ -8,11 +8,13 @@ interface Props {
   productSlug?: string;
   selectedVariantId?: string;
   embedded?: boolean;
+  sectionTitle?: string;
+  buttonText?: string;
 }
 
-const { productSlug = 'asahan-portable', selectedVariantId, embedded = false, bannerImage } = Astro.props;
+const { productSlug = 'asahan-portable', selectedVariantId, embedded = false, bannerImage, sectionTitle, buttonText } = Astro.props;
 ---
 
 <div class="mx-auto w-full max-w-[480px] bg-white" data-canonical-order-form>
-  <MalaysiaCheckoutForm productSlug={productSlug} selectedVariantId={selectedVariantId} embedded={embedded} bannerImage={bannerImage} />
+  <MalaysiaCheckoutForm productSlug={productSlug} selectedVariantId={selectedVariantId} embedded={embedded} bannerImage={bannerImage} sectionTitle={sectionTitle} buttonText={buttonText} />
 </div>

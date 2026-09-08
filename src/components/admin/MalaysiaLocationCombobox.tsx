@@ -28,12 +28,14 @@ export function MalaysiaLocationCombobox({
   const [options, setOptions] = useState<MalaysiaLocationOption[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
 
   useEffect(() => () => window.clearTimeout(timer.current), []);
 
   const search = (query: string) => {
     window.clearTimeout(timer.current);
     setOptions([]);
+    setActiveIndex(-1);
     if ((/^\d+$/.test(query) && query.length !== 5) || (!/^\d+$/.test(query) && query.trim().length < 3)) {
       setLoading(false);
       return;
@@ -45,6 +47,7 @@ export function MalaysiaLocationCombobox({
         const payload = await response.json().catch(() => ({}));
         const next = response.ok && payload.success ? (payload.items || []) as MalaysiaLocationOption[] : [];
         setOptions(next);
+        setActiveIndex(next.length ? 0 : -1);
         setOpen(true);
       } catch {
         setOptions([]);
@@ -63,12 +66,24 @@ export function MalaysiaLocationCombobox({
       aria-autocomplete="list"
       aria-expanded={open && options.length > 0}
       aria-controls={listId}
+      aria-activedescendant={open && options[activeIndex] ? `${listId}-${activeIndex}` : undefined}
       aria-invalid={!selectedId && value.trim().length > 0}
       placeholder="Cari bandar, negeri, atau poskod"
       value={value}
       disabled={disabled}
       onFocus={() => setOpen(true)}
       onBlur={() => window.setTimeout(() => setOpen(false), 120)}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') { setOpen(false); return; }
+        if (!options.length) return;
+        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+          event.preventDefault(); setOpen(true);
+          setActiveIndex(index => (index + (event.key === 'ArrowDown' ? 1 : -1) + options.length) % options.length);
+        } else if (event.key === 'Enter' && open && options[activeIndex]) {
+          event.preventDefault();
+          const option = options[activeIndex]; onChange(option.label, option); setOpen(false);
+        }
+      }}
       onChange={(event) => {
         const query = event.target.value;
         onChange(query, null);
@@ -77,14 +92,16 @@ export function MalaysiaLocationCombobox({
     />
     {loading ? <LoaderCircle className="pointer-events-none absolute right-3 top-3.5 size-4 animate-spin text-slate-400" aria-label="Mencari lokasi" /> : null}
     {open && options.length > 0 ? <div id={listId} role="listbox" className="absolute z-50 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white p-1 shadow-lg">
-      {options.map((option) => <button
+      {options.map((option, index) => <button
         key={option.location_id}
+        id={`${listId}-${index}`}
         type="button"
         role="option"
-        aria-selected={Number(option.location_id) === selectedId}
-        className="flex min-h-11 w-full items-start gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-slate-50 focus:bg-slate-50 focus:outline-none"
+        aria-selected={index === activeIndex}
+        className={`flex min-h-11 w-full items-start gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-slate-50 focus:bg-slate-50 focus:outline-none ${index === activeIndex ? 'bg-slate-50' : ''}`}
         onMouseDown={(event) => event.preventDefault()}
         onClick={() => {
+          setActiveIndex(index);
           onChange(option.label, option);
           setOpen(false);
         }}

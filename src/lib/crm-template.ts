@@ -11,6 +11,7 @@ export type CrmOrderContext = {
   postalCode?: string;
   orderNumber?: string;
   productName?: string;
+  variantName?: string;
   productPrice?: number;
   comparePrice?: number;
   shippingCost?: number;
@@ -122,6 +123,7 @@ export function renderCrmMessage(template: string, ctx: CrmOrderContext): string
     customer_name: ctx.customerName || 'Pelanggan',
 
     product_name: ctx.productName || 'Produk',
+    variant_name: ctx.variantName || '',
     item_name: ctx.productName || 'Produk',
 
     product_price: productPriceStr,

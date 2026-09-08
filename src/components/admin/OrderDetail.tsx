@@ -517,6 +517,7 @@ export function OrderDetail({
       postalCode: order.postal_code || "",
       orderNumber: order.order_number,
       productName,
+      variantName: order.items.map((item) => item.variant_title).filter(Boolean).join(', '),
       productPrice,
       shippingCost: order.shipping_cost,
       totalAmount: order.total_amount,

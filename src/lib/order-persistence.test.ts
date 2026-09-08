@@ -118,8 +118,8 @@ test("accepted order and configured Meta Purchase share one D1 batch", async () 
   assert.equal(payload.data[0]?.event_name, "Purchase");
   assert.equal(payload.data[0]?.event_id, "purchase:INV-10001");
   assert.deepEqual(payload.data[0]?.custom_data.content_ids, ["p10001-v20001"]);
-  assert.equal(payload.data[0]?.custom_data.value, 32.9);
-  assert.equal(payload.data[0]?.custom_data.currency, "MYR");
+  assert.equal(payload.data[0]?.custom_data.value, 134890);
+  assert.equal(payload.data[0]?.custom_data.currency, "IDR");
   assert.equal(payload.data[0]?.custom_data.order_id, "INV-10001");
   assert.equal(payload.data[0]?.user_data.fbp, "fb.1.1720000000000.browser123");
   assert.equal(payload.data[0]?.user_data.fbc, "fb.1.1720000000000.click123");

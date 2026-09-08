@@ -180,3 +180,6 @@ permissive value.
 - DOKU account creation, credentials, webhook registration, sandbox calls,
   production enablement, and live payment/refund activity are external actions
   requiring separate explicit approval.
+# Checkout recovery implementation — 2026-09-08
+
+REQ-233 uses a separate `checkout_leads` table rather than incomplete `orders` rows. A random per-form submit token is the capture capability and the unique accepted-order submission identity. The order insert trigger links an existing lead within the order transaction; late capture checks the order token before insert. A converted lead keeps its order reference and cannot reopen. CS conversion uses the existing `persistOrder` and Malaysia quote functions with COD only, protecting the same stock and duplicate constraints as buyer checkout. Public capture returns only success, is rate/body bounded and refuses cross-origin requests. The admin route lives under the existing order role boundary and also verifies allowed roles in its handlers. Existing CRM product-name semantics are retained; a new variant field propagates from both list and detail.

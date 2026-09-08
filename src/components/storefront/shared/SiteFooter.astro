@@ -1,4 +1,6 @@
 ---
+import Icon from './Icon.astro';
+
 const footerLegal = [
   // Keep only the customer links needed for browsing, contact and store terms.
   { label: 'Produk', href: '/produk' },
@@ -14,28 +16,31 @@ const footerLegal = [
 ];
 ---
 
-<footer class="border-fade-t bg-white px-5 py-12 text-[#111111]">
-  <div class="mx-auto max-w-[480px] space-y-6 text-center">
-    <!-- Policy Links -->
-    <nav
-      aria-label="Pautan footer"
-      class="flex flex-wrap items-center justify-center gap-x-5 gap-y-3 text-[10px] font-semibold uppercase tracking-widest text-[#555555]"
-    >
-      {
-        footerLegal.map((item) => (
-          <a
-            href={item.href}
-            class="underline-offset-4 transition-colors hover:text-[#111111] hover:underline focus-visible:text-[#111111] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111111] focus-visible:ring-offset-2"
-          >
-            {item.label}
-          </a>
-        ))
-      }
+<footer class="border-fade-t bg-white px-5 py-10 text-[#111111]">
+  <div class="mx-auto max-w-[480px]">
+    <nav aria-label="Pautan footer" class="grid grid-cols-2 gap-5 text-left">
+      {[
+        { label: 'Terokai', icon: 'package', links: footerLegal.slice(0, 4) },
+        { label: 'Dasar kedai', icon: 'shield-check', links: footerLegal.slice(4) },
+      ].map(group => (
+        <div class="min-w-0">
+          <p class="mb-2 flex items-center gap-2 text-sm font-semibold">
+            <Icon name={group.icon} class="size-4 shrink-0 text-[#767676]" />
+            {group.label}
+          </p>
+          <ul class="m-0 list-none p-0">
+            {group.links.map(item => (
+              <li>
+                <a href={item.href} class="flex min-h-11 items-center rounded-sm py-2 text-sm leading-relaxed text-[#555555] underline-offset-4 transition-colors hover:text-[#111111] hover:underline focus-visible:text-[#111111] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111111] focus-visible:ring-offset-2">
+                  {item.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
     </nav>
-
-
-    <!-- Copyright -->
-    <p class="text-[10px] uppercase tracking-wider text-[#767676]">
+    <p class="mt-6 border-t border-[#E5E5E5] pt-5 text-center text-xs leading-relaxed text-[#767676]">
       © {new Date().getFullYear()} {Astro.locals.tenant.name}. Semua hak terpelihara.
     </p>
   </div>

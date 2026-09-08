@@ -80,3 +80,7 @@ test("all operator-exposed placeholders render and preserve normalized text", ()
   assert.match(rendered, /📦 Café 😊/);
   assert.equal(rendered, rendered.normalize("NFC"));
 });
+test('variant token renders independently without changing legacy product text', () => {
+  assert.equal(renderCrmMessage('{{product_name}} / {{variant_name}}', {productName:'Fixture Book - A5',variantName:'A5'}), 'Fixture Book - A5 / A5');
+  assert.equal(renderCrmMessage('{{variant_name}}', {}), '');
+});

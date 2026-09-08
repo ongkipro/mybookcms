@@ -738,11 +738,7 @@
 }
 [data-doku-details] {
   display: grid;
-  gap: 0.55rem;
-  padding: 0.85rem;
-  border: 1px solid var(--sf-line);
-  border-radius: 0.6rem;
-  background: var(--sf-surface-alt);
+  gap: 12px;
 }
 [data-doku-details][hidden] {
   display: none;
@@ -750,13 +746,9 @@
 .doku-disclosure {
   margin: 0;
   color: #555555;
-  font-size: 0.75rem;
+  font-size: 13px;
   line-height: 1.55;
   overflow-wrap: anywhere;
-}
-.doku-disclosure {
-  padding-top: 0.55rem;
-  border-top: 1px solid var(--sf-line);
 }
 .doku-privacy-link {
   display: inline-flex;
@@ -765,7 +757,7 @@
   max-width: 100%;
   min-height: 44px;
   color: var(--sf-accent);
-  font-size: 0.75rem;
+  font-size: 13px;
   line-height: 1.55;
   text-decoration: underline;
   text-underline-offset: 0.18em;
@@ -973,7 +965,7 @@
   font-size: 0.75rem;
   line-height: 1.1;
 }
-#summary-compare {
+[data-summary-compare] {
   font-weight: 400 !important;
   color: #767676 !important;
   text-decoration: line-through;
@@ -1183,3 +1175,32 @@
      admin") cannot push its icon off the line the other two icons sit on. */
   min-height: 1.5625rem;
 }
+
+
+/* Single-page checkout: clear sections, neutral fields, progressive payment. */
+[data-malaysia-checkout] .form-block {
+  margin-top: 28px;
+  gap: 12px;
+}
+[data-malaysia-checkout] .form-block-first { margin-top: 0; }
+[data-malaysia-checkout] .form-block-head { margin-bottom: 0; }
+[data-malaysia-checkout] .section-title { font-size: 20px; font-weight: 600; line-height: 1.4; }
+[data-malaysia-checkout] .section-title::before { display: none; }
+[data-malaysia-checkout] .section-lead { font-size: 13px; line-height: 1.5; }
+[data-malaysia-checkout] .form-field input:not([type=hidden]),
+[data-malaysia-checkout] .form-field select,
+[data-malaysia-checkout] .form-field textarea { font-size: 16px; min-height: 56px; border-radius: 6px; }
+[data-malaysia-checkout] .simple-variant-group { gap: 8px; }
+[data-malaysia-checkout] .checkout-stage-status { margin: 0; font-size: 13px; line-height: 1.5; color: #555555; }
+[data-malaysia-checkout] .checkout-payment-content { min-width: 0; margin: 0; padding: 0; border: 0; display: grid; gap: 12px; }
+[data-malaysia-checkout] .checkout-payment-content[hidden] { display: none; }
+[data-malaysia-checkout] .payment-options { border-width: 1px; border-radius: 6px; }
+[data-malaysia-checkout] .payment-option-copy { min-height: 56px; padding: 14px 12px; }
+[data-malaysia-checkout] .payment-option-label { font-size: 14px; }
+[data-malaysia-checkout] .summary-card { border-radius: 6px; background: #fafafa; }
+[data-malaysia-checkout] .total-box { border-radius: 0; background: transparent; border-top: 1px solid var(--sf-line); }
+[data-malaysia-checkout] .submit-main { min-height: 56px; border-radius: 6px; font-size: 16px; }
+
+[data-malaysia-checkout] .checkout-payment[hidden] { display: none; }
+
+[data-malaysia-checkout] .submit-panel:has([data-doku-details]:not([hidden])) { gap: 16px; }

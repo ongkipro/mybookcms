@@ -91,6 +91,9 @@ class SqliteD1Database {
         slug TEXT NOT NULL,
         title TEXT NOT NULL
       );
+      CREATE TABLE product_variants (id INTEGER PRIMARY KEY, product_id INTEGER NOT NULL);
+      INSERT INTO products VALUES (10001, 'fixture-one', 'Fixture One'), (10002, 'fixture-two', 'Fixture Two');
+      INSERT INTO product_variants VALUES (20001, 10001);
       INSERT INTO products (id, slug, title) VALUES (20001, 'pupuk-organik', 'Pupuk Organik');
       INSERT INTO products (id, slug, title) VALUES (20002, 'benih-jagung', 'Benih Jagung');
     `);
@@ -101,6 +104,7 @@ class SqliteD1Database {
       "0046_landing_page_as_product_page.sql",
       // Native Astro pages are recorded in the same table (A-133).
       "0047_native_landing_pages.sql",
+      "0063_landing_content.sql",
     ]) {
       this.#database.exec(
         readFileSync(
@@ -431,4 +435,47 @@ test("the public listing links a claimed page to the product URL it answers on",
   // visitor where the page actually answers.
   assert.equal(bySlug.get(claimed.slug)?.href, "/produk/benih-jagung");
   assert.equal(bySlug.has(draft.slug), false);
+});
+
+test('typed sections round trip, reorder and reject a foreign checkout variant atomically', async () => {
+  const {locals} = createLocals();
+  const page = await createLandingPage(locals,{title:'Complete builder',slug:'complete-builder',product_id:'10001',is_active:false,sections:[
+    {type:'headline',content_config:{text:'Fixture heading',align:'center',size:'large'}},
+    {type:'paragraph',content_config:{text:'First\nSecond',align:'right'}},
+    {type:'numbered_list',content_config:{items:['One','Two']}},
+    {type:'bullet_list',content_config:{items:[' Benefit ','']}},
+    {type:'image',content_config:{src:'/media/fixture.png',alt:'Fixture image'}},
+    {type:'html',content_html:'<p>{{product_name}}</p>'},
+    {type:'form',form_config:{selected_variant_id:'20001',section_title:'Maklumat pesanan',button_text:'Hantar pesanan'}},
+  ]});
+  assert.equal(page.sections.length,7);
+  assert.deepEqual(page.sections[3].content_config,{items:['Benefit']});
+  assert.equal(page.sections[6].form_config?.button_text,'Hantar pesanan');
+  await assert.rejects(updateLandingPage(locals,page.id,{product_id:'10002'}),/Varian checkout/);
+  assert.equal((await getLandingPageById(locals,page.id))?.product_id,'10001');
+  await assert.rejects(updateLandingPage(locals,page.id,{title:null} as never),/title tidak valid/);
+  const edited = await updateLandingPage(locals,page.id,{sections:[...page.sections].reverse().map((s, sort_order) => ({...s, sort_order}))});
+  assert.equal(edited?.sections[0].type,'form');
+  assert.equal(edited?.sections[6].content_config?.text,'Fixture heading');
+});
+
+test('0063 preserves existing HTML and form rows including IDs, order and timestamps', () => {
+  const db = new DatabaseSync(':memory:');
+  db.exec('PRAGMA foreign_keys=ON; CREATE TABLE products(id INTEGER PRIMARY KEY); INSERT INTO products VALUES(1);');
+  db.exec(readFileSync(new URL('../db/migrations/0027_landing_page_builder.sql',import.meta.url),'utf8'));
+  db.exec("INSERT INTO landing_pages(id,title,slug,product_id,created_at,updated_at) VALUES('legacy','Legacy','legacy',1,'before','after'); INSERT INTO landing_sections(id,landing_page_id,sort_order,type,content_html,form_config,created_at,updated_at) VALUES('html','legacy',0,'html','<h2>Keep this</h2>',NULL,'before','after'),('form','legacy',1,'form',NULL,'{\"section_title\":\"Keep form\"}','before','after');");
+  const before = db.prepare('SELECT * FROM landing_sections ORDER BY sort_order').all().map(row => ({...row}));
+  db.exec(readFileSync(new URL('../db/migrations/0063_landing_content.sql',import.meta.url),'utf8'));
+  const after = db.prepare('SELECT * FROM landing_sections ORDER BY sort_order').all().map(({content_config,...row}) => {assert.equal(content_config,null);return row;});
+  assert.deepEqual(after,before);
+  assert.deepEqual(db.prepare('PRAGMA foreign_key_check').all(),[]);
+  db.close();
+});
+
+test('section identity and order reject malformed and duplicate values before writes', async () => {
+  const {locals} = createLocals();
+  for(const sections of [[{type:'html',id:42}],[{type:'html',id:' '}],[{type:'html',sort_order:-1}],[{type:'html',sort_order:1.5}],[{type:'html',sort_order:'1'}],[{type:'html',id:'same'},{type:'html',id:'same'}],[{type:'html',sort_order:0},{type:'form',sort_order:0}]]) {
+    await assert.rejects(createLandingPage(locals,{title:'Invalid fixture',slug:'invalid-fixture',product_id:'10001',sections} as never),/section/);
+  }
+  assert.equal((await listLandingPages(locals)).length,0);
 });

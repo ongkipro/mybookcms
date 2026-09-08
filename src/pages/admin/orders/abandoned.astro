@@ -1,0 +1,12 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import AdminPageHeader from '../../../components/admin/AdminPageHeader.astro';
+import { AbandonedOrders } from '../../../components/admin/AbandonedOrders';
+export const prerender = false;
+---
+<AdminLayout title="Pesanan tertinggal" activeMenu="orders">
+  <div class="space-y-5">
+    <AdminPageHeader eyebrow="Customer service" title="Pesanan tertinggal" description="Tindak lanjuti checkout yang belum selesai, lalu lengkapi menjadi pesanan COD." backHref="/admin/orders" backLabel="Lihat pesanan" />
+    <AbandonedOrders client:load />
+  </div>
+</AdminLayout>

@@ -146,3 +146,27 @@
   font-size: 12px;
   color: #71717a;
 }
+
+/* Shared typed-section rendering, also used by the admin canvas. */
+.lp-section .lp-align-left { text-align: left; }
+.lp-section .lp-align-center { text-align: center; }
+.lp-section .lp-align-right { text-align: right; }
+.lp-section .lp-headline.lp-size-small { font-size: 18px; }
+.lp-section .lp-headline.lp-size-medium { font-size: 24px; }
+.lp-section .lp-headline.lp-size-large { font-size: 28px; }
+.lp-section .lp-paragraph { white-space: pre-wrap; }
+.lp-section { overflow-wrap: anywhere; }
+
+/* Image-only blocks join edge to edge; text blocks retain their reading space. */
+.lp-section:has(> img:only-child) {
+  padding: 0;
+  margin: 0;
+}
+.lp-section > img:only-child {
+  display: block;
+  width: 100%;
+  height: auto;
+  padding: 0;
+  margin: 0;
+  border-radius: 0;
+}

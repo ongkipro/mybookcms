@@ -11,7 +11,11 @@ const data = getTenantLegalPage('privacy', Astro.locals.tenant.name);
     badge={data.badge}
     title={data.title}
     description={data.description}
-    sections={data.sections}
+    sections={[...data.sections.filter(section => section.lang !== 'en'),
+      {lang: 'ms', title: 'Pesanan yang belum selesai', paragraphs: ['Nama, nombor telefon Malaysia dan varian yang anda isi dalam borang boleh disimpan sebelum pesanan dihantar. Pengelola kedai boleh menggunakan maklumat ini untuk membantu anda menyambung checkout melalui WhatsApp. Rekod ini belum menjadi pesanan dan tidak menempah stok.']},
+      ...data.sections.filter(section => section.lang === 'en'),
+      {lang: 'en', title: 'Unfinished checkout', paragraphs: ['Your name, Malaysian phone number and selected variant may be saved before you submit the checkout form. Store operators may use these details to help you resume checkout through WhatsApp. This record is not yet an order and does not reserve stock.']},
+    ]}
     breadcrumbs={[
       { label: 'Laman Utama', href: '/' },
       { label: data.badge, href: '/dasar-privasi' },

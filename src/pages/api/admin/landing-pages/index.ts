@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { LandingContentError } from "../../../../lib/landing-content";
 import { jsonError, jsonOk } from "../../../../lib/api";
 import {
   buildLandingPageDuplicateInput,
@@ -62,6 +63,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         data: updated,
       });
     } catch (error: unknown) {
+    if (error instanceof LandingContentError) return jsonError(error.message, 422);
       if (error instanceof LandingProductPageConflictError) {
         return jsonError(error.message, 409);
       }
@@ -95,6 +97,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         201,
       );
     } catch (error: unknown) {
+    if (error instanceof LandingContentError) return jsonError(error.message, 422);
       console.error("POST duplicate landing-page", error);
       const message =
         error instanceof Error ? error.message : "Unknown error";
@@ -110,6 +113,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     );
     return jsonOk({ data: result });
   } catch (error: unknown) {
+    if (error instanceof LandingContentError) return jsonError(error.message, 422);
     console.error("POST landing-pages", error);
     const message = error instanceof Error ? error.message : "Unknown error";
     return jsonError("Failed to create landing page: " + message, 500);

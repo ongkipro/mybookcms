@@ -272,6 +272,7 @@ export function OrdersTable({ adminRole = "customer_service" }: { adminRole?: Ad
       postalCode: order.postal_code || "",
       orderNumber: order.order_number,
       productName: [order.product_name, order.variant_name].filter(Boolean).join(" - "),
+      variantName: order.variant_name,
       productPrice: Number(order.product_price),
       shippingCost: Number(order.shipping_cost),
       totalAmount: Number(order.total_amount),

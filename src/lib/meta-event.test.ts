@@ -109,8 +109,8 @@ test("a capability-verified paid DOKU order records canonical Purchase from the 
     content_name: "Everyday Planner",
     content_ids: ["p10001-v10002"],
     content_type: "product",
-    value: 32.9,
-    currency: "MYR",
+    value: 134890,
+    currency: "IDR",
     order_id: "INV-PENDING-001",
   });
   assert.equal(payload.data[0]?.event_id, "purchase:INV-PENDING-001");
@@ -175,7 +175,7 @@ test("product events ignore browser price and name in favor of the active D1 cat
     content_name: "Everyday Planner",
     content_ids: ["p10001-v20002"],
     content_type: "product",
-    value: 32.9,
-    currency: "MYR",
+    value: 134890,
+    currency: "IDR",
   });
 });

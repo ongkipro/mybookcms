@@ -99,6 +99,128 @@
 
 ## Open queue
 
+- [x] **A-264** — Simplify the DOKU receipt area above the checkout button.
+      Risk: R3. Requirement: REQ-235; explicit owner acceptance of the clean receipt recommendation.
+      Surface: `TASKS.md`, `STATUS.md`, `BUILD-LOG.md`, `src/components/storefront/forms/MalaysiaCheckoutForm.astro`, `src/styles/form-hybrid.css`, `scripts/verify-checkout-flow.mts`.
+      Non-scope: payment logic, provider calls, dependencies, deployment, commit/push.
+      Dependencies: designer approved undecorated receipt container and email/disclosure/privacy ordering; correct the prior currency task identifier to A-263 while preserving the historical A-258 reconciliation task and ledger record.
+      Done when: receipt field matches the other fields, disclosure precedes privacy, responsive browser checks retain gating/focus/validation and 16px inputs; build/check and independent review pass, including the A-263 documentation correction.
+
+- [x] **A-263** — Send Meta and Google advertising values in IDR at a fixed MYR conversion rate.
+      Risk: R3. Requirement: REQ-193; explicit owner acceptance of RM1 = Rp4,100 for both channels.
+      Surface: `PRD.md`, `TASKS.md`, `STATUS.md`, `BUILD-LOG.md`, `ADS.md`, `src/lib/ads-signal-policy.ts`, `src/lib/ads-signal-policy.test.ts`, `src/lib/meta-capi.ts`, `src/lib/meta-capi.test.ts`, `src/lib/meta-event.test.ts`, `src/lib/order-persistence.test.ts`, `src/lib/doku-payment-lifecycle.test.ts`, `src/components/storefront/tracking/AdsBase.astro`, `src/pages/admin/ads/meta.astro`, `src/pages/admin/ads/google.astro`, `scripts/verify-ads-currency.mts`.
+      Non-scope: changing stored money, payment/checkout amounts, XML currency, IDs, Purchase timing, CAPI receipt diagnostics, Google offline uploads, secrets, vendor traffic, deployment, commit/push.
+      Dependencies: designer approved currency/rate copy updates without layout changes.
+      Done when: Meta Pixel/CAPI, direct Google conversion and GTM ecommerce values convert once to IDR, incoming commerce values remain MYR, paired IDs match, no-value events stay valueless, D1/order/feed MYR invariants hold; tests/check/build, isolated browser and independent review pass.
+
+
+- [x] **A-255** — Clarify footer navigation grouping, type and touch targets.
+      Risk: R1. Requirement: REQ-185; explicit owner footer presentation request.
+      Surface: `TASKS.md`, `BUILD-LOG.md`, `src/components/storefront/shared/SiteFooter.astro`.
+      Non-scope: routes, link destinations, checkout, dependencies, deployment, commit/push.
+      Dependencies: designer approved two groups with decorative group icons and 44px links.
+      Done when: all eight links retain labels/destinations, 320/390/1280 browser shows readable groups with no overflow and usable keyboard focus; build and independent boundary review pass.
+
+
+- [x] **A-254C** — Remove the owner-selected stock/WhatsApp information box from checkout.
+      Risk: R3 (shared checkout path). Requirement: REQ-235; explicit owner deletion.
+      Surface: `TASKS.md`, `BUILD-LOG.md`, `src/components/storefront/forms/MalaysiaCheckoutForm.astro`.
+      Non-scope: behavior, styles, provider/API, deployment, commit/push.
+      Dependencies: designer approved deleting the whole element without a spacer.
+      Done when: build and browser confirm absent copy/box and intact summary-to-submit flow; independent boundary review passes.
+
+
+- [x] **A-254** — Place DOKU receipt details before submit and refine mobile form presentation.
+      Risk: R3. Requirement: REQ-235; explicit owner placement and mobile zoom request.
+      Surface: `TASKS.md`, `BUILD-LOG.md`, `src/components/storefront/forms/MalaysiaCheckoutForm.astro`, `src/styles/form-hybrid.css`, `scripts/verify-checkout-flow.mts`.
+      Non-scope: provider/API/order logic, viewport zoom restrictions, dependencies, deployment, commit/push.
+      Dependencies: designer approved pre-CTA neutral panel, 16px padding/input text, preserved state/focus.
+      Done when: browser at 390/1280 proves placement, keyboard order, conditional state and focus recovery; editable fields compute at least 16px without restricting zoom; build/check and independent review pass. Physical iOS Safari autozoom remains a device-specific verification limit.
+
+
+- [x] **A-253** — Make the complete landing builder clearer and more modern, especially on mobile.
+      Risk: R2. Requirement: REQ-234; explicit owner UI/UX refinement request.
+      Surface: `TASKS.md`, `BUILD-LOG.md`, `STATUS.md`, `docs/LANDING-PAGES.md`, `src/components/admin/LandingPageEditor.tsx`, `scripts/verify-landing-builder.mts`.
+      Non-scope: APIs, checkout behavior, schema, dependencies, deployment, commit/push.
+      Dependencies: designer's editor-only mobile navigation, active-section and visual hierarchy handoff.
+      Done when: mobile settings/content navigation preserves work, desktop retains two columns, seven type-specific add controls/outline/active section remain accessible, completion/save state is clear, all existing lifecycle/browser checks and independent review pass.
+      Evidence: 517/517 tests, check/build and isolated Chromium at 390/1280 px passed. Browser assertions cover view defaults, validation view, retained drafts, outline selection, both deletion focus branches, normalized saves and existing builder lifecycle; /tmp/mybookcms-a251-browser-VI3xbx. Script gzip is 156,501 bytes with no added dependency.
+
+- [x] **A-252Q** — Hide the entire payment section before selected location and correct summary comparison styling.
+      Risk: R3. Requirement: REQ-235; explicit owner correction.
+      Surface: `TASKS.md`, `BUILD-LOG.md`, `src/components/storefront/forms/MalaysiaCheckoutForm.astro`, `src/styles/form-hybrid.css`, `scripts/verify-checkout-flow.mts`.
+      Non-scope: provider/order/stock logic, dependencies, deployment, commit/push.
+      Dependencies: designer approved full-section hide after focus guard and muted strikethrough.
+      Done when: section is absent before location selection and after reset, loading/error guidance appears after selection, current quote gates controls; comparison price is crossed out and tracks selected variant; build/browser/review pass.
+
+- [x] **A-252P** — Give the shared checkout its own clear outer padding.
+      Risk: R3 (shared checkout path); requirement REQ-235, explicit owner spacing request.
+      Surface: `TASKS.md`, `BUILD-LOG.md`, `src/components/storefront/forms/MalaysiaCheckoutForm.astro`.
+      Non-scope: checkout behavior, inner field spacing, image spacing, dependencies, deployment, commit/push.
+      Dependencies: designer confirmed24px vertical/16px mobile horizontal/24px desktop horizontal before edit.
+      Done when: one root owns padding without nested accumulation; build and390/1280 browser measurements pass with independent boundary review.
+
+- [x] **A-252** — Rework the shared checkout as a progressive single-page contact/delivery/payment flow.
+      Risk: R3. Requirement: REQ-235. Integrated into active A-251D after the owner's additional request.
+      Surface: `PRD.md`, `TASKS.md`, `BUILD-LOG.md`, `STATUS.md`, `src/components/storefront/forms/MalaysiaCheckoutForm.astro`, `src/styles/form-hybrid.css`, `scripts/verify-checkout-flow.mts`.
+      Non-scope: provider requests, payment availability policy, server order/stock rules, dependencies, deployment, commit/push.
+      Dependencies: designer's Shopify-inspired single-page handoff; valid directory selection and current shipping quote remain authoritative.
+      Done when: payment is initially hidden/disabled, opens after valid selected location/current quote, closes during changes/errors, restores valid prior choice/email, supports retries and all DOKU choices; narrow/wide browser states and existing checks/build pass with independent review.
+
+- [x] **A-251D** — Make image-only landing sections full-width and seamless, and complete A-251C verification.
+      Risk: R3 (inherited checkout-copy integration). Requirement: REQ-234; REQ-212/233 copy amendment.
+      Surface: `PRD.md`, `TASKS.md`, `BUILD-LOG.md`, `STATUS.md`, `src/components/storefront/forms/MalaysiaCheckoutForm.astro`, `src/lib/malaysia-market.test.ts`, `src/styles/landing-pages/landing.css`, `scripts/verify-landing-builder.mts`.
+      Non-scope: image cropping, text-section spacing, checkout behavior, deployment, commit/push.
+      Dependencies: designer accepted zero-spacing image-only sections before edit; incorporates A-251C's earlier copy removal.
+      Done when: adjacent public images span the column without gaps or distortion at390/1280; inline notice is absent; focused checks/build/browser and independent review pass.
+
+- [x] **A-251C** — Remove the four inline checkout privacy paragraphs at the owner's explicit request.
+      Risk: R3 (shared checkout path). Requirement: REQ-212 revised by owner; REQ-233 copy amendment.
+      Surface: `PRD.md`, `TASKS.md`, `BUILD-LOG.md`, `STATUS.md`, `src/components/storefront/forms/MalaysiaCheckoutForm.astro`, `src/lib/malaysia-market.test.ts`.
+      Non-scope: capture/order/payment behavior, separate privacy page, DOKU disclosures, deployment, commit/push.
+      Dependencies: designer confirmed removal before edit.
+      Done when: inline block is absent, name field follows recipient heading without an empty gap; focused tests/build and real browser pass; independent boundary review passes.
+
+- [x] **A-251** — Complete the CMS landing builder against the verified AdsBookCMS authoring capability set.
+      Risk: R3. Primary requirement: REQ-234. Constraints: REQ-233 and existing Malaysia checkout/access/native-page contracts.
+      Surface: `PRD.md`, `TASKS.md`, `STATUS.md`, `BUILD-LOG.md`, `ARCHITECTURE.md`, `docs/CODE-MAP.md`, `docs/DEVELOPMENT-MAP.md`, `docs/LANDING-PAGES.md`, `src/components/admin/LandingPageEditor.tsx`, `src/pages/admin/landing-pages/new.astro`, `src/pages/admin/landing-pages/[id]/edit.astro`, `src/lib/landing-content.ts`, `src/lib/landing-content.test.ts`, `src/lib/landing-pages.ts`, `src/lib/landing-pages.test.ts`, `src/pages/api/admin/landing-pages/index.ts`, `src/pages/api/admin/landing-pages/[id].ts`, `src/pages/[slug].astro`, `src/db/migrations/0063_landing_content.sql`, `src/lib/version.ts`, `src/styles/landing-pages/landing.css`, `src/components/storefront/forms/GeoIpResolvedForm.astro`, `src/components/storefront/forms/MalaysiaCheckoutForm.astro`, `scripts/verify-landing-builder.mts`.
+      Non-scope: new dependencies, provider/stock/payment policy, imported Indonesian checkout modes, editing native routes in the CMS, remote migration/deployment, commit/push.
+      Dependencies: designer's seven-section/full-lifecycle handoff; existing upload boundary; local migration preserving all legacy rows.
+      Done when: seven section types create/edit/reorder/duplicate/save/reload/render correctly, malformed content and cross-product variants are refused, old HTML/form rows survive migration; image failure/dirty/manual-slug/load/save states work; check/test/build, real-browser390/1280 workflows/public render and independent security/correctness review pass; client cost is measured.
+
+- [x] **A-250I** — Make recovery row actions icon-only in one line and replace follow-up editing with a two-choice status flow, requested 2026-09-08.
+      Risk: R3. Primary requirement: REQ-233.
+      Surface: `TASKS.md`, `BUILD-LOG.md`, `src/components/admin/AbandonedOrders.tsx`, `scripts/verify-checkout-recovery-ui.mts`.
+      Non-scope: unrelated pages, order persistence semantics, schema changes, dependencies, deployment, commit/push.
+      Required status surface: `src/lib/checkout-lead.ts`, `src/lib/checkout-lead.test.ts`, `src/pages/api/admin/orders/leads.ts` — the owner-requested status-only mutation must preserve current server notes, including concurrent updates.
+      Dependencies: designer handoff; existing recovery actions.
+      Done when: three labeled 44 px icon actions fit on one line at 390/1280; Ubah status offers contact confirmation or real order conversion, preserves existing notes, and never marks failed/cancelled conversion complete; build and browser checks pass.
+
+- [x] **A-250U** — Polish the checkout recovery UI/UX and keep its client footprint bounded, requested 2026-09-08.
+      Risk: R2. Primary requirement: REQ-233.
+      Surface: `TASKS.md`, `STATUS.md`, `BUILD-LOG.md`, `src/components/admin/AbandonedOrders.tsx`, `scripts/verify-checkout-recovery-ui.mts`.
+      Non-scope: new business flows, API/schema/permissions changes, global redesign, dependencies, deploy, commit or push.
+      Dependencies: accepted designer handoff; existing shadcn primitives and A-250 recovery flow.
+      Done when: loading/refresh/error/empty/filter states are truthful and actionable; rows and dialogs wrap on mobile, controls have usable targets, quote failures stop looking pending; first load avoids search debounce; focused tests/check/build and real-browser flows pass; before/after client asset bytes are recorded with no new dependency.
+
+- [x] **A-250N** — Expose checkout recovery in the shared admin navigation, requested 2026-09-08.
+      Risk: R1. Primary requirement: REQ-233.
+      Surface: `TASKS.md`, `STATUS.md`, `BUILD-LOG.md`, `src/components/admin/admin-navigation.ts`, `src/lib/admin-navigation.test.ts`.
+      Non-scope: checkout data, conversion logic, role grants, new routes, deployment, commit or push.
+      Dependencies: existing A-250 workspace; designer navigation handoff.
+      Done when: Owner/Admin/CS can navigate to pending leads from desktop/mobile menus, advertiser cannot see the link, focused navigation tests and build pass, and real browser verifies the submenu and destination.
+
+- [x] **A-250** — Complete variant-aware CRM and abandoned checkout recovery, authorized by the owner on 2026-09-08.
+      Risk: R3 — public personal-data capture and atomic conversion into a stock-reserving order.
+      Surface: `PRD.md`, `TASKS.md`, `STATUS.md`, `BUILD-LOG.md`, `ARCHITECTURE.md`, `PLAN.md`, `docs/CODE-MAP.md`, `docs/DEVELOPMENT-MAP.md`, `src/db/migrations/0062_checkout_leads.sql`, `src/lib/version.ts`, `src/lib/checkout-lead.ts`, `src/lib/checkout-lead.test.ts`, `src/lib/order-persistence.ts`, `src/lib/crm-template.ts`, `src/lib/crm-template.test.ts`, `src/pages/admin/settings/crm.astro`, `src/components/admin/OrdersTable.tsx`, `src/components/admin/OrderDetail.tsx`, `src/components/admin/AbandonedOrders.tsx`, `src/pages/admin/orders/abandoned.astro`, `src/pages/admin/orders/index.astro`, `src/pages/api/admin/orders/leads.ts`, `src/pages/api/checkout-lead.ts`, `src/components/storefront/forms/MalaysiaCheckoutForm.astro`, `src/pages/dasar-privasi.astro`.
+      Non-scope: provider calls, automatic WhatsApp sending, DOKU/manual-transfer CS conversion, imported upstream shipping taxonomy, remote migration, deployment, commit or push.
+      Primary requirement: REQ-233
+      Required shared surface: `src/components/admin/MalaysiaLocationCombobox.tsx` — the new conversion form reuses this field; keyboard selection must work for the accepted accessible conversion flow.
+      Constraints: REQ-182, REQ-186, REQ-190, REQ-198, REQ-203
+      Dependencies: designer screen contract; existing full checkout and local D1 persistence.
+      Done when: real-D1 tests prove validation, replay/concurrency, conversion rollback, no stock/revenue/Purchase on capture, COD-disabled refusal and denied roles; CRM rendering tests prove separate variant substitution; check/test/build and route-map checks pass; real browser proves partial form capture, admin follow-up, quote and conversion, buyer completion cleanup, CRM chip insertion and responsive use; independent review passes.
+      Delivered locally 2026-09-08: variant token and separate lead workspace implemented; 512/512 full tests, check/build, real-D1 regression checks, responsive Chromium flows and independent review. Two fictional leads were created through the refreshed Tailscale form without submitting additional orders. Conversion supports one item and COD; no live mutation, commit, or push.
+
 Ordered. `G-1` blocks nothing technically but is the only task with a live
 external consequence, so it is listed first and stops for the user.
 
@@ -122,6 +244,19 @@ no task may skip. `STATUS.md` describes the current state and is the fastest way
 to see what is genuinely done versus merely implemented.
 
 Decisions first, because they unblock the most and cost the least:
+
+0. **A-258** comes before everything, including the numbered items below, and
+   it is the owner's action rather than an agent's: 61 uncommitted files,
+   among them two migrations and the whole of A-250/A-251C, sit on one disk,
+   and every ledger run that touches `TASKS.md` or `STATUS.md` inherits them
+   as pre-existing dirty paths and closes BLOCKED for that reason alone.
+   Read the health report at
+   `~/Documents/work/research/mybookcms-health-2026-09-08.md`, then
+   `git status --short`. A-259 through A-262 all depend on it.
+   **A-265** and **A-266** sit beside it as the cheapest truth work in the queue:
+   the id-uniqueness check that stops the collision that has now happened four
+   times today, and the joining of sixteen `Implemented locally` rows to tests
+   that already exist. Neither needs a designer, a decision, or a commit first.
 
 1. **A-246** records the owner's accepted reviewer policy in ADR-028.
    GPT-5.6 Sol may supply the independent review previously tied to Opus.
@@ -148,24 +283,37 @@ Decision follow-through after the owner authorized the blocked tasks:
 
 Then the implementation work that already has its decision:
 
-7. **A-232** enforces the accepted Owner/Admin COD control. Its server half
+7. **A-256** makes the admin canvas obey the design system it already has. It is
+   listed above the other visual work because it is the substrate: `shadcn/ui`,
+   `src/styles/admin.css`, and `DESIGN-SYSTEM.md` already mandate a semantic
+   layer that the components bypass roughly thirteen to one, and the raw
+   `text-slate-500` that arithmetic produces is the exact pair `DESIGN-SYSTEM.md`
+   measured as failing AA on the admin page background. Converting the token
+   layer first removes most of the drift and closes that contrast trap in one
+   pass; doing it after A-232 and A-234 would mean styling new surfaces into a
+   vocabulary those tasks then have to unpick. Read `DESIGN-SYSTEM.md`, then
+   `src/styles/admin.css`. Requires the designer/vision handoff before the first
+   visual edit.
+8. **A-232** enforces the accepted Owner/Admin COD control. Its server half
    landed 2026-09-07 in `62f634d`; what remains is the operator control, which
    needs the designer handoff because it adds a shared admin payment control.
    Read ADR-026 in `DECISIONS.md`.
-8. **A-234** can start only after its required designer handoff decides the
+9. **A-234** can start only after its required designer handoff decides the
    shared switch's 44 px target treatment without destabilising every admin
-   list. Read `DESIGN-SYSTEM.md` and `design-tokens.md`.
+   list. It stays independent of A-255: that task owns colour and shell
+   vocabulary, this one owns the 44 px interactive box. Read `DESIGN-SYSTEM.md`
+   and `design-tokens.md`.
 
 External, production, and approval gates keep their explicit approvals and are
 not reordered by anything above:
 
-9. **A-221**, **A-222**, **A-223**, and **G-1** remain external/release work.
+10. **A-221**, **A-222**, **A-223**, and **G-1** remain external/release work.
    **A-204** now has a successful hosted run on `b093cb8`. A-221 must precede
    A-222, and A-222 must precede A-223. Read `RELEASE.md` before any of them, and
    note that A-221 now also owns confirming the exact `payment.channel` string
    DOKU returns per channel — `CREDIT_CARD` most of all, because a mismatch there
    strands a paid order rather than failing loudly.
-10. **MYS-5** is last and lives under `## Release gate`, not in this queue, on
+11. **MYS-5** is last and lives under `## Release gate`, not in this queue, on
    purpose: its own `Dependencies` line is that the Open queue is empty, so
    listing it inside the thing it waits for would make it self-referential. It is
    the only open task outside the queue, and it is outside it deliberately.
@@ -844,6 +992,246 @@ Surface, and obtain the independent correctness/security review required by
       lineage ownership claims, and cites bounded browser evidence. Four built
       Worker tests cover the named blind spots with isolated fictional D1/KV
       fixtures; an inventory/citation guard detects map drift. No route changed.
+
+- [ ] **A-257** — Guard the observability contract the way the two maps are guarded.
+      Screened 2026-09-08. `docs/CODE-MAP.md` and `docs/DEVELOPMENT-MAP.md` each
+      carry a guard test that fails when the document drifts from disk —
+      `code-map.test.ts` alone asserts route coverage, path existence, HTTP
+      methods against actual exports, the live table list against the migration
+      chain, and that a row's route and file cell describe the same file.
+      `OBSERVABILITY.md` has no equivalent, and the difference showed. Eighty
+      stable surface labels are emitted from production code; before A-256 this
+      document named five. Every checkout, authentication, and advertising label
+      the "Required signals" list calls for was absent, so the requirement and
+      the code were never joined and no check could notice.
+      This is not hypothetical drift. `doku-config-unusable` was added on
+      2026-09-07 and went unregistered until it was caught by hand a day later,
+      by someone who happened to go looking. The registry added under A-256 fixes
+      today's state; only a guard keeps it true, because the next label will be
+      added by whoever is not reading this entry.
+      The check is mechanical and needs no judgement: collect every
+      `console.error` first argument that is a string literal under `src/`
+      excluding tests, and assert the set equals the labels named in the registry
+      table. It should fail in both directions — an emitted label missing from
+      the document, and a documented label nothing emits any more — because a
+      registry that keeps retired names is the same lie in the other direction.
+      Two known wrinkles the check must handle rather than skip: labels appear in
+      both quote styles, and two call sites pass a constant or a ternary rather
+      than a literal, so those need naming explicitly instead of being silently
+      dropped from the inventory.
+      Risk: R1 — one test file plus whatever registry corrections it surfaces on first run; no runtime, schema, or buyer-facing change.
+      Surface: `src/lib/observability-registry.test.ts`, `OBSERVABILITY.md`, `TASKS.md`, `STATUS.md`.
+      Non-scope: changing what any signal logs, adding or removing a signal, altering field rules or the redacted decision table, the `/tmp` evidence citations in `STATUS.md`, and retrofitting allowed-field definitions for the 75 labels the registry names by label only.
+      Primary requirement: REQ-224
+      Constraints: REQ-231
+      Dependencies: the registry section added to `OBSERVABILITY.md` under A-256.
+      Done when: a test fails when a production label is emitted but unregistered, fails when the registry names a label nothing emits, names the two non-literal call sites explicitly rather than skipping them, and passes on the current tree; and `OBSERVABILITY.md` states that the guard exists so the next author meets the rule where they meet the document.
+
+- [ ] **A-258** — Reconcile the working tree before another run inherits it. **Approval: required — committing is the owner's action, never an autonomous one.**
+      Found by the whole-project health report of 2026-09-08 (research copy at
+      `~/Documents/work/research/mybookcms-health-2026-09-08.md`; ledger run
+      `RUN-20260908T062207Z-74df6389`). Sixty-one files are uncommitted: 48
+      modified and 13 untracked. The untracked set is not scratch. It is
+      `0062_checkout_leads.sql`, `0063_landing_content.sql`, `checkout-lead.ts`
+      and its test, `landing-content.ts` and its test, `AbandonedOrders.tsx`, the
+      `/admin/orders/abandoned` page, the `/api/checkout-lead` and
+      `/api/admin/orders/leads` endpoints, and three verification scripts — the
+      whole of A-250 and A-251C, both marked complete in this file, neither in
+      git. Two migrations exist on one disk.
+      The second cost is procedural and already paid three times today. Every
+      delivery-ledger run that touches `TASKS.md` or `STATUS.md` inherits them as
+      pre-existing dirty paths and therefore requires an independent review it
+      cannot obtain in a single-agent session, so verified, green, in-scope
+      documentation runs close BLOCKED for a reason that has nothing to do with
+      their content. A clean tree removes that reason entirely at R1.
+      Risk: R1 — git state only. No file content changes under this task; anything found mid-reconciliation that needs a change becomes its own entry.
+      Surface: git index and history only. `TASKS.md` and `STATUS.md` to record the outcome.
+      Non-scope: rewriting history, force-pushing, squashing other sessions' commits, merging to `main` (G-1 owns publication), and any content edit to the files being committed.
+      Primary requirement: REQ-231
+      Constraints: none.
+      Dependencies: the owner's explicit approval of each commit, and a read of every untracked file before it is added — the health report confirmed none are scratch, but the person committing reads them, not the report.
+      Done when: `git status --short` shows no modified or untracked path outside `.delivery/`; every committed file is attributable to a task in this file; the two migrations are in history; and the next ledger run at R1 that touches only in-scope documentation reaches PASS without a review reason.
+
+- [ ] **A-259** — Take the two dependency fixes `npm audit` already has ready.
+      Found by the health report of 2026-09-08. `npm audit --omit=dev` reports
+      one high and one moderate vulnerability, both with `fixAvailable: true`:
+      `fast-uri` 3.0.0–3.1.5, host confusion via skipped IDN canonicalisation on
+      scheme-relative input; and `qs` 2.2.5–6.15.3, array-limit bypass via
+      bracket-key comma parsing and an attacker-controlled denial of service. Both
+      are transitive. Sixteen packages are also outdated, all minor, and are not
+      this task: bumping them is routine maintenance with its own regression
+      surface and should not ride on a security fix.
+      Risk: R1 — lockfile only, transitive packages. Rises to R2 if `npm audit fix` cannot resolve without a major bump of a direct dependency, in which case stop and record what it wants to change rather than forcing it.
+      Surface: `package-lock.json`, and `package.json` only if a direct dependency must move. `TASKS.md`, `STATUS.md`.
+      Non-scope: the sixteen outdated packages, any major-version bump, `--force`, and any change to what the application does with URIs or query strings.
+      Primary requirement: REQ-231
+      Constraints: none.
+      Dependencies: A-258, because a lockfile change on a tree with 61 uncommitted files is one more thing the next commit has to explain.
+      Done when: `npm audit --omit=dev` reports zero high and zero moderate; `npm ci`, `npm run check`, `npm test`, and `npm run build` pass on the new lockfile; and the diff touches no direct dependency's major version.
+
+- [ ] **A-260** — Build the DOKU request body in one place.
+      Found by the health report of 2026-09-08. `checkoutBody` exists twice:
+      `src/lib/doku-checkout.ts` (62 lines) builds it for the first attempt and
+      `src/lib/doku-payment-access.ts` (65 lines) builds it for retry. After
+      normalising `order.`/`attempt.` field access, 25 lines differ. Both produce
+      the signed provider request on an R3 payment path, and they already share
+      the invariant that matters — `payment_channels` is the single pinned
+      channel, `language` is `MS`, the callback URLs carry the return capability.
+      Two copies of that drift, and when they drift the retry sends DOKU
+      something the original attempt did not, which is exactly the class of
+      inconsistency `sameIntent` exists to refuse on the way in.
+      This is a refactor, and it earns its place only because the two copies are
+      already 25 lines apart. The unified builder takes the fields both sites
+      have — order identity, amount, customer, expiry, channel, callbacks — and
+      neither site keeps any body-shaping logic of its own.
+      Risk: R3 — the provider request body on both create and retry. Independent payment-surface review required; the existing signed-request tests in `doku-checkout.test.ts` and `doku-payment-access.test.ts` are the regression floor and must pass byte-for-byte on the bodies they already assert.
+      Surface: `src/lib/doku-checkout.ts`, `src/lib/doku-payment-access.ts`, one new shared module under `src/lib/` if neither file is the natural owner, `src/lib/doku-checkout.test.ts`, `src/lib/doku-payment-access.test.ts`, `TASKS.md`, `STATUS.md`, `docs/CODE-MAP.md`.
+      Non-scope: changing any field the body carries, the signature scheme, callback URL shape, expiry policy, channel pinning, or provider traffic; and touching `checkoutInput`/`attemptFacts`/`createAttempt`, which are test helpers duplicated across test files and a separate, lower-value tidy.
+      Primary requirement: REQ-216
+      Constraints: REQ-220, REQ-223, REQ-227
+      Dependencies: A-258.
+      Done when: one function builds the DOKU request body for both create and retry; the two call sites contain no body-shaping logic; every existing assertion on request bodies in both test files passes unchanged; a new test asserts create and retry produce identical bodies for identical inputs; and an independent review of the payment surface reports no finding.
+
+- [ ] **A-261** — Decide whether a 62,000-line codebase gets a linter. **Approval: required — adds a toolchain to a repository that has kept dependencies deliberately minimal.**
+      Found by the health report of 2026-09-08. There is no `eslint`, `prettier`,
+      or `biome` configuration anywhere in the repository. `tsconfig.json` has
+      `strict: true` and CI runs `check`, `test`, and `build`, so type errors are
+      caught; nothing catches style, consistency, unused code, or the class of
+      drift A-256 measured — 980 raw palette uses against 74 semantic tokens grew
+      across 22 files with no mechanism capable of noticing. The repository's own
+      rule is that a dependency must earn its place, so this is recorded as a
+      decision rather than done.
+      The honest framing of the choice. Adding `biome` is one dev dependency,
+      one config file, and one CI line, and gives formatting plus a useful lint
+      floor with no plugin tree; adding `eslint` plus `prettier` is the
+      conventional route with a larger dependency surface; declining is defensible
+      if the owner would rather rely on review, but then A-256's class of drift
+      will recur and should be expected to. Whichever is chosen, the first run
+      will report existing violations, and those are fixed under their own entries
+      or accepted with a recorded baseline — never in the same commit that adds
+      the tool.
+      Risk: R1 — tooling and CI configuration; no runtime change. The first-run fix-up, if chosen, is separate and its risk follows the files it touches.
+      Surface: `package.json`, `package-lock.json`, one tool configuration file, `.github/workflows/ci.yml`, `AGENTS.md`, `TASKS.md`, `STATUS.md`, `DECISIONS.md`.
+      Non-scope: fixing what the tool reports, adding rules that reformat the codebase wholesale, and any rule that would contradict `DESIGN-SYSTEM.md`.
+      Primary requirement: REQ-231
+      Constraints: none.
+      Dependencies: A-258, so the tool's first run reports against a committed tree.
+      Done when: a recorded decision states whether a linter is adopted and which; if adopted, it runs in CI on the same commands a developer runs locally, its first-run findings are recorded as a baseline or queued rather than silently fixed, and `AGENTS.md` tells the next session to run it; if declined, `DECISIONS.md` says why and what review is expected to catch instead.
+
+- [ ] **A-262** — Measure coverage, so the development map can cite a number instead of a grep.
+      Found by the health report of 2026-09-08. Ninety-two test files and 15,452
+      lines of tests exist against 62,645 lines of source, and no coverage figure
+      does: there is no `c8`, `nyc`, or equivalent. `docs/DEVELOPMENT-MAP.md` was
+      built to answer "what is covered" and did so honestly by grepping test files
+      for route names, stating that method as its limit. The limit is removable
+      for the cost of one dev dependency. `c8` wraps `node --test` without
+      configuration, which is the runner this repository already uses.
+      The number is not the point; the point is that "tested one layer down",
+      which the map currently has to say in words, becomes a claim with a figure
+      that can go down. The map keeps its route-by-route evidence columns; a
+      coverage report adds the axis it cannot derive from citations.
+      Risk: R1 — a dev dependency and one script; no runtime change. No threshold is set under this task, because a threshold chosen before the first measurement is a guess.
+      Surface: `package.json`, `package-lock.json`, `.github/workflows/ci.yml` if the report is published there, `docs/DEVELOPMENT-MAP.md`, `AGENTS.md`, `TASKS.md`, `STATUS.md`.
+      Non-scope: enforcing a threshold, changing any test, writing tests to raise the figure, and treating the number as a substitute for the map's evidence columns.
+      Primary requirement: REQ-231
+      Constraints: none.
+      Dependencies: A-258. Independent of A-261; either may land first.
+      Done when: `npm run test:coverage` (or the chosen script) produces a line and branch figure for `src/` from the existing suite without altering any test; the figure and the command are recorded in `docs/DEVELOPMENT-MAP.md` beside the method it supplements; and the first measured baseline is written down so a later drop is visible.
+
+- [ ] **A-256** — Make the admin canvas obey the design system it already has.
+      Screened 2026-09-08 after the owner reported the admin reading as untidy.
+      The finding is not a missing library. `shadcn/ui` is installed with 22
+      primitives in `src/components/ui/`, `src/styles/admin.css` carries the full
+      semantic variable set, and `DESIGN-SYSTEM.md` already makes both mandatory:
+      "the admin uses the semantic variables and Tailwind bridge in
+      `src/styles/admin.css` plus the existing shadcn components", and "do not
+      introduce a second component library, a separate color vocabulary, or a
+      provider brand as a system accent". The admin components bypass all of it.
+      Measured across `src/components/admin/*.tsx` at `0cff0f0`: `border-slate-200`
+      150 uses against `border-border` 16; `text-slate-500` 187 against
+      `text-muted-foreground` 37; `bg-white` 90 against `bg-card` 6. Whole-palette
+      counts are 980 `slate-*` uses across 22 files against 74 semantic-token uses
+      concentrated in 2 files. Seventeen of twenty-three admin components import no
+      shadcn primitive at all, and the largest are the worst: `ProductCatalog` at
+      1232 lines with 51 hand-styled nodes and zero imports, `LandingPageCatalog`
+      968/40/0, `OrderDetail` 761/36/0, `ProductForm` 696/21/0. The installed
+      `table`, `badge`, `dialog`, and `select` primitives are used by zero admin
+      components, while `OrdersTable`, `ProductCatalog`, and `LandingPageCatalog`
+      are table-heavy and full of hand-rolled badges and modals.
+      What the operator sees is the arithmetic of that. One "card" concept is drawn
+      three ways depending on the file — `rounded-xl` 121, `rounded-lg` 79,
+      `rounded-2xl` 28 — across two shadow scales and two padding rhythms.
+      `LandingPageEditor.tsx` additionally introduces a third colour vocabulary
+      (`text-zinc-800`, `bg-zinc-900`, 6 uses) in the same file that elsewhere uses
+      `border-border`, which is the "separate color vocabulary" the design system
+      names explicitly.
+      **This is not only cosmetic, and that is the part worth acting on.**
+      `DESIGN-SYSTEM.md` already measured and recorded that `slate-500` passes AA
+      on a white card at 4.76 but fails on the admin page background `#f5f6f8` at
+      4.41, and must be `slate-600` there. There are 187 raw `text-slate-500` uses.
+      Some necessarily sit on the page background, so the design system predicted
+      these failures before they were written. A component using
+      `text-muted-foreground` cannot express the failing pair at all, which is why
+      the token layer is the fix rather than a per-instance contrast audit.
+      Sequenced deliberately, because rewriting 23 components is over ten thousand
+      lines of risk for no proportionate gain. The token layer goes first: it is
+      mechanical, greppable, verifiable without taste, removes most of the visual
+      drift, and closes the contrast trap in one pass. Shared shells follow —
+      card, table, badge — where the ratio of consistency gained to lines changed
+      is highest. Surfaces are ordered by daily operator use, not by file size.
+      Risk: R2 — shared visual primitives rendered on every admin workspace; presentation only, with no data, authorization, schema, or API change. Rises to R3 for any surface where a token change alters a state indicator an operator reads as payment or order truth.
+      Surface: `src/components/admin/*.tsx`, `src/styles/admin.css`, `src/components/ui/*` only where an installed primitive needs a variant it does not yet have, `DESIGN-SYSTEM.md`, `docs/DEVELOPMENT-MAP.md`, `TASKS.md`, `STATUS.md`.
+      Non-scope: adding any component library or dependency; redesigning the AdsBookCMS interaction baseline REQ-186 protects, including the Order Management desktop-table/mobile-card split and the order-detail CRM workflow; changing any admin behaviour, data, permission, or endpoint; the storefront, which has its own token layer in `src/styles/form-hybrid.css`; the 44 px switch target, which stays A-234; and converting a component to a shadcn primitive where the primitive cannot yet express its existing behaviour.
+      Constraints: REQ-186, REQ-196
+      Dependencies: the designer/vision handoff required before the first visual edit. A-234 stays independent and neither blocks this nor is blocked by it.
+      Done when: no admin component references a raw Tailwind palette shade for a colour the semantic layer already names, verified by a grep-based check that fails on reintroduction; the third `zinc` vocabulary in `LandingPageEditor.tsx` is gone; every hand-rolled card, table, and badge that the installed primitives can express uses them; one card radius, one shadow scale, and one padding rhythm are in force across the admin; no `text-slate-500` remains on the page background; a real browser confirms each converted surface at 390 px and 1280 px with no new overflow and no regression against the REQ-186 baseline; and focused tests, all repository tests, `npm run check`, and `npm run build` pass.
+
+- [ ] **A-265** — Make a duplicated task id fail the queue contract.
+      Screened 2026-09-08 after two collisions in one day. `A-255` was allocated
+      by two sessions for two different tasks, and the design-conformance one was
+      then marked complete without any work; `A-258` was allocated twice the same
+      way an hour later. `task-queue.test.ts` validates that every open entry
+      carries its five fields, cites only defined requirements, and marks R4 for
+      approval — and asserts nothing about ids, so both collisions passed green.
+      The archive already shows the same defect at rest: `A-176` through `A-185`
+      appear under both `## A24` and `## A23`. AGENTS.md rule 7 tells a session
+      how to allocate; this is the check that makes the rule hold when a session
+      does not read it.
+      Risk: R1 — one assertion in an existing test file; no runtime change. The first run will fail on the archive duplicates, and the task decides whether those are one entry recorded under two epics or a real duplicate, per pair, rather than silencing them.
+      Surface: `src/lib/task-queue.test.ts`, `TASKS.md`, `STATUS.md`.
+      Non-scope: renumbering historical entries, changing what the five-field contract requires, and any check on `.delivery/runs/` labels, which the ledger owns.
+      Primary requirement: REQ-231
+      Constraints: none.
+      Dependencies: none.
+      Done when: `task-queue.test.ts` fails when the same `**A-nnn**` id heads more than one entry anywhere in `TASKS.md`; the archive duplicates `A-176`–`A-185` are each resolved by a recorded decision rather than an exclusion list; and the test passes on the resulting file.
+
+- [ ] **A-266** — Join the sixteen "Implemented locally" requirements to the evidence that already exists for them.
+      Screened 2026-09-08. Sixteen rows in `PRD.md` read `Implemented locally`:
+      REQ-173, 178, 179, 180, 183, 184, 185, 194, 202, 203, 204, 206, 207, 208,
+      209, 210 — the foundation of the Malaysia replatforming, from MYR integer
+      sen through postcode bands, location search, Malay copy, slugs, legal
+      reachability, seller banks, pickup address, and host hygiene. Not one of
+      them is mentioned in `STATUS.md`, in `BUILD-LOG.md`, or by any closed task
+      entry. That is not the same as unverified: 118 test names match these
+      domains by keyword, and several cover a row outright — "advertising values
+      convert integer sen to MYR major units" is REQ-173, "postcode range
+      mutations reject malformed or overlapping active policy" is REQ-178,
+      "location search returns only D1-backed shippable city, state, and postcode
+      rows" is REQ-183, "a retired slug redirects once to its Malay canonical" is
+      REQ-203. The evidence exists; nothing joins it to the row it satisfies.
+      This is a joining task, not a verification task, and it must not become an
+      upgrade pass. For each row: name the test or recorded browser evidence that
+      satisfies it, and change the status to `Verified locally` with that
+      citation; or, where nothing does, leave the row as it is and say so in the
+      status cell. A row raised without a citation is worse than the row it
+      replaces, because it looks finished.
+      Risk: R1 — `PRD.md` status cells and their citations only; no code, no test change. If a row genuinely has no evidence, writing the test is a separate entry, not this one.
+      Surface: `PRD.md`, `STATUS.md`, `TASKS.md`.
+      Non-scope: adding or changing tests; touching requirement text; the four `Accepted` rows and REQ-224's `Partially verified` row, which have their own owners; and any row whose status already cites its evidence.
+      Primary requirement: REQ-231
+      Constraints: none.
+      Dependencies: none. Independent of A-265.
+      Done when: each of the sixteen rows either reads `Verified locally` with the test name or recorded evidence that satisfies it, or still reads `Implemented locally` with the status cell stating that no evidence names it; no row was raised without a citation; and `STATUS.md` records how many moved and how many did not.
 
 
 ## Demo run 2026-09-01 — local only

@@ -3,7 +3,7 @@ import test from "node:test";
 import { POST as metaEventRoute } from "../pages/api/meta-event.ts";
 import { prepareMetaCapiPayload, sendPreparedMetaCapi } from "./meta-capi.ts";
 
-test("Meta CAPI Purchase uses MYR, Malaysia identity, and hashed advanced matching", async () => {
+test("Meta CAPI Purchase converts MYR to IDR and preserves Malaysia identity, and hashed advanced matching", async () => {
   const payload = await prepareMetaCapiPayload({
     eventName: "Purchase",
     eventId: "purchase:MY-1001",
@@ -27,8 +27,8 @@ test("Meta CAPI Purchase uses MYR, Malaysia identity, and hashed advanced matchi
   });
   const event = payload.data[0];
 
-  assert.equal(event.custom_data.currency, "MYR");
-  assert.equal(event.custom_data.value, 46.9);
+  assert.equal(event.custom_data.currency, "IDR");
+  assert.equal(event.custom_data.value, 192290);
   assert.equal(event.custom_data.order_id, "MY-1001");
   assert.deepEqual(event.custom_data.content_ids, ["p1-v2"]);
   assert.notEqual((event.user_data.ph as string[])[0], "60123456789");

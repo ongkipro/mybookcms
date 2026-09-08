@@ -28,6 +28,47 @@ customer contact information. Advertising logs may contain the safe event name
 and order number, but never access tokens, click IDs, unhashed matching fields,
 or complete vendor payloads.
 
+## Emitted signal registry
+
+Every stable surface label this repository emits from production code, resolved
+from disk on 2026-09-08 by scanning `console.error` call sites under `src/`
+excluding tests. It exists because the categories above name *what* must be
+observable while nothing named *which label* satisfies them, so the requirement
+and the code were never joined. Before this list, five labels were named
+anywhere in this document and 75 were not — including every
+checkout, authentication, and advertising signal the required-signal list calls
+for.
+
+**The registration rule.** A production log label is part of this contract the
+moment it is emitted. Adding one without adding it here leaves the runtime
+emitting a signal the observability contract does not define, which is exactly
+what happened to `doku-config-unusable`: it was caught by hand a day after it
+shipped, and only because someone went looking. Two consequences follow. An
+operator reading this document can tell an actionable signal from an incidental
+catch. And a reviewer can check registration mechanically instead of trusting
+that the author remembered.
+
+| Domain | Labels | Stable surface labels |
+| --- | ---: | --- |
+| Authentication and access | 6 | `admin-access-delete`, `admin-access-get`, `admin-access-patch`, `admin-access-post`, `admin-login`, `admin-login-default-notice` |
+| Checkout and orders | 6 | `admin-order-update`, `admin-orders-list`, `headless-checkout`, `notification-record-failed`, `submit-order`, `submit-order-shipping-quote` |
+| Payments | 4 | `doku-config-unusable`, `doku-notification`, `doku-paid-meta-prepare`, `payment-availability-config` |
+| Advertising | 7 | `accepted-order-meta-prepare`, `ads-config-load`, `ads-config-update`, `capi-outbox-drain`, `google-catalog-admin`, `google-catalog-feed`, `meta-event` |
+| Shipping and location | 8 | `admin-shipping-queue`, `headless-location-search`, `malaysia-location-search`, `malaysia-shipping-rates`, `malaysia-shipping-settings`, `malaysia-shipping-settings-list`, `manual-shipping-list`, `manual-shipping-update` |
+| Catalog and storefront | 20 | `home-content-no-database-binding`, `home-landing-pages-load`, `native-landing-claim-read-failed`, `native-landing-reconcile-failed`, `sitemap-landing-pages`, `sitemap-products`, `storefront-catalog-load`, `storefront-content-invalid`, `storefront-home-content-invalid`, `storefront-home-content-load`, `storefront-product-content-load`, `storefront-support-whatsapp-load`, `storefront-support-whatsapp-no-database-binding`, `storefront-support-whatsapp-no-store-row`, `storefront-template-invalid`, `storefront-template-list`, `storefront-template-resolve`, `tenant-identity-load`, `tenant-identity-unmigrated`, `tenant-malformed-storefront-template` |
+| Admin operations | 18 | `admin-analytics-get`, `admin-developer-keys-delete`, `admin-developer-keys-get`, `admin-developer-keys-patch`, `admin-developer-keys-post`, `admin-media-post`, `admin-notifications-read`, `admin-notifications-write`, `admin-products-delete`, `admin-products-get`, `admin-products-initial-load`, `admin-products-patch`, `admin-products-post`, `admin-products-status-patch`, `admin-profile-get`, `admin-profile-put`, `settings-get`, `settings-put` |
+| Headless API | 1 | `headless-api-audit-write-failed` |
+| Install and platform | 10 | `install-completed`, `install-missing-auth-secret`, `install-missing-setup-token`, `install-no-credential-row`, `install-no-database-binding`, `install-run`, `system-event-write-failed`, `system-events-retention-failed`, `system-log-read-failed`, `system-log-source-failed` |
+
+Registry entries carry the label only. Fields stay governed by **Event fields**
+above, and the DOKU and system-event sections below remain authoritative where
+they additionally fix allowed fields and operator decisions for a signal.
+
+Nothing enforces this list yet. `docs/CODE-MAP.md` and `docs/DEVELOPMENT-MAP.md`
+each have a guard test that fails when the document drifts from disk; this
+document has none, which is why it drifted to 75 unregistered labels
+without a single failing check. **A-257** adds that guard.
+
 ## DOKU payment signals
 
 For the managed A-221 local sandbox, use `npm run cf:dev:managed` as documented

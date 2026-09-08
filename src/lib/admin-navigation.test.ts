@@ -7,6 +7,19 @@ import {
 } from "../components/admin/admin-navigation.ts";
 import { ADMIN_ROLES, canAccessAdminRoute } from "./auth.ts";
 
+test("checkout recovery is discoverable only for order operators", () => {
+  for (const role of ADMIN_ROLES) {
+    const item = getSearchableNavItems(role).find(item => item.href === "/admin/orders/abandoned");
+    assert.equal(Boolean(item), role !== "advertiser", role);
+    if (item) {
+      assert.equal(item.label, "Pesanan tertinggal");
+      assert.match(item.keywords, /abandoned/);
+    }
+  }
+  assert.equal(isAdminNavHrefActive("/admin/orders/abandoned", "/admin/orders"), false);
+  assert.equal(isAdminNavHrefActive("/admin/orders/abandoned", "/admin/orders/abandoned"), true);
+});
+
 test("visible admin navigation never exposes a route denied to its role", () => {
   for (const role of ADMIN_ROLES) {
     const links = getSearchableNavItems(role).map((item) => item.href);

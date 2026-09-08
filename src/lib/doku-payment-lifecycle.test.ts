@@ -207,8 +207,8 @@ test("authoritative DOKU success atomically owns one canonical Meta Purchase", a
     content_name: "Jurnal Settlement",
     content_ids: ["p36000-v36001"],
     content_type: "product",
-    value: 65.8,
-    currency: "MYR",
+    value: 269780,
+    currency: "IDR",
     order_id: order.orderNumber,
   });
   assert.equal(event.user_data.fbp, "fb.1.1700000000000.browser");

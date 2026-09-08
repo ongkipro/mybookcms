@@ -1,6 +1,7 @@
 ---
 import { getStoreAdsConfig, GOOGLE_ADS_ID_PATTERN, GOOGLE_ADS_LABEL_PATTERN, GOOGLE_TAG_MANAGER_ID_PATTERN, META_PIXEL_ID_PATTERN } from '../../../lib/ads-config';
 import { META_EXTERNAL_ID_COOKIE } from '../../../lib/click-ids';
+import { ADS_CURRENCY, ADS_IDR_PER_MYR } from '../../../lib/ads-signal-policy';
 type Props = { purchaseOnly?: boolean };
 const { purchaseOnly = false } = Astro.props;
 const config = await getStoreAdsConfig(Astro.locals);
@@ -49,7 +50,7 @@ const hasGoogleAds = Boolean(googleAdsId && googleAdsLabel);
   })();
 </script>}
 
-{hasGoogleAds && <script is:inline define:vars={{ googleAdsId, googleAdsLabel }}>
+{hasGoogleAds && <script is:inline define:vars={{ googleAdsId, googleAdsLabel, adsCurrency: ADS_CURRENCY, adsIdrPerMyr: ADS_IDR_PER_MYR }}>
   (() => {
     window.dataLayer = window.dataLayer || [];
     window.gtag = window.gtag || function () { window.dataLayer.push(arguments); };
@@ -64,8 +65,8 @@ const hasGoogleAds = Boolean(googleAdsId && googleAdsLabel);
       if (userData) window.gtag('set', 'user_data', userData);
       window.gtag('event', 'conversion', {
         send_to: `${googleAdsId}/${googleAdsLabel}`,
-        value: Number(value || 0),
-        currency: 'MYR',
+        value: Math.round(Number(value || 0) * 100) * (adsIdrPerMyr / 100),
+        currency: adsCurrency,
         transaction_id: transactionId,
       });
     };
@@ -108,7 +109,7 @@ const hasGoogleAds = Boolean(googleAdsId && googleAdsLabel);
   })();
 </script>}
 
-{(metaPixelId || gtmId || hasGoogleAds) && <script is:inline define:vars={{ metaPixelId, purchaseOnly }}>
+{(metaPixelId || gtmId || hasGoogleAds) && <script is:inline define:vars={{ metaPixelId, purchaseOnly, adsCurrency: ADS_CURRENCY, adsIdrPerMyr: ADS_IDR_PER_MYR }}>
   (() => {
     const createEventId = (prefix) => {
       const random = typeof crypto.randomUUID === 'function'
@@ -131,10 +132,11 @@ const hasGoogleAds = Boolean(googleAdsId && googleAdsLabel);
         ? payload.content_ids.filter((item) => typeof item === 'string' && item)
         : payload.content_id ? [payload.content_id] : [];
       const hasValue = typeof payload.value === 'number' && Number.isFinite(payload.value);
+      const adsValue = hasValue ? Math.round(payload.value * 100) * (adsIdrPerMyr / 100) : undefined;
       const pixelData = {
         content_name: payload.content_name,
         ...(contentIds.length ? { content_ids: contentIds, content_type: 'product' } : {}),
-        ...(hasValue ? { value: Number(payload.value), currency: 'MYR' } : {}),
+        ...(hasValue ? { value: adsValue, currency: adsCurrency } : {}),
       };
       if (window.fbq) {
         const firePixel = () => window.fbq('track', eventName, pixelData, { eventID: eventId });
@@ -166,8 +168,8 @@ const hasGoogleAds = Boolean(googleAdsId && googleAdsLabel);
         ...(hasValue || contentIds.length
           ? {
               ecommerce: {
-                currency: 'MYR',
-                value: hasValue ? Number(payload.value) : undefined,
+                currency: adsCurrency,
+                value: adsValue,
                 transaction_id: payload.order_number,
                 items: contentIds.map((itemId) => ({
                   item_id: itemId,

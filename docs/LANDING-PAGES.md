@@ -13,6 +13,38 @@ URL. In that state `/produk/<product-slug>` is canonical and the landing slug
 redirects there. The D1 partial unique index prevents two pages from claiming
 the same product.
 
+## CMS builder
+
+`/admin/landing-pages/new` and `/admin/landing-pages/<id>/edit` provide the complete
+operator builder (Owner/Admin/Advertiser): headline, paragraph, numbered list,
+bullet list, image, HTML, and Malaysia checkout sections. The responsive canvas
+uses the public 480 px content width. Sections support editing, local preview,
+reordering, duplication, removal, and navigation. Title, manual slug, product,
+draft/publication status, and SEO remain on the settings panel. New pages start
+as drafts. A failed load blocks editing; failed saves retain input; leaving an
+unsaved page invokes the browser's warning. A manually edited slug is preserved.
+
+Structured content lives in `landing_sections.content_config`; migration
+`0063_landing_content.sql` preserves all existing HTML/form rows. The shared
+`src/lib/landing-content.ts` validates bounded content and escapes typed output.
+HTML remains trusted operator-authored public markup; its admin preview strips
+active markup and custom CSS, so it does not claim exact public parity. The saved
+preview uses `?preview=1` and validates current Owner/Admin/Advertiser sessions;
+anonymous and Customer Service sessions cannot reveal a draft.
+
+Image upload reuses `/api/admin/media` (JPEG/PNG/WebP/GIF/AVIF, 2 MB maximum).
+Failures preserve the previous image. Saving is disabled during upload. Changing
+the bound product clears explicit form variants; server validation rejects any
+variant belonging to another product. Form title and ready-state button text are
+customizable; required-field guidance and hosted DOKU action labels retain their
+meaning. Without an explicit form, the public renderer supplies the shared full
+Malaysia checkout automatically. No Indonesian checkout mode is imported.
+
+Local regression: build, then run
+`node --experimental-strip-types scripts/verify-landing-builder.mts` with local
+Chromium CDP at `http://127.0.0.1:9396` (override with `CDP_URL`). It uses fictional
+isolated Worker/D1/KV/R2 fixtures and does not mutate the running store.
+
 ## Native page contract
 
 A native route resolves the product from D1, renders through `BaseLayout`, and
@@ -74,6 +106,20 @@ and route file in the same change.
   imported only by that route.
 - The public reading column is 480 CSS px. Components must not create a second
   competing maximum width.
+
+## Editor interaction
+
+On mobile, new pages start in Pengaturan and existing pages start in Konten.
+Both panels remain mounted so switching views preserves unsaved input. Desktop
+shows settings and canvas together. Required-field save errors reopen settings;
+a successful save returns to content with the server-normalized draft.
+
+Tambah bagian is initially collapsed on mobile edit pages and open on new
+pages or desktop. Susunan halaman provides a collapsible, type-labeled outline
+with the active section marked. Section actions use labeled 44 px icon buttons.
+Deleting a section focuses its neighbor; deleting the last section opens the add
+palette and focuses its first control. Selesai mengedit bagian closes the inline
+editor; Simpan is still required to persist the draft.
 
 ## Verification
 

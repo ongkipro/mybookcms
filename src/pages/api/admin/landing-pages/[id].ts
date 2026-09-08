@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { LandingContentError } from "../../../../lib/landing-content";
 import { jsonError, jsonOk } from "../../../../lib/api";
 import {
   deleteLandingPage,
@@ -32,8 +33,10 @@ export const PUT: APIRoute = async ({ request, params, locals }) => {
   try {
     const body = await request.json();
     const result = await updateLandingPage(locals, id, body);
+    if (!result) return jsonError("Halaman tidak ditemukan. Perubahan belum disimpan.", 404);
     return jsonOk({ data: result });
   } catch (error: unknown) {
+    if (error instanceof LandingContentError) return jsonError(error.message, 422);
     if (error instanceof NativeLandingReadOnlyError) {
       return jsonError(error.message, 409, { code: "NATIVE_LANDING_READ_ONLY" });
     }
@@ -52,6 +55,7 @@ export const DELETE: APIRoute = async ({ params, locals }) => {
     await deleteLandingPage(locals, id);
     return jsonOk({ message: "Deleted successfully" });
   } catch (error: unknown) {
+    if (error instanceof LandingContentError) return jsonError(error.message, 422);
     if (error instanceof NativeLandingReadOnlyError) {
       return jsonError(error.message, 409, { code: "NATIVE_LANDING_READ_ONLY" });
     }

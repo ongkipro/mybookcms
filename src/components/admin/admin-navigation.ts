@@ -55,7 +55,10 @@ export const adminNavGroups: AdminNavGroup[] = [
         shortLabel: "Pesanan",
         description: "Validasi dan proses pesanan",
         icon: ShoppingBag,
-        keywords: "orders pesanan transaksi pelanggan",
+        keywords: "orders pesanan transaksi pelanggan tertinggal abandoned lead",
+        children: [
+          { href: "/admin/orders/abandoned", label: "Pesanan tertinggal" },
+        ],
       },
       {
         id: "shipping",

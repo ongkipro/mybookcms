@@ -1,3 +1,4 @@
+import { ADS_CURRENCY, adsValueFromMyr } from "./ads-signal-policy.ts";
 import { malaysiaPhoneDigits, metaNameParts, normalizeMetaText } from "./meta-identity.ts";
 
 /** Verified against Meta's canonical Graph API changelog on 2026-08-24. */
@@ -70,7 +71,8 @@ export async function prepareMetaCapiPayload(input: MetaSignalInput): Promise<Pr
   const contentName = clean(input.customData?.contentName);
   const contentIds = input.customData?.contentIds?.filter(Boolean) || [];
   const orderNumber = clean(input.customData?.orderNumber);
-  const hasValue = typeof input.customData?.value === "number";
+  const valueMyr = input.customData?.value;
+  const hasValue = typeof valueMyr === "number" && Number.isFinite(valueMyr);
   return {
     data: [{
       event_name: input.eventName,
@@ -96,7 +98,7 @@ export async function prepareMetaCapiPayload(input: MetaSignalInput): Promise<Pr
       custom_data: {
         ...(contentName ? { content_name: contentName } : {}),
         ...(contentIds.length ? { content_ids: contentIds, content_type: "product" } : {}),
-        ...(hasValue ? { value: input.customData?.value, currency: "MYR" } : {}),
+        ...(hasValue ? { value: adsValueFromMyr(valueMyr), currency: ADS_CURRENCY } : {}),
         ...(orderNumber ? { order_id: orderNumber } : {}),
       },
     }],

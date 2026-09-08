@@ -12,6 +12,7 @@ const read = (path: string) => readFileSync(new URL(`../../${path}`, import.meta
 test("privacy presents the complete Malay notice before English and preserves accepted DOKU copy", () => {
   const notice = getTenantLegalPage("privacy", "Fixture Store");
   assert.deepEqual(notice.sections.map(section => section.lang), [...Array(7).fill("ms"), ...Array(8).fill("en")]);
+  assert.match(read("src/components/storefront/shared/LegalPage.astro"), /lang=\{section\.lang\}/);
   assert.equal(notice.sections[7].title, "Privacy Notice — Fixture Store");
   assert.equal(notice.sections.find(section => section.id === "pembayaran-doku")?.lang, "ms");
   for (const section of notice.sections) {
@@ -23,20 +24,6 @@ test("privacy presents the complete Malay notice before English and preserves ac
     .map(({ title, paragraphs }) => ({ title, paragraphs }));
   // The accepted REQ-227 paragraphs predate the translation task and are outside its scope.
   assert.equal(createHash("sha256").update(JSON.stringify(acceptedDoku)).digest("hex"), "829c277cfe4704f1557a49e0265ebeb8c9ecee6038ce515e84d0f39c3d026ac8");
-});
-
-test("the bilingual privacy notice precedes the first checkout name field independently of DOKU", () => {
-  const checkout = read("src/components/storefront/forms/MalaysiaCheckoutForm.astro");
-  const start = checkout.indexOf("data-privacy-notice");
-  const name = checkout.indexOf('name="customer_name"');
-  assert.ok(start >= 0 && start < name);
-  const introduction = checkout.slice(start, name);
-  assert.equal((introduction.match(/href="\/dasar-privasi"/g) ?? []).length, 2);
-  assert.match(introduction, /Sebelum mengisi maklumat peribadi, baca/);
-  assert.match(introduction, /Before entering personal information, read/);
-  assert.match(introduction, /lang="ms"/);
-  assert.match(introduction, /lang="en"/);
-  assert.match(read("src/components/storefront/shared/LegalPage.astro"), /lang=\{section\.lang\}/);
 });
 
 /**

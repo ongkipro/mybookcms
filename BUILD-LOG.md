@@ -7,6 +7,94 @@
 > product's infrastructure and mean nothing to a reader of this repository.
 > The engineering narrative is unchanged.
 
+## 2026-09-08 — A-250I icon actions and truthful status changes
+
+Delivery audit: the initial icon-only run retained a failed boundary record after
+the owner expanded the request to status logic on three already-dirty A-250
+backend files. An integration continuation explicitly captured those authorized
+overlaps at the same HEAD; code and original verification evidence were retained
+for independent review. No unrelated work was overwritten.
+
+Recovery row actions now use three 44 px icons on one line with accessible lead
+labels and native title tooltips. Ubah status offers only Sudah dihubungi or
+Jadikan pesanan. Conversion opens the existing order form and does not change
+status until order persistence succeeds; cancellation preserves the lead.
+Untouched leads remain Belum dihubungi. Legacy status labels and notes remain
+readable, with legacy filter options shown when relevant; the note editor is gone.
+
+The UI sends status only. Optional note validation and an atomic COALESCE update
+preserve the current server note, including a newer note written by another CS,
+while explicit legacy note edits retain their contract. A real-D1 regression
+pins this behavior. Keyed status-to-conversion dialogs restore row focus only
+on a real close, preventing old content from stealing the new form's focus.
+
+Check/build, final TypeScript check, 17 focused tests, and isolated Chromium at
+390/1280 passed. Browser proof covers the single-line icon group, two status
+choices, keyboard focus, cancellation preservation, contact save, unchanged
+notes, and actual conversion. Designer accepted the status layout and icon row;
+the table heading now uses Status consistently. Loaded JavaScript remains under
+the existing 180,000-byte gzip budget. Local Tailscale dev was refreshed without
+changing its data; no migration, dependency, deploy, commit, or push occurred.
+
+## 2026-09-08 — A-250U recovery UI/UX and bounded client cost
+
+Reused installed Button, Input, Dialog, Badge, Skeleton, and Textarea components
+and native selects. Labeled filters/reset and customer-first rows improve scan
+order; local controls now have 44 px targets. Initial loads show skeletons,
+refresh failures retain rows and announce stale results, and initial failures no
+longer announce a successful empty count. Conversion groups customer/product/
+shipping fields, wraps the selected variant, and shows failed quotes distinctly
+from loading. No provider, data, role, dependency, or navigation change occurred.
+
+Only typing search incurs the existing 250 ms debounce. The first load and
+explicit filter/refresh/page actions start immediately. One unthrottled isolated
+Worker mobile run with browser cache disabled showed rows after 725 ms before
+and 402 ms after; these are single-run lab observations, not field Web Vitals.
+Loaded JavaScript was 154,683 bytes gzip before and 156,517 after,
+including the shared React/admin shell. The small UI increase is about 1.2%; no
+chart/table framework or new dependency was added. The durable browser script
+checks a 180,000-byte gzip regression budget for this route's loaded JavaScript.
+
+Validation: project check/build, focused recovery/CRM/navigation/mobile tests,
+and `scripts/verify-checkout-recovery-ui.mts` with isolated fictional data. The
+browser script checks loading, retained refresh errors, initial errors, filtered
+and true empty states, reset and search debounce, long content, 44 px actions,
+keyboard traversal, follow-up, quote failure/retry, disabled COD/stock, and real
+conversion at 390/1280. Designer accepted settled and scrolled dialog captures.
+Dev Tailscale was refreshed with the same local data; no commit/push or deploy.
+
+## 2026-09-08 — A-250N expose checkout recovery navigation
+
+Added Pesanan tertinggal as an Orders child in the shared navigation manifest.
+Desktop sidebar, mobile menu, and command search inherit the existing role
+filtering and exact child active state. The previous Orders-page link remains.
+No order data, permissions, or routes changed. Focused navigation tests (5/5)
+and build passed; browser verification covers desktop/mobile menu navigation
+for Owner/Admin/CS and absence for Advertiser.
+
+## 2026-09-08 — A-250 variant CRM and checkout recovery
+
+Added the separate variant template token without changing existing product
+substitution, plus a pending-lead workspace for Owner/Admin/CS. The full form
+captures valid name, Malaysia mobile, and variant after an adjacent disclosure;
+public capture is bounded, rate-limited, and returns no personal data. Leads
+are separate from orders, stock, payment attempts, revenue, and Purchase.
+Explicit follow-up records actor and time. COD conversion reuses authoritative
+order persistence and shipping policy. An order-insert trigger atomically
+links buyer or CS completion and prevents concurrent conversion or reopening.
+
+Validation: 512/512 full tests, check and build passed. Real D1 regression
+checks cover capture replay, conversion races, rollback, COD disabled, stale
+quotes, roles, body limits, and actual rate exhaustion. Chromium at 390/1280 px
+proved form capture, manual follow-up, COD conversion, buyer completion,
+CRM chip/save/render, and capture during a failed pending submit. Independent
+review identified and resolved capture suppression during submission and a
+stale active option after pointer selection in the shared location control.
+Designer review accepted the responsive screens after the selected destination
+was given a wrapping summary. Shared location keyboard selection was verified
+in conversion and the existing order detail editor. All data and provider
+isolation checks used local fictional fixtures; no live mutation was performed.
+
 ## 2026-09-07 — A-242 channel-first DOKU Hosted Checkout implemented locally
 
 The accepted full-form payment hierarchy now renders each enabled DOKU Malaysia
@@ -5935,3 +6023,203 @@ Direct actorless bootstrap/test configuration/template helpers are outside the
 privileged HTTP audit scope; KV retains its documented concurrency limitation.
 No live provider, remote migration, deployment, publication, commit or push was
 performed. The remaining sandbox/publication/production gates are unchanged.
+
+
+## 2026-09-08 — A-251 complete CMS landing builder
+
+REQ-234 is implemented from the verified AdsBookCMS seven-section capability
+set while retaining MyBookCMS's Malaysia checkout, MYR, stock, and role rules.
+The editor now supports structured headline/paragraph/list/image content,
+legacy HTML/form, section actions/navigation, SEO, draft status, image upload,
+manual slug preservation, and local versus saved preview. Shared typed validation
+and escaped rendering round trip through D1; migration0063 preserves old rows.
+
+Independent review identified and resolved draft-preview role leakage, stale
+local state after normalized saves, false success after concurrent deletion, and
+malformed section identity/order acceptance. Tests cover these paths, including
+real D1 deletion before a browser save. Designer accepted mobile/desktop canvas
+and checkout layout; the fictional store logo is blocked with external fixture
+requests and is not a builder image-upload failure. Browser evidence is generated
+by `scripts/verify-landing-builder.mts`; latest reviewed flow artifacts are
+`/tmp/mybookcms-a251-browser-VWOr83` (390/1280 px, 155001 gzip bytes including shell
+and public fixture). The unsaved guard cancels a browser leave event.
+
+Run `RUN-20260908T035821Z-37ad2be1` owns the declared change surface and final
+check/test/build/browser evidence. No dependency was installed. No remote
+migration, deployment, commit or push is part of this delivery.
+
+
+## 2026-09-08 — A-251C remove inline checkout notice
+
+The owner explicitly requested removal of the four bilingual privacy paragraphs.
+Removed their shared wrapper from MalaysiaCheckoutForm and retired the obsolete
+placement test; retained the legal page language assertion. REQ-212/233 record
+the copy amendment. Designer confirmed the bounded removal before editing.
+No capture, order, payment, or separate legal-page behavior changed.
+Validation uses the focused Malaysia market checks, build, and existing isolated
+landing-builder browser flow. No deployment, commit or push is included.
+
+
+## 2026-09-08 — A-251D seamless landing images and A-251C integration
+
+The owner expanded the active copy-removal request to include full-width images.
+The earlier A-251C run retained a FAIL/incomplete checkpoint because its final
+browser review had not run; this continuation declares and accepts the existing
+dirty work explicitly. Image-only lp-section wrappers now have zero padding and
+margin; their images fill the column, retain natural aspect ratio, and have no
+rounded corners. Other content retains its reading space. Real browser checks
+measure adjacent image edges and widths at390/1280 and verify notice removal.
+
+
+## 2026-09-08 — A-252 progressive single-page checkout
+
+The owner added checkout redesign and payment-after-postcode/city behavior to
+active UI work. A-251D's ledger surface explicitly expanded to the previously
+clean form-hybrid stylesheet and new checkout browser script. Designer selected
+the single-page product/contact/delivery/payment/summary flow: Shopify's one-page
+structure informs the hierarchy, while MyBookCMS retains its existing 480px
+Malaysia funnel and server-authoritative shipping/payment/stock rules.
+Reference reviewed by designer: https://help.shopify.com/en/manual/checkout-settings/customize-checkout-configurations/one-page-checkout
+
+The payment fieldset is initially hidden/disabled. A current quote tied to the
+selected directory location and variant unlocks it and lazily loads methods.
+Quote invalidation re-closes payment and email without discarding values; a
+late stale response cannot reopen it. Focus returns to the location control
+only if the hidden payment fieldset contained focus. Conditional email validity
+is not erased while visible. Unknown shipping leaves an explicitly labeled
+subtotal; quote and payment errors retain their existing separate retries.
+
+No backend/provider/data-model change or dependency was introduced. Browser
+fixtures use real local D1 shipping with mocked public payment-method choices
+for five DOKU channels, COD, and manual transfer, never a provider request.
+`node --experimental-strip-types scripts/verify-checkout-flow.mts` proves the
+staged gate, keyboard selection, reset/stale/error/retry paths, and preserved
+channel/email across changes. Designer accepted 390/1280 screenshots. The stale
+request harness handles Chrome's expected cancelled interception when AbortController
+invalidates an intentionally delayed quote. No deployment, commit or push.
+
+
+## 2026-09-08 — A-252P explicit checkout padding
+
+The shared checkout root now owns24px vertical padding,16px horizontal padding
+on mobile and24px from the existing sm breakpoint. Removed nested form/wrapper
+padding so it cannot accumulate; the optional custom heading shares the same
+inset and uses a16px bottom gap. Field-group and seamless image spacing are
+unchanged. Designer confirmed the direction before edit. Validation is a fresh
+build and live browser measurement at390/1280; no logic or provider changes.
+
+
+## 2026-09-08 — A-252Q payment section and comparison price
+
+The entire payment section now starts hidden and becomes visible only after a
+directory location is selected. Existing current-quote gating and focus recovery
+run before the outer hide. Summary comparison styling targeted a retired ID;
+repointed it to the actual data-summary-compare hook, preserving its existing
+price update/hide logic. Browser checks cover computed strikethrough/weight,
+variant updates and the full section's hidden/reset states.
+
+
+## 2026-09-08 — A-253 landing builder hierarchy and mobile editing
+
+The editor now separates mobile Konten and Pengaturan while keeping both panels
+mounted. New pages begin with settings; existing pages begin with content.
+Desktop retains both columns. The compact header separates preview from save,
+and completion copy explains that closing a section does not persist changes.
+Type-specific icons, a collapsible outline, an active-section border and softer
+chrome improve navigation. Existing mobile pages start with the add palette
+collapsed. Deleting the last section opens that palette before moving focus.
+
+Verification: npm run check completed with zero errors/warnings and one existing
+beforeunload deprecation hint; npm test passed 517/517; the Worker build passed.
+Isolated Chromium passed all seven types, upload/load/save retry, safe previews,
+draft visibility, normalization, reorder/duplicate/delete and mobile/desktop
+interaction at 390/1280 px. Exact mode and focus assertions cover validation,
+outline selection, deleting neighbors and deleting the final section with its
+palette closed. Evidence: /tmp/mybookcms-a251-browser-VI3xbx; script gzip 156,501
+bytes. No new dependency, API change, provider call, deployment, commit or push.
+
+
+## 2026-09-08 — A-254 pre-submit DOKU receipt details
+
+Moved the intact conditional receipt email, privacy link and hosted-payment
+disclosure into the submit panel immediately before the CTA. The neutral panel
+uses 16px padding, 12px internal spacing, a 6px radius and 13px supporting copy.
+The email retains its explicit required/disabled synchronization outside the
+payment fieldset; focus moves to a visible payment/location control before the
+details are hidden. Hidden details consume no layout space.
+
+The shared checkout retains 16px editable input/textarea text and extends that
+rule to native selects. No viewport zoom restriction or gesture suppression was
+introduced. Chromium at 390/1280 verified computed input sizes, placement,
+email-to-privacy-to-submit keyboard order, channel changes, quote invalidation,
+retained email and safe focus recovery. Evidence:
+ /tmp/mybookcms-a252-browser-mqOdXC. The build passed. Physical iOS Safari focus
+autozoom remains unverified; mobile Chromium emulation does not establish it.
+No provider/API/order change, dependency, deployment, commit or push.
+
+
+## 2026-09-08 — A-254C remove checkout information box
+
+Removed the owner-selected stock/WhatsApp paragraph and its info-box element.
+The summary now directly precedes the existing submit panel, with no replacement
+text or spacer. The Worker build passed; read-only Chromium at 390/1280 on the
+refreshed local Tailscale dev confirmed absent copy/box, adjacent summary/submit
+and no horizontal overflow. No checkout behavior or styles changed.
+
+
+## 2026-09-08 — A-255 footer navigation clarity
+
+Replaced the small uppercase link cloud with two left-aligned groups, Terokai
+and Dasar kedai, retaining every label and destination. Two existing static
+Lucide icons identify the groups. Links use 14px text and minimum 44px targets;
+copyright uses 12px text with a quiet separator. No client script or dependency
+was added.
+
+The Worker build passed. Read-only Chromium on local /produk at 320/390/1280
+confirmed all eight destinations, two decorative icons, visible keyboard focus,
+44px minimum link heights and zero horizontal overflow. Long shipping copy wraps
+at narrow widths. Evidence: /tmp/mybookcms-a255-check.mjs and
+/tmp/mybookcms-footer-{320,390,1280}.png. Dev was refreshed locally.
+
+
+## 2026-09-08 — A-263 fixed IDR advertising values
+
+The owner explicitly chose 1 MYR = 4,100 IDR for both Meta and Google Ads.
+Meta Pixel/CAPI, direct Google Purchase and GTM ecommerce values now convert
+once at their outbound boundary. Shared rate/currency constants feed the
+browser scripts and server converter. RM18.90 becomes IDR77,490; RM32.90
+becomes IDR134,890. Internal tracker and Meta-ingress inputs remain MYR,
+as do persisted orders, payment amounts, storefront prices and catalog XML.
+IDs, Malaysia matching and accepted-order/paid-DOKU timing remain unchanged.
+
+Prepared CAPI outbox payloads retain their currency on retry, including legacy
+MYR payloads. No history was rewritten or resent. Existing tabs must reload
+to use the new script. Admin Meta currency and Google conversion instructions,
+KPI and payload example now state IDR; feed instructions remain MYR.
+ADS.md and REQ-193 record the explicit currency boundary and limitations.
+
+Verification: the full suite passed 519/519; check reported zero errors/warnings
+and one existing beforeunload hint. Focused currency, accepted-order, DOKU
+settlement, outbox and catalog tests passed 30/30. The real-browser fixture
+verified initial product Pixel output, synthetic checkout/Purchase tracking
+calls paired with the server payload builder, direct Google and GTM values,
+unconverted ingress/checkout/XML and admin copy at 390/1280. The fixture
+blocks all external browser requests; backend settlement/persistence behavior
+is covered separately by the focused tests. No live provider event was sent.
+Changing currency does not prove provider receipt, attribution or ROAS.
+
+## 2026-09-08 — A-264 clean DOKU receipt area
+
+Removed the receipt wrapper decoration and disclosure divider. The existing email,
+disclosure and privacy link now flow directly above the checkout button. Payment
+selection, validation, hidden state, wording and accessible IDs are retained.
+The browser fixture additionally checks the undecorated full-width field and order.
+
+The currency task is A-263: its initial A-258 label collided with the historical
+reconciliation task. RUN-20260908T064104Z-b7d77a2c remains a failed audit record;
+this run corrects documentation without rewriting that history or changing the
+previously verified currency implementation.
+
+Validation: build and checkout browser fixture PASS at 390/1280; artifacts
+`/tmp/mybookcms-a252-browser-B6LqKq`. Final check and currency regression evidence
+are captured by the active A-264 delivery ledger, alongside independent review.

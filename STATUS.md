@@ -1,9 +1,93 @@
 # MyBookCMS Status
 
-> Status reviewed against disk: 2026-09-07 @ MyBookCMS working tree. Executable
+> Status reviewed against disk: 2026-09-08 @ MyBookCMS working tree. Executable
 > evidence remains dated and revision-bound where recorded below.
 
 ## Current state
+
+A-263 applies the owner-approved fixed advertising rate, 1 MYR = 4,100 IDR,
+to Meta Pixel/CAPI, direct Google Ads and GTM ecommerce values. Conversion occurs
+once at outbound boundaries; internal event inputs, persisted commerce money,
+checkout/payment amounts and XML remain MYR. Existing catalog/event IDs and
+Purchase timing are unchanged. Previously prepared outbox payloads retain their
+original currency on retry. This local implementation does not establish
+provider receipt or resolve the reported ROAS symptom by itself.
+
+
+A-253 refines the complete landing builder with mobile Konten/Pengaturan
+navigation, a compact action header, collapsible add palette and outline,
+type-specific icons, and clear active-section/save states. Existing inputs remain
+mounted across view changes. Deletion restores focus to a neighboring editor or
+the reopened add palette. No dependency or API change was introduced.
+
+
+A-252 presents one shared checkout with product, contact, delivery, payment, and
+summary sections. Payment methods load/reveal only after a directory-selected
+location has a successful current shipping quote. Changing location or variant
+hides/disables payment and conditional email while preserving prior values.
+Shipping errors expose retry without calling a subtotal the final amount; payment
+load failure can be retried independently. Existing DOKU channels, disclosures,
+uncertain-submit recovery, and server price/stock/order authority remain intact.
+The browser fixture covers full-form/PDP/embed and five mocked public DOKU
+channel options without contacting a payment provider. Designer accepted mobile
+and desktop screenshots; verification is recorded by the active delivery run.
+
+
+A-251D makes image-only landing sections fill the content column with no
+padding, margin, or rounded corners. Consecutive images meet seamlessly while
+retaining their natural aspect ratios and responsive widths.
+
+A-251C removes the four inline checkout privacy paragraphs at the owner's explicit request. The shared form now starts recipient inputs directly below
+its heading. The separate privacy page and checkout behavior are unchanged.
+
+A-251 / REQ-234 completes `/admin/landing-pages/new` and CMS editing with seven
+section types: headline, paragraph, numbered list, bullet list, image, HTML,
+and full Malaysia checkout. Existing shadcn controls provide section navigation,
+reorder/duplicate/delete, draft/publication, SEO, upload, local/saved preview,
+and recoverable loading/saving errors. Successful saves hydrate authoritative
+server content; concurrent deletion returns 404 and preserves the editor draft.
+Draft previews require current Owner/Admin/Advertiser sessions.
+
+Migration `0063_landing_content.sql` (schema version 64) preserves legacy rows.
+Typed content and checkout variant ownership are validated before writes.
+No new dependency or provider/payment/stock policy is introduced. The isolated
+browser regression covers 390/1280 px, all seven section round trips, upload and
+save/load failures, normalized save state, deleted-page retention, product/variant
+reset, saved reordering, preview access, and public custom checkout copy. Its
+loaded JavaScript is 155,001 bytes gzip including shared shell and public fixture;
+this is a local transfer budget, not a Core Web Vitals measurement. Designer
+accepted the settings/canvas/public layout; the fixture's blocked external logo
+is outside the canvas result. See `docs/LANDING-PAGES.md` for authoring rules.
+
+
+A-250U polishes the recovery workspace with existing shadcn primitives: labeled
+filters/reset, initial skeletons, retained rows on refresh failure, customer-first
+rows, 44 px actions, wrapping product summaries, and distinct quote-error states.
+Only text search waits 250 ms; initial load, status/page changes, and refresh
+start immediately. No dependency, API, schema, or permission was added.
+The local UI regression is `node --experimental-strip-types scripts/verify-checkout-recovery-ui.mts`
+after build, using an existing local Chrome CDP endpoint and fictional D1/KV.
+It checks mobile/desktop error/recovery/conversion and a 180,000-byte gzip budget
+for all loaded JavaScript (shared shell included), not a field performance score.
+
+A-250N exposes **Pesanan tertinggal** beneath Orders in the shared desktop,
+mobile, and search navigation for Owner/Admin/CS. Advertiser remains excluded.
+
+A-250 adds a separate CRM `{{variant_name}}` token and a locally verified
+checkout recovery workspace at `/admin/orders/abandoned`. Valid partial full
+checkouts become leads without stock reservation, payment attempts, order
+revenue, or Purchase events. Owner/Admin/CS can explicitly record follow-up
+and convert a lead into one COD order using the existing trusted location,
+quote, price, and stock rules. Buyer completion removes its lead from the
+pending queue atomically. CS conversion currently supports one item and COD.
+The local migration is `0062_checkout_leads.sql` (schema version 63).
+
+Verification on 2026-09-08: 512/512 repository tests, check, build, and isolated
+built-Worker Chromium flows at 390/1280 px passed. Browser evidence covers
+partial capture, follow-up, conversion, buyer completion, CRM substitution,
+COD-disabled state, failed submission capture, and keyboard location selection.
+No remote migration, deployment, provider proof, commit, or push is claimed
+for this change.
 
 The Malaysia cutover is locally integrated. Active buyer-facing money is MYR
 integer sen; checkout exposes configured COD/manual transfer and hosted DOKU choices; D1 owns Malaysia postcode/weight
@@ -327,6 +411,100 @@ after `33a29c7`, and it changes no code.
 This remains local evidence. No remote migration, deployment, or provider
 traffic is claimed by it.
 
+## Working-agreement rules and two joining tasks 2026-09-08
+
+Three rules were added to `AGENTS.md` because each had already been broken
+more than once in a single day and none was written anywhere a session reads.
+Task ids are now allocated from the highest number in both `TASKS.md` and the
+ledger runs, after `A-255` and `A-258` were each claimed by two sessions for
+different work and one of each pair was overwritten or falsely closed. New
+entries are inserted after the last entry of `## Open queue` rather than
+anchored on `MYS-5`, after nine tasks landed under `## Release gate` where the
+queue contract could not see them. And a new `console.error` label is
+registered in `OBSERVABILITY.md` in the same change, after
+`doku-config-unusable` shipped unregistered. A-265 queues the id-uniqueness
+check that makes the first rule hold mechanically. A-266 queues the joining of
+sixteen `Implemented locally` requirements to evidence that already exists —
+118 test names match their domains and several cover a row outright — but
+which no current-state document cites; it is explicitly not an upgrade pass.
+
+## Whole-project health report 2026-09-08
+
+Measured against disk at `0cff0f0` including the working tree; the full report
+with method is at `~/Documents/work/research/mybookcms-health-2026-09-08.md`, a
+research snapshot rather than a source of truth. Verdict: a two-week-old
+codebase unusually disciplined about evidence and unusually undisciplined about
+committing it. Strong: documentation is self-enforcing through
+`code-map.test.ts`, `development-map.test.ts`, and `task-queue.test.ts`; 476
+tests pass with direct-runtime coverage of the four blind spots the map found;
+the payment path is independently reviewed with channel choice bound end to end.
+Weak: 48 modified and 13 untracked files sit on one disk, the untracked set
+being the whole of A-250 and A-251C including migrations `0062` and `0063`
+(A-258); no linter, formatter, or coverage measurement exists on 62,645 lines
+(A-261, A-262); `checkoutBody` is built twice on the R3 payment path with 25
+lines drifted between copies (A-260); `npm audit` reports one high and one
+moderate vulnerability, both with fixes available (A-259). The branch is 38
+commits ahead of `main` with nothing merged, which G-1 already owns. Seven tests
+each spend 12–18 s spawning their own Worker; A-235 recorded the sharing pattern
+and it applies file by file, so it is noted rather than queued. Of 63
+requirements, 33 are verified locally, 18 implemented without recorded
+verification, 4 accepted without implementation, and 1 partial — each already
+owned by a task.
+
+## Documentation audit 2026-09-08
+
+Audited mechanically against disk rather than by reading. What held up: every
+file path cited by a current-state document resolves; every `REQ-` citation
+outside `PRD.md` is defined in it; the ADR ids 013–020 that appear undefined are
+the upstream records this fork never carried, already settled by A-233 and
+documented in `DECISIONS.md`; and `docs/CODE-MAP.md` and
+`docs/DEVELOPMENT-MAP.md` are both enforced by guard tests that check route
+coverage, path existence, HTTP methods against real exports, and the live table
+list against the migration chain. The documentation set is in better shape than
+a reading would suggest.
+
+Two defects were found and fixed. `TASKS.md` carried two different tasks under
+the id `A-255` — a footer-navigation task and the admin design-conformance task
+queued the same morning — and the second had been marked complete without any
+work being done. That was verified rather than assumed: the counts the entry
+cites were re-measured and are unchanged at 150 `border-slate-200` to 16
+`border-border` and 187 `text-slate-500` to 37 `text-muted-foreground`, and no
+run exists for it. It is renumbered `A-256` and reopened.
+
+`OBSERVABILITY.md` named five stable surface labels while production code emits
+eighty. Its "Required signals" list named the categories that must be observable
+without naming a single label that satisfies them, so the requirement and the
+code were never joined, and every checkout, authentication, and advertising
+signal was absent. A registry of all eighty now sits in the document with the
+registration rule stated. Unlike the two maps, nothing enforces it — which is
+how `doku-config-unusable` stayed unregistered for a day after it shipped —
+so **A-257** queues the guard.
+
+## A-255 — admin design-system conformance queued 2026-09-08
+
+The owner reported the admin canvas reading as untidy. Screened against disk at
+`0cff0f0`, the cause is not a missing component library. `shadcn/ui` is installed
+with 22 primitives, `src/styles/admin.css` carries the full semantic variable
+set, and `DESIGN-SYSTEM.md` already mandates both and forbids a second library or
+a separate colour vocabulary. The admin components bypass that system: 150
+`border-slate-200` against 16 `border-border`, 187 `text-slate-500` against 37
+`text-muted-foreground`, 90 `bg-white` against 6 `bg-card`, and 980 raw palette
+uses across 22 files against 74 semantic-token uses concentrated in 2.
+Seventeen of twenty-three admin components import no shadcn primitive, and the
+installed `table`, `badge`, `dialog`, and `select` are used by none of them while
+`OrdersTable`, `ProductCatalog`, and `LandingPageCatalog` hand-roll all four. One
+card concept is drawn at three radii across two shadow scales, and
+`LandingPageEditor.tsx` adds a third `zinc` vocabulary in a file that elsewhere
+uses `border-border`.
+The consequence is not only visual. `DESIGN-SYSTEM.md` already measured
+`slate-500` as passing AA on a white card at 4.76 and failing on the admin page
+background at 4.41, requiring `slate-600` there; 187 raw uses of that exact class
+mean the system predicted these failures before they were written. A-255 is
+queued to convert the token layer first, then the shared card/table/badge shells,
+ordered by daily operator use. No code was changed: the finding is recorded as an
+entry, and the designer/vision handoff is a stated dependency before the first
+visual edit.
+
 ## Current execution gates
 
 The remaining queue is intentionally gate-led. A-240 now implements ADR-027's
@@ -507,7 +685,7 @@ audit confirmed those boundaries hold.
   recoverable empty state replaces the former immediate redirect. Once the
   persisted order and checkout-issued status token are verified, the page emits
   one deduplicated Purchase using the order number and merchandise subtotal.
-- Headless Chromium on the current build exercised pending COD at 390 px and
+- Historical pre-A-263 Chromium evidence exercised pending COD at 390 px and
   pending manual transfer at 1280 px. Each first load emitted one MYR 32.90
   Purchase with the confirmed order number, each reload emitted none, both pages
   had zero root overflow, and neither produced a runtime exception.
@@ -577,7 +755,7 @@ audit confirmed those boundaries hold.
   control renders, configured tags initialize immediately, `fbclid` persists
   into bounded `_fbc` and HttpOnly attribution cookies, and the page has zero
   horizontal overflow.
-- The same product-page run emitted PageView plus canonical
+- That historical pre-A-263 product-page run emitted PageView plus canonical
   `p10001-v10001` / MYR 24.90 ViewContent immediately. Vendor traffic was
   intercepted deliberately; no production Meta/Google endpoint was exercised.
 - An unauthenticated `/admin/dashboard` request still redirects to `/hello`.
@@ -1024,3 +1202,7 @@ checks remain historical evidence. No sandbox provider call, remote migration,
 deployment, publication, commit or push was performed for this closure.
 A-221 still needs the approved public HTTPS sandbox origin and DOKU Dashboard
 setup; production activation/observation and publication remain separate gates.
+
+A-264 cleans the DOKU receipt field above the CTA: full-width email, plain
+disclosure, then privacy link. The 390/1280 isolated browser fixture passes
+including payment gating, email validation, keyboard focus and 16px input text.

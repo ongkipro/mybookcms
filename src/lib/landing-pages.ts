@@ -1,5 +1,6 @@
 import { getRuntimeEnv } from "./env.ts";
-import { formatMyr, type StorefrontLocale } from "./storefront-locale.ts";
+import { LANDING_SECTION_TYPES, normalizeLandingContent, LandingContentError, type LandingContentConfig, type LandingSectionType } from "./landing-content.ts";
+export type { LandingSectionType } from "./landing-content.ts";
 import { solutionEntries } from "../data/content.ts";
 import {
   activeNativeLandingPages,
@@ -9,7 +10,7 @@ import {
 } from "./native-landing-pages.ts";
 
 type D1Statement = ReturnType<D1Database["prepare"]>;
-export type LandingSectionType = "html" | "form";
+
 
 export type LandingFormConfig = {
   selected_variant_id?: string;
@@ -24,6 +25,7 @@ export type LandingSection = {
   type: LandingSectionType;
   content_html: string | null;
   form_config: LandingFormConfig | null;
+  content_config?: LandingContentConfig | null;
   created_at: string;
   updated_at: string;
 };
@@ -69,6 +71,7 @@ export type LandingSectionInput = {
   type: LandingSectionType;
   content_html?: string | null;
   form_config?: LandingFormConfig | null;
+  content_config?: LandingContentConfig | null;
 };
 
 export type CreateLandingPageInput = {
@@ -129,13 +132,15 @@ export function buildLandingPageDuplicateInput(
       type: section.type,
       content_html: section.content_html,
       form_config: normalizeFormConfig(section.form_config),
+      ...(section.content_config ? {content_config: structuredClone(section.content_config)} : {}),
     })),
   };
 }
 
 type LandingPageRow = Omit<LandingPage, "sections">;
-type LandingSectionRow = Omit<LandingSection, "form_config"> & {
+type LandingSectionRow = Omit<LandingSection, "form_config" | "content_config"> & {
   form_config: string | null;
+  content_config: string | null;
 };
 
 type LocalsWithDatabase = {
@@ -149,7 +154,7 @@ const PAGE_COLUMNS = `
 
 const SECTION_COLUMNS = `
   id, landing_page_id, sort_order, type, content_html,
-  form_config, created_at, updated_at
+  form_config, content_config, created_at, updated_at
 `;
 
 function getDatabase(locals: App.Locals): D1Database {
@@ -190,6 +195,7 @@ function mapSection(row: LandingSectionRow): LandingSection {
   return {
     ...row,
     form_config: parseFormConfig(row.form_config),
+    content_config: row.content_config ? normalizeLandingContent(row.type, JSON.parse(row.content_config)) : null,
   };
 }
 
@@ -221,10 +227,45 @@ function normalizeActive(value: boolean | number | undefined, fallback = 1) {
   return value === true || value === 1 ? 1 : 0;
 }
 
-function validateSection(section: LandingSectionInput) {
-  if (section.type !== "html" && section.type !== "form") {
-    throw new Error("Landing page section type must be 'html' or 'form'");
+function validateInput(input: unknown, partial = false): asserts input is CreateLandingPageInput {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) throw new LandingContentError('Data halaman tidak valid.');
+  const value = input as Record<string, unknown>;
+  for (const [key, limit] of [['title', 200], ['slug', 160], ['product_id', 100], ['meta_title', 200], ['meta_description', 500]] as const) {
+    if ((value[key] === undefined && partial) || (value[key] == null && key.startsWith('meta_'))) continue;
+    if (typeof value[key] !== 'string' || value[key].length > limit) throw new LandingContentError(`${key} tidak valid (maksimal ${limit} karakter).`);
   }
+  if (value.is_active !== undefined && ![true, false, 0, 1].includes(value.is_active as never)) throw new LandingContentError('Status publikasi tidak valid.');
+  if (value.sections !== undefined && (!Array.isArray(value.sections) || value.sections.length > 50)) throw new LandingContentError('Maksimal 50 section per halaman.');
+  const ids = new Set<string>(), orders = new Set<number>();
+  for (const [index, section] of ((value.sections ?? []) as LandingSectionInput[]).entries()) {
+    validateSection(section);
+    if (section.id && ids.has(section.id)) throw new LandingContentError('ID section duplikat.');
+    if (section.id) ids.add(section.id);
+    const order = section.sort_order ?? index;
+    if (orders.has(order)) throw new LandingContentError('Urutan section duplikat.');
+    orders.add(order);
+  }
+}
+
+async function validateProductSections(database: D1Database, productId: string, sections: LandingSectionInput[]) {
+  if (!await database.prepare('SELECT id FROM products WHERE id = ?').bind(productId).first()) throw new LandingContentError('Produk tidak ditemukan.');
+  for (const section of sections) {
+    const config = normalizeFormConfig(section.form_config);
+    if (section.type === 'form' && config?.selected_variant_id && !await database.prepare('SELECT id FROM product_variants WHERE id = ? AND product_id = ?').bind(config.selected_variant_id, productId).first()) throw new LandingContentError('Varian checkout bukan milik produk terpilih.');
+  }
+}
+
+function validateSection(section: LandingSectionInput) {
+  if (section?.id !== undefined && (typeof section.id !== 'string' || !section.id.trim() || section.id.length > 100)) throw new LandingContentError('ID section tidak valid.');
+  if (section?.sort_order !== undefined && (!Number.isInteger(section.sort_order) || section.sort_order < 0 || section.sort_order > 50000)) throw new LandingContentError('Urutan section tidak valid.');
+  if (!section || !LANDING_SECTION_TYPES.includes(section.type)) throw new LandingContentError("Jenis section tidak valid.");
+  if (section.content_html != null && (typeof section.content_html !== "string" || section.content_html.length > 100000)) throw new LandingContentError("HTML maksimal 100.000 karakter.");
+  if (section.form_config != null && (typeof section.form_config !== 'object' || Array.isArray(section.form_config))) throw new LandingContentError('Konfigurasi checkout tidak valid.');
+  for (const [key, limit] of [['selected_variant_id', 100], ['section_title', 200], ['button_text', 100]] as const) {
+    const value = section.form_config?.[key];
+    if (value !== undefined && (typeof value !== 'string' || value.length > limit)) throw new LandingContentError(`${key} tidak valid.`);
+  }
+  normalizeLandingContent(section.type, section.content_config);
 }
 
 async function findPageBySlug(
@@ -345,6 +386,7 @@ export async function createLandingPage(
   locals: App.Locals,
   input: CreateLandingPageInput,
 ): Promise<LandingPage> {
+  validateInput(input);
   const slugValidation = validateLandingPageSlug(input.slug);
   if (!slugValidation.valid) throw new Error(slugValidation.error);
   if (!input.title?.trim()) throw new Error("Landing page title is required");
@@ -355,6 +397,7 @@ export async function createLandingPage(
     throw new Error("Landing page slug is already in use");
   }
 
+  await validateProductSections(database, input.product_id.trim(), input.sections ?? []);
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
   const statements: D1Statement[] = [
@@ -385,8 +428,8 @@ export async function createLandingPage(
         .prepare(
           `INSERT INTO landing_sections (
              id, landing_page_id, sort_order, type, content_html,
-             form_config, created_at, updated_at
-           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+             form_config, content_config, created_at, updated_at
+           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         )
         .bind(
           section.id ?? crypto.randomUUID(),
@@ -395,6 +438,7 @@ export async function createLandingPage(
           section.type,
           section.content_html ?? null,
           serializeFormConfig(section.form_config),
+          JSON.stringify(normalizeLandingContent(section.type, section.content_config)),
           now,
           now,
         ),
@@ -413,6 +457,7 @@ export async function updateLandingPage(
   input: UpdateLandingPageInput,
 ): Promise<LandingPage | null> {
   if (isNativeLandingId(id)) throw new NativeLandingReadOnlyError();
+  validateInput(input, true);
   const database = getDatabase(locals);
   const existing = await getLandingPageById(locals, id);
   if (!existing) return null;
@@ -434,7 +479,8 @@ export async function updateLandingPage(
       ? existing.product_id
       : input.product_id.trim();
   if (!title) throw new Error("Landing page title is required");
-  if (!productId) throw new Error("Landing page product_id is required");
+  if (!productId) throw new LandingContentError("Produk wajib dipilih.");
+  await validateProductSections(database, productId, input.sections ?? existing.sections);
 
   const now = new Date().toISOString();
   const statements: D1Statement[] = [
@@ -473,8 +519,8 @@ export async function updateLandingPage(
           .prepare(
             `INSERT INTO landing_sections (
                id, landing_page_id, sort_order, type, content_html,
-               form_config, created_at, updated_at
-             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+               form_config, content_config, created_at, updated_at
+             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           )
           .bind(
             section.id ?? crypto.randomUUID(),
@@ -483,6 +529,7 @@ export async function updateLandingPage(
             section.type,
             section.content_html ?? null,
             serializeFormConfig(section.form_config),
+            JSON.stringify(normalizeLandingContent(section.type, section.content_config)),
             now,
             now,
           ),
@@ -509,74 +556,7 @@ export async function deleteLandingPage(
   return Number(result.meta?.changes ?? 0) > 0;
 }
 
-function escapeHtml(value: unknown) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
-}
-
-function firstDefinedNumber(...values: unknown[]) {
-  for (const value of values) {
-    if (value !== undefined && value !== null && value !== "") {
-      const number = Number(value);
-      if (Number.isFinite(number)) return number;
-    }
-  }
-  return 0;
-}
-
-export type ShortcodeProduct = {
-  title?: string;
-  productName?: string;
-  name?: string;
-  price?: number | string;
-  compare_price?: number | string | null;
-  comparePrice?: number | string | null;
-  variants?: Array<{
-    price?: number | string;
-    compare_price?: number | string | null;
-    comparePrice?: number | string | null;
-  }>;
-};
-
-export function parseShortcodes(
-  html: string,
-  product: ShortcodeProduct,
-  csPhone = "",
-  locale: StorefrontLocale | string = "ms-MY",
-): string {
-  const firstVariant = Array.isArray(product?.variants)
-    ? product.variants[0]
-    : undefined;
-  const price = firstDefinedNumber(product?.price, firstVariant?.price);
-  const comparePrice = firstDefinedNumber(
-    product?.compare_price,
-    product?.comparePrice,
-    firstVariant?.compare_price,
-    firstVariant?.comparePrice,
-  );
-  const discountPercent =
-    comparePrice > price && comparePrice > 0
-      ? `${Math.round(((comparePrice - price) / comparePrice) * 100)}%`
-      : "0%";
-  const replacements: Record<string, string> = {
-    product_name: escapeHtml(
-      product?.title ?? product?.productName ?? product?.name ?? "",
-    ),
-    product_price: formatMyr(price, locale),
-    compare_price: formatMyr(comparePrice, locale),
-    discount_percent: discountPercent,
-    cs_whatsapp: escapeHtml(csPhone),
-  };
-
-  return html.replace(
-    /(?:\{\{|\[)\s*(product_name|product_price|compare_price|discount_percent|cs_whatsapp)\s*(?:\}\}|\])/g,
-    (_match, shortcode: string) => replacements[shortcode] ?? _match,
-  );
-}
+export { parseShortcodes, type ShortcodeProduct } from "./landing-content.ts";
 
 export function validateLandingPageSlug(
   slug: string,
