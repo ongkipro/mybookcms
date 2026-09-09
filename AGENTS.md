@@ -122,6 +122,24 @@ Never stage the ledger with `git add -f`.
     read off the tool. This cost run `RUN-20260908T174024Z-5393afaf` its clean
     close on 2026-09-09 for exactly that reason and nothing else.
 
+12. A `before()` or `after()` hook that can fail must fail with a message
+    naming itself, and must not throw away the payload it read that message
+    from. The runner prints no test name for a hook, so its failure reaches you
+    as a stack over whatever the hook was holding — and if that payload contains
+    a migration name and a SQL-shaped word, the obvious reading is wrong. One
+    `npm test` exit 1 went unattributed for a full day on 2026-09-08 for exactly
+    that reason: `tail` showed migration
+    `0034_remove_foreign_sample_product.sql`, and the actual cause was a
+    transient port draw.
+    Two traps, both hit while fixing that one. A tool often logs a wrapper line
+    at the same severity as the cause it announces — wrangler emits
+    `Migration <name> failed with the following errors:` through `logger.error`
+    too — so taking the *first* matching line yields a sentence that announces a
+    reason and never gives one. Take the last, and keep the wrapper only when it
+    is all there is. And put the original error on `cause` rather than
+    summarising it away: a short message is for reading a `tail`, not for
+    discarding evidence.
+
 ```bash
 npm run check
 npm test

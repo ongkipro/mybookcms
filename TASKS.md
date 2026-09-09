@@ -1456,7 +1456,55 @@ Surface, and obtain the independent correctness/security review required by
       Dependencies: A-261.
       Done when: `npm run lint` exits 0 with the 15 warnings still reported, `npm run check` runs it, CI's static-analysis step therefore gates on it, and a real browser confirms the two admin surfaces still render and still report their failures.
 
-- [ ] **A-275** — Stop `npm test` from failing on a wrangler port collision, and stop that failure from hiding its own name.
+- [x] **A-275** — Stop `npm test` from failing on a wrangler port collision, and stop that failure from hiding its own name. **Done 2026-09-09, after an independent review found the first attempt was inert against real wrangler output and its central test passed only on a doctored fixture.**
+      **The diagnosis was wrong twice before it was right, and both corrections
+      matter more than the fix.** The first said `bad port` was a failed bind and
+      that the colliding port was one of our own, since nine peer test files
+      drive wrangler — eight through `getPlatformProxy`, one through
+      `createTestHarness`. That analysis is real but it is evidence for a
+      different failure. `bad port` is not a bind at all: undici raises it from
+      `requestBadPort`, the WHATWG blocked-port check, when wrangler fetches its
+      own local server on a port in that list. Nineteen blocked ports sit at or
+      above 1024 — 6000, 6566, 6665-6669, 6697 among them — and this machine's
+      `ip_local_port_range` is `1024 65535`, so an ephemeral draw lands on one
+      about once in 3,400. Rare, unrelated to the migration it names, unaffected
+      by peer processes: the shape of the observed flake. **Retry is the right
+      fix after all, because a fresh attempt draws a fresh port** — not for the
+      reason the first attempt gave.
+      The second correction is that the reporter did not work.
+      `describeWranglerFailure` took the *first* `[ERROR]` line, and wrangler
+      logs `Migration <name> failed with the following errors:` through
+      `logger.error` as well, so the first line is the wrapper. On genuine output
+      the message led with the migration name, discarded `bad port`, never fired
+      the clarification, and retried zero times. Worse, a real SQL failure was
+      reported as "...with the following errors:" and nothing — less than the raw
+      payload had carried. It now takes the last cause line, keeps the wrapper
+      only when it is all there is, and puts the original error on `cause`.
+      Verified against faithful wrangler output rather than a fixture shaped to
+      the implementation.
+      Two further review findings landed. Each retry now gets its own state
+      directory: D1 local does not wrap a migration body and its `d1_migrations`
+      bookkeeping insert in one transaction, so resuming over a half-applied
+      directory can turn a transient into a permanent "already exists". And the
+      helpers moved to `src/lib/wrangler-failure.ts`, because exporting them from
+      a test module meant importing them ran that file's twenty-second migration
+      chain — the reviewer hit exactly that while probing.
+      `AGENTS.md` rule 12 generalises both traps: name the file, take the last
+      line rather than the first, and keep the payload on `cause`.
+      Two tests, not three as an earlier draft of this entry said. The reproduction
+      feeds wrangler's real line structure, colouring included, and asserts the
+      message carries `bad port`, keeps `0034` out of the lead, keeps a genuine
+      SQL error's cause, degrades rather than crashes with no wrangler output at
+      all, and stays under 400 characters. The retry test proves fresh state per
+      attempt, spaced attempts, `cause` preserved when they are exhausted, and a
+      SQL error refused on the first attempt without sleeping.
+      Risk: R1 — a test hook and its diagnostics; no source file, no schema, no runtime path.
+      Surface: `src/lib/shipping-bootstrap.test.ts`, `src/lib/wrangler-failure.ts` where the reporter moved so importing it does not run the migration chain, `AGENTS.md`, `TASKS.md`, `STATUS.md`.
+      Non-scope: changing any migration, changing what the test asserts about Malaysia shipping policy, and adding a retry to tests that are not failing on a bind.
+      Primary requirement: REQ-231
+      Constraints: none.
+      Dependencies: none.
+      Done when: a bind failure in the hook either recovers or fails with a message that names `shipping-bootstrap` and `bad port` without a session needing to decode an `execFileSync` payload; the migration chain is no longer implicated by the wording; and a deliberate reproduction — an occupied port, not a rerun — shows the new behaviour rather than a green run being taken as proof. **Met, and the first attempt met none of it:** the reporter was verified against wrangler's genuine line structure rather than a fixture shaped to fit it, and a real SQL failure keeps its cause instead of losing it.
       This closes an open debt. A `npm test` exit 1 was recorded as
       **unattributed** on 2026-09-08 after six clean reruns failed to reproduce
       it and the failing test name was never captured. It reproduced on

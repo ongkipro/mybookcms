@@ -437,6 +437,57 @@ exactly that separation. They are queued as A-274, which also folds `lint` into
 recorded in the ledger as `lint-baseline-first-run=FAIL` — an executed red, kept
 red, rather than a green derived from a command chosen to pass.
 
+## A-275 — two wrong diagnoses before a right one 2026-09-09
+
+The fix works now. What is worth recording is that the first version of it did
+not, and that an independent review is what established that.
+
+**Wrong diagnosis one.** `bad port` was read as a failed bind, and the colliding
+port as one of our own — nine peer test files drive wrangler, eight through
+`getPlatformProxy` and one through `createTestHarness`, and `node --test` runs
+them in parallel. That count is correct and it is evidence for a different
+failure. `bad port` is not a bind: undici raises it from `requestBadPort`, the
+WHATWG blocked-port check, when wrangler fetches its own local server on a port
+in that list. Nineteen blocked ports sit at or above 1024 — 6000, 6566,
+6665-6669, 6697 among them — and this machine's `ip_local_port_range` is
+`1024 65535`, so an ephemeral draw lands on one roughly once in 3,400. Rare,
+unrelated to the migration it names, unaffected by peer processes: exactly the
+flake that was observed. Retry is the right fix after all, because a fresh
+attempt draws a fresh port — but the reason given for it was invented, which is
+the same failure this task exists to prevent, committed inside the fix for it.
+
+**Wrong diagnosis two, and the more serious one: the reporter did not work.**
+`describeWranglerFailure` took the *first* `[ERROR]` line, and wrangler logs
+`Migration <name> failed with the following errors:` through `logger.error` as
+well — verified in `wrangler-dist/cli.js`. So on genuine output the message led
+with the migration name, discarded `bad port`, never fired the clarification, and
+retried zero times. Every stated goal of the task was unmet on real input. It
+passed only because the test fixture had the `[ERROR]` prefix stripped off the
+wrapper line, a shape wrangler cannot emit — a fixture shaped to the
+implementation rather than to the tool.
+
+It was also a regression before it was a fix: a genuine SQL failure came out as
+"...with the following errors:" and nothing, which is less than the raw payload
+had carried. The reporter now takes the last cause line, keeps the wrapper only
+when it is all there is, and puts the original error on `cause`. Verified
+directly against faithful wrangler output: `bad port` carried, `0034` absent,
+retry armed; and `near "CREATE": syntax error` kept with retry withheld.
+
+Two further review findings landed. Each retry gets its own state directory,
+because D1 local does not wrap a migration body and its `d1_migrations`
+bookkeeping insert in one transaction, so resuming over a half-applied directory
+can turn a transient into a permanent "already exists". And the helpers moved to
+`src/lib/wrangler-failure.ts` — exporting them from a test module meant importing
+them ran that file's twenty-second migration chain, which the reviewer hit while
+probing.
+
+`AGENTS.md` rule 12 now carries both traps rather than the mis-diagnosis it
+first carried: name the file, take the last matching line rather than the first
+because tools log wrappers at the same severity as causes, and keep the payload
+on `cause`.
+
+Two tests, not the three an earlier draft of this claimed.
+
 ## A-279 — the expiry guard, and why it is load-bearing 2026-09-09
 
 `DokuCheckoutBodyInput.expiresAt` is `string` now, with `requiredExpiry`

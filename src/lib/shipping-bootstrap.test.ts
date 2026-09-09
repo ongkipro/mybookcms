@@ -4,6 +4,11 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import test, { after, before } from "node:test";
+import {
+  describeWranglerFailure,
+  isTransientPortDraw,
+  retryTransient,
+} from "./wrangler-failure.ts";
 import { fileURLToPath } from "node:url";
 
 const projectRoot = dirname(dirname(dirname(fileURLToPath(import.meta.url))));
@@ -26,9 +31,19 @@ function runWrangler(args: string[]) {
  */
 let stateDirectory = "";
 
+const applyArgs = ["d1", "migrations", "apply", "OMS_DB", "--local", "--persist-to"] as const;
+
 before(() => {
-  stateDirectory = mkdtempSync(join(tmpdir(), "mybookcms-clean-chain-"));
-  runWrangler(["d1", "migrations", "apply", "OMS_DB", "--local", "--persist-to", stateDirectory]);
+  const abandoned: string[] = [];
+  retryTransient(() => {
+    stateDirectory = mkdtempSync(join(tmpdir(), "mybookcms-clean-chain-"));
+    abandoned.push(stateDirectory);
+    return runWrangler([...applyArgs, stateDirectory]);
+  }, applyArgs);
+  // Every attempt but the one that succeeded left a half-applied directory.
+  for (const directory of abandoned) {
+    if (directory !== stateDirectory) rmSync(directory, { recursive: true, force: true });
+  }
 });
 
 after(() => {
@@ -136,4 +151,103 @@ test("a clean migration chain leaves every system-log read on an index with no s
         `${read.source} still sorts in a temporary B-tree: ${details.join(" | ")}`,
     );
   }
+});
+
+
+/** An `execFileSync` failure carries wrangler's output on `stderr`. */
+function wranglerError(stderr: string) {
+  return Object.assign(new Error("Command failed"), { stderr, stdout: "" });
+}
+
+test("a wrangler failure names itself and does not lose its cause", () => {
+  // A-275, rebuilt after the independent review proved the first version of
+  // this test passed only against an unfaithful fixture. Wrangler logs the
+  // wrapper line through `logger.error` as well, so BOTH lines carry the
+  // `[ERROR]` prefix and the wrapper comes first — verified in
+  // node_modules/wrangler/wrangler-dist/cli.js. The first draft stripped that
+  // prefix off the wrapper, which wrangler cannot emit, and so the reporter
+  // appeared to work while being inert on real output.
+  const esc = "\u001B";
+  const colour = (line: string) =>
+    `${esc}[31m x ${esc}[41;31m[${esc}[41;97mERROR${esc}[41;31m]${esc}[0m ${esc}[1m${line}${esc}[0m`;
+  const faithful = [
+    colour("Migration 0034_remove_foreign_sample_product.sql failed with the following errors:"),
+    "",
+    colour("bad port"),
+  ].join("\n");
+
+  const described = describeWranglerFailure(applyArgs, wranglerError(faithful));
+  assert.match(described, /^shipping-bootstrap: /, "the message must name the file it came from");
+  assert.match(described, /bad port/, "it must carry the cause, not the wrapper that announces one");
+  assert.match(described, /transient port draw/, "and clear the migration chain of blame");
+  assert.doesNotMatch(described, /0034/, "the migration name must not lead the message");
+  assert.ok(described.length < 400, `a tail-readable message, got ${described.length} chars`);
+
+  // A genuine SQL failure keeps its reason. Taking the first `[ERROR]` line
+  // reported "...with the following errors:" and stopped there, which is less
+  // than the raw payload used to carry.
+  const sqlFailure = [
+    colour("Migration 0044_retire_wide_catalog.sql failed with the following errors:"),
+    "",
+    colour('near "CREATE": syntax error'),
+  ].join("\n");
+  const genuine = describeWranglerFailure(applyArgs, wranglerError(sqlFailure));
+  assert.match(genuine, /near "CREATE": syntax error/, "a real failure must keep its cause");
+  assert.doesNotMatch(genuine, /transient port draw/, "and must not be dressed up as a port draw");
+  assert.equal(isTransientPortDraw(genuine), false);
+
+  // The wrapper alone is all there is: report it rather than nothing.
+  const wrapperOnly = describeWranglerFailure(
+    applyArgs,
+    wranglerError(colour("Migration 0001_x.sql failed with the following errors:")),
+  );
+  assert.match(wrapperOnly, /failed with the following errors:/);
+
+  // Degrade rather than crash when there is no wrangler output at all.
+  assert.match(describeWranglerFailure(applyArgs, new Error("spawn ENOENT")), /spawn ENOENT/);
+  assert.match(describeWranglerFailure(applyArgs, "plain string"), /plain string/);
+});
+
+test("a transient port draw is retried on a fresh state directory, and a real refusal is not", () => {
+  const slept: number[] = [];
+  const directories: string[] = [];
+  let calls = 0;
+  const flaky = () => {
+    calls += 1;
+    directories.push(`state-${calls}`);
+    if (calls < 3) throw wranglerError("[ERROR] bad port");
+    return "applied";
+  };
+  assert.equal(retryTransient(flaky, applyArgs, 3, (ms) => slept.push(ms)), "applied");
+  assert.equal(calls, 3, "two transient draws must not end the run");
+  assert.deepEqual(slept, [750, 1500], "and the attempts must be spaced, not spun");
+  assert.equal(new Set(directories).size, 3, "each attempt must start from its own state");
+
+  // Exhausting the attempts reports rather than hangs, and keeps the payload.
+  const original = wranglerError("[ERROR] bad port");
+  let always = 0;
+  let exhausted: unknown;
+  try {
+    retryTransient(() => { always += 1; throw original; }, applyArgs, 3, () => {});
+    assert.fail("exhausting the attempts must throw");
+  } catch (error) {
+    exhausted = error;
+  }
+  assert.match(String((exhausted as Error).message), /shipping-bootstrap: .*bad port/);
+  assert.equal(always, 3);
+  assert.equal((exhausted as { cause?: unknown }).cause, original, "the full output must stay reachable");
+
+  // A syntax error is a refusal, not a draw: one attempt, no retry, no delay.
+  let once = 0;
+  assert.throws(
+    () =>
+      retryTransient(
+        () => { once += 1; throw wranglerError('[ERROR] near "CREATE": syntax error'); },
+        applyArgs,
+        3,
+        () => assert.fail("a real refusal must not sleep"),
+      ),
+    /syntax error/,
+  );
+  assert.equal(once, 1, "a real refusal must be reported on the first attempt");
 });
