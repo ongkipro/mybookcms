@@ -174,7 +174,15 @@ signatures, URLs, click IDs, and provider bodies are forbidden labels/payloads.
 
 Never log the Client ID when it is treated as an account identifier, API Key,
 Secret Key, Authorization/Signature headers, raw body/digest, checkout URL,
-customer fields, click IDs, or complete provider response. Each bullet becomes
+customer fields, click IDs, or complete provider response. **That covers DOKU's
+*response* headers, not only ours.** Observed 2026-09-09 (A-277): DOKU echoes our
+own `Authorization: Basic` request header back on both create and retrieve, so a
+diagnostic that dumps a DOKU response's headers logs the API Key. Nothing does
+today: `doku-client.ts` reaches a DOKU response's headers in exactly two places,
+`readCheckoutResponseEnvelope` — which reads six names by hand, `Request-Id`,
+`Client-Id`, `Response-Timestamp`, `API-Version`, `Content-Type` and
+`Signature` — and `readBoundedResponseBody`, which compares `Content-Length`
+numerically. Neither logs or forwards them, and nothing should start. Each bullet becomes
 runtime truth only when its owning task records executable evidence; the list is
 not evidence that the still-open configuration, Ads, or hosted paths already
 exist.

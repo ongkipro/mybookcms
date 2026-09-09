@@ -437,6 +437,38 @@ exactly that separation. They are queued as A-274, which also folds `lint` into
 recorded in the ledger as `lint-baseline-first-run=FAIL` — an executed red, kept
 red, rather than a green derived from a command chosen to pass.
 
+## A-277 — the guard now names the decision that governs it 2026-09-09
+
+Small change, written because a session already made the mistake it prevents.
+`doku-client.ts`'s `if (responseEnvelope.signature !== null)` now carries a
+comment naming ADR-022 and REQ-227, recording that DOKU was observed unsigned on
+2026-09-02 and again on 2026-09-09 across all five channels and both operations,
+listing what an unsigned response must still pass — absent `Request-Id`, exact
+`Client-Id`, fresh `Response-Timestamp`, JSON content type, exact `API-Version`,
+then the amount and identity assertions — and saying outright that hardening the
+branch would refuse every DOKU response and stop payments.
+
+`OBSERVABILITY.md`'s no-logging rule now states that it covers DOKU's *response*
+headers and not only ours, since DOKU echoes our `Authorization: Basic` header
+back. A diagnostic that dumps a DOKU response's headers would log the API Key.
+Nothing does today; the rule exists so nothing starts.
+
+The provider question is left open on purpose: whether production signs is
+DOKU's to answer, and ADR-022's Context records their own artifacts
+contradicting each other. **The independent review caught that recording it here
+and in a code comment while closing A-277 would leave no open task carrying the
+obligation** — A-222's entry mentioned nothing about it. It is now a condition in
+A-222's own Dependencies and Done-when, which is where it can actually stop
+production being enabled without an answer.
+
+The review returned five findings on this small change, and two are worth
+keeping visible. The comment credited the 2026-09-02 observation to A-221R, which
+is the task that *implemented* the accepted profile; A-221 made the observation.
+And inserting fifteen comment lines moved every line this change's own prose
+cited, so a change whose stated purpose was "so the next reader is not misled"
+shipped with broken pointers. Both are fixed, and the line numbers are replaced
+with symbol names throughout so they cannot rot again.
+
 ## A-221 outbound half executed against DOKU sandbox 2026-09-09
 
 Owner-approved. Real requests to `api-sandbox.doku.com` using this repository's
@@ -459,7 +491,7 @@ found on 2026-09-02, is recorded in A-221's own evidence lines in `TASKS.md`,
 and was already decided: **ADR-022** (Accepted 2026-09-02) resolves to verify
 `Signature` when present and accept the response without it only after the other
 envelope checks; **REQ-227** encodes that and **A-221R** implemented it and is
-closed. `doku-client.ts:366` is an accepted decision working as written, not an
+closed. That guard is an accepted decision working as written, not an
 unnoticed fail-open. Claiming novelty here is exactly the inflation this
 repository's review gate exists to catch, and it was caught.
 
@@ -474,11 +506,10 @@ and never by printing it.
 
 The residual risk was also understated in the safe direction and is corrected
 here. An unsigned response is not accepted loosely: `readCheckoutResponseEnvelope`
-(`doku-client.ts:167-198`) first requires the absence of the Cards-only
+first requires the absence of the Cards-only
 `Request-Id`, an exact `Client-Id` match, a present and fresh
 `Response-Timestamp`, a JSON content type and an exact `API-Version`, and only
-then do `assertDokuMyrPayload` and `assertCheckoutResponseIdentity` run at
-`:381-382`. Saying "two structural guards" undercounted it. What is missing is
+then do `assertDokuMyrPayload` and `assertCheckoutResponseIdentity` run. Saying "two structural guards" undercounted it. What is missing is
 body-origin HMAC assurance — which is precisely what ADR-022 records as its
 accepted negative consequence. **A-277** is rewritten accordingly: not a posture
 to decide, but a comment pointing the guard at ADR-022 so the next reader does

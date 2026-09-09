@@ -596,8 +596,8 @@ Surface, and obtain the independent correctness/security review required by
       Non-scope: copying sandbox credentials/state; enabling an unverified channel; refunds, disputes, BNPL, recurring, direct Cards, payout, or unrelated infrastructure changes; recording credentials, signatures, raw payloads, or customer data.
       Primary requirement: REQ-216
       Constraints: REQ-173, REQ-182, REQ-217, REQ-218, REQ-219, REQ-220, REQ-221, REQ-222, REQ-223, REQ-224, REQ-225, REQ-226
-      Dependencies: A-221 and a separately approved target-install release plan
-      Done when: after explicit approval for each live mutation, the exact reviewed revision passes local release gates; the target is backed up/protected; forward migrations apply once; production credentials are entered without disclosure; the exact notification URL is registered; only sandbox-proven channels are enabled; one bounded approved production smoke payment proves create, return, signed notification, REQ-227-compliant retrieve, local order/stock state, operator diagnostics, and exactly-once Ads Purchase; COD/manual remain usable; rollback criteria are recorded; and all evidence is redacted.
+      Dependencies: A-221 and a separately approved target-install release plan. **Also A-277's open provider question:** whether DOKU signs Checkout responses in *production* is unanswered — ADR-022's Context records DOKU's own artifacts contradicting each other, and A-221 observed sandbox unsigned on 2026-09-02 and again on 2026-09-09. A-277 closed having recorded the question; this entry owns resolving it, because this is the task that enables production.
+      Done when: after explicit approval for each live mutation, the exact reviewed revision passes local release gates; the target is backed up/protected; forward migrations apply once; production credentials are entered without disclosure; the exact notification URL is registered; only sandbox-proven channels are enabled; one bounded approved production smoke payment proves create, return, signed notification, REQ-227-compliant retrieve, local order/stock state, operator diagnostics, and exactly-once Ads Purchase; COD/manual remain usable; rollback criteria are recorded; and all evidence is redacted. **And before production acceptance is enabled, DOKU has confirmed in writing whether production signs Checkout responses, with the answer recorded and the `if (responseEnvelope.signature !== null)` guard's comment updated to match** — a production that does sign while the client only verifies opportunistically is a different posture from the one ADR-022 accepted for sandbox, and must not be discovered after money moves.
 
 - [ ] **A-223** — Observe the approved DOKU production rollout and close or roll it back from evidence. **Approval: required for any new synthetic payment, configuration change, disablement, rollback, or deployment; read-only observation alone does not authorize mutation.**
       Risk: R4 — live payment continuity and the decision to keep or disable production acceptance.
@@ -1527,7 +1527,7 @@ Surface, and obtain the independent correctness/security review required by
       Dependencies: A-256, which must establish the tokens, fix `admin.css`'s literal-class selectors, and build the guard first. The designer/vision handoff.
       Done when: no file under `src/pages/admin` references a raw palette shade for a colour the semantic layer names, verified by the extended A-256 guard mutation-proved against these paths; A-256's Done-when can then be restated as "no admin surface" without becoming false; and a real browser confirms each of the ten routes at 390 px and 1280 px with no new overflow and no regression against the REQ-186 baseline.
 
-- [ ] **A-277** — Point the response-signature guard at the decision that governs it, and confirm production before production.
+- [x] **A-277** — Point the response-signature guard at the decision that governs it, and confirm production before production. **Done 2026-09-09, apart from the provider question, which is not mine to answer.** `doku-client.ts` now carries a comment at the guard naming ADR-022 and REQ-227, recording that DOKU was observed unsigned on 2026-09-02 and again on 2026-09-09 across all five channels and both operations, listing the envelope checks an unsigned response still passes, and stating plainly that turning the branch into a hard requirement would refuse every DOKU response and stop payments. `OBSERVABILITY.md` now says the no-logging rule covers DOKU's *response* headers and not only ours, because DOKU echoes our `Authorization: Basic` header back — so a diagnostic that dumps response headers would log the API Key. **The open half is handed on, not merely recorded:** whether production signs is a question for DOKU, and it is now written into **A-222's own Dependencies and Done-when** as a condition of enabling production, as well as into the guard comment. The independent review was right that recording it in prose while closing this entry would have left no open task carrying the obligation.
       **This entry replaces a wrong one.** Its first draft claimed the absent
       DOKU response signature as a new discovery and proposed deciding the
       fail-open posture. The independent review of 2026-09-09 disproved both.
@@ -1536,8 +1536,8 @@ Surface, and obtain the independent correctness/security review required by
       Checkout response-envelope compatibility", Accepted 2026-09-02) resolves
       to verify `Signature` whenever present and accept the response without it
       only after the other envelope checks, **REQ-227** encodes that, and
-      **A-221R** implemented it and is closed. So `doku-client.ts:366` is not an
-      unnoticed fail-open; it is an accepted decision working as written. Saying
+      **A-221R** implemented it and is closed. So the `if (responseEnvelope.signature !== null)` guard in
+      `doku-client.ts` is not an unnoticed fail-open; it is an accepted decision working as written. Saying
       otherwise is the inflation this repository's review gate exists to catch.
       What the 2026-09-09 outbound run actually added is confirmation, and it is
       worth having: the omission still holds seven days later, across all five
@@ -1549,7 +1549,7 @@ Surface, and obtain the independent correctness/security review required by
       reflecting our own `Basic` request header back rather than signing.
       **Two things remain genuinely open, and neither is a re-decision.** First,
       nothing at the guard tells a reader that ADR-022 governs it, so the next
-      session to read `doku-client.ts:366` will draw the same wrong conclusion
+      session to read that branch will draw the same wrong conclusion
       this entry's first draft did — that is not hypothetical, it just happened.
       Second, ADR-022's own Context records conflicting official artifacts: the
       endpoint OpenAPI models no response headers while the generic Global
@@ -1558,27 +1558,28 @@ Surface, and obtain the independent correctness/security review required by
       enables production, not after.
       **State the residual risk as the code actually has it.** An unsigned
       response is not accepted loosely. `readCheckoutResponseEnvelope`
-      (`doku-client.ts:167-198`) first requires the absence of the Cards-only
+      first requires the absence of the Cards-only
       `Request-Id`, an exact `Client-Id` match, a present and fresh
       `Response-Timestamp`, a JSON content type, and an exact `API-Version`;
       only then do `assertDokuMyrPayload` and `assertCheckoutResponseIdentity`
-      run at `:381-382`. An earlier draft of this entry said "two structural
+      run. An earlier draft of this entry said "two structural
       guards", which understates it. What is missing is body-origin HMAC
       assurance, which is exactly what ADR-022 records as its accepted negative
       consequence.
       A smaller item belongs here: DOKU reflects our `Authorization: Basic`
       request header back in the response, so the API key appears in DOKU's
-      response headers. Nothing logs them today — `doku-client.ts:349` passes
-      them only to `readCheckoutResponseEnvelope`, which reads five names by
-      hand — so there is no leak. Record it as a standing constraint before a
+      response headers. Nothing logs them today — `doku-client.ts` reaches a DOKU
+      response's headers in exactly two places, `readCheckoutResponseEnvelope`,
+      which reads six names by hand, and `readBoundedResponseBody`, which
+      compares `Content-Length` numerically — so there is no leak. Record it as a standing constraint before a
       future diagnostic starts dumping response headers.
       Risk: R1 — a comment, a constraint, and a question to the provider. It was first written as R3 on the false premise that an undecided security posture was in play; there is no posture to decide.
-      Surface: `src/lib/doku-client.ts` for the comment only, `OBSERVABILITY.md` for the response-header constraint, `TASKS.md`, `STATUS.md`.
+      Surface: `src/lib/doku-client.ts` for the comment only, `OBSERVABILITY.md` for the response-header constraint, `TASKS.md` including A-222's entry, `STATUS.md`.
       Non-scope: **re-opening ADR-022 or amending REQ-227**, which is what this entry's first draft wrongly proposed; changing any verification behaviour; the request signature, which DOKU does require and which works; notification signature verification, which is the inbound half and uses the asymmetric key; and switching production to fail-closed, which would refuse every response and stop payments.
       Primary requirement: REQ-227
       Constraints: REQ-227
-      Dependencies: none. The production question must be answered before A-222, not by it.
-      Done when: the guard at `doku-client.ts:366` names ADR-022 and REQ-227 and states that DOKU was observed not to sign responses on 2026-09-02 and again on 2026-09-09, so the next reader is not misled; the response-header reflection is recorded as a constraint against logging them; and the question of whether production signs is either answered by DOKU and recorded, or recorded as an open question that A-222 must resolve before enabling production.
+      Dependencies: none. The production question is A-222's to resolve before it enables production, and is written into A-222's Dependencies and Done-when so it is enforceable rather than merely recorded. An earlier draft of this line said "before A-222, not by it", which contradicted this entry's own closure text; A-222 is the task that enables production, so A-222 is where the obligation belongs.
+      Done when: the guard names ADR-022 and REQ-227 and states that DOKU was observed not to sign responses on 2026-09-02 and again on 2026-09-09, so the next reader is not misled; the response-header reflection is recorded as a constraint against logging them; and the question of whether production signs is either answered by DOKU and recorded, or recorded as an open question that A-222 must resolve before enabling production.
 
 - [ ] **A-278** — Complete one sandbox payment and retrieve it, because that is the only way to learn the `CREDIT_CARD` channel string. **Approval: required — a payment at a hosted provider page, even a sandbox one.**
       A-221's Done-when asks for the exact `payment.channel` string DOKU returns

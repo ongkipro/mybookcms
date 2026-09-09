@@ -363,6 +363,23 @@ export class DokuClient {
     } finally {
       clearTimeout(timer);
     }
+    // ADR-022 / REQ-227: DOKU does not sign Checkout responses, so this branch
+    // is conditional by decision, not by oversight. Observed unsigned by A-221
+    // on 2026-09-02 (A-221R is the task that implemented the accepted profile,
+    // not the one that observed it) and re-confirmed by A-221's outbound run on
+    // 2026-09-09 across all five Malaysia channels on both create and retrieve,
+    // with a full header inventory showing no signature under any alternate
+    // name. An unsigned response is still not accepted loosely:
+    // `readCheckoutResponseEnvelope` above has already required an absent
+    // Cards-only `Request-Id`, an exact `Client-Id`, a fresh
+    // `Response-Timestamp`, a JSON content type and an exact `API-Version`, and
+    // `assertDokuMyrPayload` plus `assertCheckoutResponseIdentity` run below.
+    // What is absent is body-origin HMAC assurance, which ADR-022 records as
+    // its accepted cost.
+    // Do not "fix" this into a hard requirement: today that would refuse every
+    // DOKU response and stop payments. Whether *production* signs is still
+    // unanswered — ADR-022's Context notes DOKU's own artifacts contradict each
+    // other — and A-222 must resolve it before enabling production.
     if (responseEnvelope.signature !== null) {
       const validSignature = await verifyDokuGlobalResponseSignature({
         clientId: this.#clientId,
