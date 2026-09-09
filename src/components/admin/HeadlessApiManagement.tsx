@@ -269,7 +269,7 @@ export function HeadlessApiManagement() {
                 <KeyRound className="size-4 text-blue-600" aria-hidden="true" />
                 API Key Aktif
               </CardTitle>
-              <p className="mt-1 text-xs leading-5 text-slate-500">
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">
                 Gunakan key server-side untuk integrasi privat. Secret lengkap hanya ditampilkan saat dibuat.
               </p>
             </div>
@@ -282,27 +282,27 @@ export function HeadlessApiManagement() {
         <CardContent>
           {loading ? (
             <div className="space-y-3" role="status" aria-label="Memuat API key">
-              <div className="h-11 animate-pulse rounded-lg bg-slate-100" />
-              <div className="h-11 animate-pulse rounded-lg bg-slate-100" />
-              <div className="h-11 animate-pulse rounded-lg bg-slate-100" />
+              <div className="h-11 animate-pulse rounded-lg bg-muted" />
+              <div className="h-11 animate-pulse rounded-lg bg-muted" />
+              <div className="h-11 animate-pulse rounded-lg bg-muted" />
             </div>
           ) : keys.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-5 py-10 text-center">
+            <div className="rounded-xl border border-dashed border-slate-300 bg-muted px-5 py-10 text-center">
               <KeyRound className="mx-auto size-7 text-slate-400" aria-hidden="true" />
               <p className="mt-3 text-sm font-black text-slate-800">Belum ada API key aktif</p>
-              <p className="mt-1 text-xs text-slate-500">Buat key pertama untuk menghubungkan backend eksternal.</p>
+              <p className="mt-1 text-xs text-muted-foreground">Buat key pertama untuk menghubungkan backend eksternal.</p>
             </div>
           ) : (
             <div className="space-y-3">
               {keys.map((key) => {
                 const editing = editingId === key.id;
                 return (
-                  <section key={key.id} className="rounded-xl border border-slate-200 bg-white p-4">
+                  <section key={key.id} className="rounded-xl border border-border bg-card p-4">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="font-black text-slate-900">{key.name}</p>
+                        <p className="font-black text-foreground">{key.name}</p>
                         <p className="mt-1 break-all font-mono text-[11px] text-slate-600">{key.key_preview}</p>
-                        <p className="mt-1 text-[10px] text-slate-500">
+                        <p className="mt-1 text-[10px] text-muted-foreground">
                           Dibuat {formatTimestamp(key.created_at)} oleh {key.created_by} · Terakhir dipakai {formatTimestamp(key.last_used_at)}
                         </p>
                       </div>
@@ -333,10 +333,10 @@ export function HeadlessApiManagement() {
                     {editing ? (
                       <div className="mt-4 space-y-4 border-t border-slate-100 pt-4">
                         <fieldset>
-                          <legend className="text-xs font-black text-slate-700">Scope yang diizinkan</legend>
+                          <legend className="text-xs font-black text-foreground-subtle">Scope yang diizinkan</legend>
                           <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
                             {SCOPE_OPTIONS.map((scope) => (
-                              <label key={scope.value} className="flex min-h-11 items-center gap-2 rounded-lg border border-slate-200 px-3 text-xs font-bold text-slate-700">
+                              <label key={scope.value} className="flex min-h-11 items-center gap-2 rounded-lg border border-border px-3 text-xs font-bold text-foreground-subtle">
                                 <input
                                   type="checkbox"
                                   checked={draftScopes.includes(scope.value)}
@@ -349,7 +349,7 @@ export function HeadlessApiManagement() {
                           </div>
                         </fieldset>
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                          <label className="grid grid-cols-1 gap-2 text-xs font-bold text-slate-700">
+                          <label className="grid grid-cols-1 gap-2 text-xs font-bold text-foreground-subtle">
                             Request per menit
                             <Input
                               type="number"
@@ -360,7 +360,7 @@ export function HeadlessApiManagement() {
                               onChange={(event) => setDraftRateLimit(Number(event.target.value))}
                             />
                           </label>
-                          <label className="grid grid-cols-1 gap-2 text-xs font-bold text-slate-700">
+                          <label className="grid grid-cols-1 gap-2 text-xs font-bold text-foreground-subtle">
                             Kuota per hari
                             <Input
                               type="number"
@@ -384,11 +384,11 @@ export function HeadlessApiManagement() {
                     ) : (
                       <div className="mt-3 flex flex-wrap items-center gap-1.5">
                         {key.scopes.map((scope) => (
-                          <span key={scope} className="rounded-md bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-700">
+                          <span key={scope} className="rounded-md bg-muted px-2 py-1 text-[10px] font-bold text-foreground-subtle">
                             {SCOPE_OPTIONS.find((option) => option.value === scope)?.label || scope}
                           </span>
                         ))}
-                        <span className="text-[10px] font-bold text-slate-500">
+                        <span className="text-[10px] font-bold text-muted-foreground">
                           {key.rate_limit_per_minute}/menit · {key.daily_quota.toLocaleString("id-ID")}/hari
                         </span>
                       </div>
@@ -399,20 +399,20 @@ export function HeadlessApiManagement() {
             </div>
           )}
           {!loading && (
-            <section className="mt-6 border-t border-slate-200 pt-5" aria-labelledby="headless-audit-title">
+            <section className="mt-6 border-t border-border pt-5" aria-labelledby="headless-audit-title">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <h4 id="headless-audit-title" className="text-sm font-black text-slate-900">Aktivitas API terbaru</h4>
-                  <p className="mt-1 text-[11px] text-slate-500">Hanya keputusan autentikasi, scope, dan kuota. Payload tidak disimpan.</p>
+                  <h4 id="headless-audit-title" className="text-sm font-black text-foreground">Aktivitas API terbaru</h4>
+                  <p className="mt-1 text-[11px] text-muted-foreground">Hanya keputusan autentikasi, scope, dan kuota. Payload tidak disimpan.</p>
                 </div>
-                <span className="text-[10px] font-bold text-slate-500">{auditEvents.length} event</span>
+                <span className="text-[10px] font-bold text-muted-foreground">{auditEvents.length} event</span>
               </div>
               {auditEvents.length === 0 ? (
-                <p className="mt-3 rounded-lg bg-slate-50 px-3 py-4 text-xs text-slate-500">Belum ada penggunaan API tercatat.</p>
+                <p className="mt-3 rounded-lg bg-muted px-3 py-4 text-xs text-muted-foreground">Belum ada penggunaan API tercatat.</p>
               ) : (
-                <div className="mt-3 max-h-64 overflow-auto rounded-xl border border-slate-200">
+                <div className="mt-3 max-h-64 overflow-auto rounded-xl border border-border">
                   <table className="w-full min-w-[560px] text-left text-xs">
-                    <thead className="sticky top-0 bg-slate-50 text-[10px] font-black uppercase text-slate-500">
+                    <thead className="sticky top-0 bg-muted text-[10px] font-black uppercase text-muted-foreground">
                       <tr>
                         <th className="px-3 py-2" scope="col">Waktu</th>
                         <th className="px-3 py-2" scope="col">Key</th>
@@ -423,8 +423,8 @@ export function HeadlessApiManagement() {
                     <tbody className="divide-y divide-slate-100">
                       {auditEvents.map((event) => (
                         <tr key={event.id}>
-                          <td className="px-3 py-2 text-slate-500">{formatTimestamp(event.created_at)}</td>
-                          <td className="px-3 py-2 font-bold text-slate-700">{event.key_name}</td>
+                          <td className="px-3 py-2 text-muted-foreground">{formatTimestamp(event.created_at)}</td>
+                          <td className="px-3 py-2 font-bold text-foreground-subtle">{event.key_name}</td>
                           <td className="px-3 py-2 font-mono text-[10px] text-slate-600">{event.operation}</td>
                           <td className="px-3 py-2 text-slate-600">{AUDIT_OUTCOME_LABELS[event.outcome] || "Ditolak"} · {event.status_code}</td>
                         </tr>
@@ -441,11 +441,11 @@ export function HeadlessApiManagement() {
       <Card>
         <CardHeader>
           <CardTitle as="h3" className="text-sm font-black">Buat API Key Instan</CardTitle>
-          <p className="text-xs leading-5 text-slate-500">Beri nama sesuai aplikasi atau lingkungan pemakai.</p>
+          <p className="text-xs leading-5 text-muted-foreground">Beri nama sesuai aplikasi atau lingkungan pemakai.</p>
         </CardHeader>
         <CardContent className="space-y-4">
           <form onSubmit={createKey} className="space-y-3">
-            <label className="grid-cols-1 grid gap-2 text-xs font-bold text-slate-700">
+            <label className="grid-cols-1 grid gap-2 text-xs font-bold text-foreground-subtle">
               Nama key
               <Input
                 required
@@ -459,10 +459,10 @@ export function HeadlessApiManagement() {
               />
             </label>
             <fieldset>
-              <legend className="text-xs font-black text-slate-700">Scope awal</legend>
+              <legend className="text-xs font-black text-foreground-subtle">Scope awal</legend>
             <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-1">
                 {SCOPE_OPTIONS.map((scope) => (
-                  <label key={scope.value} className="flex min-h-11 items-center gap-2 rounded-lg border border-slate-200 px-3 text-xs font-bold text-slate-700">
+                  <label key={scope.value} className="flex min-h-11 items-center gap-2 rounded-lg border border-border px-3 text-xs font-bold text-foreground-subtle">
                     <input
                       type="checkbox"
                       checked={scopes.includes(scope.value)}
@@ -475,7 +475,7 @@ export function HeadlessApiManagement() {
               </div>
             </fieldset>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-1">
-            <label className="grid grid-cols-1 gap-2 text-xs font-bold text-slate-700">
+            <label className="grid grid-cols-1 gap-2 text-xs font-bold text-foreground-subtle">
                 Request per menit
                 <Input
                   type="number"
@@ -486,7 +486,7 @@ export function HeadlessApiManagement() {
                   onChange={(event) => setRateLimit(Number(event.target.value))}
                 />
               </label>
-            <label className="grid grid-cols-1 gap-2 text-xs font-bold text-slate-700">
+            <label className="grid grid-cols-1 gap-2 text-xs font-bold text-foreground-subtle">
                 Kuota per hari
                 <Input
                   type="number"
@@ -511,7 +511,7 @@ export function HeadlessApiManagement() {
                 <Input
                   readOnly
                   value={generatedSecret}
-                  className="min-h-11 min-w-0 bg-white font-mono text-[11px]"
+                  className="min-h-11 min-w-0 bg-card font-mono text-[11px]"
                   aria-label="API key baru"
                   onFocus={(event) => event.currentTarget.select()}
                 />
@@ -521,7 +521,7 @@ export function HeadlessApiManagement() {
                   size="icon"
                   onClick={() => void copySecret()}
                   aria-label={copied ? "API key sudah disalin" : "Salin API key"}
-                  className={copied ? "min-h-11 min-w-11 border-emerald-300 bg-emerald-50 text-emerald-700" : "min-h-11 min-w-11 bg-white"}
+                  className={copied ? "min-h-11 min-w-11 border-emerald-300 bg-emerald-50 text-emerald-700" : "min-h-11 min-w-11 bg-card"}
                 >
                   {copied ? <Check className="size-4" aria-hidden="true" /> : <Copy className="size-4" aria-hidden="true" />}
                 </Button>

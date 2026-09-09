@@ -437,6 +437,53 @@ exactly that separation. They are queued as A-274, which also folds `lint` into
 recorded in the ledger as `lint-baseline-first-run=FAIL` — an executed red, kept
 red, rather than a green derived from a command chosen to pass.
 
+## A-256 — the admin speaks one vocabulary 2026-09-09
+
+660 raw palette uses in `src/components/admin` converted to tokens the semantic
+layer already named, plus the `<body>` ink in `AdminLayout.astro`. `zinc` is
+gone. `text-slate-500`→`text-muted-foreground` (187),
+`text-slate-950`/`900`→`text-foreground` (167), `border-slate-200`→`border-border`
+(151), `bg-slate-50`+`bg-slate-100`→`bg-muted` (162), `bg-white`→`bg-card` (90),
+`text-slate-700`→ the new `--foreground-subtle` (73).
+
+**It improves contrast rather than only tidying names, and the ratios were
+computed rather than taken from the handoff.** `--muted-foreground` resolves to
+`#5f6a77`: 5.50 on a white card, 5.13 on the page, 4.97 on a muted panel. The
+`text-slate-500` it replaced measures 4.76 / 4.44 / 4.31 — failing AA on two of
+the three grounds it was actually used against. 187 potential failures closed.
+
+Step 0 first, as the entry demanded: `admin.css` matched card geometry on the
+literal class `bg-white`, so the sweep would have dropped radius and shadow on
+sixteen sections. Both classes are listed now; `.bg-white` goes when nothing
+uses it.
+
+**A third stale premise.** The entry said `text-slate-600` stays raw "in exactly
+seventeen occurrences across three files". It is 90 across 18. The rule survives
+the count: `DESIGN-SYSTEM.md` records that muted text on the page background uses
+slate-600 for 7.26:1 because slate-500 there is 4.41, so mapping them to
+`--muted-foreground` would pass AA and still *reduce* contrast on text
+deliberately darkened. All 90 stay, and so do the `text-slate-400` occurrences
+the handoff split by role.
+
+**And I nearly shipped a fourth false claim of my own.** The closure first said
+`AdminLayout.astro` needed no change because it set no raw ink. Line 38 carried
+`text-slate-900` on `<body>` — the ink every component inherits — exactly as the
+entry had said. Checking before writing the claim is the only reason it is not
+in the repository.
+
+`src/lib/admin-token-guard.test.ts` is what notices next time: it forbids the
+eight converted shades by name across the components and the layout, keeps zinc
+retired, and asserts the three carve-outs are still *present*, so a future sweep
+cannot quietly convert them without arguing with the comment first.
+Mutation-proved by reintroducing `text-slate-500` and `bg-white` into
+`OrdersTable.tsx`.
+
+Six admin routes verified in a real browser at 390 px and 1280 px, twice — once
+after the sweep and again after the layout ink changed. No overflow, no console
+errors, no runtime exceptions, every card still computing a non-zero radius, and
+both the new ink level and the body ink resolving to a colour rather than to
+nothing.
+
 ## A-275 — two wrong diagnoses before a right one 2026-09-09
 
 The fix works now. What is worth recording is that the first version of it did

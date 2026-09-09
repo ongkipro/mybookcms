@@ -220,7 +220,7 @@ export default function SellerBankAccounts({
           by outline — it sits under the page h2 on /admin/payments. */}
       <h3
         id="seller-bank-accounts-heading"
-        className="text-base leading-snug font-semibold text-slate-900"
+        className="text-base leading-snug font-semibold text-foreground"
       >
         Rekening tujuan transfer
       </h3>
@@ -237,7 +237,7 @@ export default function SellerBankAccounts({
         noValidate
       >
         <div className="space-y-1.5">
-          <label htmlFor="seller-bank-code" className="block text-xs font-bold text-slate-700">
+          <label htmlFor="seller-bank-code" className="block text-xs font-bold text-foreground-subtle">
             Bank
           </label>
           <Select
@@ -246,7 +246,7 @@ export default function SellerBankAccounts({
             disabled={pending}
             required
           >
-            <SelectTrigger id="seller-bank-code" className="h-11 border-slate-200 bg-white shadow-sm">
+            <SelectTrigger id="seller-bank-code" className="h-11 border-border bg-card shadow-sm">
               <SelectValue>
                 {bankByCode.get(bankCode)?.label || "Pilih bank"}
               </SelectValue>
@@ -262,7 +262,7 @@ export default function SellerBankAccounts({
         </div>
 
         <div className="space-y-1.5">
-          <label htmlFor="seller-bank-holder" className="block text-xs font-bold text-slate-700">
+          <label htmlFor="seller-bank-holder" className="block text-xs font-bold text-foreground-subtle">
             Nama penerima
           </label>
           <Input
@@ -273,7 +273,7 @@ export default function SellerBankAccounts({
               setAccountHolder(cleanAccountHolder(event.target.value));
               setErrors((current) => ({ ...current, holder: undefined }));
             }}
-            className="h-11 border-slate-200 bg-white shadow-sm"
+            className="h-11 border-border bg-card shadow-sm"
             maxLength={100}
             autoComplete="off"
             aria-invalid={Boolean(errors.holder)}
@@ -283,14 +283,14 @@ export default function SellerBankAccounts({
           />
           <p
             id="seller-bank-holder-help"
-            className={`text-[11px] leading-4 ${errors.holder ? "font-semibold text-rose-700" : "text-slate-500"}`}
+            className={`text-[11px] leading-4 ${errors.holder ? "font-semibold text-rose-700" : "text-muted-foreground"}`}
           >
             {errors.holder || "Hanya huruf; tanpa angka. Harus sama dengan nama pemilik rekening."}
           </p>
         </div>
 
         <div className="space-y-1.5">
-          <label htmlFor="seller-bank-number" className="block text-xs font-bold text-slate-700">
+          <label htmlFor="seller-bank-number" className="block text-xs font-bold text-foreground-subtle">
             Nomor rekening
           </label>
           <Input
@@ -300,7 +300,7 @@ export default function SellerBankAccounts({
               setAccountNumber(cleanAccountNumber(event.target.value));
               setErrors((current) => ({ ...current, number: undefined }));
             }}
-            className="h-11 border-slate-200 bg-white font-mono shadow-sm"
+            className="h-11 border-border bg-card font-mono shadow-sm"
             inputMode="numeric"
             pattern="[0-9]{6,24}"
             minLength={6}
@@ -313,7 +313,7 @@ export default function SellerBankAccounts({
           />
           <p
             id="seller-bank-number-help"
-            className={`text-[11px] leading-4 ${errors.number ? "font-semibold text-rose-700" : "text-slate-500"}`}
+            className={`text-[11px] leading-4 ${errors.number ? "font-semibold text-rose-700" : "text-muted-foreground"}`}
           >
             {errors.number || "Hanya 6–24 digit angka; tanpa huruf, spasi, atau tanda baca."}
           </p>
@@ -349,11 +349,11 @@ export default function SellerBankAccounts({
 
       <div className="grid-cols-1 grid gap-2" aria-live="polite">
         {!statusError && status === "Memuat rekening…" ? (
-          <div className="rounded-xl border border-dashed border-slate-300 p-4 text-center text-xs text-slate-500">
+          <div className="rounded-xl border border-dashed border-slate-300 p-4 text-center text-xs text-muted-foreground">
             Memuat rekening…
           </div>
         ) : accounts.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-slate-300 p-4 text-center text-xs text-slate-500">
+          <div className="rounded-xl border border-dashed border-slate-300 p-4 text-center text-xs text-muted-foreground">
             Belum ada rekening transfer bank.
           </div>
         ) : (
@@ -362,14 +362,14 @@ export default function SellerBankAccounts({
             return (
               <article
                 key={account.id}
-                className="grid grid-cols-1 gap-3 rounded-xl border border-slate-200 bg-slate-50/70 p-3 sm:grid-cols-[5rem_minmax(0,1fr)_auto] sm:items-center"
+                className="grid grid-cols-1 gap-3 rounded-xl border border-border bg-muted/70 p-3 sm:grid-cols-[5rem_minmax(0,1fr)_auto] sm:items-center"
               >
-                <div className="grid h-12 w-20 place-items-center rounded-lg border border-slate-200 bg-white px-2 text-center text-[10px] font-black text-slate-700" aria-label={bank?.label || account.bank_code}>
+                <div className="grid h-12 w-20 place-items-center rounded-lg border border-border bg-card px-2 text-center text-[10px] font-black text-foreground-subtle" aria-label={bank?.label || account.bank_code}>
                   {bank?.label || account.bank_code}
                 </div>
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="truncate text-sm font-bold text-slate-950">
+                    <p className="truncate text-sm font-bold text-foreground">
                       {account.bank_code} · {account.account_holder}
                     </p>
                     <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${account.is_active ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-600"}`}>
@@ -380,7 +380,7 @@ export default function SellerBankAccounts({
                   <p className="mt-1 font-mono text-xs text-slate-600">{account.account_number}</p>
                 </div>
                 <div className="flex min-h-11 items-center gap-2 sm:justify-end">
-                  <label className="flex min-h-11 cursor-pointer items-center gap-2 text-xs font-medium text-slate-700">
+                  <label className="flex min-h-11 cursor-pointer items-center gap-2 text-xs font-medium text-foreground-subtle">
                     <span className="sr-only">Status rekening {account.bank_code}</span>
                     <Switch
                       checked={Boolean(account.is_active)}

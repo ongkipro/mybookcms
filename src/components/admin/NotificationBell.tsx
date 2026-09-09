@@ -234,7 +234,7 @@ export function NotificationBell() {
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="relative grid size-10 place-items-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+          className="relative grid size-10 place-items-center rounded-xl border border-border bg-card text-slate-600 shadow-sm transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
           aria-label={
             unread > 0 ? `Notifikasi, ${unread} belum dibaca` : "Notifikasi"
           }
@@ -251,8 +251,8 @@ export function NotificationBell() {
         align="end"
         className="w-[min(22rem,calc(100vw-1.5rem))] p-0"
       >
-        <div className="flex items-center justify-between gap-2 border-b border-slate-200 px-3 py-2.5">
-          <p className="text-xs font-bold text-slate-900">Notifikasi</p>
+        <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2.5">
+          <p className="text-xs font-bold text-foreground">Notifikasi</p>
           <div className="flex items-center gap-1">
             {unread > 0 && (
               <button
@@ -269,7 +269,7 @@ export function NotificationBell() {
               aria-pressed={muted}
               title={muted ? "Bunyikan notifikasi" : "Bisukan notifikasi"}
               aria-label={muted ? "Bunyikan notifikasi" : "Bisukan notifikasi"}
-              className="grid size-7 place-items-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+              className="grid size-7 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
             >
               {muted ? (
                 <VolumeX className="size-4" aria-hidden="true" />
@@ -281,15 +281,15 @@ export function NotificationBell() {
         </div>
         <div className="max-h-[min(26rem,60vh)] overflow-y-auto overscroll-contain">
           {loading && items.length === 0 && (
-            <p className="px-3 py-6 text-center text-xs text-slate-500">Memuat…</p>
+            <p className="px-3 py-6 text-center text-xs text-muted-foreground">Memuat…</p>
           )}
           {!loading && failed && items.length === 0 && (
-            <p className="px-3 py-6 text-center text-xs text-slate-500">
+            <p className="px-3 py-6 text-center text-xs text-muted-foreground">
               Notifikasi gagal dimuat. Coba buka lagi sebentar.
             </p>
           )}
           {!loading && !failed && items.length === 0 && (
-            <p className="px-3 py-6 text-center text-xs text-slate-500">
+            <p className="px-3 py-6 text-center text-xs text-muted-foreground">
               Belum ada order atau pembayaran baru.
             </p>
           )}
@@ -300,16 +300,16 @@ export function NotificationBell() {
                 key={item.id}
                 type="button"
                 onClick={() => openItem(item)}
-                className={`flex w-full items-start gap-2.5 border-b border-slate-100 px-3 py-2.5 text-left transition last:border-b-0 hover:bg-slate-50 ${
+                className={`flex w-full items-start gap-2.5 border-b border-slate-100 px-3 py-2.5 text-left transition last:border-b-0 hover:bg-muted ${
                   item.unread ? "bg-blue-50/40" : ""
                 }`}
               >
-                <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-lg bg-slate-100 text-slate-600">
+                <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-lg bg-muted text-slate-600">
                   <Icon className="size-3.5" aria-hidden="true" />
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-1.5">
-                    <span className="min-w-0 flex-1 truncate text-xs font-bold text-slate-900">
+                    <span className="min-w-0 flex-1 truncate text-xs font-bold text-foreground">
                       {item.title}
                     </span>
                     {item.unread && (

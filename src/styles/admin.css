@@ -90,6 +90,8 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
+  /* A-256: the Tailwind bridge for the third ink level, so `text-foreground-subtle` works. */
+  --color-foreground-subtle: var(--foreground-subtle);
   --color-muted: var(--muted);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-secondary: var(--secondary);
@@ -123,6 +125,7 @@
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
   --muted-foreground: oklch(0.556 0 0);
+  --foreground-subtle: oklch(37.2% 0.044 257.287);
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
@@ -196,6 +199,10 @@
   --secondary-foreground: oklch(0.25 0.025 255);
   --muted: oklch(0.965 0.006 255);
   --muted-foreground: oklch(0.52 0.025 255);
+  /* A-256 decision (b). 73 admin components use `text-slate-700` — a tier the
+     token layer had no name for, not an exception worth pinning. This is
+     Tailwind's own slate-700, so naming it moves nothing. */
+  --foreground-subtle: oklch(37.2% 0.044 257.287);
   --accent: oklch(0.96 0.009 255);
   --accent-foreground: oklch(0.22 0.025 255);
   --border: oklch(0.91 0.009 255);
@@ -236,9 +243,15 @@
   .admin-bottom-nav, .admin-bottom-nav *
 ) { animation: none !important; transition: none !important; }
 
+/* A-256 step 0. These matched the literal utility `bg-white`, so converting a
+   section to `bg-card` silently dropped its radius and shadow. Both are listed
+   until the sweep is finished; `.bg-white` goes when no admin component uses
+   it. Never remove `.bg-card` here — it is what the geometry now hangs on. */
 .admin-shell [data-slot="card"],
 .admin-shell section.bg-white,
-.admin-shell article.bg-white { border-color: rgba(203, 213, 225, 0.72); border-radius: 0.875rem; box-shadow: none; }
+.admin-shell article.bg-white,
+.admin-shell section.bg-card,
+.admin-shell article.bg-card { border-color: rgba(203, 213, 225, 0.72); border-radius: 0.875rem; box-shadow: none; }
 .admin-shell [data-slot="card-header"] { border-color: rgba(226, 232, 240, 0.82); }
 .admin-shell section.relative > [aria-hidden="true"].absolute { display: none; }
 .admin-shell .admin-main :where(h2, h3) { letter-spacing: -0.025em; }
@@ -273,7 +286,8 @@
   .admin-shell .admin-main :where(section, article, form, fieldset).p-6,
   .admin-shell .admin-main [data-slot="card-content"].p-5,
   .admin-shell .admin-main [data-slot="card-header"].p-5 { padding: 1rem; }
-  .admin-shell [data-slot="card"], .admin-shell section.bg-white, .admin-shell article.bg-white { border-radius: 1rem; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.035); }
+  .admin-shell [data-slot="card"], .admin-shell section.bg-white, .admin-shell article.bg-white,
+  .admin-shell section.bg-card, .admin-shell article.bg-card { border-radius: 1rem; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.035); }
   .admin-shell .admin-main :where(input:not([type="checkbox"]):not([type="radio"]), select, textarea) { min-height: 3rem; }
   /* A Base UI select trigger is a <button>, so it took the 2.75rem button floor
      while the input beside it took 3rem - every admin filter row had two

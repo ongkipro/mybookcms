@@ -72,7 +72,7 @@ export function AppSidebar({
                 />
                 <span className="grid-cols-1 grid min-w-0 flex-1 text-left leading-tight">
                   <span className="truncate text-sm font-semibold tracking-tight text-sidebar-foreground">{storeName}</span>
-                  <span className="truncate text-[10px] text-slate-500">{displayDomain}</span>
+                  <span className="truncate text-[10px] text-muted-foreground">{displayDomain}</span>
                 </span>
               </a>
             </SidebarMenuButton>
@@ -123,7 +123,7 @@ export function AppSidebar({
                       asChild
                       isActive={active}
                       tooltip={children.length > 0 ? `${item.label} · memiliki submenu` : item.label}
-                      className="relative h-9 rounded-lg px-2.5 font-normal text-slate-600 hover:bg-slate-100 hover:text-slate-950 data-[active=true]:font-medium data-[active=true]:text-blue-700 group-data-[collapsible=icon]:size-10!"
+                      className="relative h-9 rounded-lg px-2.5 font-normal text-slate-600 hover:bg-muted hover:text-foreground data-[active=true]:font-medium data-[active=true]:text-blue-700 group-data-[collapsible=icon]:size-10!"
                       style={itemStyle}
                     >
                       <a
@@ -144,7 +144,7 @@ export function AppSidebar({
                       </a>
                     </SidebarMenuButton>
                     {active && children.length > 0 && (
-                      <SidebarMenuSub className="mr-0 gap-0.5 border-slate-200/90 py-1">
+                      <SidebarMenuSub className="mr-0 gap-0.5 border-border/90 py-1">
                         {children.map((child) => {
                           const childActive = isAdminNavHrefActive(currentPath, child.href);
 
@@ -153,7 +153,7 @@ export function AppSidebar({
                               <SidebarMenuSubButton
                                 asChild
                                 isActive={childActive}
-                                className="h-8 rounded-md px-2 text-xs font-normal text-slate-500 hover:bg-slate-100 hover:text-slate-950 data-[active=true]:font-medium data-[active=true]:text-blue-700"
+                                className="h-8 rounded-md px-2 text-xs font-normal text-muted-foreground hover:bg-muted hover:text-foreground data-[active=true]:font-medium data-[active=true]:text-blue-700"
                               >
                                 <a
                                   href={child.href}
@@ -179,11 +179,11 @@ export function AppSidebar({
         ))}
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-slate-200/70 p-2">
+      <SidebarFooter className="border-t border-border/70 p-2">
         <SidebarMenu>
           <SidebarMenuItem>
             <form method="POST" action="/api/admin/logout" data-logout-form>
-              <SidebarMenuButton asChild tooltip="Keluar dari sistem" className="h-10 text-slate-500 hover:bg-rose-50 hover:text-rose-700">
+              <SidebarMenuButton asChild tooltip="Keluar dari sistem" className="h-10 text-muted-foreground hover:bg-rose-50 hover:text-rose-700">
                 <button type="submit" className="w-full justify-start font-normal">
                   <LogOut className="size-[17px]" aria-hidden="true" />
                   <span>Keluar</span>
@@ -192,12 +192,12 @@ export function AppSidebar({
             </form>
           </SidebarMenuItem>
         </SidebarMenu>
-        <div className="mt-2 flex items-center justify-between rounded-lg border border-slate-200/80 bg-slate-50/80 px-2.5 py-1.5 text-[11px] font-medium text-slate-500 group-data-[collapsible=icon]:hidden">
+        <div className="mt-2 flex items-center justify-between rounded-lg border border-border/80 bg-muted/80 px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground group-data-[collapsible=icon]:hidden">
           <div className="flex items-center gap-1.5">
             <span className="relative flex size-2">
               <span className="relative inline-flex size-2 rounded-full bg-emerald-500"></span>
             </span>
-            <span className="font-medium text-slate-700">CMS Core</span>
+            <span className="font-medium text-foreground-subtle">CMS Core</span>
           </div>
           <span className="rounded bg-slate-200/70 px-1.5 py-0.5 font-mono text-[10px] font-medium text-slate-600">
             v{CMS_VERSION.version}

@@ -91,14 +91,14 @@ export function MalaysiaLocationCombobox({
       }}
     />
     {loading ? <LoaderCircle className="pointer-events-none absolute right-3 top-3.5 size-4 animate-spin text-slate-400" aria-label="Mencari lokasi" /> : null}
-    {open && options.length > 0 ? <div id={listId} role="listbox" className="absolute z-50 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white p-1 shadow-lg">
+    {open && options.length > 0 ? <div id={listId} role="listbox" className="absolute z-50 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-border bg-card p-1 shadow-lg">
       {options.map((option, index) => <button
         key={option.location_id}
         id={`${listId}-${index}`}
         type="button"
         role="option"
         aria-selected={index === activeIndex}
-        className={`flex min-h-11 w-full items-start gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-slate-50 focus:bg-slate-50 focus:outline-none ${index === activeIndex ? 'bg-slate-50' : ''}`}
+        className={`flex min-h-11 w-full items-start gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-muted focus:bg-muted focus:outline-none ${index === activeIndex ? 'bg-muted' : ''}`}
         onMouseDown={(event) => event.preventDefault()}
         onClick={() => {
           setActiveIndex(index);
@@ -107,7 +107,7 @@ export function MalaysiaLocationCombobox({
         }}
       >
         <MapPin className="mt-0.5 size-4 shrink-0 text-blue-600" aria-hidden="true" />
-        <span><strong className="block text-slate-900">{option.city}, {option.province}</strong><span className="text-xs text-slate-500">Poskod {option.postcode}</span></span>
+        <span><strong className="block text-foreground">{option.city}, {option.province}</strong><span className="text-xs text-muted-foreground">Poskod {option.postcode}</span></span>
       </button>)}
     </div> : null}
     {!selectedId && value.trim().length > 0 && !loading ? <p className="mt-1.5 text-[11px] font-semibold text-amber-700">Pilih lokasi dari hasil pencarian.</p> : null}

@@ -326,7 +326,7 @@ export function ProductForm({ productId }: { productId?: string }) {
   if (loading)
     return (
       <div
-        className="h-96 animate-pulse rounded-xl bg-slate-100"
+        className="h-96 animate-pulse rounded-xl bg-muted"
         aria-label="Memuat formulir produk"
         aria-busy="true"
       />
@@ -334,10 +334,10 @@ export function ProductForm({ productId }: { productId?: string }) {
   if (loadError)
     return (
       <section
-        className="rounded-xl border border-rose-200 bg-slate-50 p-8 text-center shadow-sm"
+        className="rounded-xl border border-rose-200 bg-muted p-8 text-center shadow-sm"
         role="alert"
       >
-        <h2 className="text-lg font-black text-slate-950">
+        <h2 className="text-lg font-black text-foreground">
           Produk gagal dimuat
         </h2>
         <p className="mt-2 text-sm text-slate-600">{loadError}</p>
@@ -357,18 +357,18 @@ export function ProductForm({ productId }: { productId?: string }) {
       noValidate
     >
       <div className="space-y-6">
-        <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-200 p-5">
-            <h2 className="text-base font-black text-slate-950">
+        <section className="rounded-xl border border-border bg-card shadow-sm">
+          <div className="border-b border-border p-5">
+            <h2 className="text-base font-black text-foreground">
               Informasi produk
             </h2>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-muted-foreground">
               Identitas katalog dan status storefront.
             </p>
           </div>
           <div className="grid grid-cols-1 gap-4 p-5 md:grid-cols-2">
             <label>
-              <span className="mb-1.5 block text-xs font-black text-slate-700">
+              <span className="mb-1.5 block text-xs font-black text-foreground-subtle">
                 Nama produk
               </span>
               <Input
@@ -376,11 +376,11 @@ export function ProductForm({ productId }: { productId?: string }) {
                 maxLength={160}
                 value={title}
                 onChange={(event) => onTitleChange(event.target.value)}
-                className="admin-input-flat h-11 border-slate-300 bg-slate-50 text-base shadow-none focus-visible:border-emerald-700 focus-visible:ring-emerald-700/20 md:text-sm"
+                className="admin-input-flat h-11 border-slate-300 bg-muted text-base shadow-none focus-visible:border-emerald-700 focus-visible:ring-emerald-700/20 md:text-sm"
               />
             </label>
             <label>
-              <span className="mb-1.5 block text-xs font-black text-slate-700">
+              <span className="mb-1.5 block text-xs font-black text-foreground-subtle">
                 Slug
               </span>
               <Input
@@ -391,21 +391,21 @@ export function ProductForm({ productId }: { productId?: string }) {
                 onChange={(event) => {
                   setSlug(slugify(event.target.value));
                 }}
-                className="admin-input-flat h-11 border-slate-300 bg-slate-50 font-mono text-base shadow-none focus-visible:border-emerald-700 focus-visible:ring-emerald-700/20 md:text-sm"
+                className="admin-input-flat h-11 border-slate-300 bg-muted font-mono text-base shadow-none focus-visible:border-emerald-700 focus-visible:ring-emerald-700/20 md:text-sm"
               />
-              <span className="mt-1 block text-[11px] text-slate-500">
+              <span className="mt-1 block text-[11px] text-muted-foreground">
                 Huruf kecil, angka, dan tanda hubung.
               </span>
             </label>
             <div className="md:col-span-2">
               <label
                 htmlFor="product-image"
-                className="mb-1.5 block text-xs font-black text-slate-700"
+                className="mb-1.5 block text-xs font-black text-foreground-subtle"
               >
                 Foto produk
               </label>
-              <div className="grid grid-cols-1 gap-3 rounded-xl border border-slate-200 p-4 sm:grid-cols-[112px_1fr] sm:items-center">
-                <div className="flex aspect-square items-center justify-center overflow-hidden bg-slate-50">
+              <div className="grid grid-cols-1 gap-3 rounded-xl border border-border p-4 sm:grid-cols-[112px_1fr] sm:items-center">
+                <div className="flex aspect-square items-center justify-center overflow-hidden bg-muted">
                   {imageUrl ? (
                     <img
                       src={imageUrl}
@@ -430,11 +430,11 @@ export function ProductForm({ productId }: { productId?: string }) {
                       if (file) void uploadImage(file);
                       event.target.value = "";
                     }}
-                    className="block min-h-11 w-full border-slate-300 bg-slate-50 text-base text-slate-700 focus-visible:border-emerald-700 focus-visible:ring-emerald-700/20 file:mr-3 file:min-h-11 file:rounded-lg file:border-0 file:bg-emerald-700 file:px-4 file:text-xs file:font-bold file:text-white file:hover:bg-emerald-800 md:text-sm"
+                    className="block min-h-11 w-full border-slate-300 bg-muted text-base text-foreground-subtle focus-visible:border-emerald-700 focus-visible:ring-emerald-700/20 file:mr-3 file:min-h-11 file:rounded-lg file:border-0 file:bg-emerald-700 file:px-4 file:text-xs file:font-bold file:text-white file:hover:bg-emerald-800 md:text-sm"
                   />
                   <p
                     id="product-image-hint"
-                    className="mt-2 text-[11px] leading-5 text-slate-500"
+                    className="mt-2 text-[11px] leading-5 text-muted-foreground"
                   >
                     Format WebP (ototmatis dikonversi & dibuang file originalnya). Maksimal 2 MB.
                   </p>
@@ -452,13 +452,13 @@ export function ProductForm({ productId }: { productId?: string }) {
             </div>
           </div>
         </section>
-        <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex flex-col gap-3 border-b border-slate-200 p-5 sm:flex-row sm:items-center sm:justify-between">
+        <section className="rounded-xl border border-border bg-card shadow-sm">
+          <div className="flex flex-col gap-3 border-b border-border p-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-base font-black text-slate-950">
+              <h2 className="text-base font-black text-foreground">
                 Varian produk
               </h2>
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-xs text-muted-foreground">
                 Variant ID dibuat otomatis; kelola SKU, harga dalam sen MYR, dan berat.
               </p>
             </div>
@@ -479,9 +479,9 @@ export function ProductForm({ productId }: { productId?: string }) {
             {variants.map((variant, index) => (
               <fieldset
                 key={variant.key}
-                className="rounded-xl border border-slate-200 p-4"
+                className="rounded-xl border border-border p-4"
               >
-                <legend className="px-2 text-xs font-black text-slate-700">
+                <legend className="px-2 text-xs font-black text-foreground-subtle">
                   Varian {index + 1}
                 </legend>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -502,7 +502,7 @@ export function ProductForm({ productId }: { productId?: string }) {
                       onChange={(event) =>
                         updateVariant(index, "title", event.target.value)
                       }
-                      className="admin-input-flat h-11 border-slate-300 bg-slate-50 text-base shadow-none focus-visible:border-emerald-700 focus-visible:ring-emerald-700/20 md:text-sm"
+                      className="admin-input-flat h-11 border-slate-300 bg-muted text-base shadow-none focus-visible:border-emerald-700 focus-visible:ring-emerald-700/20 md:text-sm"
                     />
                     <span className="mt-1 block text-[10px] text-slate-400">
                       Maks. 15 karakter (contoh: 500ml, 1 Liter, Beli 2)
@@ -523,14 +523,14 @@ export function ProductForm({ productId }: { productId?: string }) {
                           event.target.value.toUpperCase(),
                         )
                       }
-                      className="admin-input-flat h-11 border-slate-300 bg-slate-50 font-mono text-base uppercase shadow-none focus-visible:border-emerald-700 focus-visible:ring-emerald-700/20 md:text-sm"
+                      className="admin-input-flat h-11 border-slate-300 bg-muted font-mono text-base uppercase shadow-none focus-visible:border-emerald-700 focus-visible:ring-emerald-700/20 md:text-sm"
                     />
                   </label>
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
+                  <div className="rounded-lg border border-border bg-muted px-3 py-2.5">
                     <span className="block text-xs font-bold text-slate-600">
                       Variant ID
                     </span>
-                    <span className="mt-1 block font-mono text-sm text-slate-700">
+                    <span className="mt-1 block font-mono text-sm text-foreground-subtle">
                       {variant.id || "Dibuat otomatis saat disimpan"}
                     </span>
                   </div>
@@ -548,7 +548,7 @@ export function ProductForm({ productId }: { productId?: string }) {
                       onChange={(event) =>
                         updateVariant(index, "price", event.target.value)
                       }
-                      className="admin-input-flat h-11 border-slate-300 bg-slate-50 text-base shadow-none focus-visible:border-emerald-700 focus-visible:ring-emerald-700/20 md:text-sm"
+                      className="admin-input-flat h-11 border-slate-300 bg-muted text-base shadow-none focus-visible:border-emerald-700 focus-visible:ring-emerald-700/20 md:text-sm"
                     />
                   </label>
                   <label>
@@ -568,7 +568,7 @@ export function ProductForm({ productId }: { productId?: string }) {
                           event.target.value,
                         )
                       }
-                      className="admin-input-flat h-11 border-slate-300 bg-slate-50 text-base shadow-none focus-visible:border-emerald-700 focus-visible:ring-emerald-700/20 md:text-sm"
+                      className="admin-input-flat h-11 border-slate-300 bg-muted text-base shadow-none focus-visible:border-emerald-700 focus-visible:ring-emerald-700/20 md:text-sm"
                     />
                   </label>
                   <label>
@@ -585,7 +585,7 @@ export function ProductForm({ productId }: { productId?: string }) {
                       onChange={(event) =>
                         updateVariant(index, "weight_grams", event.target.value)
                       }
-                      className="admin-input-flat h-11 border-slate-300 bg-slate-50 text-base shadow-none focus-visible:border-emerald-700 focus-visible:ring-emerald-700/20 md:text-sm"
+                      className="admin-input-flat h-11 border-slate-300 bg-muted text-base shadow-none focus-visible:border-emerald-700 focus-visible:ring-emerald-700/20 md:text-sm"
                     />
                   </label>
                 </div>
@@ -607,9 +607,9 @@ export function ProductForm({ productId }: { productId?: string }) {
         </section>
       </div>
       <aside className="xl:sticky xl:top-6 xl:self-start">
-        <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <section className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
           {imageUrl && (
-            <div className="flex aspect-[16/9] items-center justify-center border-b border-slate-100 bg-slate-50 p-4">
+            <div className="flex aspect-[16/9] items-center justify-center border-b border-slate-100 bg-muted p-4">
               <img
                 src={imageUrl}
                 alt=""
@@ -620,52 +620,52 @@ export function ProductForm({ productId }: { productId?: string }) {
           <div className="p-5">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-xs font-black uppercase tracking-wider text-slate-500">
+                <p className="text-xs font-black uppercase tracking-wider text-muted-foreground">
                   Ringkasan
                 </p>
-                <h2 className="mt-2 break-words text-xl font-black text-slate-950">
+                <h2 className="mt-2 break-words text-xl font-black text-foreground">
                   {title || (editing ? "Produk tanpa nama" : "Produk baru")}
                 </h2>
               </div>
               <span
-                className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-black ${active ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-600"}`}
+                className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-black ${active ? "bg-emerald-100 text-emerald-800" : "bg-muted text-slate-600"}`}
               >
                 {active ? "Aktif" : "Draft"}
               </span>
             </div>
             <dl className="mt-5 grid grid-cols-2 gap-3 text-xs">
-              <div className="rounded-lg bg-slate-50 p-3">
-                <dt className="text-slate-500">Product / Content ID</dt>
-                <dd className="mt-1 font-mono font-black text-slate-900">
+              <div className="rounded-lg bg-muted p-3">
+                <dt className="text-muted-foreground">Product / Content ID</dt>
+                <dd className="mt-1 font-mono font-black text-foreground">
                   {productId ? catalogProductId(productId) : "Otomatis"}
                 </dd>
               </div>
-              <div className="rounded-lg bg-slate-50 p-3">
-                <dt className="text-slate-500">Varian</dt>
-                <dd className="mt-1 font-black text-slate-900">
+              <div className="rounded-lg bg-muted p-3">
+                <dt className="text-muted-foreground">Varian</dt>
+                <dd className="mt-1 font-black text-foreground">
                   {variants.length}
                 </dd>
               </div>
-              <div className="col-span-2 rounded-lg bg-slate-50 p-3">
-                <dt className="text-slate-500">Slug</dt>
-                <dd className="mt-1 break-all font-mono font-bold text-slate-900">
+              <div className="col-span-2 rounded-lg bg-muted p-3">
+                <dt className="text-muted-foreground">Slug</dt>
+                <dd className="mt-1 break-all font-mono font-bold text-foreground">
                   {slug || "Belum diisi"}
                 </dd>
               </div>
-              <div className="rounded-lg bg-slate-50 p-3">
-                <dt className="text-slate-500">Kategori</dt>
-                <dd className="mt-1 font-black text-slate-900">
+              <div className="rounded-lg bg-muted p-3">
+                <dt className="text-muted-foreground">Kategori</dt>
+                <dd className="mt-1 font-black text-foreground">
                   {category || "Umum"}
                 </dd>
               </div>
-              <div className="rounded-lg bg-slate-50 p-3">
-                <dt className="text-slate-500">Foto</dt>
-                <dd className="mt-1 font-black text-slate-900">
+              <div className="rounded-lg bg-muted p-3">
+                <dt className="text-muted-foreground">Foto</dt>
+                <dd className="mt-1 font-black text-foreground">
                   {imageUrl ? "Tersimpan" : "Belum ada"}
                 </dd>
               </div>
             </dl>
-            <p className="mt-3 text-[11px] leading-5 text-slate-500">
+            <p className="mt-3 text-[11px] leading-5 text-muted-foreground">
               Product ID adalah identitas stabil untuk storefront dan Headless API.
             </p>
             <button
@@ -682,7 +682,7 @@ export function ProductForm({ productId }: { productId?: string }) {
               Batal
             </a>
             <p
-              className={`mt-4 min-h-5 text-xs font-bold ${statusTone === "error" ? "text-rose-700" : statusTone === "success" ? "text-emerald-700" : "text-slate-500"}`}
+              className={`mt-4 min-h-5 text-xs font-bold ${statusTone === "error" ? "text-rose-700" : statusTone === "success" ? "text-emerald-700" : "text-muted-foreground"}`}
               role="status"
               aria-live="polite"
             >

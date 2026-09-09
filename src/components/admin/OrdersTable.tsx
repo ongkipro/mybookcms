@@ -102,7 +102,7 @@ const statusDots: Record<AdminOrderStatus, string> = {
 };
 
 const statusClasses: Record<AdminOrderStatus, string> = {
-  new: "border-slate-200 bg-slate-50 text-slate-800",
+  new: "border-border bg-muted text-slate-800",
   waiting: "border-amber-200 bg-amber-50 text-amber-900",
   queued: "border-sky-200 bg-sky-50 text-sky-900",
   in_transit: "border-blue-200 bg-blue-50 text-blue-900",
@@ -164,7 +164,7 @@ function OrderStatusBadge({ order }: { order: OrderRow }) {
       <span className={`size-1.5 rounded-full ${statusDots[status]}`} aria-hidden="true" />
       {orderStatusLabels[status]}
     </span>
-    {detail ? <p className="mt-1 text-[10px] font-medium text-slate-500">{detail}</p> : null}
+    {detail ? <p className="mt-1 text-[10px] font-medium text-muted-foreground">{detail}</p> : null}
   </div>;
 }
 
@@ -374,7 +374,7 @@ export function OrdersTable({ adminRole = "customer_service" }: { adminRole?: Ad
   const firstVisible = pagination.totalItems ? (pagination.page - 1) * pagination.limit + 1 : 0;
   const lastVisible = Math.min(pagination.page * pagination.limit, pagination.totalItems);
 
-  if (loading) return <div className="h-96 animate-pulse rounded-xl bg-slate-100" aria-label="Memuat daftar pesanan" aria-busy="true" />;
+  if (loading) return <div className="h-96 animate-pulse rounded-xl bg-muted" aria-label="Memuat daftar pesanan" aria-busy="true" />;
 
   return <div className="space-y-5">
     <section className="grid grid-cols-2 gap-3 xl:grid-cols-4" aria-label="Ringkasan pesanan">
@@ -383,25 +383,25 @@ export function OrdersTable({ adminRole = "customer_service" }: { adminRole?: Ad
         ["Belum dibayar", String(summary.unpaidCount), "Perlu follow-up pembayaran"],
         ["Antrean pengiriman", String(summary.fulfilmentCount), "Pesanan yang masuk Pengiriman"],
         ["Nilai pesanan", formatMyr(summary.totalValue), "Nilai bruto semua status"],
-      ].map(([label, value, help]) => <div key={label} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
-        <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">{label}</p>
-        <p className="mt-2 text-xl font-black tracking-tight text-slate-950 sm:text-2xl">{value}</p>
-        <p className="mt-1 hidden text-xs text-slate-500 sm:block">{help}</p>
+      ].map(([label, value, help]) => <div key={label} className="rounded-xl border border-border bg-card p-3 shadow-sm sm:p-4">
+        <p className="text-[11px] font-black uppercase tracking-wider text-muted-foreground">{label}</p>
+        <p className="mt-2 text-xl font-black tracking-tight text-foreground sm:text-2xl">{value}</p>
+        <p className="mt-1 hidden text-xs text-muted-foreground sm:block">{help}</p>
       </div>)}
     </section>
 
     <nav className="flex gap-2 overflow-x-auto pb-1" aria-label="Filter cepat status pesanan">
       {quickStatusFilters.map(([value, label]) => {
         const active = orderStatusFilter === value;
-        return <button key={value} type="button" aria-pressed={active} onClick={() => { setOrderStatusFilter(value); setPage(1); }} className={`inline-flex min-h-10 shrink-0 items-center gap-2 rounded-full border px-3.5 text-xs font-black ${active ? "border-slate-950 bg-slate-950 text-white" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"}`}>
+        return <button key={value} type="button" aria-pressed={active} onClick={() => { setOrderStatusFilter(value); setPage(1); }} className={`inline-flex min-h-10 shrink-0 items-center gap-2 rounded-full border px-3.5 text-xs font-black ${active ? "border-slate-950 bg-slate-950 text-white" : "border-border bg-card text-foreground-subtle hover:bg-muted"}`}>
           {value !== "all" ? <span className={`size-2 rounded-full ${statusDots[value]}`} aria-hidden="true" /> : null}
-          {label}<span className={`min-w-5 rounded-full px-1.5 py-0.5 text-[10px] ${active ? "bg-white/20" : "bg-slate-100"}`}>{statusCounts[value] || 0}</span>
+          {label}<span className={`min-w-5 rounded-full px-1.5 py-0.5 text-[10px] ${active ? "bg-card/20" : "bg-muted"}`}>{statusCounts[value] || 0}</span>
         </button>;
       })}
     </nav>
 
     {selectedIds.length ? <section className="sticky top-3 z-20 flex flex-col gap-3 rounded-xl border border-blue-200 bg-blue-50/95 p-4 shadow-lg backdrop-blur sm:flex-row sm:items-center sm:justify-between" aria-label="Aksi massal pesanan">
-      <div><p className="text-sm font-black text-slate-950">{selectedIds.length} pesanan dipilih</p><button type="button" className="mt-1 text-xs font-bold text-blue-700 hover:underline" onClick={() => setSelectedIds([])}>Batalkan pilihan</button></div>
+      <div><p className="text-sm font-black text-foreground">{selectedIds.length} pesanan dipilih</p><button type="button" className="mt-1 text-xs font-bold text-blue-700 hover:underline" onClick={() => setSelectedIds([])}>Batalkan pilihan</button></div>
       <div className="flex flex-wrap gap-2">
         <Button variant="outline" disabled={mutating || selectedIds.some((id) => queuePendingIds.includes(id))} onClick={() => void setShippingQueue(selectedIds, true)}>
           {selectedIds.some((id) => queuePendingIds.includes(id)) ? <LoaderCircle className="animate-spin" /> : <Truck />}Masukkan ke Pengiriman
@@ -419,8 +419,8 @@ export function OrdersTable({ adminRole = "customer_service" }: { adminRole?: Ad
       </div>
     </section> : null}
 
-    <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div className="border-b border-slate-200 p-4">
+    <section className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+      <div className="border-b border-border p-4">
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(14rem,1fr)_13rem_13rem_auto_auto]">
           <label className="relative"><span className="sr-only">Cari pesanan</span><Search className="absolute left-3 top-3.5 size-4 text-slate-400" /><Input className="h-11 pl-9" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Cari nomor pesanan, pelanggan, produk, kota" /></label>
           <select className="admin-input-flat min-h-11" value={paymentFilter} onChange={(event) => { setPaymentFilter(event.target.value); setPage(1); }} aria-label="Filter status pembayaran">
@@ -430,30 +430,30 @@ export function OrdersTable({ adminRole = "customer_service" }: { adminRole?: Ad
           <Button variant="outline" disabled={refreshing} onClick={() => setRequestVersion((value) => value + 1)}><RefreshCw className={refreshing ? "animate-spin" : ""} />Perbarui</Button>
           <Button variant="secondary" disabled={!query && orderStatusFilter === "all" && paymentFilter === "all" && dateSelection.filter === "all"} onClick={() => { setQuery(""); setOrderStatusFilter("all"); setPaymentFilter("all"); setDateSelection({ filter: "all", start: "", end: "" }); setPage(1); }}>Atur ulang</Button>
         </div>
-        <p className="mt-3 text-xs font-bold text-slate-500" aria-live="polite">{refreshing ? "Memperbarui…" : `Menampilkan ${firstVisible}-${lastVisible} dari ${pagination.totalItems} pesanan`}</p>
+        <p className="mt-3 text-xs font-bold text-muted-foreground" aria-live="polite">{refreshing ? "Memperbarui…" : `Menampilkan ${firstVisible}-${lastVisible} dari ${pagination.totalItems} pesanan`}</p>
         {notice ? <p className="mt-2 text-xs font-bold text-emerald-700" role="status">{notice}</p> : null}
         {error ? <p className="mt-2 text-xs font-bold text-rose-700" role="alert">{error}</p> : null}
       </div>
 
       <div className="grid grid-cols-1 gap-3 p-3 lg:hidden" aria-label="Daftar pesanan mobile">
-        {orders.map((order) => <article key={order.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
-          <div className="flex items-start justify-between gap-3"><div className="min-w-0"><a className="break-all font-black text-slate-950 hover:text-blue-600 hover:underline" href={`/admin/orders/${encodeURIComponent(order.order_number)}`}>{order.order_number}</a><p className="mt-1 text-[11px] text-slate-400">{formatAdminDateTime(order.created_at)}</p></div><PaymentBadge status={order.payment_status} /></div>
-          <div className="mt-4 border-t border-slate-100 pt-4"><p className="font-black text-slate-900">{order.customer_name}</p><p className="mt-1 font-mono text-xs text-slate-500">{order.customer_phone}</p><p className="mt-1 text-xs text-slate-500">{[order.city, order.province, order.postal_code].filter(Boolean).join(", ")}</p></div>
-          <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-slate-50 p-3 text-xs"><div><p className="text-slate-500">Produk & total</p><p className="mt-1 truncate font-semibold text-slate-900">{order.product_name}</p><p className="truncate text-[11px] text-slate-500">{order.variant_name}</p><p className="mt-1 text-sm font-black text-slate-950">{formatMyr(order.total_amount)}</p></div><div><p className="mb-1 text-slate-500">Status</p><OrderStatusBadge order={order} /></div></div>
+        {orders.map((order) => <article key={order.id} className="rounded-xl border border-border bg-card p-4 shadow-xs">
+          <div className="flex items-start justify-between gap-3"><div className="min-w-0"><a className="break-all font-black text-foreground hover:text-blue-600 hover:underline" href={`/admin/orders/${encodeURIComponent(order.order_number)}`}>{order.order_number}</a><p className="mt-1 text-[11px] text-slate-400">{formatAdminDateTime(order.created_at)}</p></div><PaymentBadge status={order.payment_status} /></div>
+          <div className="mt-4 border-t border-slate-100 pt-4"><p className="font-black text-foreground">{order.customer_name}</p><p className="mt-1 font-mono text-xs text-muted-foreground">{order.customer_phone}</p><p className="mt-1 text-xs text-muted-foreground">{[order.city, order.province, order.postal_code].filter(Boolean).join(", ")}</p></div>
+          <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-muted p-3 text-xs"><div><p className="text-muted-foreground">Produk & total</p><p className="mt-1 truncate font-semibold text-foreground">{order.product_name}</p><p className="truncate text-[11px] text-muted-foreground">{order.variant_name}</p><p className="mt-1 text-sm font-black text-foreground">{formatMyr(order.total_amount)}</p></div><div><p className="mb-1 text-muted-foreground">Status</p><OrderStatusBadge order={order} /></div></div>
           <div className="mt-4"><p className="mb-2 text-[10px] font-black uppercase tracking-wider text-slate-400">Tindak lanjut WhatsApp</p>{renderCrmActions(order)}</div>
-          <div className="mt-4 flex items-center justify-between gap-2 border-t border-slate-100 pt-3"><label className="flex min-h-11 items-center gap-2 text-xs font-bold text-slate-700"><Checkbox checked={selectedIds.includes(order.id)} onCheckedChange={(checked) => setSelectedIds((current) => checked ? [...new Set([...current, order.id])] : current.filter((id) => id !== order.id))} aria-label={`Pilih pesanan ${order.order_number}`} />Pilih</label><OrderMenu order={order} disabled={mutating} queuePending={queuePendingIds.includes(order.id)} canDelete={mayDeleteOrders} onQueue={(queued) => void setShippingQueue([order.id], queued)} onStatus={(status) => void updateStatuses([order.id], status)} onDelete={() => void deleteOrders([order.id])} /></div>
+          <div className="mt-4 flex items-center justify-between gap-2 border-t border-slate-100 pt-3"><label className="flex min-h-11 items-center gap-2 text-xs font-bold text-foreground-subtle"><Checkbox checked={selectedIds.includes(order.id)} onCheckedChange={(checked) => setSelectedIds((current) => checked ? [...new Set([...current, order.id])] : current.filter((id) => id !== order.id))} aria-label={`Pilih pesanan ${order.order_number}`} />Pilih</label><OrderMenu order={order} disabled={mutating} queuePending={queuePendingIds.includes(order.id)} canDelete={mayDeleteOrders} onQueue={(queued) => void setShippingQueue([order.id], queued)} onStatus={(status) => void updateStatuses([order.id], status)} onDelete={() => void deleteOrders([order.id])} /></div>
         </article>)}
       </div>
 
       <div className="hidden overflow-x-auto pb-16 lg:block" aria-label="Tabel pesanan desktop">
         <Table className="min-w-[1180px]">
-          <TableHeader><TableRow className="bg-slate-50 text-[11px] font-black uppercase tracking-wider text-slate-500"><TableHead className="w-12 px-4"><Checkbox checked={allVisibleSelected ? true : selectedIds.some((id) => orders.some((order) => order.id === id)) ? "indeterminate" : false} onCheckedChange={(checked) => setSelectedIds((current) => checked ? [...new Set([...current, ...orders.map((order) => order.id)])] : current.filter((id) => !orders.some((order) => order.id === id)))} aria-label="Pilih semua pesanan di halaman ini" /></TableHead><TableHead className="w-44 border-r border-slate-200 px-5">Nomor pesanan</TableHead><TableHead className="w-52 px-4">Pemesan</TableHead><TableHead className="w-44 px-4">Status</TableHead><TableHead className="w-48 px-4">Pembayaran</TableHead><TableHead className="w-48 px-4 text-right">Produk & total</TableHead><TableHead className="w-56 px-4">Tindak lanjut WhatsApp</TableHead><TableHead className="w-24 px-4 text-right">Aksi</TableHead></TableRow></TableHeader>
-          <TableBody>{orders.map((order) => <TableRow key={order.id} className="align-top hover:bg-slate-50"><TableCell className="px-4 py-4"><Checkbox checked={selectedIds.includes(order.id)} onCheckedChange={(checked) => setSelectedIds((current) => checked ? [...new Set([...current, order.id])] : current.filter((id) => id !== order.id))} aria-label={`Pilih pesanan ${order.order_number}`} /></TableCell><TableCell className="border-r border-slate-200 px-5 py-4"><a className="whitespace-nowrap font-black text-slate-950 hover:text-blue-600 hover:underline" href={`/admin/orders/${encodeURIComponent(order.order_number)}`}>{order.order_number}</a><p className="mt-1 text-[11px] text-slate-400">{formatAdminDateTime(order.created_at)}</p></TableCell><TableCell className="max-w-[210px] px-4 py-4"><a className="block truncate font-black text-slate-900 hover:underline" href={`/admin/orders/${encodeURIComponent(order.order_number)}`}>{order.customer_name}</a><p className="mt-1 font-mono text-[11px] text-slate-500">{order.customer_phone}</p><p className="mt-1 truncate text-[11px] text-slate-400">{[order.city, order.province, order.postal_code].filter(Boolean).join(", ") || "Alamat belum lengkap"}</p></TableCell><TableCell className="px-4 py-4"><OrderStatusBadge order={order} /></TableCell><TableCell className="px-4 py-4"><PaymentBadge status={order.payment_status} /><p className="mt-2 text-[10px] font-bold text-slate-500">{paymentMethodLabels[order.payment_method] || order.payment_method}</p></TableCell><TableCell className="px-4 py-4 text-right"><p className="ml-auto max-w-[180px] truncate text-xs font-semibold text-slate-900">{order.product_name}</p><p className="ml-auto mt-0.5 max-w-[180px] truncate text-[11px] text-slate-500">{order.variant_name}</p><p className="mt-1 text-sm font-black text-slate-950">{formatMyr(order.total_amount)}</p><p className="mt-1 text-[10px] text-slate-500">Ongkir {formatMyr(order.shipping_cost)}</p></TableCell><TableCell className="px-4 py-4">{renderCrmActions(order)}</TableCell><TableCell className="px-4 py-4 text-right"><OrderMenu order={order} disabled={mutating} queuePending={queuePendingIds.includes(order.id)} canDelete={mayDeleteOrders} onQueue={(queued) => void setShippingQueue([order.id], queued)} onStatus={(status) => void updateStatuses([order.id], status)} onDelete={() => void deleteOrders([order.id])} /></TableCell></TableRow>)}</TableBody>
+          <TableHeader><TableRow className="bg-muted text-[11px] font-black uppercase tracking-wider text-muted-foreground"><TableHead className="w-12 px-4"><Checkbox checked={allVisibleSelected ? true : selectedIds.some((id) => orders.some((order) => order.id === id)) ? "indeterminate" : false} onCheckedChange={(checked) => setSelectedIds((current) => checked ? [...new Set([...current, ...orders.map((order) => order.id)])] : current.filter((id) => !orders.some((order) => order.id === id)))} aria-label="Pilih semua pesanan di halaman ini" /></TableHead><TableHead className="w-44 border-r border-border px-5">Nomor pesanan</TableHead><TableHead className="w-52 px-4">Pemesan</TableHead><TableHead className="w-44 px-4">Status</TableHead><TableHead className="w-48 px-4">Pembayaran</TableHead><TableHead className="w-48 px-4 text-right">Produk & total</TableHead><TableHead className="w-56 px-4">Tindak lanjut WhatsApp</TableHead><TableHead className="w-24 px-4 text-right">Aksi</TableHead></TableRow></TableHeader>
+          <TableBody>{orders.map((order) => <TableRow key={order.id} className="align-top hover:bg-muted"><TableCell className="px-4 py-4"><Checkbox checked={selectedIds.includes(order.id)} onCheckedChange={(checked) => setSelectedIds((current) => checked ? [...new Set([...current, order.id])] : current.filter((id) => id !== order.id))} aria-label={`Pilih pesanan ${order.order_number}`} /></TableCell><TableCell className="border-r border-border px-5 py-4"><a className="whitespace-nowrap font-black text-foreground hover:text-blue-600 hover:underline" href={`/admin/orders/${encodeURIComponent(order.order_number)}`}>{order.order_number}</a><p className="mt-1 text-[11px] text-slate-400">{formatAdminDateTime(order.created_at)}</p></TableCell><TableCell className="max-w-[210px] px-4 py-4"><a className="block truncate font-black text-foreground hover:underline" href={`/admin/orders/${encodeURIComponent(order.order_number)}`}>{order.customer_name}</a><p className="mt-1 font-mono text-[11px] text-muted-foreground">{order.customer_phone}</p><p className="mt-1 truncate text-[11px] text-slate-400">{[order.city, order.province, order.postal_code].filter(Boolean).join(", ") || "Alamat belum lengkap"}</p></TableCell><TableCell className="px-4 py-4"><OrderStatusBadge order={order} /></TableCell><TableCell className="px-4 py-4"><PaymentBadge status={order.payment_status} /><p className="mt-2 text-[10px] font-bold text-muted-foreground">{paymentMethodLabels[order.payment_method] || order.payment_method}</p></TableCell><TableCell className="px-4 py-4 text-right"><p className="ml-auto max-w-[180px] truncate text-xs font-semibold text-foreground">{order.product_name}</p><p className="ml-auto mt-0.5 max-w-[180px] truncate text-[11px] text-muted-foreground">{order.variant_name}</p><p className="mt-1 text-sm font-black text-foreground">{formatMyr(order.total_amount)}</p><p className="mt-1 text-[10px] text-muted-foreground">Ongkir {formatMyr(order.shipping_cost)}</p></TableCell><TableCell className="px-4 py-4">{renderCrmActions(order)}</TableCell><TableCell className="px-4 py-4 text-right"><OrderMenu order={order} disabled={mutating} queuePending={queuePendingIds.includes(order.id)} canDelete={mayDeleteOrders} onQueue={(queued) => void setShippingQueue([order.id], queued)} onStatus={(status) => void updateStatuses([order.id], status)} onDelete={() => void deleteOrders([order.id])} /></TableCell></TableRow>)}</TableBody>
         </Table>
       </div>
 
-      {!orders.length ? <div className="border-t border-slate-200 p-10 text-center"><p className="text-sm font-black text-slate-950">Pesanan tidak ditemukan</p><p className="mt-1 text-xs text-slate-500">Ubah pencarian atau atur ulang filter.</p></div> : null}
-      {pagination.totalPages > 1 ? <div className="border-t border-slate-200 px-4 py-3"><Pagination><PaginationContent className="w-full justify-between"><PaginationItem><PaginationPrevious href="#" onClick={(event) => { event.preventDefault(); if (page > 1) setPage(page - 1); }} className={page <= 1 ? "pointer-events-none opacity-50" : ""} /></PaginationItem><PaginationItem><PaginationLink href="#" isActive onClick={(event) => event.preventDefault()}>Halaman {page} dari {pagination.totalPages}</PaginationLink></PaginationItem><PaginationItem><PaginationNext href="#" onClick={(event) => { event.preventDefault(); if (page < pagination.totalPages) setPage(page + 1); }} className={page >= pagination.totalPages ? "pointer-events-none opacity-50" : ""} /></PaginationItem></PaginationContent></Pagination></div> : null}
+      {!orders.length ? <div className="border-t border-border p-10 text-center"><p className="text-sm font-black text-foreground">Pesanan tidak ditemukan</p><p className="mt-1 text-xs text-muted-foreground">Ubah pencarian atau atur ulang filter.</p></div> : null}
+      {pagination.totalPages > 1 ? <div className="border-t border-border px-4 py-3"><Pagination><PaginationContent className="w-full justify-between"><PaginationItem><PaginationPrevious href="#" onClick={(event) => { event.preventDefault(); if (page > 1) setPage(page - 1); }} className={page <= 1 ? "pointer-events-none opacity-50" : ""} /></PaginationItem><PaginationItem><PaginationLink href="#" isActive onClick={(event) => event.preventDefault()}>Halaman {page} dari {pagination.totalPages}</PaginationLink></PaginationItem><PaginationItem><PaginationNext href="#" onClick={(event) => { event.preventDefault(); if (page < pagination.totalPages) setPage(page + 1); }} className={page >= pagination.totalPages ? "pointer-events-none opacity-50" : ""} /></PaginationItem></PaginationContent></Pagination></div> : null}
     </section>
   </div>;
 }

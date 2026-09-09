@@ -181,8 +181,8 @@ function DokuPaymentOperations({
 
   return (
     <Card className="gap-0 rounded-2xl py-0 shadow-xs" aria-busy={busy}>
-      <CardHeader className="border-b bg-slate-50/50 p-4 sm:px-6">
-        <CardTitle as="h2" className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-slate-500"><CreditCard className="size-4" />Operasional pembayaran DOKU</CardTitle>
+      <CardHeader className="border-b bg-muted/50 p-4 sm:px-6">
+        <CardTitle as="h2" className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-muted-foreground"><CreditCard className="size-4" />Operasional pembayaran DOKU</CardTitle>
         <CardDescription>Riwayat terverifikasi dan tindakan pemeriksaan yang tidak menampilkan kredensial atau payload provider.</CardDescription>
         <CardAction className="flex gap-2">
           <Badge variant="outline">{operations.environment === "production" ? "Production" : operations.environment === "sandbox" ? "Sandbox" : "Belum tersedia"}</Badge>
@@ -207,11 +207,11 @@ function DokuPaymentOperations({
               />
               <Info label="Klasifikasi kendala" value={latest.error_class ? dokuErrorLabels[latest.error_class] || "Respons DOKU" : "Tidak ada"} />
             </div>
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <div className="rounded-xl border border-border bg-muted p-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                   <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">ID korelasi</p>
-                  <p className="mt-1 break-all font-mono text-sm font-bold text-slate-900">{latest.correlation_id}</p>
+                  <p className="mt-1 break-all font-mono text-sm font-bold text-foreground">{latest.correlation_id}</p>
                 </div>
                 <Button variant="outline" size="sm" className="min-h-11" onClick={() => void copy("doku-attempt", latest.correlation_id, "ID korelasi")}>
                   {copied === "doku-attempt" ? <Check /> : <Clipboard />}{copied === "doku-attempt" ? "Tersalin" : "Salin ID korelasi"}
@@ -242,27 +242,27 @@ function DokuPaymentOperations({
               )}
             </div>
             <details className="border-t border-slate-100 pt-4">
-              <summary className="min-h-11 cursor-pointer py-3 text-sm font-black text-slate-900">Riwayat percobaan & peristiwa ({operations.attempts.length})</summary>
+              <summary className="min-h-11 cursor-pointer py-3 text-sm font-black text-foreground">Riwayat percobaan & peristiwa ({operations.attempts.length})</summary>
               <div className="space-y-5 pt-2">
                 {operations.attempts.map((attempt, index) => (
-                  <section key={attempt.correlation_id} aria-labelledby={`attempt-${index}`} className="rounded-xl border border-slate-200 p-4">
-                    <h3 id={`attempt-${index}`} className="break-all font-mono text-sm font-black text-slate-950">{attempt.correlation_id}</h3>
-                    <p className="mt-1 text-xs font-semibold text-slate-500">{dokuStatusLabels[attempt.local_status] || attempt.local_status} · dibuat {formatAdminDateTime(attempt.created_at)} · {attempt.reconcile_attempts} pemeriksaan</p>
-                    <ol className="mt-4 space-y-3 border-l border-slate-200 pl-4">
+                  <section key={attempt.correlation_id} aria-labelledby={`attempt-${index}`} className="rounded-xl border border-border p-4">
+                    <h3 id={`attempt-${index}`} className="break-all font-mono text-sm font-black text-foreground">{attempt.correlation_id}</h3>
+                    <p className="mt-1 text-xs font-semibold text-muted-foreground">{dokuStatusLabels[attempt.local_status] || attempt.local_status} · dibuat {formatAdminDateTime(attempt.created_at)} · {attempt.reconcile_attempts} pemeriksaan</p>
+                    <ol className="mt-4 space-y-3 border-l border-border pl-4">
                       {attempt.events.map((event) => (
                         <li key={event.id} className="text-sm">
-                          <p className="font-bold text-slate-900">{dokuSourceLabels[event.source]} · {dokuStatusLabels[event.resulting_status] || event.resulting_status}</p>
-                          <p className="mt-0.5 text-xs text-slate-500">{formatAdminDateTime(event.received_at)}{event.provider_status ? ` · ${event.provider_status}` : ""}</p>
+                          <p className="font-bold text-foreground">{dokuSourceLabels[event.source]} · {dokuStatusLabels[event.resulting_status] || event.resulting_status}</p>
+                          <p className="mt-0.5 text-xs text-muted-foreground">{formatAdminDateTime(event.received_at)}{event.provider_status ? ` · ${event.provider_status}` : ""}</p>
                         </li>
                       ))}
-                      {attempt.events.length === 0 && <li className="text-sm text-slate-500">Belum ada peristiwa tercatat.</li>}
+                      {attempt.events.length === 0 && <li className="text-sm text-muted-foreground">Belum ada peristiwa tercatat.</li>}
                     </ol>
                   </section>
                 ))}
               </div>
             </details>
           </>
-        ) : <p className="text-sm font-semibold text-slate-500">Belum ada percobaan pembayaran DOKU.</p>}
+        ) : <p className="text-sm font-semibold text-muted-foreground">Belum ada percobaan pembayaran DOKU.</p>}
       </CardContent>
     </Card>
   );
@@ -306,16 +306,16 @@ function StatusBadge({ status, kind }: { status: string; kind: "payment" | "ship
 function LoadingState() {
   return (
     <div className="mx-auto max-w-7xl space-y-6" aria-busy="true" aria-label="Memuat detail order">
-      <div className="h-44 animate-pulse rounded-2xl bg-slate-100" />
+      <div className="h-44 animate-pulse rounded-2xl bg-muted" />
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <div className="h-64 animate-pulse rounded-2xl bg-slate-100" />
-          <div className="h-48 animate-pulse rounded-2xl bg-slate-100" />
-          <div className="h-72 animate-pulse rounded-2xl bg-slate-100" />
+          <div className="h-64 animate-pulse rounded-2xl bg-muted" />
+          <div className="h-48 animate-pulse rounded-2xl bg-muted" />
+          <div className="h-72 animate-pulse rounded-2xl bg-muted" />
         </div>
         <div className="space-y-6">
-          <div className="h-72 animate-pulse rounded-2xl bg-slate-100" />
-          <div className="h-80 animate-pulse rounded-2xl bg-slate-100" />
+          <div className="h-72 animate-pulse rounded-2xl bg-muted" />
+          <div className="h-80 animate-pulse rounded-2xl bg-muted" />
         </div>
       </div>
     </div>
@@ -565,7 +565,7 @@ export function OrderDetail({
       <Card className="gap-0 rounded-2xl py-0 shadow-xs">
         <CardHeader className="border-b border-slate-100 p-4 sm:px-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <a href="/admin/orders" className="inline-flex min-h-10 items-center gap-1.5 text-xs font-extrabold text-slate-600 transition-colors hover:text-slate-950">
+            <a href="/admin/orders" className="inline-flex min-h-10 items-center gap-1.5 text-xs font-extrabold text-slate-600 transition-colors hover:text-foreground">
               <ArrowLeft className="size-4" />Kembali ke daftar order
             </a>
             <div className="flex flex-wrap items-center justify-end gap-2">
@@ -608,12 +608,12 @@ export function OrderDetail({
                 {stockReleased && <Badge variant="destructive" className="h-auto px-2.5 py-1 text-[10px] font-black uppercase tracking-wider">Stok dikembalikan</Badge>}
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-2">
-                <h1 className="font-mono text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">{order.order_number}</h1>
-                <button type="button" onClick={() => void copy("invoice", order.order_number, "Nomor invoice")} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 text-xs font-bold text-slate-600 hover:bg-slate-200 hover:text-slate-950" title="Salin nomor invoice">
+                <h1 className="font-mono text-2xl font-black tracking-tight text-foreground sm:text-3xl">{order.order_number}</h1>
+                <button type="button" onClick={() => void copy("invoice", order.order_number, "Nomor invoice")} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-muted px-2.5 text-xs font-bold text-slate-600 hover:bg-slate-200 hover:text-foreground" title="Salin nomor invoice">
                   {copied === "invoice" ? <Check className="size-3.5 text-emerald-600" /> : <Clipboard className="size-3.5" />}{copied === "invoice" ? "Tersalin" : "Salin"}
                 </button>
               </div>
-              <p className="mt-1 text-xs text-slate-500">Dibuat {formatAdminDateTime(order.created_at)} · ID internal <span className="font-mono font-bold">{order.id}</span></p>
+              <p className="mt-1 text-xs text-muted-foreground">Dibuat {formatAdminDateTime(order.created_at)} · ID internal <span className="font-mono font-bold">{order.id}</span></p>
             </div>
             <a href={buildWaUrl(order.customer_phone, directMessage)} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 text-sm font-black text-white transition-colors hover:bg-emerald-800 lg:w-auto">
               <MessageCircle className="size-4" />Chat WhatsApp
@@ -625,8 +625,8 @@ export function OrderDetail({
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <main className="space-y-6 lg:col-span-2">
           <Card className="gap-0 rounded-2xl py-0 shadow-xs">
-            <CardHeader className="border-b bg-slate-50/50 p-4 sm:px-6">
-              <CardTitle as="h2" className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-slate-500"><MapPin className="size-4" />Pelanggan & alamat pengiriman</CardTitle>
+            <CardHeader className="border-b bg-muted/50 p-4 sm:px-6">
+              <CardTitle as="h2" className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-muted-foreground"><MapPin className="size-4" />Pelanggan & alamat pengiriman</CardTitle>
               <CardAction><Button variant="outline" size="sm" onClick={() => void copy("address", fullAddress, "Alamat pelanggan")} disabled={!fullAddress}>{copied === "address" ? <Check /> : <Clipboard />}{copied === "address" ? "Tersalin" : "Salin alamat"}</Button></CardAction>
             </CardHeader>
             <CardContent className="space-y-5 p-5 sm:p-6">
@@ -637,21 +637,21 @@ export function OrderDetail({
               <div className="border-t border-slate-100 pt-4">
                 <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Alamat jalan</p>
                 <p className="mt-1 text-sm font-semibold leading-relaxed text-slate-800">{order.address || "Alamat jalan belum diisi"}</p>
-                <p className="mt-1 text-xs font-medium text-slate-500">{[order.city, order.province, order.postal_code].filter(Boolean).join(", ") || "Tujuan belum tersedia"}</p>
+                <p className="mt-1 text-xs font-medium text-muted-foreground">{[order.city, order.province, order.postal_code].filter(Boolean).join(", ") || "Tujuan belum tersedia"}</p>
               </div>
             </CardContent>
           </Card>
 
           <Card className="gap-0 rounded-2xl py-0 shadow-xs">
-            <CardHeader className="border-b bg-slate-50/50 p-4 sm:px-6">
-              <CardTitle as="h2" className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-slate-500"><Package className="size-4" />Rincian produk dipesan</CardTitle>
+            <CardHeader className="border-b bg-muted/50 p-4 sm:px-6">
+              <CardTitle as="h2" className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-muted-foreground"><Package className="size-4" />Rincian produk dipesan</CardTitle>
               <CardAction><Badge variant="secondary">{order.items.length} item</Badge></CardAction>
             </CardHeader>
             <CardContent className="divide-y divide-slate-100 p-0">
-              {order.items.length === 0 ? <p className="p-6 text-center text-sm font-semibold text-slate-500">Rincian item belum tersedia.</p> : order.items.map((item) => (
+              {order.items.length === 0 ? <p className="p-6 text-center text-sm font-semibold text-muted-foreground">Rincian item belum tersedia.</p> : order.items.map((item) => (
                 <div key={item.id} className="flex items-start justify-between gap-4 p-4 sm:p-5">
-                  <div className="min-w-0"><h3 className="font-black text-slate-950">{item.product_title || "Produk"}</h3><p className="mt-1 text-xs font-medium text-slate-500">{item.variant_title || "Standard"}{item.variant_sku ? ` · SKU ${item.variant_sku}` : ""}</p></div>
-                  <div className="shrink-0 text-right"><p className="font-black tabular-nums text-slate-950">{formatMyr(item.unit_price * item.quantity)}</p><p className="mt-1 text-[11px] font-bold text-slate-500">{item.quantity} × {formatMyr(item.unit_price)}</p></div>
+                  <div className="min-w-0"><h3 className="font-black text-foreground">{item.product_title || "Produk"}</h3><p className="mt-1 text-xs font-medium text-muted-foreground">{item.variant_title || "Standard"}{item.variant_sku ? ` · SKU ${item.variant_sku}` : ""}</p></div>
+                  <div className="shrink-0 text-right"><p className="font-black tabular-nums text-foreground">{formatMyr(item.unit_price * item.quantity)}</p><p className="mt-1 text-[11px] font-bold text-muted-foreground">{item.quantity} × {formatMyr(item.unit_price)}</p></div>
                 </div>
               ))}
             </CardContent>
@@ -662,8 +662,8 @@ export function OrderDetail({
           )}
 
           <Card className="gap-0 rounded-2xl py-0 shadow-xs">
-            <CardHeader className="border-b bg-slate-50/50 p-4 sm:px-6">
-              <CardTitle as="h2" className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-slate-500"><Truck className="size-4" />Pengiriman</CardTitle>
+            <CardHeader className="border-b bg-muted/50 p-4 sm:px-6">
+              <CardTitle as="h2" className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-muted-foreground"><Truck className="size-4" />Pengiriman</CardTitle>
               <CardDescription>Status dicatat manual. Informasi resi dikirim langsung melalui WhatsApp dan tidak disimpan di sistem.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-5 p-5 sm:p-6">
@@ -674,13 +674,13 @@ export function OrderDetail({
                   <Field label="Biaya pengiriman (RM)"><Input value={fulfilment.shipping_cost_myr} onChange={(event) => setFulfilment((current) => ({ ...current, shipping_cost_myr: event.target.value }))} inputMode="decimal" disabled={savingFulfilment} /></Field>
                 ) : (
                   <div>
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Biaya pengiriman</p>
-                    <p className="mt-1 font-black text-slate-950">{formatMyr(order.shipping_cost)}</p>
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Biaya pengiriman</p>
+                    <p className="mt-1 font-black text-foreground">{formatMyr(order.shipping_cost)}</p>
                     <p className="mt-1 text-xs leading-relaxed text-slate-600">Dihitung ulang otomatis ketika alamat diubah. Nilai manual hanya dapat diatur oleh owner atau admin.</p>
                   </div>
                 )}
               </div>
-              <div className="grid grid-cols-2 gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs">
+              <div className="grid grid-cols-2 gap-3 rounded-xl border border-border bg-muted p-4 text-xs">
                 <Info label="Zona pengiriman" value={order.shipping_zone || "Belum ditentukan"} />
                 <Info label="Biaya tersimpan" value={formatMyr(order.shipping_cost)} />
               </div>
@@ -695,16 +695,16 @@ export function OrderDetail({
 
         <aside className="space-y-6">
           <Card className="gap-0 rounded-2xl py-0 shadow-xs">
-            <CardHeader className="border-b bg-slate-50/50 p-4 sm:px-6">
-              <CardTitle as="h2" className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-slate-500"><CreditCard className="size-4" />Ringkasan pembayaran</CardTitle>
+            <CardHeader className="border-b bg-muted/50 p-4 sm:px-6">
+              <CardTitle as="h2" className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-muted-foreground"><CreditCard className="size-4" />Ringkasan pembayaran</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 p-5 sm:p-6">
               {paymentError && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-bold text-rose-800">{paymentError}</div>}
-              <div className="flex items-center justify-between gap-3 text-sm"><span className="text-slate-500">Metode</span><strong>{order.payment_method === "cod" ? "COD" : order.payment_method === "doku" ? "DOKU" : "Transfer bank manual"}</strong></div>
+              <div className="flex items-center justify-between gap-3 text-sm"><span className="text-muted-foreground">Metode</span><strong>{order.payment_method === "cod" ? "COD" : order.payment_method === "doku" ? "DOKU" : "Transfer bank manual"}</strong></div>
               {order.payment_method === "doku" ? (
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <div className="rounded-xl border border-border bg-muted p-4">
                   <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Status pembayaran</p>
-                  <p className="mt-1 font-black text-slate-950">{paymentLabels[order.payment_status] || order.payment_status}</p>
+                  <p className="mt-1 font-black text-foreground">{paymentLabels[order.payment_status] || order.payment_status}</p>
                   <p className="mt-2 text-xs leading-relaxed text-slate-600">Status DOKU hanya berubah dari notifikasi atau pemeriksaan provider yang terverifikasi.</p>
                 </div>
               ) : (
@@ -712,17 +712,17 @@ export function OrderDetail({
                   <Field label="Status pembayaran"><select className="admin-input-flat" value={paymentDraft} onChange={(event) => setPaymentDraft(event.target.value)} disabled={savingPayment}>{paymentStatuses.map((status) => <option key={status} value={status} disabled={stockReleased && !stockReleasingPaymentStatuses.has(status)}>{paymentLabels[status]}</option>)}</select></Field>
                 ) : (
                   <div>
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Status pembayaran</p>
-                    <p className="mt-1 font-black text-slate-950">{paymentLabels[order.payment_status] || order.payment_status}</p>
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Status pembayaran</p>
+                    <p className="mt-1 font-black text-foreground">{paymentLabels[order.payment_status] || order.payment_status}</p>
                     <p className="mt-2 text-xs leading-relaxed text-slate-600">Menandai pesanan lunas adalah keputusan owner atau admin.</p>
                   </div>
                 )
               )}
-              {order.payment_method === "manual_transfer" && <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-600"><p className="font-black text-slate-900">{order.seller_bank_name || "Bank"}</p><p className="mt-1 font-mono">{order.seller_account_number || "Nomor rekening belum tersimpan"}</p><p className="mt-1">a.n. {order.seller_account_holder || "-"}</p></div>}
+              {order.payment_method === "manual_transfer" && <div className="rounded-xl border border-border bg-muted p-4 text-xs text-slate-600"><p className="font-black text-foreground">{order.seller_bank_name || "Bank"}</p><p className="mt-1 font-mono">{order.seller_account_number || "Nomor rekening belum tersimpan"}</p><p className="mt-1">a.n. {order.seller_account_holder || "-"}</p></div>}
               <dl className="space-y-2 border-t border-slate-100 pt-4 text-sm">
-                <div className="flex justify-between gap-4"><dt className="text-slate-500">Subtotal produk</dt><dd className="font-bold tabular-nums">{formatMyr(productSubtotal)}</dd></div>
-                <div className="flex justify-between gap-4"><dt className="text-slate-500">Biaya pengiriman</dt><dd className="font-bold tabular-nums">{formatMyr(order.shipping_cost)}</dd></div>
-                <div className="flex items-end justify-between gap-4 border-t-2 border-slate-900 pt-3"><dt className="font-black text-slate-950">Total tagihan</dt><dd className="text-xl font-black tabular-nums text-emerald-700">{formatMyr(order.total_amount)}</dd></div>
+                <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Subtotal produk</dt><dd className="font-bold tabular-nums">{formatMyr(productSubtotal)}</dd></div>
+                <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Biaya pengiriman</dt><dd className="font-bold tabular-nums">{formatMyr(order.shipping_cost)}</dd></div>
+                <div className="flex items-end justify-between gap-4 border-t-2 border-slate-900 pt-3"><dt className="font-black text-foreground">Total tagihan</dt><dd className="text-xl font-black tabular-nums text-emerald-700">{formatMyr(order.total_amount)}</dd></div>
               </dl>
               {order.payment_method !== "doku" && mayWriteOrderMoney && (
                 <Button className="w-full" size="lg" onClick={() => void savePayment()} disabled={savingPayment || paymentDraft === order.payment_status}>
@@ -733,16 +733,16 @@ export function OrderDetail({
           </Card>
 
           <Card className="gap-0 rounded-2xl py-0 shadow-xs">
-            <CardHeader className="border-b bg-slate-50/50 p-4 sm:px-6">
-              <CardTitle as="h2" className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-slate-500"><MessageSquare className="size-4" />CRM Follow-up WhatsApp</CardTitle>
+            <CardHeader className="border-b bg-muted/50 p-4 sm:px-6">
+              <CardTitle as="h2" className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-muted-foreground"><MessageSquare className="size-4" />CRM Follow-up WhatsApp</CardTitle>
               <CardDescription>Sepuluh template Malaysia dari pengaturan CRM.</CardDescription>
-              <CardAction><a href="/admin/settings/crm" className="inline-flex size-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50" aria-label="Buka pengaturan CRM"><Settings className="size-4" /></a></CardAction>
+              <CardAction><a href="/admin/settings/crm" className="inline-flex size-9 items-center justify-center rounded-lg border border-border text-slate-600 hover:bg-muted" aria-label="Buka pengaturan CRM"><Settings className="size-4" /></a></CardAction>
             </CardHeader>
             <CardContent className="p-4 sm:p-5">
               <CrmActionGroup crmUrls={crmUrls} clickedSteps={Object.fromEntries(CRM_STEPS.map((step) => [step.key, Boolean(clickedSteps[`${order.id}_${step.key}`])]))} onStepClick={markClicked} collapsible defaultExpanded />
               <div className="mt-4 border-t border-slate-100 pt-4">
                 <p className="mb-2 text-[10px] font-black uppercase tracking-wider text-slate-400">Salin template</p>
-                <div className="grid grid-cols-2 gap-2">{CRM_STEPS.map((step) => <button key={step.key} type="button" title={`Salin ${step.title}`} onClick={() => void copy(`crm-${step.key}`, crmMessages[step.key] || "", `Template ${step.label}`)} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-2 text-xs font-bold text-slate-700 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800 sm:min-h-9">{copied === `crm-${step.key}` ? <Check className="size-3.5 text-emerald-600" /> : <Clipboard className="size-3.5" />}{copied === `crm-${step.key}` ? "Tersalin" : step.label}</button>)}</div>
+                <div className="grid grid-cols-2 gap-2">{CRM_STEPS.map((step) => <button key={step.key} type="button" title={`Salin ${step.title}`} onClick={() => void copy(`crm-${step.key}`, crmMessages[step.key] || "", `Template ${step.label}`)} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-border px-2 text-xs font-bold text-foreground-subtle hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800 sm:min-h-9">{copied === `crm-${step.key}` ? <Check className="size-3.5 text-emerald-600" /> : <Clipboard className="size-3.5" />}{copied === `crm-${step.key}` ? "Tersalin" : step.label}</button>)}</div>
               </div>
             </CardContent>
           </Card>
@@ -757,5 +757,5 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 function Info({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
-  return <div className="min-w-0"><p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{label}</p><p className={`mt-1 break-words font-black text-slate-950 ${mono ? "font-mono text-sm" : ""}`}>{value}</p></div>;
+  return <div className="min-w-0"><p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{label}</p><p className={`mt-1 break-words font-black text-foreground ${mono ? "font-mono text-sm" : ""}`}>{value}</p></div>;
 }

@@ -119,7 +119,7 @@ function CalendarMonth({
                 "mx-auto grid h-8 w-8 place-items-center rounded-lg text-xs tabular-nums transition",
                 disabled
                   ? "cursor-not-allowed text-slate-300"
-                  : "text-slate-700 hover:bg-slate-100",
+                  : "text-foreground-subtle hover:bg-muted",
                 inRange && !isEndpoint ? "bg-blue-50 text-blue-700" : "",
                 isEndpoint ? "bg-blue-600 font-bold text-white hover:bg-blue-600" : "",
                 isToday && !isEndpoint ? "font-bold text-blue-700 ring-1 ring-inset ring-blue-200" : "",
@@ -235,7 +235,7 @@ export function AdminDateRangeFilter({
         <button
           type="button"
           disabled={disabled}
-          className={`flex h-11 min-w-0 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-left text-sm font-medium text-slate-900 shadow-none transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
+          className={`flex h-11 min-w-0 items-center gap-2 rounded-xl border border-border bg-card px-3 text-left text-sm font-medium text-foreground shadow-none transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
         >
           <CalendarDays className="size-4 shrink-0 text-slate-400" aria-hidden="true" />
           <span className="min-w-0 flex-1 truncate">{adminDateSelectionLabel(value)}</span>
@@ -247,7 +247,7 @@ export function AdminDateRangeFilter({
         className="w-[min(44rem,calc(100vw-1.5rem))] p-0"
       >
         <div className="grid grid-cols-1 gap-0 sm:grid-cols-[11rem_1fr]">
-          <div className="max-h-56 overflow-y-auto border-b border-slate-200 p-1.5 sm:max-h-none sm:border-b-0 sm:border-r">
+          <div className="max-h-56 overflow-y-auto border-b border-border p-1.5 sm:max-h-none sm:border-b-0 sm:border-r">
             {presets.map((option) => {
               const active = value.filter === option.value;
               return (
@@ -255,8 +255,8 @@ export function AdminDateRangeFilter({
                   key={option.value}
                   type="button"
                   onClick={() => choosePreset(option.value)}
-                  className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-medium transition hover:bg-slate-100 ${
-                    active ? "bg-slate-100 font-bold text-slate-900" : "text-slate-700"
+                  className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-medium transition hover:bg-muted ${
+                    active ? "bg-muted font-bold text-foreground" : "text-foreground-subtle"
                   }`}
                 >
                   <Check
@@ -274,12 +274,12 @@ export function AdminDateRangeFilter({
               <button
                 type="button"
                 onClick={() => setViewMonth(shiftAdminMonth(viewMonth, -1))}
-                className="grid size-7 place-items-center rounded-lg text-slate-500 transition hover:bg-slate-100"
+                className="grid size-7 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted"
                 aria-label="Bulan sebelumnya"
               >
                 <ChevronLeft className="size-4" aria-hidden="true" />
               </button>
-              <div className="flex flex-1 items-center justify-around gap-2 text-xs font-bold text-slate-900">
+              <div className="flex flex-1 items-center justify-around gap-2 text-xs font-bold text-foreground">
                 <span>
                   {ADMIN_MONTH_NAMES[Number(viewMonth.slice(5)) - 1]} {viewMonth.slice(0, 4)}
                 </span>
@@ -291,7 +291,7 @@ export function AdminDateRangeFilter({
                 type="button"
                 onClick={() => canGoNext && setViewMonth(shiftAdminMonth(viewMonth, 1))}
                 disabled={!canGoNext}
-                className="grid size-7 place-items-center rounded-lg text-slate-500 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
+                className="grid size-7 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-30"
                 aria-label="Bulan berikutnya"
               >
                 <ChevronRight className="size-4" aria-hidden="true" />
@@ -308,11 +308,11 @@ export function AdminDateRangeFilter({
 
             <div className="mt-3 flex flex-col gap-2 border-t border-slate-100 pt-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-2 text-xs">
-                <span className="min-w-0 rounded-lg border border-slate-200 px-2.5 py-1.5 font-medium text-slate-900">
+                <span className="min-w-0 rounded-lg border border-border px-2.5 py-1.5 font-medium text-foreground">
                   {formatBoxDate(draftStart)}
                 </span>
                 <span className="text-slate-400">–</span>
-                <span className="min-w-0 rounded-lg border border-slate-200 px-2.5 py-1.5 font-medium text-slate-900">
+                <span className="min-w-0 rounded-lg border border-border px-2.5 py-1.5 font-medium text-foreground">
                   {formatBoxDate(draftEnd)}
                 </span>
               </div>
@@ -336,7 +336,7 @@ export function AdminDateRangeFilter({
               </div>
             </div>
             <p
-              className={`mt-2 text-[11px] ${draft.ok || !draftStart || !draftEnd ? "text-slate-500" : "text-red-600"}`}
+              className={`mt-2 text-[11px] ${draft.ok || !draftStart || !draftEnd ? "text-muted-foreground" : "text-red-600"}`}
               role={draft.ok ? undefined : "alert"}
             >
               {!draftStart || !draftEnd

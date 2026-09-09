@@ -376,12 +376,12 @@ export function AccessManager() {
     <div className="space-y-6">
       {/* Overview Stats Bar */}
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
-          <div className="flex items-center gap-2 text-slate-500">
+        <div className="rounded-2xl border border-border bg-card p-4 shadow-xs">
+          <div className="flex items-center gap-2 text-muted-foreground">
             <Users className="size-4 text-emerald-600" />
             <span className="text-xs font-bold">Total Akun</span>
           </div>
-          <p className="mt-2 text-2xl font-black text-slate-950">{stats.total}</p>
+          <p className="mt-2 text-2xl font-black text-foreground">{stats.total}</p>
         </div>
         <div className="rounded-2xl border border-emerald-200/80 bg-emerald-50/50 p-4 shadow-xs">
           <div className="flex items-center gap-2 text-emerald-800">
@@ -416,14 +416,14 @@ export function AccessManager() {
       {/* Main Grid: User List & Add Form */}
       <div className="grid grid-cols-1 min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_400px]">
         {/* Left Column: User Directory */}
-        <Card className="min-w-0 rounded-2xl border-slate-200 shadow-xs">
+        <Card className="min-w-0 rounded-2xl border-border shadow-xs">
           <CardHeader className="border-b border-slate-100 pb-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <CardTitle className="text-base font-black text-slate-950">
+                <CardTitle className="text-base font-black text-foreground">
                   Daftar Pengguna Sistem
                 </CardTitle>
-                <p className="mt-0.5 text-xs text-slate-500">
+                <p className="mt-0.5 text-xs text-muted-foreground">
                   Kelola izin staf. Pengguna hanya dapat mengakses halaman sesuai perannya.
                 </p>
               </div>
@@ -433,7 +433,7 @@ export function AccessManager() {
                 size="sm"
                 onClick={() => void load()}
                 disabled={loading}
-                className="h-8.5 rounded-xl border-slate-200 text-xs font-bold text-slate-700"
+                className="h-8.5 rounded-xl border-border text-xs font-bold text-foreground-subtle"
               >
                 <RefreshCw
                   className={`mr-1.5 size-3.5 ${loading ? "animate-spin" : ""}`}
@@ -450,13 +450,13 @@ export function AccessManager() {
                   placeholder="Cari username, nama, atau email…"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="h-9 rounded-xl border-slate-200 bg-slate-50/50 pl-9 text-xs"
+                  className="h-9 rounded-xl border-border bg-muted/50 pl-9 text-xs"
                 />
               </div>
               <select
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value)}
-                className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-300"
+                className="h-9 rounded-xl border border-border bg-card px-3 text-xs font-bold text-foreground-subtle focus:outline-none focus:ring-2 focus:ring-slate-300"
               >
                 <option value="all">Semua Role</option>
                 <option value="owner">Owner</option>
@@ -470,9 +470,9 @@ export function AccessManager() {
           <CardContent className="p-4">
             {loading ? (
               <div className="space-y-3 p-2">
-                <div className="h-16 rounded-xl bg-slate-100 animate-pulse" />
-                <div className="h-16 rounded-xl bg-slate-100 animate-pulse" />
-                <div className="h-16 rounded-xl bg-slate-100 animate-pulse" />
+                <div className="h-16 rounded-xl bg-muted animate-pulse" />
+                <div className="h-16 rounded-xl bg-muted animate-pulse" />
+                <div className="h-16 rounded-xl bg-muted animate-pulse" />
               </div>
             ) : filteredUsers.length === 0 ? (
               <div className="p-8 text-center">
@@ -482,7 +482,7 @@ export function AccessManager() {
                 </p>
               </div>
             ) : (
-              <div className="divide-y divide-slate-100 rounded-xl border border-slate-200/80 bg-white">
+              <div className="divide-y divide-slate-100 rounded-xl border border-border/80 bg-card">
                 {filteredUsers.map((user) => {
                   const style = ROLE_BADGE_STYLES[user.role];
                   const initial = (user.display_name || user.username)
@@ -493,7 +493,7 @@ export function AccessManager() {
                   return (
                     <article
                       key={user.id}
-                      className="flex flex-col gap-3 p-4 transition-colors hover:bg-slate-50/60 sm:flex-row sm:items-center sm:justify-between"
+                      className="flex flex-col gap-3 p-4 transition-colors hover:bg-muted/60 sm:flex-row sm:items-center sm:justify-between"
                     >
                       <div className="flex items-start gap-3 min-w-0">
                         {/* Avatar */}
@@ -503,7 +503,7 @@ export function AccessManager() {
 
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
-                            <p className="truncate font-extrabold text-slate-950">
+                            <p className="truncate font-extrabold text-foreground">
                               {user.display_name || user.username}
                             </p>
 
@@ -525,8 +525,8 @@ export function AccessManager() {
                             </span>
                           </div>
 
-                          <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-slate-500">
-                            <span className="font-mono font-bold text-slate-700">
+                          <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                            <span className="font-mono font-bold text-foreground-subtle">
                               @{user.username}
                             </span>
                             {user.email && (
@@ -552,9 +552,9 @@ export function AccessManager() {
                             size="sm"
                             title="Edit profil & role"
                             onClick={() => handleOpenEdit(user)}
-                            className="h-8 rounded-lg px-2.5 text-xs font-bold text-slate-700 hover:bg-slate-200/60"
+                            className="h-8 rounded-lg px-2.5 text-xs font-bold text-foreground-subtle hover:bg-slate-200/60"
                           >
-                            <Pencil className="mr-1 size-3.5 text-slate-500" />
+                            <Pencil className="mr-1 size-3.5 text-muted-foreground" />
                             Edit
                           </Button>
                           <Button
@@ -591,20 +591,20 @@ export function AccessManager() {
         </Card>
 
         {/* Right Column: Add User Form */}
-        <Card className="min-w-0 rounded-2xl border-slate-200 shadow-xs h-fit">
+        <Card className="min-w-0 rounded-2xl border-border shadow-xs h-fit">
           <CardHeader className="border-b border-slate-100 pb-4">
-            <CardTitle className="flex items-center gap-2 text-base font-black text-slate-950">
+            <CardTitle className="flex items-center gap-2 text-base font-black text-foreground">
               <UserPlus className="size-4 text-emerald-600" />
               Tambah Pengguna Baru
             </CardTitle>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-muted-foreground">
               Buat kredensial staf baru. Pengguna wajib mengganti password sementara saat login pertama.
             </p>
           </CardHeader>
           <CardContent className="p-4">
             <form onSubmit={create} className="space-y-4">
               <div>
-                <label className="text-xs font-extrabold text-slate-900">
+                <label className="text-xs font-extrabold text-foreground">
                   Nama Lengkap <span className="text-rose-500">*</span>
                 </label>
                 <Input
@@ -614,12 +614,12 @@ export function AccessManager() {
                   placeholder="Misal: Ahmad Fauzi"
                   value={form.display_name}
                   onChange={(e) => setForm({ ...form, display_name: e.target.value })}
-                  className="mt-1 h-9 rounded-xl border-slate-200 text-xs"
+                  className="mt-1 h-9 rounded-xl border-border text-xs"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-extrabold text-slate-900">
+                <label className="text-xs font-extrabold text-foreground">
                   Role & Peran Akses <span className="text-rose-500">*</span>
                 </label>
                 <select
@@ -627,19 +627,19 @@ export function AccessManager() {
                   onChange={(e) =>
                     setForm({ ...form, role: e.target.value as AssignableRole })
                   }
-                  className="mt-1 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-extrabold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                  className="mt-1 h-10 w-full rounded-xl border border-border bg-card px-3 text-xs font-extrabold text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
                 >
                   <option value="admin">Admin Ops (Akses Seluruh Operasional)</option>
                   <option value="advertiser">Operator Konten (Produk & Content)</option>
                   <option value="customer_service">Operator CS (Order, Pengiriman & WA)</option>
                 </select>
-                <p className="mt-1.5 rounded-lg bg-slate-50 p-2 text-[11px] leading-4 text-slate-600 border border-slate-100">
+                <p className="mt-1.5 rounded-lg bg-muted p-2 text-[11px] leading-4 text-slate-600 border border-slate-100">
                   {ROLE_DESCRIPTIONS[form.role]}
                 </p>
               </div>
 
               <div>
-                <label className="text-xs font-extrabold text-slate-900">
+                <label className="text-xs font-extrabold text-foreground">
                   Username Login <span className="text-rose-500">*</span>
                 </label>
                 <Input
@@ -652,7 +652,7 @@ export function AccessManager() {
                   onChange={(e) =>
                     setForm({ ...form, username: e.target.value.toLowerCase() })
                   }
-                  className="mt-1 h-9 font-mono rounded-xl border-slate-200 text-xs"
+                  className="mt-1 h-9 font-mono rounded-xl border-border text-xs"
                 />
                 <span className="text-[10px] text-slate-400">
                   3–64 karakter (huruf kecil, angka, titik, garis bawah, strip).
@@ -660,20 +660,20 @@ export function AccessManager() {
               </div>
 
               <div>
-                <label className="text-xs font-extrabold text-slate-900">Email Opsional</label>
+                <label className="text-xs font-extrabold text-foreground">Email Opsional</label>
                 <Input
                   type="email"
                   maxLength={160}
                   placeholder="ahmad@perusahaan.com"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  className="mt-1 h-9 rounded-xl border-slate-200 text-xs"
+                  className="mt-1 h-9 rounded-xl border-border text-xs"
                 />
               </div>
 
               <div>
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-extrabold text-slate-900">
+                  <label className="text-xs font-extrabold text-foreground">
                     Password Sementara <span className="text-rose-500">*</span>
                   </label>
                   <button
@@ -696,7 +696,7 @@ export function AccessManager() {
                     placeholder="Minimal 8 karakter"
                     value={form.password}
                     onChange={(e) => setForm({ ...form, password: e.target.value })}
-                    className="h-9 rounded-xl border-slate-200 pr-9 text-xs font-mono"
+                    className="h-9 rounded-xl border-border pr-9 text-xs font-mono"
                   />
                   <button
                     type="button"
@@ -727,39 +727,39 @@ export function AccessManager() {
       {/* Edit User Modal Dialog */}
       {editingUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-xs p-4">
-          <div className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl ring-1 ring-slate-950/10 animate-in fade-in zoom-in-95 duration-150">
-            <h3 className="text-base font-black text-slate-950">
+          <div className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl bg-card p-6 shadow-2xl ring-1 ring-slate-950/10 animate-in fade-in zoom-in-95 duration-150">
+            <h3 className="text-base font-black text-foreground">
               Edit Profil & Peran Pengguna
             </h3>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-muted-foreground">
               Perbarui nama, email, dan wewenang akses untuk @{editingUser.username}.
             </p>
 
             <form onSubmit={saveUserEdit} className="mt-4 space-y-4">
               <div>
-                <label className="text-xs font-bold text-slate-700">Nama Lengkap</label>
+                <label className="text-xs font-bold text-foreground-subtle">Nama Lengkap</label>
                 <Input
                   required
                   value={editForm.display_name}
                   onChange={(e) =>
                     setEditForm({ ...editForm, display_name: e.target.value })
                   }
-                  className="mt-1 h-9 rounded-xl border-slate-200 text-xs"
+                  className="mt-1 h-9 rounded-xl border-border text-xs"
                 />
               </div>
               <div>
-                <label className="text-xs font-bold text-slate-700">Email</label>
+                <label className="text-xs font-bold text-foreground-subtle">Email</label>
                 <Input
                   type="email"
                   value={editForm.email}
                   onChange={(e) =>
                     setEditForm({ ...editForm, email: e.target.value })
                   }
-                  className="mt-1 h-9 rounded-xl border-slate-200 text-xs"
+                  className="mt-1 h-9 rounded-xl border-border text-xs"
                 />
               </div>
               <div>
-                <label className="text-xs font-bold text-slate-700">Role</label>
+                <label className="text-xs font-bold text-foreground-subtle">Role</label>
                 <select
                   value={editForm.role}
                   onChange={(e) =>
@@ -768,7 +768,7 @@ export function AccessManager() {
                       role: e.target.value as AssignableRole,
                     })
                   }
-                  className="mt-1 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-900"
+                  className="mt-1 h-10 w-full rounded-xl border border-border bg-card px-3 text-xs font-bold text-foreground"
                 >
                   <option value="admin">Admin Ops</option>
                   <option value="advertiser">Operator Konten</option>
@@ -782,7 +782,7 @@ export function AccessManager() {
                   variant="outline"
                   size="sm"
                   onClick={() => setEditingUser(null)}
-                  className="rounded-xl border-slate-200 text-xs font-bold"
+                  className="rounded-xl border-border text-xs font-bold"
                 >
                   Batal
                 </Button>
@@ -803,21 +803,21 @@ export function AccessManager() {
       {/* Reset Password Modal Dialog */}
       {resetUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-xs p-4">
-          <div className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl ring-1 ring-slate-950/10 animate-in fade-in zoom-in-95 duration-150">
+          <div className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl bg-card p-6 shadow-2xl ring-1 ring-slate-950/10 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center gap-2 text-amber-700">
               <KeyRound className="size-5" />
-              <h3 className="text-base font-black text-slate-950">
+              <h3 className="text-base font-black text-foreground">
                 Reset Password Sementara
               </h3>
             </div>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-muted-foreground">
               Buat password sementara baru untuk <strong>@{resetUser.username}</strong>. Sesi login aktif pengguna ini akan otomatis dicabut.
             </p>
 
             <form onSubmit={savePasswordReset} className="mt-4 space-y-4">
               <div>
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-slate-700">
+                  <label className="text-xs font-bold text-foreground-subtle">
                     Password Sementara Baru
                   </label>
                   <button
@@ -833,7 +833,7 @@ export function AccessManager() {
                   minLength={8}
                   value={newPasswordValue}
                   onChange={(e) => setNewPasswordValue(e.target.value)}
-                  className="mt-1 h-9 rounded-xl border-slate-200 font-mono text-xs"
+                  className="mt-1 h-9 rounded-xl border-border font-mono text-xs"
                 />
               </div>
 
@@ -847,7 +847,7 @@ export function AccessManager() {
                   variant="outline"
                   size="sm"
                   onClick={() => setResetUser(null)}
-                  className="rounded-xl border-slate-200 text-xs font-bold"
+                  className="rounded-xl border-border text-xs font-bold"
                 >
                   Batal
                 </Button>
@@ -866,13 +866,13 @@ export function AccessManager() {
       )}
 
       {/* Permissions Matrix Reference Table */}
-      <Card className="min-w-0 rounded-2xl border-slate-200 shadow-xs">
+      <Card className="min-w-0 rounded-2xl border-border shadow-xs">
         <CardHeader className="border-b border-slate-100 pb-4">
-          <CardTitle className="flex items-center gap-2 text-base font-black text-slate-950">
+          <CardTitle className="flex items-center gap-2 text-base font-black text-foreground">
             <ShieldCheck className="size-5 text-blue-600" aria-hidden="true" />
             Matriks Hak Akses & Matrix Permission per Role
           </CardTitle>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-muted-foreground">
             Ringkasan batasan akses halaman & API operasional untuk Owner, Admin, dan Operator Spesialis.
           </p>
         </CardHeader>
@@ -887,10 +887,10 @@ export function AccessManager() {
             {PERMISSION_ROWS.map((row) => (
               <section
                 key={row.capability}
-                className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs"
+                className="rounded-2xl border border-border/80 bg-card p-4 shadow-2xs"
               >
-                <h3 className="font-extrabold text-slate-950">{row.capability}</h3>
-                <p className="mt-0.5 text-xs text-slate-500">{row.description}</p>
+                <h3 className="font-extrabold text-foreground">{row.capability}</h3>
+                <p className="mt-0.5 text-xs text-muted-foreground">{row.description}</p>
                 <div className="mt-3 grid grid-cols-1 gap-2 min-[420px]:grid-cols-2">
                   {PERMISSION_COLUMNS.map((column) => {
                     const level = row.access[column.role];
@@ -898,7 +898,7 @@ export function AccessManager() {
                     return (
                       <div
                         key={column.role}
-                        className="flex items-center justify-between gap-2 rounded-xl bg-slate-50 px-3 py-2 border border-slate-100"
+                        className="flex items-center justify-between gap-2 rounded-xl bg-muted px-3 py-2 border border-slate-100"
                       >
                         <span className="text-[10px] font-bold text-slate-600">
                           {column.label}
@@ -924,13 +924,13 @@ export function AccessManager() {
           </div>
 
           {/* Desktop Table View */}
-          <div className="hidden overflow-x-auto rounded-2xl border border-slate-200 md:block">
+          <div className="hidden overflow-x-auto rounded-2xl border border-border md:block">
             <table className="w-full min-w-[640px] text-left text-xs">
-              <thead className="bg-slate-50/80">
+              <thead className="bg-muted/80">
                 <tr>
                   <th
                     scope="col"
-                    className="px-4 py-3.5 text-[10px] font-black uppercase tracking-wide text-slate-500"
+                    className="px-4 py-3.5 text-[10px] font-black uppercase tracking-wide text-muted-foreground"
                   >
                     Area Operasional
                   </th>
@@ -940,19 +940,19 @@ export function AccessManager() {
                       scope="col"
                       className="px-4 py-3.5 text-center"
                     >
-                      <span className="text-[11px] font-black text-slate-900">
+                      <span className="text-[11px] font-black text-foreground">
                         {column.label}
                       </span>
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 bg-white">
+              <tbody className="divide-y divide-slate-100 bg-card">
                 {PERMISSION_ROWS.map((row) => (
-                  <tr key={row.capability} className="hover:bg-slate-50/50">
+                  <tr key={row.capability} className="hover:bg-muted/50">
                     <td className="px-4 py-3.5">
-                      <p className="font-extrabold text-slate-950">{row.capability}</p>
-                      <p className="mt-0.5 text-[11px] text-slate-500">
+                      <p className="font-extrabold text-foreground">{row.capability}</p>
+                      <p className="mt-0.5 text-[11px] text-muted-foreground">
                         {row.description}
                       </p>
                     </td>
@@ -965,7 +965,7 @@ export function AccessManager() {
                             className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-extrabold ${
                               allowed
                                 ? "bg-emerald-50 text-emerald-800 border border-emerald-200/80"
-                                : "bg-slate-100 text-slate-400"
+                                : "bg-muted text-slate-400"
                             }`}
                           >
                             {allowed ? (

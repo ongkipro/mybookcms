@@ -68,7 +68,7 @@ const SEVERITY_ICON: Record<Severity, typeof Info> = {
 
 /** Border and text only. Colour never carries the meaning on its own. */
 const SEVERITY_STYLE: Record<Severity, string> = {
-  info: "border-slate-200 text-slate-500",
+  info: "border-border text-muted-foreground",
   warning: "border-amber-300 text-amber-700",
   error: "border-rose-300 text-rose-700",
 };
@@ -144,14 +144,14 @@ export function SystemLogPanel() {
 
   return (
     <section className="space-y-4" aria-label="Log sistem">
-      <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <p className="text-sm font-bold text-slate-950">
+          <p className="text-sm font-bold text-foreground">
             {state === "ready"
               ? `${entries.length} peristiwa terekam`
               : "Memuat peristiwa sistem"}
           </p>
-          <p className="mt-0.5 text-xs leading-5 text-slate-500">
+          <p className="mt-0.5 text-xs leading-5 text-muted-foreground">
             {meta
               ? `Rentang ${meta.window_days} hari terakhir, maksimum ${meta.max_entries} baris.${
                   meta.truncated ? " Daftar dipotong pada batas tersebut." : ""
@@ -163,7 +163,7 @@ export function SystemLogPanel() {
           type="button"
           onClick={() => void load()}
           disabled={state === "loading"}
-          className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-xs font-bold text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 disabled:opacity-60"
+          className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-xs font-bold text-foreground-subtle transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 disabled:opacity-60"
         >
           <RefreshCw
             className={`size-4 ${state === "loading" ? "animate-spin" : ""}`}
@@ -181,7 +181,7 @@ export function SystemLogPanel() {
           className={`min-h-11 rounded-xl border px-3 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 ${
             source === "all"
               ? "border-blue-600 bg-blue-50 text-blue-700"
-              : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+              : "border-border bg-card text-slate-600 hover:bg-muted"
           }`}
         >
           Semua ({entries.length})
@@ -195,13 +195,13 @@ export function SystemLogPanel() {
             className={`min-h-11 rounded-xl border px-3 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 ${
               source === key
                 ? "border-blue-600 bg-blue-50 text-blue-700"
-                : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                : "border-border bg-card text-slate-600 hover:bg-muted"
             }`}
           >
             {SOURCE_LABEL[key]} ({counts[key]})
           </button>
         ))}
-        <label className="ml-auto inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-blue-600">
+        <label className="ml-auto inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-border bg-card px-3 text-xs font-bold text-slate-600 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-blue-600">
           <input
             type="checkbox"
             checked={onlyAttention}
@@ -223,7 +223,7 @@ export function SystemLogPanel() {
       {state === "loading" && (
         <div className="space-y-2" aria-hidden="true">
           {[0, 1, 2, 3].map((row) => (
-            <div key={row} className="h-16 animate-pulse rounded-xl bg-slate-100" />
+            <div key={row} className="h-16 animate-pulse rounded-xl bg-muted" />
           ))}
         </div>
       )}
@@ -237,7 +237,7 @@ export function SystemLogPanel() {
           <button
             type="button"
             onClick={() => void load()}
-            className="mt-3 inline-flex min-h-11 items-center rounded-xl border border-rose-300 bg-white px-4 text-xs font-bold text-rose-800 transition hover:bg-rose-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-600"
+            className="mt-3 inline-flex min-h-11 items-center rounded-xl border border-rose-300 bg-card px-4 text-xs font-bold text-rose-800 transition hover:bg-rose-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-600"
           >
             Coba lagi
           </button>
@@ -245,9 +245,9 @@ export function SystemLogPanel() {
       )}
 
       {state === "ready" && visible.length === 0 && (
-        <div className="rounded-xl border border-slate-200 bg-white p-8 text-center">
-          <p className="text-sm font-bold text-slate-950">Tidak ada peristiwa</p>
-          <p className="mx-auto mt-1 max-w-sm text-xs leading-5 text-slate-500">
+        <div className="rounded-xl border border-border bg-card p-8 text-center">
+          <p className="text-sm font-bold text-foreground">Tidak ada peristiwa</p>
+          <p className="mx-auto mt-1 max-w-sm text-xs leading-5 text-muted-foreground">
             {entries.length === 0
               ? "Belum ada peristiwa sistem dalam rentang waktu ini. Ini normal untuk instalasi yang baru dijalankan."
               : "Tidak ada peristiwa yang cocok dengan saringan aktif."}
@@ -263,7 +263,7 @@ export function SystemLogPanel() {
             return (
               <li
                 key={`${entry.source}-${entry.correlation}-${entry.occurred_at}-${index}`}
-                className={`rounded-xl border bg-white p-4 ${SEVERITY_STYLE[entry.severity]}`}
+                className={`rounded-xl border bg-card p-4 ${SEVERITY_STYLE[entry.severity]}`}
               >
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-4">
                   <div className="flex min-w-0 flex-1 items-start gap-3">
@@ -272,10 +272,10 @@ export function SystemLogPanel() {
                       aria-hidden="true"
                     />
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold leading-6 text-slate-950">
+                      <p className="text-sm font-semibold leading-6 text-foreground">
                         {entry.label}
                       </p>
-                      <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-medium text-slate-500">
+                      <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-medium text-muted-foreground">
                         <span>{SOURCE_LABEL[entry.source]}</span>
                         <span aria-hidden="true">·</span>
                         <time dateTime={entry.occurred_at}>{formatWhen(entry.occurred_at)}</time>

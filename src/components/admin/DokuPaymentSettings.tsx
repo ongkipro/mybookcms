@@ -69,10 +69,10 @@ export function CodAvailability() {
   }
 
   return (
-    <div className="my-4 border-b border-slate-200 pb-4">
+    <div className="my-4 border-b border-border pb-4">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <label htmlFor="cod-availability" className="text-sm font-semibold text-slate-950">Bayar di tempat (COD)</label>
+          <label htmlFor="cod-availability" className="text-sm font-semibold text-foreground">Bayar di tempat (COD)</label>
           <p id="cod-availability-description" className="mt-1 text-sm leading-6 text-slate-600">Perubahan langsung berlaku untuk checkout baru. Pesanan yang sudah masuk tidak berubah.</p>
         </div>
         <Switch ref={control} id="cod-availability" aria-describedby="cod-availability-description" checked={enabled ?? false} disabled={busy || enabled === null} onCheckedChange={(next) => void save(next)} />
@@ -139,7 +139,7 @@ function statusPresentation(status: ConfigStatus) {
     return {
       label: "Belum dikonfigurasi",
       detail: "Simpan satu draft lengkap. Draft baru selalu nonaktif dan tidak menghubungi DOKU.",
-      tone: "border-slate-200 bg-slate-50 text-slate-800",
+      tone: "border-border bg-muted text-slate-800",
     };
   }
   if (status.enabled) {
@@ -358,23 +358,23 @@ export default function DokuPaymentSettings() {
     .join(", ");
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6" aria-labelledby="doku-settings-heading">
+    <section className="rounded-xl border border-border bg-card p-4 shadow-sm sm:p-6" aria-labelledby="doku-settings-heading">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 id="doku-settings-heading" className="text-lg font-bold text-slate-950">DOKU Malaysia</h2>
+          <h2 id="doku-settings-heading" className="text-lg font-bold text-foreground">DOKU Malaysia</h2>
           <p className="mt-1 text-sm leading-6 text-slate-600">Hosted payment untuk FPX, eWallet, dan kartu. Konfigurasi ini berlaku untuk satu store.</p>
         </div>
         <div className="flex flex-wrap gap-2 text-xs font-bold" aria-label="Status konfigurasi">
-          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700">{status.environment === "production" ? "Production" : "Sandbox"}</span>
-          <span className={`rounded-full px-2.5 py-1 ${status.enabled ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-700"}`}>{status.enabled ? "Aktif" : "Nonaktif"}</span>
-          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700">Revisi {status.configRevision ?? "—"}</span>
+          <span className="rounded-full bg-muted px-2.5 py-1 text-foreground-subtle">{status.environment === "production" ? "Production" : "Sandbox"}</span>
+          <span className={`rounded-full px-2.5 py-1 ${status.enabled ? "bg-emerald-100 text-emerald-800" : "bg-muted text-foreground-subtle"}`}>{status.enabled ? "Aktif" : "Nonaktif"}</span>
+          <span className="rounded-full bg-muted px-2.5 py-1 text-foreground-subtle">Revisi {status.configRevision ?? "—"}</span>
         </div>
       </div>
 
       {loading ? (
         <div className="mt-5 grid grid-cols-1 gap-3" aria-label="Memuat konfigurasi DOKU">
-          <div className="h-20 animate-pulse rounded-lg bg-slate-100" />
-          <div className="h-11 animate-pulse rounded-lg bg-slate-100" />
+          <div className="h-20 animate-pulse rounded-lg bg-muted" />
+          <div className="h-11 animate-pulse rounded-lg bg-muted" />
         </div>
       ) : loadError ? (
         <div className="mt-5 rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900" role="alert" tabIndex={-1}>
@@ -411,16 +411,16 @@ export default function DokuPaymentSettings() {
                 {busy === "copy" ? <Check /> : <Clipboard />} {busy === "copy" ? "Disalin" : "Salin URL webhook"}
               </Button>
             </div>
-            <p className="text-xs leading-5 text-slate-500">Daftarkan URL ini secara manual di DOKU Back Office. MyBookCMS tidak mendaftarkannya secara otomatis.</p>
+            <p className="text-xs leading-5 text-muted-foreground">Daftarkan URL ini secara manual di DOKU Back Office. MyBookCMS tidak mendaftarkannya secara otomatis.</p>
           </div>
 
           {status.configured && (
-            <div className="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-4">
-              <h3 className="text-sm font-bold text-slate-900">Kredensial tersimpan</h3>
+            <div className="mt-5 rounded-lg border border-border bg-muted p-4">
+              <h3 className="text-sm font-bold text-foreground">Kredensial tersimpan</h3>
               <dl className="mt-3 grid grid-cols-1 gap-3 text-xs sm:grid-cols-3">
-                <div><dt className="text-slate-500">Client ID</dt><dd className="mt-1 break-all font-mono font-bold text-slate-800">{status.clientIdMasked}</dd></div>
-                <div><dt className="text-slate-500">API Key</dt><dd className="mt-1 break-all font-mono font-bold text-slate-800">{status.apiKeyMasked}</dd></div>
-                <div><dt className="text-slate-500">Secret Key</dt><dd className="mt-1 break-all font-mono font-bold text-slate-800">{status.secretKeyMasked}</dd></div>
+                <div><dt className="text-muted-foreground">Client ID</dt><dd className="mt-1 break-all font-mono font-bold text-slate-800">{status.clientIdMasked}</dd></div>
+                <div><dt className="text-muted-foreground">API Key</dt><dd className="mt-1 break-all font-mono font-bold text-slate-800">{status.apiKeyMasked}</dd></div>
+                <div><dt className="text-muted-foreground">Secret Key</dt><dd className="mt-1 break-all font-mono font-bold text-slate-800">{status.secretKeyMasked}</dd></div>
               </dl>
             </div>
           )}
@@ -430,7 +430,7 @@ export default function DokuPaymentSettings() {
               <legend className="text-sm font-bold text-slate-800">Environment</legend>
               <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {(["sandbox", "production"] as const).map((value) => (
-                  <label key={value} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-slate-200 px-3 text-sm font-semibold text-slate-800 focus-within:ring-2 focus-within:ring-blue-500">
+                  <label key={value} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-border px-3 text-sm font-semibold text-slate-800 focus-within:ring-2 focus-within:ring-blue-500">
                     <input type="radio" name="doku-environment" value={value} checked={environment === value} onChange={() => { setEnvironment(value); setDirty(true); }} />
                     {value === "sandbox" ? "Sandbox" : "Production"}
                   </label>
@@ -463,7 +463,7 @@ export default function DokuPaymentSettings() {
                       }}
                       disabled={conflictsDisabled}
                     />
-                    <p id={`${String(id)}-help`} className={`text-xs leading-5 ${errors[fieldName] ? "font-semibold text-rose-700" : "text-slate-500"}`}>
+                    <p id={`${String(id)}-help`} className={`text-xs leading-5 ${errors[fieldName] ? "font-semibold text-rose-700" : "text-muted-foreground"}`}>
                       {errors[fieldName] || (status.configured ? "Masukkan nilai lengkap untuk mengganti; nilai tersimpan tidak pernah ditampilkan." : "Nilai disimpan terenkripsi dan tidak dapat ditampilkan kembali.")}
                     </p>
                   </div>
@@ -475,7 +475,7 @@ export default function DokuPaymentSettings() {
               <legend className="text-sm font-bold text-slate-800">Channel pembayaran</legend>
               <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {CHANNELS.map(([value, label]) => (
-                  <label key={value} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-slate-200 px-3 text-sm text-slate-800">
+                  <label key={value} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-border px-3 text-sm text-slate-800">
                     <Checkbox checked={channels.includes(value)} onCheckedChange={(checked) => toggleChannel(value, checked === true)} />
                     {label}
                   </label>
@@ -490,9 +490,9 @@ export default function DokuPaymentSettings() {
           </form>
 
           {status.source === "database" && status.health !== "missing" && (
-            <div className="mt-6 border-t border-slate-200 pt-5">
-              <h3 className="text-sm font-bold text-slate-900">Aktivasi dan penghapusan</h3>
-              <p className="mt-1 text-xs leading-5 text-slate-500">Perubahan di sini tidak memulai pembayaran dan tidak menghubungi DOKU.</p>
+            <div className="mt-6 border-t border-border pt-5">
+              <h3 className="text-sm font-bold text-foreground">Aktivasi dan penghapusan</h3>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">Perubahan di sini tidak memulai pembayaran dan tidak menghubungi DOKU.</p>
               <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                 <Button type="button" size="xl" className="w-full sm:w-auto" disabled={conflictsDisabled || status.health !== "ready"} onClick={() => setConfirmAction(status.enabled ? "disable" : "enable")}>
                   {status.enabled ? "Nonaktifkan DOKU" : `Aktifkan ${status.environment ?? "sandbox"}`}
@@ -504,8 +504,8 @@ export default function DokuPaymentSettings() {
             </div>
           )}
 
-          <details className="mt-6 rounded-lg border border-slate-200 p-4 text-sm text-slate-700">
-            <summary className="min-h-11 cursor-pointer py-2 font-bold text-slate-900">Memahami status health</summary>
+          <details className="mt-6 rounded-lg border border-border p-4 text-sm text-foreground-subtle">
+            <summary className="min-h-11 cursor-pointer py-2 font-bold text-foreground">Memahami status health</summary>
             <ul className="mt-2 list-disc space-y-1 pl-5 text-xs leading-5">
               <li><strong>Konfigurasi:</strong> data tidak lengkap, tidak dapat dibaca, atau revision tidak sesuai.</li>
               <li><strong>Autentikasi:</strong> DOKU menolak Client ID atau API Key.</li>

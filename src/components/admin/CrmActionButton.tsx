@@ -103,7 +103,7 @@ export const CrmActionButton: React.FC<CrmActionButtonProps> = ({
       <span className="hidden sm:inline truncate">{displayText}</span>
       <span className="inline sm:hidden truncate text-[10px]">{displayMobile}</span>
       {isClicked && (
-        <span className="inline-flex size-3.5 shrink-0 items-center justify-center rounded-full bg-emerald-400 text-[9px] font-black text-slate-950">
+        <span className="inline-flex size-3.5 shrink-0 items-center justify-center rounded-full bg-emerald-400 text-[9px] font-black text-foreground">
           ✓
         </span>
       )}

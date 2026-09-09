@@ -247,7 +247,7 @@ export function AnalyticsDashboard({ showPaymentsLink = false }: { showPaymentsL
           ? "Order aktif pada periode ini"
           : `Dari ${data.total_orders.toLocaleString("id-ID")} masuk · ${(data.total_orders - data.live_orders).toLocaleString("id-ID")} batal/gagal/retur`,
       icon: PackageCheck,
-      tone: "text-slate-950",
+      tone: "text-foreground",
       iconTone: "bg-blue-50 text-blue-700",
     },
     {
@@ -256,7 +256,7 @@ export function AnalyticsDashboard({ showPaymentsLink = false }: { showPaymentsL
       // COD is paid on delivery and is excluded from the base on purpose.
       note: `Dari ${data.transfer_orders.toLocaleString("id-ID")} order transfer manual`,
       icon: CircleCheckBig,
-      tone: "text-slate-950",
+      tone: "text-foreground",
       iconTone: "bg-blue-50 text-blue-700",
     },
     {
@@ -267,11 +267,11 @@ export function AnalyticsDashboard({ showPaymentsLink = false }: { showPaymentsL
           ? `Dari ${data.rts_base.toLocaleString("id-ID")} kiriman selesai`
           : "Belum ada kiriman yang selesai",
       icon: RotateCcw,
-      tone: data.rts_rate > 10 ? "text-rose-700" : "text-slate-950",
+      tone: data.rts_rate > 10 ? "text-rose-700" : "text-foreground",
       iconTone:
         data.rts_rate > 10
           ? "bg-rose-50 text-rose-700"
-          : "bg-slate-100 text-slate-600",
+          : "bg-muted text-slate-600",
     },
   ];
 
@@ -297,14 +297,14 @@ export function AnalyticsDashboard({ showPaymentsLink = false }: { showPaymentsL
 
   return (
     <div className="space-y-4 md:space-y-5">
-      <section className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+      <section className="flex flex-col gap-3 rounded-xl border border-border bg-card p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
         <div className="flex items-center gap-2.5">
-          <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-slate-100 text-slate-600">
+          <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-muted text-slate-600">
             <CalendarDays className="size-[18px]" aria-hidden="true" />
           </span>
           <div>
-            <p className="text-xs font-medium text-slate-900">Periode laporan</p>
-            <p className="text-[11px] text-slate-500">
+            <p className="text-xs font-medium text-foreground">Periode laporan</p>
+            <p className="text-[11px] text-muted-foreground">
               Semua metrik mengikuti periode ini; dibuka pada bulan berjalan (MYT).
             </p>
           </div>
@@ -325,7 +325,7 @@ export function AnalyticsDashboard({ showPaymentsLink = false }: { showPaymentsL
             disabled={refreshing}
             aria-label="Perbarui data dashboard"
             aria-busy={refreshing}
-            className="size-11 shrink-0 border border-slate-200 bg-white shadow-none"
+            className="size-11 shrink-0 border border-border bg-card shadow-none"
           >
             <RefreshCw
               className={`size-4 ${refreshing ? "animate-spin" : ""}`}
@@ -350,10 +350,10 @@ export function AnalyticsDashboard({ showPaymentsLink = false }: { showPaymentsL
         aria-label="Ringkasan performa toko"
       >
         {metrics.map((metric) => (
-          <Card key={metric.label} className="overflow-hidden border-slate-200 shadow-none">
+          <Card key={metric.label} className="overflow-hidden border-border shadow-none">
             <CardContent className="p-3.5 sm:p-5">
               <div className="flex items-start justify-between gap-2">
-                <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-slate-500 sm:text-[11px]">
+                <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground sm:text-[11px]">
                   {metric.label}
                 </p>
                 <span className={`hidden size-8 shrink-0 place-items-center rounded-xl sm:grid ${metric.iconTone}`}>
@@ -363,7 +363,7 @@ export function AnalyticsDashboard({ showPaymentsLink = false }: { showPaymentsL
               <p className={`mt-3 text-lg font-semibold tabular-nums tracking-[-0.035em] sm:text-2xl ${metric.tone}`}>
                 {metric.value}
               </p>
-              <p className="mt-1 line-clamp-2 text-[10px] leading-relaxed text-slate-500 sm:text-[11px]">
+              <p className="mt-1 line-clamp-2 text-[10px] leading-relaxed text-muted-foreground sm:text-[11px]">
                 {metric.note}
               </p>
             </CardContent>
@@ -372,9 +372,9 @@ export function AnalyticsDashboard({ showPaymentsLink = false }: { showPaymentsL
       </section>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(320px,0.75fr)]">
-        <Card aria-labelledby="trend-heading" className="min-w-0 border-slate-200 shadow-none">
+        <Card aria-labelledby="trend-heading" className="min-w-0 border-border shadow-none">
           <CardHeader className="border-b border-slate-100 pb-4">
-            <CardTitle as="h3" id="trend-heading" className="text-sm font-semibold text-slate-950 md:text-base">
+            <CardTitle as="h3" id="trend-heading" className="text-sm font-semibold text-foreground md:text-base">
               Tren omset
             </CardTitle>
             <CardDescription className="text-xs">
@@ -383,13 +383,13 @@ export function AnalyticsDashboard({ showPaymentsLink = false }: { showPaymentsL
           </CardHeader>
           <CardContent className="px-2 pb-4 pt-5 sm:px-5">
             {data.trends.length === 0 ? (
-              <div className="grid h-[280px] place-items-center rounded-xl bg-slate-50 text-center">
+              <div className="grid h-[280px] place-items-center rounded-xl bg-muted text-center">
                 <div>
                   <PackageCheck className="mx-auto size-6 text-slate-300" aria-hidden="true" />
-                  <p className="mt-2 text-sm font-medium text-slate-700">
+                  <p className="mt-2 text-sm font-medium text-foreground-subtle">
                     Belum ada data periode ini
                   </p>
-                  <p className="mt-1 text-xs text-slate-500">
+                  <p className="mt-1 text-xs text-muted-foreground">
                     Grafik terisi setelah order tercatat.
                   </p>
                 </div>
@@ -455,9 +455,9 @@ export function AnalyticsDashboard({ showPaymentsLink = false }: { showPaymentsL
           </CardContent>
         </Card>
 
-        <Card aria-labelledby="payment-mix-heading" className="border-slate-200 shadow-none">
+        <Card aria-labelledby="payment-mix-heading" className="border-border shadow-none">
           <CardHeader className="border-b border-slate-100 pb-4">
-            <CardTitle as="h3" id="payment-mix-heading" className="text-sm font-semibold text-slate-950 md:text-base">
+            <CardTitle as="h3" id="payment-mix-heading" className="text-sm font-semibold text-foreground md:text-base">
               Metode pembayaran
             </CardTitle>
             <CardDescription className="text-xs">
@@ -466,7 +466,7 @@ export function AnalyticsDashboard({ showPaymentsLink = false }: { showPaymentsL
           </CardHeader>
           <CardContent className="space-y-5 p-5">
             {data.payment_methods.total === 0 ? (
-              <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-5 text-center">
+              <div className="rounded-xl border border-dashed border-border bg-muted p-5 text-center">
                 <CreditCard className="mx-auto size-5 text-slate-400" aria-hidden="true" />
                 <p className="mt-2 text-xs font-semibold text-slate-800">Belum ada pesanan selesai checkout pada periode ini.</p>
               </div>
@@ -477,15 +477,15 @@ export function AnalyticsDashboard({ showPaymentsLink = false }: { showPaymentsL
                     <p className="truncate text-xs font-medium text-slate-800">
                       {item.name}
                     </p>
-                    <p className="mt-0.5 text-[10px] leading-4 text-slate-500">
+                    <p className="mt-0.5 text-[10px] leading-4 text-muted-foreground">
                       {item.detail}
                     </p>
                   </div>
-                  <span className="shrink-0 text-sm font-semibold tabular-nums text-slate-950">
+                  <span className="shrink-0 text-sm font-semibold tabular-nums text-foreground">
                     {item.count.toLocaleString("id-ID")} pesanan · {percentage(item.percentage)}
                   </span>
                 </div>
-                <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
+                <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
                   <div
                     className={`h-full rounded-full ${item.bar}`}
                     style={{
@@ -502,7 +502,7 @@ export function AnalyticsDashboard({ showPaymentsLink = false }: { showPaymentsL
               </p>
             )}
             {showPaymentsLink && (
-              <a href="/admin/payments" className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 hover:bg-slate-50">
+              <a href="/admin/payments" className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-border bg-card px-3 text-xs font-medium text-foreground-subtle hover:bg-muted">
                 Kelola payment
               </a>
             )}

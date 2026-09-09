@@ -486,14 +486,14 @@ export function ExpeditionSettings() {
 
   if (loading) {
     return <div className="grid grid-cols-1 gap-4 sm:grid-cols-2" aria-label="Memuat tarif pengiriman" aria-busy="true">
-      {Array.from({ length: 4 }).map((_, index) => <div key={index} className="h-52 animate-pulse rounded-xl bg-slate-100" />)}
+      {Array.from({ length: 4 }).map((_, index) => <div key={index} className="h-52 animate-pulse rounded-xl bg-muted" />)}
     </div>;
   }
 
   if (error) {
-    return <section className="rounded-xl border border-rose-200 bg-white p-8 text-center" role="alert">
+    return <section className="rounded-xl border border-rose-200 bg-card p-8 text-center" role="alert">
       <AlertTriangle className="mx-auto size-8 text-rose-600" aria-hidden="true" />
-      <h2 className="mt-3 font-black text-slate-950">Tarif Malaysia gagal dimuat</h2>
+      <h2 className="mt-3 font-black text-foreground">Tarif Malaysia gagal dimuat</h2>
       <p className="mt-2 text-sm text-slate-600">{error}</p>
       <Button className="mt-5" onClick={() => void load()}><RefreshCw /> Coba lagi</Button>
     </section>;
@@ -503,7 +503,7 @@ export function ExpeditionSettings() {
     const zoneRanges = ranges.filter((range) => range.zoneId === zone.id);
     return <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h4 className="flex items-center gap-2 text-sm font-black text-slate-950">
+        <h4 className="flex items-center gap-2 text-sm font-black text-foreground">
           <MapPin className="size-4" aria-hidden="true" />Cakupan poskod
         </h4>
         <Button
@@ -517,13 +517,13 @@ export function ExpeditionSettings() {
         </Button>
       </div>
       {zoneRanges.length === 0
-        ? <p className="rounded-lg border border-dashed border-slate-200 p-4 text-xs text-slate-500">
+        ? <p className="rounded-lg border border-dashed border-border p-4 text-xs text-muted-foreground">
             Belum ada rentang poskod untuk zona ini.
           </p>
         : <ul className="space-y-2">
-            {zoneRanges.map((range) => <li key={range.id} className="rounded-lg border border-slate-200 p-3">
+            {zoneRanges.map((range) => <li key={range.id} className="rounded-lg border border-border p-3">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="font-mono text-sm font-bold text-slate-950">{range.postcodeStart}–{range.postcodeEnd}</p>
+                <p className="font-mono text-sm font-bold text-foreground">{range.postcodeStart}–{range.postcodeEnd}</p>
                 <div className="flex items-center gap-2">
                   <Button
                     type="button"
@@ -551,7 +551,7 @@ export function ExpeditionSettings() {
     const zoneRates = visibleRates.filter((rate) => rate.zoneId === zone.id && !rate.stateCode);
     return <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h4 className="flex items-center gap-2 text-sm font-black text-slate-950">
+        <h4 className="flex items-center gap-2 text-sm font-black text-foreground">
           <Scale className="size-4" aria-hidden="true" />Weight band dan tarif fallback
         </h4>
         <Button
@@ -567,7 +567,7 @@ export function ExpeditionSettings() {
         ><Plus /> Tambah weight band</Button>
       </div>
       {zoneRates.length === 0
-        ? <p className="rounded-lg border border-dashed border-slate-200 p-4 text-xs text-slate-500">
+        ? <p className="rounded-lg border border-dashed border-border p-4 text-xs text-muted-foreground">
             Belum ada weight band fallback untuk zona ini.
           </p>
         : <ul className="space-y-2">
@@ -575,11 +575,11 @@ export function ExpeditionSettings() {
               const amount = draftAmounts[rate.id] ?? ringgitOf(rate.amountSen);
               const amountSen = toSen(amount);
               const changed = isDraftSavable(amount, rate.amountSen);
-              return <li key={rate.id} className="rounded-lg border border-slate-200 p-3">
+              return <li key={rate.id} className="rounded-lg border border-border p-3">
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto_auto_auto] md:items-center">
                   <div className="min-w-0">
-                    <p className="text-sm font-bold text-slate-950">{rate.minWeightGrams}–{rate.maxWeightGrams} g</p>
-                    <p className="text-xs text-slate-500">Tersimpan {formatMyr(rate.amountSen)}</p>
+                    <p className="text-sm font-bold text-foreground">{rate.minWeightGrams}–{rate.maxWeightGrams} g</p>
+                    <p className="text-xs text-muted-foreground">Tersimpan {formatMyr(rate.amountSen)}</p>
                   </div>
                   <Input
                     type="number"
@@ -617,7 +617,7 @@ export function ExpeditionSettings() {
       {zones.map((zone) => {
         const open = openZones.includes(zone.id);
         const panelId = `${idPrefix}-zone-${zone.id}`;
-        return <li key={zone.id} className="rounded-xl border border-slate-200 bg-white">
+        return <li key={zone.id} className="rounded-xl border border-border bg-card">
           <div className="flex flex-wrap items-center justify-between gap-3 p-4">
             <button
               type="button"
@@ -626,8 +626,8 @@ export function ExpeditionSettings() {
               aria-controls={panelId}
               className="flex min-h-11 flex-1 items-center gap-2 rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
             >
-              <ChevronDown className={`size-4 shrink-0 text-slate-500 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden="true" />
-              <span className="text-sm font-black text-slate-950">{zone.name}</span>
+              <ChevronDown className={`size-4 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} aria-hidden="true" />
+              <span className="text-sm font-black text-foreground">{zone.name}</span>
               <Badge variant={zone.isActive ? "default" : "secondary"}>{zone.isActive ? "Aktif" : "Nonaktif"}</Badge>
             </button>
             <Switch
@@ -645,14 +645,14 @@ export function ExpeditionSettings() {
     </ul>;
 
   return <div ref={workspaceRef} className="space-y-5">
-    <section className="grid grid-cols-3 gap-2 rounded-xl border border-slate-200 bg-white p-3" aria-label="Ringkasan shipping Malaysia">
+    <section className="grid grid-cols-3 gap-2 rounded-xl border border-border bg-card p-3" aria-label="Ringkasan shipping Malaysia">
       {([
         ["Zona aktif", metrics.zones],
         ["Negeri/WP bertarif", metrics.activeStates],
         ["Rentang poskod", metrics.coveredRanges],
       ] as const).map(([label, value]) => <div key={label} className="min-w-0 px-1">
-        <p className="truncate text-[10px] font-bold uppercase tracking-wide text-slate-500">{label}</p>
-        <p className="text-lg font-black text-slate-950">{value}</p>
+        <p className="truncate text-[10px] font-bold uppercase tracking-wide text-muted-foreground">{label}</p>
+        <p className="text-lg font-black text-foreground">{value}</p>
       </div>)}
     </section>
 
@@ -668,20 +668,20 @@ export function ExpeditionSettings() {
       <TabsContent value="states">
         <section className="space-y-4" aria-labelledby="state-rate-title">
           <div>
-            <h2 id="state-rate-title" className="text-lg font-black text-slate-950">Tarif per negeri dan Wilayah Persekutuan</h2>
+            <h2 id="state-rate-title" className="text-lg font-black text-foreground">Tarif per negeri dan Wilayah Persekutuan</h2>
             <p className="mt-1 text-xs text-slate-600">Ubah nilai lalu tekan simpan. Switch berlaku langsung tanpa simpan terpisah.</p>
           </div>
           {zoneAccordion((zone) => {
             const zoneStates = states.filter((state) => state.zoneId === zone.id);
             if (zoneStates.length === 0) {
-              return <p className="rounded-lg border border-dashed border-slate-200 p-4 text-xs text-slate-500">Belum ada negeri/WP pada zona ini.</p>;
+              return <p className="rounded-lg border border-dashed border-border p-4 text-xs text-muted-foreground">Belum ada negeri/WP pada zona ini.</p>;
             }
             return <ul className="space-y-2">
               {zoneStates.map((state) => {
                 const stateRates = visibleRates.filter((rate) => rate.stateCode === state.code);
                 if (stateRates.length === 0) return null;
-                return <li key={state.code} className="rounded-lg border border-slate-200 p-3">
-                  <p className="text-sm font-black text-slate-950">{state.name}</p>
+                return <li key={state.code} className="rounded-lg border border-border p-3">
+                  <p className="text-sm font-black text-foreground">{state.name}</p>
                   <ul className="mt-2 space-y-2">
                     {stateRates.map((rate) => {
                       const amount = draftAmounts[rate.id] ?? ringgitOf(rate.amountSen);
@@ -689,8 +689,8 @@ export function ExpeditionSettings() {
                       const changed = isDraftSavable(amount, rate.amountSen);
                       return <li key={rate.id} className="grid grid-cols-1 gap-2 md:grid-cols-[1fr_auto_auto_auto] md:items-center">
                         <div className="min-w-0">
-                          <p className="text-xs font-bold text-slate-700">{rate.minWeightGrams}–{rate.maxWeightGrams} g</p>
-                          <p className="text-xs text-slate-500">Tersimpan {formatMyr(rate.amountSen)}</p>
+                          <p className="text-xs font-bold text-foreground-subtle">{rate.minWeightGrams}–{rate.maxWeightGrams} g</p>
+                          <p className="text-xs text-muted-foreground">Tersimpan {formatMyr(rate.amountSen)}</p>
                         </div>
                         <Input
                           type="number"
@@ -728,7 +728,7 @@ export function ExpeditionSettings() {
       <TabsContent value="zones">
         <section className="space-y-4" aria-labelledby="shipping-zone-title">
           <div>
-            <h2 id="shipping-zone-title" className="text-lg font-black text-slate-950">Zona dan cakupan poskod</h2>
+            <h2 id="shipping-zone-title" className="text-lg font-black text-foreground">Zona dan cakupan poskod</h2>
             <p className="mt-1 text-xs text-slate-600">Aktifkan zona dan atur rentang poskod yang dilayaninya.</p>
           </div>
           {zoneAccordion(zonePostcodeSection, "zones")}
@@ -738,7 +738,7 @@ export function ExpeditionSettings() {
       <TabsContent value="fallback">
         <section className="space-y-4" aria-labelledby="fallback-rate-title">
           <div>
-            <h2 id="fallback-rate-title" className="text-lg font-black text-slate-950">Tarif fallback per zona</h2>
+            <h2 id="fallback-rate-title" className="text-lg font-black text-foreground">Tarif fallback per zona</h2>
             <p className="mt-1 text-xs text-slate-600">Dipakai ketika tidak ada tarif negeri/WP yang cocok dengan berat yang diminta.</p>
           </div>
           {zoneAccordion(zoneFallbackSection, "fallback")}
@@ -757,7 +757,7 @@ export function ExpeditionSettings() {
           </SheetHeader>
           <div className="grid grid-cols-1 gap-4 overflow-y-auto px-4">
             <div>
-              <label htmlFor="range-start" className="text-xs font-bold text-slate-700">Poskod awal</label>
+              <label htmlFor="range-start" className="text-xs font-bold text-foreground-subtle">Poskod awal</label>
               <Input
                 id="range-start"
                 inputMode="numeric"
@@ -767,7 +767,7 @@ export function ExpeditionSettings() {
               />
             </div>
             <div>
-              <label htmlFor="range-end" className="text-xs font-bold text-slate-700">Poskod akhir</label>
+              <label htmlFor="range-end" className="text-xs font-bold text-foreground-subtle">Poskod akhir</label>
               <Input
                 id="range-end"
                 inputMode="numeric"
@@ -803,7 +803,7 @@ export function ExpeditionSettings() {
           </SheetHeader>
           <div className="grid grid-cols-1 gap-4 overflow-y-auto px-4">
             <div>
-              <label htmlFor="new-rule-zone" className="text-xs font-bold text-slate-700">Zona</label>
+              <label htmlFor="new-rule-zone" className="text-xs font-bold text-foreground-subtle">Zona</label>
               <Select value={newRule.zoneId} onValueChange={(value) => setNewRule((current) => ({ ...current, zoneId: value ?? "" }))}>
                 <SelectTrigger id="new-rule-zone" className="mt-1 w-full" aria-label="Zona untuk weight band fallback">
                   <SelectValue placeholder="Pilih zona" />
@@ -815,7 +815,7 @@ export function ExpeditionSettings() {
               {newRuleSubmitAttempted && newRuleValidation.errors.zoneId && <p role="alert" className="mt-1 text-xs font-bold text-rose-700">{newRuleValidation.errors.zoneId}</p>}
             </div>
             <div>
-              <label htmlFor="new-rule-min" className="text-xs font-bold text-slate-700">Berat minimum (gram)</label>
+              <label htmlFor="new-rule-min" className="text-xs font-bold text-foreground-subtle">Berat minimum (gram)</label>
               <Input
                 id="new-rule-min"
                 type="number"
@@ -828,7 +828,7 @@ export function ExpeditionSettings() {
               {newRuleSubmitAttempted && newRuleValidation.errors.minWeightGrams && <p role="alert" className="mt-1 text-xs font-bold text-rose-700">{newRuleValidation.errors.minWeightGrams}</p>}
             </div>
             <div>
-              <label htmlFor="new-rule-max" className="text-xs font-bold text-slate-700">Berat maksimum (gram)</label>
+              <label htmlFor="new-rule-max" className="text-xs font-bold text-foreground-subtle">Berat maksimum (gram)</label>
               <Input
                 id="new-rule-max"
                 type="number"
@@ -841,7 +841,7 @@ export function ExpeditionSettings() {
               {newRuleSubmitAttempted && newRuleValidation.errors.maxWeightGrams && <p role="alert" className="mt-1 text-xs font-bold text-rose-700">{newRuleValidation.errors.maxWeightGrams}</p>}
             </div>
             <div>
-              <label htmlFor="new-rule-amount" className="text-xs font-bold text-slate-700">Tarif (RM)</label>
+              <label htmlFor="new-rule-amount" className="text-xs font-bold text-foreground-subtle">Tarif (RM)</label>
               <Input
                 id="new-rule-amount"
                 type="number"
@@ -853,7 +853,7 @@ export function ExpeditionSettings() {
               />
               {newRuleSubmitAttempted && newRuleValidation.errors.amountRinggit && <p role="alert" className="mt-1 text-xs font-bold text-rose-700">{newRuleValidation.errors.amountRinggit}</p>}
             </div>
-            <div className="rounded-lg bg-slate-50 p-3 text-xs text-slate-600" aria-live="polite">
+            <div className="rounded-lg bg-muted p-3 text-xs text-slate-600" aria-live="polite">
               <p>
                 {selectedNewRuleZone ? selectedNewRuleZone.name : "Zona belum dipilih"} ·{" "}
                 {newRule.minWeightGrams || "?"}–{newRule.maxWeightGrams || "?"} g ·{" "}

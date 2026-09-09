@@ -60,7 +60,7 @@ export const CrmActionGroup: React.FC<CrmActionGroupProps> = ({
           className={`group flex min-h-8 w-full items-center justify-between gap-2 rounded-lg border px-2.5 py-1.5 text-xs font-bold transition-all duration-150 ${
             expanded
               ? 'border-emerald-300 bg-emerald-50 text-emerald-900 shadow-xs'
-              : 'border-slate-200 bg-white text-slate-700 hover:border-emerald-200 hover:bg-emerald-50/50 hover:text-emerald-800'
+              : 'border-border bg-card text-foreground-subtle hover:border-emerald-200 hover:bg-emerald-50/50 hover:text-emerald-800'
           }`}
         >
           <span className="flex items-center gap-1.5">
@@ -78,7 +78,7 @@ export const CrmActionGroup: React.FC<CrmActionGroupProps> = ({
               className={`rounded-full px-2 py-0.5 text-[10px] font-black transition-colors ${
                 clickedCount > 0
                   ? 'bg-emerald-600 text-white'
-                  : 'bg-slate-100 text-slate-600'
+                  : 'bg-muted text-slate-600'
               }`}
             >
               {clickedCount}/{totalCount}

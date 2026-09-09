@@ -174,7 +174,7 @@ export function ContentWorkbench() {
   };
 
   if (loading && !index) {
-    return <div className="h-96 rounded-xl bg-slate-100" aria-label="Memuat workbench konten" />;
+    return <div className="h-96 rounded-xl bg-muted" aria-label="Memuat workbench konten" />;
   }
 
   return (
@@ -182,19 +182,19 @@ export function ContentWorkbench() {
       <Card>
         <CardHeader className="border-b border-slate-100">
           <CardTitle as="h3" className="text-base font-black">Draft Storefront</CardTitle>
-          <p className="text-xs leading-5 text-slate-500">
+          <p className="text-xs leading-5 text-muted-foreground">
             D1 adalah source of truth. Generate membuat draft; publish adalah aksi terpisah.
           </p>
         </CardHeader>
         <CardContent className="space-y-4 p-5">
           <div aria-busy={loading}>
-            <label className="grid grid-cols-1 gap-2 text-xs font-bold text-slate-700">
+            <label className="grid grid-cols-1 gap-2 text-xs font-bold text-foreground-subtle">
               Target konten
               <select
                 value={selectedKey}
                 onChange={(event) => void changeContext(event.target.value)}
                 disabled={loading || saving}
-                className="admin-input-flat h-11 bg-white text-sm"
+                className="admin-input-flat h-11 bg-card text-sm"
               >
                 {(index?.targets || []).map((target) => (
                   <option key={target.key} value={target.key}>
@@ -204,20 +204,20 @@ export function ContentWorkbench() {
               </select>
             </label>
           </div>
-          <div className="flex flex-wrap gap-2 text-[11px] font-bold text-slate-500">
+          <div className="flex flex-wrap gap-2 text-[11px] font-bold text-muted-foreground">
             <span>Versi {record?.version || 0}</span>
             <span>·</span>
             <span>{record?.generated_by || "belum ada draft"}</span>
             {record?.published_at && <span>· Published {record.published_at}</span>}
           </div>
-          <label className="grid-cols-1 grid gap-2 text-xs font-bold text-slate-700">
+          <label className="grid-cols-1 grid gap-2 text-xs font-bold text-foreground-subtle">
             Draft JSON
             <textarea
               value={editor}
               onChange={(event) => setEditor(event.target.value)}
               spellCheck={false}
               style={{ backgroundColor: "#020617", color: "#f1f5f9", colorScheme: "dark" }}
-              className="min-h-[30rem] w-full resize-y rounded-md border border-slate-700 bg-slate-950 p-4 font-mono text-xs leading-5 text-slate-100 shadow-sm placeholder:text-slate-500 focus-visible:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/30 disabled:cursor-not-allowed disabled:opacity-70"
+              className="min-h-[30rem] w-full resize-y rounded-md border border-slate-700 bg-slate-950 p-4 font-mono text-xs leading-5 text-slate-100 shadow-sm placeholder:text-muted-foreground focus-visible:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/30 disabled:cursor-not-allowed disabled:opacity-70"
             />
           </label>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
@@ -247,7 +247,7 @@ export function ContentWorkbench() {
         <Card>
           <CardHeader>
             <CardTitle as="h3" className="text-sm font-black">Media Tenant</CardTitle>
-            <p className="text-xs leading-5 text-slate-500">
+            <p className="text-xs leading-5 text-muted-foreground">
               Upload gambar ke R2 tenant, lalu gunakan URL hasilnya pada field image di draft JSON.
             </p>
           </CardHeader>
@@ -258,7 +258,7 @@ export function ContentWorkbench() {
                 type="file"
                 accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
                 required
-                className="block w-full text-xs text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-xs file:font-bold"
+                className="block w-full text-xs text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-muted file:px-3 file:py-2 file:text-xs file:font-bold"
               />
               <Button type="submit" variant="outline" disabled={uploading} className="w-full">
                 {uploading ? "Mengunggah..." : "Upload ke R2"}
@@ -266,7 +266,7 @@ export function ContentWorkbench() {
             </form>
             {mediaUrl && (
               <div className="space-y-2">
-                <input readOnly value={mediaUrl} className="admin-input-flat bg-slate-50 font-mono text-xs" />
+                <input readOnly value={mediaUrl} className="admin-input-flat bg-muted font-mono text-xs" />
                 <Button
                   type="button"
                   variant="secondary"
@@ -283,7 +283,7 @@ export function ContentWorkbench() {
           <Card>
             <CardHeader>
               <CardTitle as="h3" className="text-sm font-black">Instruksi Tenant</CardTitle>
-              <p className="text-xs leading-5 text-slate-500">
+              <p className="text-xs leading-5 text-muted-foreground">
                 Guardrail dasar berasal dari repository. Isian ini hanya menambah aturan tenant dan tidak pernah ditampilkan kembali.
               </p>
             </CardHeader>
@@ -298,7 +298,7 @@ export function ContentWorkbench() {
                 maxLength={8000}
                 rows={8}
                 placeholder="Tambahkan tone, istilah, dan batas klaim khusus tenant..."
-                className="admin-input-flat resize-y bg-white text-sm"
+                className="admin-input-flat resize-y bg-card text-sm"
               />
               <Button
                 type="button"

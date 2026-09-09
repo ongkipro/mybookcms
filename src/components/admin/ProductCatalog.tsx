@@ -124,13 +124,13 @@ function ProductActions({
       <DropdownMenuContent align="end" className="w-52">
         <DropdownMenuItem asChild>
           <a href={editUrl} className="flex items-center gap-2">
-            <Pencil className="size-4 text-slate-500" aria-hidden="true" />
+            <Pencil className="size-4 text-muted-foreground" aria-hidden="true" />
             <span>Edit produk</span>
           </a>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <a href={storefrontUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2">
-            <Eye className="size-4 text-slate-500" aria-hidden="true" />
+            <Eye className="size-4 text-muted-foreground" aria-hidden="true" />
             <span>Lihat di storefront</span>
           </a>
         </DropdownMenuItem>
@@ -139,7 +139,7 @@ function ProductActions({
           <span>Embed checkout form</span>
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => onCopyId(product.id)} className="flex items-center gap-2">
-          <Copy className="size-4 text-slate-500" aria-hidden="true" />
+          <Copy className="size-4 text-muted-foreground" aria-hidden="true" />
           <span>Salin Content ID</span>
         </DropdownMenuItem>
 
@@ -456,10 +456,10 @@ export function ProductCatalog({
       <div className="space-y-6">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-28 rounded-xl bg-slate-100" />
+            <Skeleton key={i} className="h-28 rounded-xl bg-muted" />
           ))}
         </div>
-        <Skeleton className="h-96 rounded-xl bg-slate-100" />
+        <Skeleton className="h-96 rounded-xl bg-muted" />
       </div>
     );
   }
@@ -467,13 +467,13 @@ export function ProductCatalog({
   if (error) {
     return (
       <section
-        className="rounded-xl border border-rose-200 bg-white p-8 text-center shadow-sm"
+        className="rounded-xl border border-rose-200 bg-card p-8 text-center shadow-sm"
         role="alert"
       >
         <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-rose-50 text-rose-600">
           <RefreshCw className="size-6" />
         </div>
-        <h2 className="mt-3 text-lg font-black text-slate-950">
+        <h2 className="mt-3 text-lg font-black text-foreground">
           Daftar produk gagal dimuat
         </h2>
         <p className="mt-1 text-sm text-slate-600">{error}</p>
@@ -498,74 +498,74 @@ export function ProductCatalog({
         className="grid grid-cols-2 gap-3 sm:grid-cols-4"
         aria-label="Ringkasan katalog produk"
       >
-        <Card className="border-slate-200 shadow-xs">
+        <Card className="border-border shadow-xs">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               Total Produk
             </CardTitle>
             <Package className="size-4 text-slate-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">
+            <div className="text-2xl font-black tracking-tight text-foreground sm:text-3xl">
               {products.length}
             </div>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-muted-foreground">
               Produk terdaftar di katalog.
             </p>
           </CardContent>
         </Card>
 
-        <Card className="border-slate-200 shadow-xs">
+        <Card className="border-border shadow-xs">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               Produk Aktif
             </CardTitle>
             <CheckCircle2 className="size-4 text-emerald-600" />
           </CardHeader>
           <CardContent>
             <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">
+              <span className="text-2xl font-black tracking-tight text-foreground sm:text-3xl">
                 {activeCount}
               </span>
               <span className="text-xs font-bold text-emerald-700">
                 ({products.length ? Math.round((activeCount / products.length) * 100) : 0}%)
               </span>
             </div>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-muted-foreground">
               Aktif & tayang di storefront.
             </p>
           </CardContent>
         </Card>
 
-        <Card className="border-slate-200 shadow-xs">
+        <Card className="border-border shadow-xs">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               Total Varian
             </CardTitle>
             <Layers className="size-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">
+            <div className="text-2xl font-black tracking-tight text-foreground sm:text-3xl">
               {variantCount}
             </div>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-muted-foreground">
               Varian harga & opsi dari seluruh produk.
             </p>
           </CardContent>
         </Card>
 
-        <Card className="border-slate-200 shadow-xs">
+        <Card className="border-border shadow-xs">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               Kategori
             </CardTitle>
             <Tag className="size-4 text-amber-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">
+            <div className="text-2xl font-black tracking-tight text-foreground sm:text-3xl">
               {categoryCount}
             </div>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-muted-foreground">
               Kategori unik produk.
             </p>
           </CardContent>
@@ -573,9 +573,9 @@ export function ProductCatalog({
       </section>
 
       {/* Main Catalog Container */}
-      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs">
+      <section className="overflow-hidden rounded-xl border border-border bg-card shadow-xs">
         {/* Controls Header: Search, Filters, Stats */}
-        <div className="flex flex-col gap-4 border-b border-slate-200 p-4 lg:flex-row lg:items-center lg:justify-between lg:p-5">
+        <div className="flex flex-col gap-4 border-b border-border p-4 lg:flex-row lg:items-center lg:justify-between lg:p-5">
           <div className="relative flex-1">
             <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
             <Input
@@ -583,25 +583,25 @@ export function ProductCatalog({
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Cari nama produk, ID, slug, atau kategori..."
-              className="h-11 pl-10 pr-4 bg-slate-50/50 shadow-none border-slate-200 focus:bg-white"
+              className="h-11 pl-10 pr-4 bg-muted/50 shadow-none border-border focus:bg-card"
             />
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
             {/* Filter Status Pills */}
-            <div className="inline-flex rounded-lg border border-slate-200 bg-slate-100/60 p-1 text-xs font-semibold">
+            <div className="inline-flex rounded-lg border border-border bg-muted/60 p-1 text-xs font-semibold">
               <button
                 type="button"
                 onClick={() => setStatusFilter("all")}
                 aria-pressed={statusFilter === "all"}
                 className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 transition-all ${
                   statusFilter === "all"
-                    ? "bg-white text-slate-950 shadow-xs font-bold"
-                    : "text-slate-600 hover:text-slate-900"
+                    ? "bg-card text-foreground shadow-xs font-bold"
+                    : "text-slate-600 hover:text-foreground"
                 }`}
               >
                 Semua
-                <span className="rounded-full bg-slate-200/80 px-1.5 py-0.5 text-[10px] tabular-nums text-slate-700">
+                <span className="rounded-full bg-slate-200/80 px-1.5 py-0.5 text-[10px] tabular-nums text-foreground-subtle">
                   {products.length}
                 </span>
               </button>
@@ -611,8 +611,8 @@ export function ProductCatalog({
                 aria-pressed={statusFilter === "active"}
                 className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 transition-all ${
                   statusFilter === "active"
-                    ? "bg-white text-emerald-800 shadow-xs font-bold"
-                    : "text-slate-600 hover:text-slate-900"
+                    ? "bg-card text-emerald-800 shadow-xs font-bold"
+                    : "text-slate-600 hover:text-foreground"
                 }`}
               >
                 Aktif
@@ -626,12 +626,12 @@ export function ProductCatalog({
                 aria-pressed={statusFilter === "draft"}
                 className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 transition-all ${
                   statusFilter === "draft"
-                    ? "bg-white text-slate-950 shadow-xs font-bold"
-                    : "text-slate-600 hover:text-slate-900"
+                    ? "bg-card text-foreground shadow-xs font-bold"
+                    : "text-slate-600 hover:text-foreground"
                 }`}
               >
                 Draft
-                <span className="rounded-full bg-slate-200/80 px-1.5 py-0.5 text-[10px] tabular-nums text-slate-700">
+                <span className="rounded-full bg-slate-200/80 px-1.5 py-0.5 text-[10px] tabular-nums text-foreground-subtle">
                   {products.length - activeCount}
                 </span>
               </button>
@@ -644,7 +644,7 @@ export function ProductCatalog({
                   value={categoryFilter}
                   onChange={(e) => setCategoryFilter(e.target.value)}
                   aria-label="Filter kategori produk"
-                  className="h-9 rounded-lg border border-slate-200 bg-white pl-3 pr-8 text-xs font-medium text-slate-700 shadow-xs outline-none hover:bg-slate-50 focus:border-slate-400"
+                  className="h-9 rounded-lg border border-border bg-card pl-3 pr-8 text-xs font-medium text-foreground-subtle shadow-xs outline-none hover:bg-muted focus:border-slate-400"
                 >
                   <option value="all">Semua Kategori</option>
                   {categories.map((cat) => (
@@ -668,7 +668,7 @@ export function ProductCatalog({
         </div>
 
         {/* Results Counter Bar */}
-        <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 px-4 py-2.5 text-xs font-medium text-slate-500 lg:px-5">
+        <div className="flex items-center justify-between border-b border-slate-100 bg-muted/50 px-4 py-2.5 text-xs font-medium text-muted-foreground lg:px-5">
           <span>
             Menampilkan <strong>{filtered.length}</strong> dari <strong>{products.length}</strong> produk
           </span>
@@ -680,7 +680,7 @@ export function ProductCatalog({
                 setStatusFilter("all");
                 setCategoryFilter("all");
               }}
-              className="text-xs font-bold text-slate-600 hover:text-slate-900 underline"
+              className="text-xs font-bold text-slate-600 hover:text-foreground underline"
             >
               Reset filter
             </button>
@@ -690,11 +690,11 @@ export function ProductCatalog({
         {/* Empty State / Content */}
         {products.length === 0 ? (
           <div className="p-12 text-center">
-            <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+            <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-muted text-slate-400">
               <Package className="size-7" />
             </div>
-            <h3 className="mt-4 text-base font-bold text-slate-950">Belum ada produk</h3>
-            <p className="mt-1 text-xs text-slate-500 max-w-sm mx-auto">
+            <h3 className="mt-4 text-base font-bold text-foreground">Belum ada produk</h3>
+            <p className="mt-1 text-xs text-muted-foreground max-w-sm mx-auto">
               Katalog produk Anda masih kosong. Tambahkan produk pertama untuk mulai berjualan.
             </p>
             <a
@@ -707,11 +707,11 @@ export function ProductCatalog({
           </div>
         ) : filtered.length === 0 ? (
           <div className="p-12 text-center">
-            <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+            <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-muted text-slate-400">
               <Filter className="size-6" />
             </div>
-            <h3 className="mt-3 text-base font-bold text-slate-950">Produk tidak ditemukan</h3>
-            <p className="mt-1 text-xs text-slate-500 max-w-sm mx-auto">
+            <h3 className="mt-3 text-base font-bold text-foreground">Produk tidak ditemukan</h3>
+            <p className="mt-1 text-xs text-muted-foreground max-w-sm mx-auto">
               Tidak ada produk yang cocok dengan pencarian atau filter yang dipilih.
             </p>
             <Button
@@ -741,10 +741,10 @@ export function ProductCatalog({
               return (
                 <article
                   key={product.id}
-                  className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs"
+                  className="rounded-xl border border-border bg-card p-4 shadow-xs"
                 >
                   <div className="flex items-start gap-3">
-                    <div className="size-16 shrink-0 rounded-lg border border-slate-100 bg-slate-50 overflow-hidden flex items-center justify-center">
+                    <div className="size-16 shrink-0 rounded-lg border border-slate-100 bg-muted overflow-hidden flex items-center justify-center">
                       {product.image_url ? (
                         <img
                           src={product.image_url}
@@ -760,7 +760,7 @@ export function ProductCatalog({
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <h3 className="font-bold text-sm text-slate-950 truncate">
+                          <h3 className="font-bold text-sm text-foreground truncate">
                             <a
                               href={`/admin/products/edit?id=${encodeURIComponent(String(product.id))}`}
                               className="hover:text-emerald-700 hover:underline"
@@ -768,7 +768,7 @@ export function ProductCatalog({
                               {product.title}
                             </a>
                           </h3>
-                          <p className="mt-0.5 font-mono text-[11px] text-slate-500 truncate">
+                          <p className="mt-0.5 font-mono text-[11px] text-muted-foreground truncate">
                             /{product.slug}
                           </p>
                         </div>
@@ -778,7 +778,7 @@ export function ProductCatalog({
                             className={
                               product.is_active
                                 ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-100 font-bold text-[10px]"
-                                : "bg-slate-100 text-slate-600 hover:bg-slate-100 font-bold text-[10px]"
+                                : "bg-muted text-slate-600 hover:bg-muted font-bold text-[10px]"
                             }
                           >
                             {product.is_active ? "Aktif" : "Draft"}
@@ -810,22 +810,22 @@ export function ProductCatalog({
                     </div>
                   </div>
 
-                  <dl className="mt-3.5 grid grid-cols-3 gap-2 rounded-lg bg-slate-50/80 p-2.5 text-xs">
+                  <dl className="mt-3.5 grid grid-cols-3 gap-2 rounded-lg bg-muted/80 p-2.5 text-xs">
                     <div>
-                      <dt className="text-[10px] text-slate-500 uppercase font-semibold">Content ID</dt>
-                      <dd className="mt-0.5 font-mono font-bold text-slate-900 text-[11px] truncate">
+                      <dt className="text-[10px] text-muted-foreground uppercase font-semibold">Content ID</dt>
+                      <dd className="mt-0.5 font-mono font-bold text-foreground text-[11px] truncate">
                         {catalogProductId(product.id)}
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-[10px] text-slate-500 uppercase font-semibold">Harga</dt>
-                      <dd className="mt-0.5 font-bold text-slate-900 text-[11px] truncate">
+                      <dt className="text-[10px] text-muted-foreground uppercase font-semibold">Harga</dt>
+                      <dd className="mt-0.5 font-bold text-foreground text-[11px] truncate">
                         {priceRange || "-"}
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-[10px] text-slate-500 uppercase font-semibold">Varian</dt>
-                      <dd className="mt-0.5 font-bold text-slate-900 text-[11px]">
+                      <dt className="text-[10px] text-muted-foreground uppercase font-semibold">Varian</dt>
+                      <dd className="mt-0.5 font-bold text-foreground text-[11px]">
                         {product.variants?.length || 0} opsi
                       </dd>
                     </div>
@@ -849,7 +849,7 @@ export function ProductCatalog({
           <div className="hidden overflow-x-auto lg:block" aria-label="Tabel produk desktop">
             <Table>
               <TableHeader>
-                <TableRow className="bg-slate-50/80 text-[11px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
+                <TableRow className="bg-muted/80 text-[11px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border">
                   <TableHead className="py-3 pl-5 pr-4 w-[340px]">Produk</TableHead>
                   <TableHead className="py-3 px-4 w-[160px]">Harga</TableHead>
                   <TableHead className="py-3 px-4 w-[180px]">Content ID</TableHead>
@@ -863,11 +863,11 @@ export function ProductCatalog({
                   const priceRange = getProductPriceRange(product.variants);
 
                   return (
-                    <TableRow key={product.id} className="hover:bg-slate-50/60 transition-colors">
+                    <TableRow key={product.id} className="hover:bg-muted/60 transition-colors">
                       {/* Product details cell with thumbnail */}
                       <TableCell className="py-3.5 pl-5 pr-4">
                         <div className="flex items-center gap-3">
-                          <div className="size-12 shrink-0 rounded-lg border border-slate-200 bg-slate-50 overflow-hidden flex items-center justify-center">
+                          <div className="size-12 shrink-0 rounded-lg border border-border bg-muted overflow-hidden flex items-center justify-center">
                             {product.image_url ? (
                               <img
                                 src={product.image_url}
@@ -884,7 +884,7 @@ export function ProductCatalog({
                             <div className="flex items-center gap-2">
                               <a
                                 href={`/admin/products/edit?id=${encodeURIComponent(String(product.id))}`}
-                                className="font-bold text-slate-950 text-sm hover:text-emerald-700 hover:underline"
+                                className="font-bold text-foreground text-sm hover:text-emerald-700 hover:underline"
                               >
                                 {product.title}
                               </a>
@@ -896,7 +896,7 @@ export function ProductCatalog({
                               {product.category && (
                                 <>
                                   <span className="text-slate-300">•</span>
-                                  <span className="text-[11px] font-medium text-slate-500">
+                                  <span className="text-[11px] font-medium text-muted-foreground">
                                     {product.category}
                                   </span>
                                 </>
@@ -908,7 +908,7 @@ export function ProductCatalog({
 
                       {/* Price range */}
                       <TableCell className="py-3.5 px-4">
-                        <span className="font-bold text-slate-900 text-sm">
+                        <span className="font-bold text-foreground text-sm">
                           {priceRange || <span className="text-slate-400 font-normal text-xs">Belum set</span>}
                         </span>
                       </TableCell>
@@ -918,10 +918,10 @@ export function ProductCatalog({
                         <button
                           type="button"
                           onClick={() => void copyText(catalogProductId(product.id), "Product ID")}
-                          className="group inline-flex items-center gap-1.5 rounded-md px-2 py-1 hover:bg-slate-100 transition-colors text-left"
+                          className="group inline-flex items-center gap-1.5 rounded-md px-2 py-1 hover:bg-muted transition-colors text-left"
                           title="Klik untuk menyalin Content ID"
                         >
-                          <span className="font-mono text-xs font-bold text-slate-700 group-hover:text-slate-950">
+                          <span className="font-mono text-xs font-bold text-foreground-subtle group-hover:text-foreground">
                             {catalogProductId(product.id)}
                           </span>
                           <Copy className="size-3 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -929,7 +929,7 @@ export function ProductCatalog({
                       </TableCell>
 
                       {/* Variant count */}
-                      <TableCell className="py-3.5 px-4 font-semibold text-slate-700 text-xs">
+                      <TableCell className="py-3.5 px-4 font-semibold text-foreground-subtle text-xs">
                         {product.variants?.length || 0} varian
                       </TableCell>
 
@@ -941,7 +941,7 @@ export function ProductCatalog({
                             className={
                               product.is_active
                                 ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-100 font-bold text-[10px] gap-1"
-                                : "bg-slate-100 text-slate-600 hover:bg-slate-100 font-bold text-[10px]"
+                                : "bg-muted text-slate-600 hover:bg-muted font-bold text-[10px]"
                             }
                           >
                             {product.is_active && (
@@ -983,11 +983,11 @@ export function ProductCatalog({
           </div>
         )}
         {totalPages > 1 && (
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-200 bg-slate-50/50 px-5 py-3.5">
-            <p className="text-xs text-slate-500 font-medium">
-              Menampilkan <span className="font-bold text-slate-900">{(page - 1) * itemsPerPage + 1}</span>–
-              <span className="font-bold text-slate-900">{Math.min(page * itemsPerPage, filtered.length)}</span> dari{" "}
-              <span className="font-bold text-slate-900">{filtered.length}</span> produk
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-border bg-muted/50 px-5 py-3.5">
+            <p className="text-xs text-muted-foreground font-medium">
+              Menampilkan <span className="font-bold text-foreground">{(page - 1) * itemsPerPage + 1}</span>–
+              <span className="font-bold text-foreground">{Math.min(page * itemsPerPage, filtered.length)}</span> dari{" "}
+              <span className="font-bold text-foreground">{filtered.length}</span> produk
             </p>
             <div className="flex items-center gap-1.5">
               <Button
@@ -995,11 +995,11 @@ export function ProductCatalog({
                 size="sm"
                 disabled={page <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="h-8 px-3 text-xs bg-white"
+                className="h-8 px-3 text-xs bg-card"
               >
                 Sebelumnya
               </Button>
-              <div className="flex items-center gap-1 px-2 text-xs font-bold text-slate-700">
+              <div className="flex items-center gap-1 px-2 text-xs font-bold text-foreground-subtle">
                 Halaman {page} dari {totalPages}
               </div>
               <Button
@@ -1007,7 +1007,7 @@ export function ProductCatalog({
                 size="sm"
                 disabled={page >= totalPages}
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                className="h-8 px-3 text-xs bg-white"
+                className="h-8 px-3 text-xs bg-card"
               >
                 Selanjutnya
               </Button>
@@ -1035,13 +1035,13 @@ export function ProductCatalog({
           </DialogHeader>
 
           {embedLoading ? (
-            <Skeleton className="h-48 rounded-xl bg-slate-100" />
+            <Skeleton className="h-48 rounded-xl bg-muted" />
           ) : embedError ? (
             <section
               className="rounded-xl border border-amber-200 bg-amber-50 p-4"
               role="alert"
             >
-              <p className="text-sm font-bold text-slate-950">
+              <p className="text-sm font-bold text-foreground">
                 Form belum dapat di-embed
               </p>
               <p className="mt-1 text-xs leading-5 text-amber-900">
@@ -1052,13 +1052,13 @@ export function ProductCatalog({
             <div className="space-y-4">
               <div className="grid grid-cols-1 gap-3">
                 <label className="block">
-                  <span className="mb-1.5 block text-xs font-bold text-slate-700">
+                  <span className="mb-1.5 block text-xs font-bold text-foreground-subtle">
                     Varian Awal (Default)
                   </span>
                   <select
                     value={embedVariantId}
                     onChange={(event) => setEmbedVariantId(event.target.value)}
-                    className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-950 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 font-medium"
+                    className="h-10 w-full rounded-lg border border-border bg-card px-3 text-xs text-foreground outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 font-medium"
                   >
                     {embedConfig.variants.map((variant) => (
                       <option
@@ -1101,29 +1101,29 @@ export function ProductCatalog({
                   readOnly
                   rows={6}
                   aria-label="MyBookCMS widget embed"
-                  className="mt-3 w-full resize-y rounded-lg border border-emerald-300 bg-white p-3 font-mono text-[11px] leading-5 text-slate-800 outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
+                  className="mt-3 w-full resize-y rounded-lg border border-emerald-300 bg-card p-3 font-mono text-[11px] leading-5 text-slate-800 outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
                 />
               </section>
 
               {/* Advanced / Alternative Options */}
               <details className="group [&_summary::-webkit-details-marker]:hidden">
-                <summary className="flex cursor-pointer items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold text-slate-700 hover:bg-slate-100 focus-visible:outline-none">
+                <summary className="flex cursor-pointer items-center justify-between rounded-xl border border-border bg-muted px-4 py-3 text-xs font-bold text-foreground-subtle hover:bg-muted focus-visible:outline-none">
                   <span>Opsi Lanjutan (Link Form Direct & Plain Iframe)</span>
-                  <ChevronDown className="size-4 text-slate-500 transition-transform duration-200 group-open:rotate-180" aria-hidden="true" />
+                  <ChevronDown className="size-4 text-muted-foreground transition-transform duration-200 group-open:rotate-180" aria-hidden="true" />
                 </summary>
 
-                <div className="mt-3 space-y-4 rounded-xl border border-slate-200 p-4 bg-white">
+                <div className="mt-3 space-y-4 rounded-xl border border-border p-4 bg-card">
                   <div>
                     <div className="flex items-center justify-between gap-3">
                       <div>
-                        <h4 className="text-xs font-bold text-slate-950">Direct Form URL</h4>
-                        <p className="mt-0.5 text-xs text-slate-500">Untuk tombol redirect CTA di Landing Page eksternal.</p>
+                        <h4 className="text-xs font-bold text-foreground">Direct Form URL</h4>
+                        <p className="mt-0.5 text-xs text-muted-foreground">Untuk tombol redirect CTA di Landing Page eksternal.</p>
                       </div>
                       <a
                         href={standaloneUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 px-3 text-xs font-bold text-slate-700 hover:bg-slate-50"
+                        className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-bold text-foreground-subtle hover:bg-muted"
                       >
                         <span>Preview</span>
                         <ExternalLink className="size-3" aria-hidden="true" />
@@ -1148,11 +1148,11 @@ export function ProductCatalog({
                     </div>
                   </div>
 
-                  <div className="h-px bg-slate-100" />
+                  <div className="h-px bg-muted" />
 
                   <div>
                     <div className="flex items-center justify-between">
-                      <h4 className="text-xs font-bold text-slate-950">Plain Iframe (Tanpa Script JS)</h4>
+                      <h4 className="text-xs font-bold text-foreground">Plain Iframe (Tanpa Script JS)</h4>
                       <Button
                         type="button"
                         variant="outline"
@@ -1169,13 +1169,13 @@ export function ProductCatalog({
                       readOnly
                       rows={3}
                       aria-label="Iframe embed tanpa JavaScript"
-                      className="mt-2 w-full resize-y rounded-lg border border-slate-200 bg-slate-50 p-2.5 font-mono text-[11px] leading-5 text-slate-800"
+                      className="mt-2 w-full resize-y rounded-lg border border-border bg-muted p-2.5 font-mono text-[11px] leading-5 text-slate-800"
                     />
                   </div>
                 </div>
               </details>
 
-              <p className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-700">
+              <p className="rounded-lg border border-border bg-muted p-3 text-xs leading-5 text-foreground-subtle">
                 <strong>Versi snippet: v{EMBED_SNIPPET_VERSION}.</strong>{" "}
                 Snippet yang sudah ditempel tidak ikut ter-update saat sistem
                 di-deploy. Setiap kali halaman merchant memuat form dengan versi
@@ -1203,7 +1203,7 @@ export function ProductCatalog({
           <DialogHeader>
             <DialogTitle>Hapus produk ini?</DialogTitle>
             <DialogDescription>
-              <strong className="text-slate-900">{deleteTarget?.title}</strong>{" "}
+              <strong className="text-foreground">{deleteTarget?.title}</strong>{" "}
               dan seluruh variannya akan dihapus secara permanen dari sistem.
             </DialogDescription>
           </DialogHeader>

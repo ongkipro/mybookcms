@@ -284,7 +284,7 @@ export default function LandingPageCatalog() {
   return (
     <div className="space-y-4">
       {/* Control Bar & Filter Header */}
-      <div className="flex flex-col gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+      <div className="flex flex-col gap-3 bg-card p-4 rounded-xl border border-border shadow-xs">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 w-full">
           {/* Search Input */}
           <div className="relative w-full sm:w-80">
@@ -294,13 +294,13 @@ export default function LandingPageCatalog() {
               placeholder="Cari judul, slug, atau produk..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-8 text-xs text-slate-900 placeholder:text-slate-400 shadow-xs focus-visible:border-slate-300 focus-visible:ring-1 focus-visible:ring-slate-300"
+              className="h-9 w-full rounded-lg border border-border bg-card pl-9 pr-8 text-xs text-foreground placeholder:text-slate-400 shadow-xs focus-visible:border-slate-300 focus-visible:ring-1 focus-visible:ring-slate-300"
             />
             {search && (
               <button
                 type="button"
                 onClick={() => setSearch("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded-md hover:bg-slate-100"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded-md hover:bg-muted"
                 aria-label="Hapus kata kunci pencarian"
               >
                 <X className="size-3.5" />
@@ -323,19 +323,19 @@ export default function LandingPageCatalog() {
         {/* Filter Sub-bar */}
         <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3">
           {/* Status Tabs Filter */}
-          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg text-xs font-medium">
+          <div className="flex items-center gap-1 bg-muted p-1 rounded-lg text-xs font-medium">
             <button
               type="button"
               onClick={() => setStatusFilter("all")}
               aria-pressed={statusFilter === "all"}
               className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all ${
                 statusFilter === "all"
-                  ? "bg-white text-slate-900 shadow-xs font-semibold"
-                  : "text-slate-600 hover:text-slate-900"
+                  ? "bg-card text-foreground shadow-xs font-semibold"
+                  : "text-slate-600 hover:text-foreground"
               }`}
             >
               Semua
-              <span className="rounded-full bg-slate-200/80 px-1.5 py-0.5 text-[10px] tabular-nums text-slate-700">
+              <span className="rounded-full bg-slate-200/80 px-1.5 py-0.5 text-[10px] tabular-nums text-foreground-subtle">
                 {pages.length}
               </span>
             </button>
@@ -345,8 +345,8 @@ export default function LandingPageCatalog() {
               aria-pressed={statusFilter === "published"}
               className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all ${
                 statusFilter === "published"
-                  ? "bg-white text-emerald-700 shadow-xs font-semibold"
-                  : "text-slate-600 hover:text-slate-900"
+                  ? "bg-card text-emerald-700 shadow-xs font-semibold"
+                  : "text-slate-600 hover:text-foreground"
               }`}
             >
               Published
@@ -360,8 +360,8 @@ export default function LandingPageCatalog() {
               aria-pressed={statusFilter === "draft"}
               className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all ${
                 statusFilter === "draft"
-                  ? "bg-white text-amber-700 shadow-xs font-semibold"
-                  : "text-slate-600 hover:text-slate-900"
+                  ? "bg-card text-amber-700 shadow-xs font-semibold"
+                  : "text-slate-600 hover:text-foreground"
               }`}
             >
               Draft
@@ -372,13 +372,13 @@ export default function LandingPageCatalog() {
           </div>
 
           {/* Source Tabs Filter */}
-          <div className="flex w-full max-w-full items-center gap-1 overflow-x-auto rounded-lg border border-slate-200 bg-slate-50 p-1 text-[11px] font-medium sm:w-auto">
+          <div className="flex w-full max-w-full items-center gap-1 overflow-x-auto rounded-lg border border-border bg-muted p-1 text-[11px] font-medium sm:w-auto">
             <span className="px-2 text-slate-400 font-bold uppercase text-[9px]">Sumber:</span>
             <button
               type="button"
               onClick={() => setSourceFilter("all")}
               className={`px-2 py-0.5 rounded transition-all ${
-                sourceFilter === "all" ? "bg-white text-slate-900 shadow-xs font-bold" : "text-slate-500 hover:text-slate-800"
+                sourceFilter === "all" ? "bg-card text-foreground shadow-xs font-bold" : "text-muted-foreground hover:text-slate-800"
               }`}
             >
               Semua
@@ -387,7 +387,7 @@ export default function LandingPageCatalog() {
               type="button"
               onClick={() => setSourceFilter("manual")}
               className={`px-2 py-0.5 rounded transition-all ${
-                sourceFilter === "manual" ? "bg-white text-blue-700 shadow-xs font-bold" : "text-slate-500 hover:text-slate-800"
+                sourceFilter === "manual" ? "bg-card text-blue-700 shadow-xs font-bold" : "text-muted-foreground hover:text-slate-800"
               }`}
             >
               CMS Manual
@@ -396,7 +396,7 @@ export default function LandingPageCatalog() {
               type="button"
               onClick={() => setSourceFilter("native")}
               className={`px-2 py-0.5 rounded transition-all ${
-                sourceFilter === "native" ? "bg-white text-sky-700 shadow-xs font-bold" : "text-slate-500 hover:text-slate-800"
+                sourceFilter === "native" ? "bg-card text-sky-700 shadow-xs font-bold" : "text-muted-foreground hover:text-slate-800"
               }`}
             >
               Native Astro
@@ -405,7 +405,7 @@ export default function LandingPageCatalog() {
               type="button"
               onClick={() => setSourceFilter("static")}
               className={`px-2 py-0.5 rounded transition-all ${
-                sourceFilter === "static" ? "bg-white text-emerald-700 shadow-xs font-bold" : "text-slate-500 hover:text-slate-800"
+                sourceFilter === "static" ? "bg-card text-emerald-700 shadow-xs font-bold" : "text-muted-foreground hover:text-slate-800"
               }`}
             >
               Static Astro
@@ -414,7 +414,7 @@ export default function LandingPageCatalog() {
               type="button"
               onClick={() => setSourceFilter("ai")}
               className={`px-2 py-0.5 rounded transition-all ${
-                sourceFilter === "ai" ? "bg-white text-purple-700 shadow-xs font-bold" : "text-slate-500 hover:text-slate-800"
+                sourceFilter === "ai" ? "bg-card text-purple-700 shadow-xs font-bold" : "text-muted-foreground hover:text-slate-800"
               }`}
             >
               AI Generated
@@ -423,7 +423,7 @@ export default function LandingPageCatalog() {
               type="button"
               onClick={() => setSourceFilter("injected")}
               className={`px-2 py-0.5 rounded transition-all ${
-                sourceFilter === "injected" ? "bg-white text-amber-700 shadow-xs font-bold" : "text-slate-500 hover:text-slate-800"
+                sourceFilter === "injected" ? "bg-card text-amber-700 shadow-xs font-bold" : "text-muted-foreground hover:text-slate-800"
               }`}
             >
               Injected / External
@@ -433,7 +433,7 @@ export default function LandingPageCatalog() {
       </div>
 
       {/* Main Catalog Card */}
-      <Card className="border border-slate-200 shadow-xs overflow-hidden">
+      <Card className="border border-border shadow-xs overflow-hidden">
         <CardContent className="p-0">
           {loading ? (
             <div className="flex flex-col items-center justify-center gap-2 py-12 text-slate-400">
@@ -446,7 +446,7 @@ export default function LandingPageCatalog() {
                 <div className="flex flex-col items-center justify-center max-w-sm mx-auto text-center space-y-2">
                   <Search className="w-8 h-8 text-slate-300 stroke-[1.5]" />
                   <p className="text-sm font-medium text-slate-800">Tidak ada landing page yang cocok</p>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-muted-foreground">
                     Coba ubah kata kunci pencarian atau filter status yang dipilih.
                   </p>
                   <Button
@@ -468,8 +468,8 @@ export default function LandingPageCatalog() {
                     <Globe className="w-6 h-6 stroke-[1.5]" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-semibold text-slate-900">Belum ada Landing Page</h3>
-                    <p className="text-xs text-slate-500 mt-1 max-w-xs">
+                    <h3 className="text-sm font-semibold text-foreground">Belum ada Landing Page</h3>
+                    <p className="text-xs text-muted-foreground mt-1 max-w-xs">
                       Buat landing page native pertama Anda untuk mempromosikan produk katalog secara efektif.
                     </p>
                   </div>
@@ -509,11 +509,11 @@ export default function LandingPageCatalog() {
                   return (
                     <article
                       key={page.id}
-                      className="min-w-0 rounded-xl border border-slate-200 bg-white p-4 shadow-xs"
+                      className="min-w-0 rounded-xl border border-border bg-card p-4 shadow-xs"
                     >
                       {/* Title + status — desktop columns 1 and 4 */}
                       <div className="flex items-start justify-between gap-2">
-                        <h3 className="min-w-0 flex-1 text-sm font-semibold text-slate-900">
+                        <h3 className="min-w-0 flex-1 text-sm font-semibold text-foreground">
                           <a
                             href={isStatic ? `/${page.slug}` : `/admin/landing-pages/${page.id}/edit`}
                             className="line-clamp-2 break-words hover:text-blue-600 transition-colors"
@@ -527,7 +527,7 @@ export default function LandingPageCatalog() {
                             Published
                           </span>
                         ) : (
-                          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-[11px] font-medium text-slate-600">
+                          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-muted px-2.5 py-0.5 text-[11px] font-medium text-slate-600">
                             <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
                             Draft
                           </span>
@@ -536,7 +536,7 @@ export default function LandingPageCatalog() {
 
                       {/* Slug + salin link — desktop column 1 */}
                       <div className="mt-2 flex items-center gap-2">
-                        <span className="min-w-0 flex-1 truncate rounded bg-slate-100 px-1.5 py-1 font-mono text-[11px] text-slate-500">
+                        <span className="min-w-0 flex-1 truncate rounded bg-muted px-1.5 py-1 font-mono text-[11px] text-muted-foreground">
                           /{page.slug}
                         </span>
                         <button
@@ -544,7 +544,7 @@ export default function LandingPageCatalog() {
                           onClick={() => handleCopyLink(page)}
                           title="Salin URL lengkap"
                           aria-label={`Salin URL /${page.slug}`}
-                          className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900"
+                          className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                         >
                           {copiedSlug === page.slug ? (
                             <Check className="size-4 text-emerald-600" />
@@ -555,9 +555,9 @@ export default function LandingPageCatalog() {
                       </div>
 
                       {/* Sumber + produk — desktop columns 2 and 3 */}
-                      <dl className="mt-3 space-y-2 rounded-lg bg-slate-50/80 p-2.5">
+                      <dl className="mt-3 space-y-2 rounded-lg bg-muted/80 p-2.5">
                         <div className="flex items-center justify-between gap-2">
-                          <dt className="text-[10px] font-semibold uppercase text-slate-500">
+                          <dt className="text-[10px] font-semibold uppercase text-muted-foreground">
                             Tipe Sumber
                           </dt>
                           <dd>
@@ -567,14 +567,14 @@ export default function LandingPageCatalog() {
                           </dd>
                         </div>
                         <div>
-                          <dt className="text-[10px] font-semibold uppercase text-slate-500">
+                          <dt className="text-[10px] font-semibold uppercase text-muted-foreground">
                             Produk Terkait
                           </dt>
                           <dd className="mt-0.5 break-words text-xs font-medium text-slate-800">
                             {page.product_title || (isStatic ? "Static Landing Page" : "Unknown Product")}
                           </dd>
                           {page.product_id && (
-                            <dd className="mt-1 break-all font-mono text-[10px] text-slate-500">
+                            <dd className="mt-1 break-all font-mono text-[10px] text-muted-foreground">
                               ID: {page.product_id}
                             </dd>
                           )}
@@ -613,7 +613,7 @@ export default function LandingPageCatalog() {
                           <DropdownMenuTrigger asChild>
                             <Button
                               variant="outline"
-                              className="min-h-11 min-w-11 shrink-0 text-slate-500"
+                              className="min-h-11 min-w-11 shrink-0 text-muted-foreground"
                               aria-label={`Aksi lain untuk ${page.title}`}
                             >
                               <MoreHorizontal className="size-4" />
@@ -622,14 +622,14 @@ export default function LandingPageCatalog() {
                           <DropdownMenuContent align="end" className="w-48">
                             <DropdownMenuItem asChild>
                               <a href={`/${page.slug}?preview=1`} target="_blank" rel="noreferrer">
-                                <ExternalLink className="w-3.5 h-3.5 mr-2 text-slate-500" />
+                                <ExternalLink className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
                                 Preview Live
                               </a>
                             </DropdownMenuItem>
                             {!isStatic && (
                               <DropdownMenuItem asChild>
                                 <a href={`/admin/landing-pages/${page.id}/edit`}>
-                                  <Pencil className="w-3.5 h-3.5 mr-2 text-slate-500" />
+                                  <Pencil className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
                                   Edit Layout
                                 </a>
                               </DropdownMenuItem>
@@ -639,14 +639,14 @@ export default function LandingPageCatalog() {
                                 disabled={productPagePageId === page.id}
                                 onClick={() => handleToggleProductPage(page)}
                               >
-                                <Package className="w-3.5 h-3.5 mr-2 text-slate-500" />
+                                <Package className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
                                 {Number(page.is_product_page)
                                   ? "Lepas dari halaman produk"
                                   : "Jadikan halaman produk"}
                               </DropdownMenuItem>
                             )}
                             <DropdownMenuItem onClick={() => handleCopyLink(page)}>
-                              <Copy className="w-3.5 h-3.5 mr-2 text-slate-500" />
+                              <Copy className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
                               Salin Link
                             </DropdownMenuItem>
                             {!isStatic && (
@@ -692,13 +692,13 @@ export default function LandingPageCatalog() {
               {/* Desktop table */}
               <div className="hidden lg:block" aria-label="Tabel landing page desktop">
                 <Table>
-                  <TableHeader className="bg-slate-50/80">
+                  <TableHeader className="bg-muted/80">
                     <TableRow className="hover:bg-transparent">
-                      <TableHead className="text-xs font-semibold text-slate-700">Landing Page & Slug</TableHead>
-                      <TableHead className="text-xs font-semibold text-slate-700">Tipe Sumber</TableHead>
-                      <TableHead className="text-xs font-semibold text-slate-700">Produk Terkait</TableHead>
-                      <TableHead className="text-xs font-semibold text-slate-700">Status</TableHead>
-                      <TableHead className="text-xs font-semibold text-slate-700 text-right">Aksi</TableHead>
+                      <TableHead className="text-xs font-semibold text-foreground-subtle">Landing Page & Slug</TableHead>
+                      <TableHead className="text-xs font-semibold text-foreground-subtle">Tipe Sumber</TableHead>
+                      <TableHead className="text-xs font-semibold text-foreground-subtle">Produk Terkait</TableHead>
+                      <TableHead className="text-xs font-semibold text-foreground-subtle">Status</TableHead>
+                      <TableHead className="text-xs font-semibold text-foreground-subtle text-right">Aksi</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -708,25 +708,25 @@ export default function LandingPageCatalog() {
                         const srcBadge = getSourceType(page.id, page.slug, page.title);
 
                         return (
-                          <TableRow key={page.id} className="hover:bg-slate-50/60 transition-colors">
+                          <TableRow key={page.id} className="hover:bg-muted/60 transition-colors">
                             {/* Title & Slug */}
                             <TableCell className="py-3">
                               <div className="flex flex-col">
                                 <a
                                   href={isStatic ? `/${page.slug}` : `/admin/landing-pages/${page.id}/edit`}
-                                  className="font-semibold text-sm text-slate-900 hover:text-blue-600 transition-colors line-clamp-1"
+                                  className="font-semibold text-sm text-foreground hover:text-blue-600 transition-colors line-clamp-1"
                                 >
                                   {page.title}
                                 </a>
                                 <div className="flex items-center gap-1.5 mt-0.5">
-                                  <span className="font-mono text-[11px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                                  <span className="font-mono text-[11px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                                     /{page.slug}
                                   </span>
                                   <button
                                     type="button"
                                     onClick={() => handleCopyLink(page)}
                                     title="Salin URL lengkap"
-                                    className="text-slate-400 hover:text-slate-700 p-0.5 rounded transition-colors"
+                                    className="text-slate-400 hover:text-foreground-subtle p-0.5 rounded transition-colors"
                                   >
                                     {copiedSlug === page.slug ? (
                                       <Check className="w-3 h-3 text-emerald-600" />
@@ -752,7 +752,7 @@ export default function LandingPageCatalog() {
                                   {page.product_title || (isStatic ? "Static Landing Page" : "Unknown Product")}
                                 </span>
                                 {page.product_id && (
-                                  <span className="text-[10px] font-mono text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200">
+                                  <span className="text-[10px] font-mono text-slate-400 bg-muted px-1.5 py-0.5 rounded border border-border">
                                     ID: {page.product_id}
                                   </span>
                                 )}
@@ -767,7 +767,7 @@ export default function LandingPageCatalog() {
                                   Published
                                 </span>
                               ) : (
-                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-muted text-slate-600 border border-border">
                                   <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
                                   Draft
                                 </span>
@@ -781,7 +781,7 @@ export default function LandingPageCatalog() {
                                   href={`/${page.slug}?preview=1`}
                                   target="_blank"
                                   rel="noreferrer"
-                                  className={`${buttonVariants({ variant: "ghost", size: "icon" })} w-8 h-8 text-slate-500 hover:text-slate-900`}
+                                  className={`${buttonVariants({ variant: "ghost", size: "icon" })} w-8 h-8 text-muted-foreground hover:text-foreground`}
                                   title="Preview Live"
                                 >
                                   <ExternalLink className="w-3.5 h-3.5" />
@@ -789,7 +789,7 @@ export default function LandingPageCatalog() {
                                 {!isStatic && (
                                   <a
                                     href={`/admin/landing-pages/${page.id}/edit`}
-                                    className={`${buttonVariants({ variant: "ghost", size: "icon" })} w-8 h-8 text-slate-500 hover:text-slate-900`}
+                                    className={`${buttonVariants({ variant: "ghost", size: "icon" })} w-8 h-8 text-muted-foreground hover:text-foreground`}
                                     title="Edit Builder"
                                   >
                                     <Pencil className="w-3.5 h-3.5" />
@@ -822,21 +822,21 @@ export default function LandingPageCatalog() {
 
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="w-8 h-8 text-slate-500 hover:text-slate-900">
+                                    <Button variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground hover:text-foreground">
                                       <MoreHorizontal className="w-3.5 h-3.5" />
                                     </Button>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end" className="w-44">
                                     <DropdownMenuItem asChild>
                                       <a href={`/${page.slug}?preview=1`} target="_blank" rel="noreferrer">
-                                        <ExternalLink className="w-3.5 h-3.5 mr-2 text-slate-500" />
+                                        <ExternalLink className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
                                         Preview Live
                                       </a>
                                     </DropdownMenuItem>
                                     {!isStatic && (
                                       <DropdownMenuItem asChild>
                                         <a href={`/admin/landing-pages/${page.id}/edit`}>
-                                          <Pencil className="w-3.5 h-3.5 mr-2 text-slate-500" />
+                                          <Pencil className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
                                           Edit Layout
                                         </a>
                                       </DropdownMenuItem>
@@ -846,14 +846,14 @@ export default function LandingPageCatalog() {
                                         disabled={productPagePageId === page.id}
                                         onClick={() => handleToggleProductPage(page)}
                                       >
-                                        <Package className="w-3.5 h-3.5 mr-2 text-slate-500" />
+                                        <Package className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
                                         {Number(page.is_product_page)
                                           ? "Lepas dari halaman produk"
                                           : "Jadikan halaman produk"}
                                       </DropdownMenuItem>
                                     )}
                                     <DropdownMenuItem onClick={() => handleCopyLink(page)}>
-                                      <Copy className="w-3.5 h-3.5 mr-2 text-slate-500" />
+                                      <Copy className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
                                       Salin Link
                                     </DropdownMenuItem>
                                     {!isStatic && (
@@ -884,11 +884,11 @@ export default function LandingPageCatalog() {
       </Card>
 
       {totalPages > 1 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border border-slate-200 bg-white rounded-xl px-5 py-3.5 shadow-xs">
-          <p className="text-xs text-slate-500 font-medium">
-            Menampilkan <span className="font-bold text-slate-900">{(page - 1) * itemsPerPage + 1}</span>–
-            <span className="font-bold text-slate-900">{Math.min(page * itemsPerPage, filtered.length)}</span> dari{" "}
-            <span className="font-bold text-slate-900">{filtered.length}</span> landing page
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border border-border bg-card rounded-xl px-5 py-3.5 shadow-xs">
+          <p className="text-xs text-muted-foreground font-medium">
+            Menampilkan <span className="font-bold text-foreground">{(page - 1) * itemsPerPage + 1}</span>–
+            <span className="font-bold text-foreground">{Math.min(page * itemsPerPage, filtered.length)}</span> dari{" "}
+            <span className="font-bold text-foreground">{filtered.length}</span> landing page
           </p>
           <div className="flex items-center gap-1.5">
             <Button
@@ -896,11 +896,11 @@ export default function LandingPageCatalog() {
               size="sm"
               disabled={page <= 1}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="h-8 px-3 text-xs bg-white"
+              className="h-8 px-3 text-xs bg-card"
             >
               Sebelumnya
             </Button>
-            <div className="flex items-center gap-1 px-2 text-xs font-bold text-slate-700">
+            <div className="flex items-center gap-1 px-2 text-xs font-bold text-foreground-subtle">
               Halaman {page} dari {totalPages}
             </div>
             <Button
@@ -908,7 +908,7 @@ export default function LandingPageCatalog() {
               size="sm"
               disabled={page >= totalPages}
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              className="h-8 px-3 text-xs bg-white"
+              className="h-8 px-3 text-xs bg-card"
             >
               Selanjutnya
             </Button>
@@ -920,21 +920,21 @@ export default function LandingPageCatalog() {
       <Dialog open={!!pageToDelete} onOpenChange={(open) => !open && setPageToDelete(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-base font-semibold text-slate-900 flex items-center gap-2">
+            <DialogTitle className="text-base font-semibold text-foreground flex items-center gap-2">
               <Trash2 className="w-4 h-4 text-red-600" />
               Hapus Landing Page
             </DialogTitle>
-            <DialogDescription className="text-xs text-slate-500 mt-1">
+            <DialogDescription className="text-xs text-muted-foreground mt-1">
               Apakah Anda yakin ingin menghapus landing page ini? URL publik tidak dapat diakses lagi setelah dihapus.
             </DialogDescription>
           </DialogHeader>
 
           {pageToDelete && (
-            <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs space-y-1 my-1">
-              <div className="font-semibold text-slate-900">{pageToDelete.title}</div>
-              <div className="text-slate-500 font-mono">/{pageToDelete.slug}</div>
+            <div className="bg-muted p-3 rounded-lg border border-border text-xs space-y-1 my-1">
+              <div className="font-semibold text-foreground">{pageToDelete.title}</div>
+              <div className="text-muted-foreground font-mono">/{pageToDelete.slug}</div>
               {pageToDelete.product_title && (
-                <div className="text-slate-600 pt-1 border-t border-slate-200/80">
+                <div className="text-slate-600 pt-1 border-t border-border/80">
                   Produk: <span className="font-medium text-slate-800">{pageToDelete.product_title}</span>
                 </div>
               )}
