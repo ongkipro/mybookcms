@@ -28,7 +28,11 @@ const blocks = (section: string) =>
 
 test("every open task carries what Goal Mode needs to execute it", () => {
   const required = ["Risk:", "Surface:", "Non-scope:", "Dependencies:", "Done when"];
-  const found = blocks(openQueue());
+  // `[x]` blocks are excluded: this contract exists so an agent can *execute* an
+  // open task, and a finished one has nothing left to execute. Requiring the
+  // full shape on closed entries only forced long closure notes, which ADR-033
+  // set out to stop. Id uniqueness, below, still covers both.
+  const found = blocks(openQueue()).filter((block) => block.startsWith("- [ ]"));
   assert.ok(found.length > 0, "the open queue must not be empty of parsed tasks");
   for (const block of found) {
     const id = block.match(/\*\*([A-Z]+-\d+)\*\*/)?.[1] ?? block.slice(0, 40);
