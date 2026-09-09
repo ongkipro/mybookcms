@@ -527,4 +527,11 @@ test("an absent expiry is refused here rather than by DOKU", () => {
     JSON.parse(buildDokuCheckoutBody(bodyInput)).order.expired_at,
     /^2026-09-01T08:00:00\.000Z$/,
   );
+
+  // A-280, and the reason `loadPersistedDokuOrder` cannot go back to a bare
+  // `String(row.expires_at)`: a NULL coerces to the four-character string
+  // "null", which is non-empty, so this guard accepts it and DOKU gets it.
+  // The refusal has to happen at the coercion; asserting it here keeps anyone
+  // from "simplifying" that ternary away on the belief the builder catches it.
+  assert.doesNotThrow(() => buildDokuCheckoutBody({ ...bodyInput, expiresAt: String(null) }));
 });

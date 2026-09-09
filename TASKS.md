@@ -1692,35 +1692,7 @@ Surface, and obtain the independent correctness/security review required by
       Dependencies: none.
       Done when: `DokuCheckoutBodyInput.expiresAt` is `string`; the retry path's `checkoutBody` either narrows its nullable row value or refuses the retry with a named error rather than sending a body DOKU will reject — **the first draft's "every caller still compiles unchanged" was false and is the thing this task must actually solve**; `npm run check` passes; and a test proves the retry path's behaviour when the row's expiry is absent.
 
-- [ ] **A-280** — Close the coercion that turns an absent expiry into the string `"null"` and walks it past the guard A-279 just added.
-      Found by the independent review of A-279 on 2026-09-09, which noted that
-      entry's own closure text claimed more coverage than the code has.
-      `attemptFromRow` in `doku-checkout.ts` builds `expiresAt: String(row.expires_at)`.
-      On a row whose nullable `expires_at` is NULL that yields the four-character
-      string `"null"`, which is non-empty, so `requiredExpiry` accepts it and it
-      reaches DOKU. A-279 refuses an *absent* expiry; this refuses a *masked*
-      one, and until it lands the create path can still defeat the guard.
-      **Same standing as A-279: not a live defect.** No write path produces a
-      NULL `expires_at` — all four writes were enumerated during A-279 and each
-      binds a string. This is the second half of the same unenforced invariant,
-      and it is worth closing for the same reason: the guarantee lives in the
-      habits of two INSERT statements rather than in the schema or the types.
-      Check the sibling coercions on the same object while there. `checkout_url`,
-      `provider_reference`, `provider_status` and `provider_state` all guard with
-      `row.x ? String(row.x) : null`; `expires_at` is the one that does not, which
-      looks like an oversight rather than a decision. Confirm that reading before
-      changing it — a deliberate difference would be worth a comment instead.
-      Consider whether the durable fix is a migration making `expires_at NOT NULL`
-      rather than more coercion guards. That is a schema change and belongs to its
-      own entry if this one argues for it, but decide rather than default.
-      Risk: R2 — a coercion on the DOKU payment path; no schema, no buyer-facing change, no provider contract change.
-      Surface: `src/lib/doku-checkout.ts`, `src/lib/doku-checkout.test.ts`, `TASKS.md`, `STATUS.md`.
-      Non-scope: a migration adding `NOT NULL`, which is a separate entry if argued for; changing what `requiredExpiry` does; and the four sibling coercions unless the reading above shows they share the defect.
-      Primary requirement: REQ-227
-      Constraints: none.
-      Dependencies: A-279, which established the guard this bypasses.
-      Done when: a NULL `expires_at` on that row is refused or narrowed rather than stringified into `"null"`; a test proves the refusal and is mutation-proved by reverting the change; and the decision about `NOT NULL` is recorded either as done, as a queued entry, or as declined with a reason.
-
+- [x] **A-280** — Close the coercion that turns an absent expiry into the string `"null"`. **Done 2026-09-09.** `loadPersistedDokuOrder` now guards `expires_at` the way its four siblings on the same object already did — `row.x ? String(row.x) : ""` — so a NULL refuses at `requiredExpiry` instead of reaching DOKU as the four-character string `"null"`. A test pins why the ternary is needed rather than the ternary itself: `buildDokuCheckoutBody` accepts `String(null)`, so the builder cannot be the place this is caught. No `NOT NULL` migration: it is a schema change on a live table for an invariant every write path already holds, and the coercion covers the read side. Still not a live defect — no write path produces a NULL.
 - [ ] **MYS-5** — Release readiness for a specific install. **Approval: required — never run autonomously.**
       Carried over from the retired `UNIMPLEMENTED_SPECS.md`. This is not a product gap: the product does not depend on any external courier or payment service, and a missing provider contract must never be converted into a blocker. Nothing has been deployed to Cloudflare; the local database is the only one that exists.
       Risk: R4 — production deployment.

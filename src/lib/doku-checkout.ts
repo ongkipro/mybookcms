@@ -264,7 +264,10 @@ async function loadPersistedDokuOrder(
     channel: String(row.channel) as DokuPaymentChannel,
     checkoutUrl: row.checkout_url ? String(row.checkout_url) : null,
     providerReference: row.provider_reference ? String(row.provider_reference) : null,
-    expiresAt: String(row.expires_at),
+    // A-280. The four siblings here guard with `row.x ? String(row.x) : null`;
+    // this one did not, so a NULL became the string "null" — non-empty, so it
+    // walked past A-279's `requiredExpiry` and reached DOKU. Empty refuses.
+    expiresAt: row.expires_at ? String(row.expires_at) : "",
     providerStatus: row.provider_status ? String(row.provider_status) : null,
     providerState: row.provider_state ? String(row.provider_state) : null,
   };
