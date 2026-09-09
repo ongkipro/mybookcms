@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { SCHEMA_STATUS_HREF, schemaGuidance } from "./schema-guidance.ts";
 import test from "node:test";
 import {
   loadSystemLog,
@@ -292,4 +293,37 @@ test("operator audit links are exposed only to Owner readers", async () => {
     assert.equal(row.href, role === "owner" ? "/admin/settings/access" : null);
     assert.equal(row.actor, "fixture_owner");
   }
+});
+
+
+test("the schema entry finally has somewhere to go, healthy or not", async () => {
+  // A-271. `href` was `null` for every schema entry, so the one source that can
+  // report `severity: "error"` was the one source offering an operator nowhere
+  // to act on it. This pins the destination so it cannot quietly return to null.
+  const database = fakeDatabase({});
+  const row = (await loadSystemLog(localsWith(database), database, NOW)).find(
+    entry => entry.source === "schema",
+  );
+  assert.ok(row, "the schema source must always emit exactly one row");
+  assert.equal(row.href, SCHEMA_STATUS_HREF);
+  assert.equal(row.href, "/admin/settings/schema", "the literal path, so a rename is a visible diff");
+});
+
+test("every schema state gives an operator an action the admin can actually take", () => {
+  // The reason the entry pointed nowhere for so long was that pointing at a
+  // page which could not explain what to do would be worse than the honest
+  // null. So each state owes a headline, a meaning and a next action — and no
+  // action may tell an operator to run a migration here, because the admin
+  // deliberately has no migration control.
+  const states = ["match", "database-behind", "database-ahead", "history-invalid", "upgrade-failed", "unknown"] as const;
+  for (const state of states) {
+    const guidance = schemaGuidance(state);
+    for (const [field, value] of Object.entries(guidance)) {
+      if (typeof value !== "string") continue;
+      assert.ok(value.trim().length > 10, `${state}.${field} is not usable copy`);
+    }
+    assert.equal(guidance.safeToOperate, state === "match", `${state} must not claim it is safe unless it matches`);
+  }
+  // An unrecognised state degrades to the one that promises least.
+  assert.equal(schemaGuidance("something-new" as never).headline, schemaGuidance("unknown").headline);
 });

@@ -1,4 +1,5 @@
 import { SYSTEM_EVENT_LABELS, type SystemEventAction } from "./system-events.ts";
+import { SCHEMA_STATUS_HREF } from "./schema-guidance.ts";
 import { getSchemaVersionStatus } from "./schema-version.ts";
 
 /**
@@ -137,7 +138,12 @@ async function readSchema(locals: App.Locals, now: Date): Promise<SystemLogEntry
         : `Skema database tidak sepadan (${status.state}${status.errorCode ? `, ${status.errorCode}` : ""}). Diharapkan versi ${status.expected}, terpasang ${status.applied ?? "tidak diketahui"}.`,
       occurred_at: now.toISOString(),
       correlation: `schema:${status.expected}`,
-      href: null,
+      // A-271. This was `null` for every schema entry, which meant the only
+      // source that can report `severity: "error"` was the only one offering an
+      // operator nowhere to act. It links whether or not the state is healthy:
+      // the version is worth reading before something goes wrong, not only
+      // after.
+      href: SCHEMA_STATUS_HREF,
     },
   ];
 }

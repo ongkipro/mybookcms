@@ -183,6 +183,7 @@ All use `AdminLayout` (sidebar from `components/admin/admin-navigation.ts`, shel
 | `/admin/settings/developer` | `pages/admin/settings/developer.astro` | `HeadlessApiManagement` | `/api/admin/settings/developer`, `/api/admin/settings` | owner, admin |
 | `/admin/settings/access` | `pages/admin/settings/access.astro` | `AccessManager` | `/api/admin/access` | owner only |
 | `/admin/settings/log` | `pages/admin/settings/log.astro` | `SystemLogPanel` | `/api/admin/system-log` | owner, admin |
+| `/admin/settings/schema` | `pages/admin/settings/schema.astro` | none; server-rendered | none; reads `getSchemaVersionStatus` directly | owner, admin |
 | `/admin/profile` | `pages/admin/profile.astro` | inline form | `/api/admin/profile` | all; the only page allowed while password rotation is pending |
 
 ## 7. Admin API

@@ -437,6 +437,36 @@ exactly that separation. They are queued as A-274, which also folds `lint` into
 recorded in the ledger as `lint-baseline-first-run=FAIL` — an executed red, kept
 red, rather than a green derived from a command chosen to pass.
 
+## A-271 — the schema entry has somewhere to go 2026-09-09
+
+`/admin/settings/schema` states the expected version, the applied version, the
+state, the error code, and the next action. It also says outright that it cannot
+repair anything: the admin has no migration control and A-271 added none.
+Pointing an operator at a page that could not explain what to do is why the
+entry honestly pointed nowhere until now.
+
+`system-log.ts` no longer returns `href: null` for the only source that can
+report `severity: "error"`. It links whether or not the state is healthy — the
+version is worth reading before something breaks, not only after.
+
+**The role question is answered by a rule rather than a list:** the destination
+inherits the audience of the entry that points at it. That is owner and admin,
+matching `/admin/settings/log` exactly, and the test asserts the two answers are
+*equal* rather than restating the roles — so the two cannot drift apart. A wider
+audience would be pointless; a narrower one would publish a link that some
+readers of that log could not follow.
+
+Operator copy lives in `schema-guidance.ts`, outside both the page and the
+upgrade logic. A test walks all six states, refuses any that claims
+`safeToOperate` without matching, and checks an unrecognised state degrades to
+the guidance that promises least. The destination and the role gate are both
+mutation-proved.
+
+Three of this repository's own contracts caught what I missed: the code map, the
+development map, and `mobile-layout-guard`, which refused a `grid` declaring its
+columns only at `sm:` — the shape its own message says has clipped admin
+controls off a phone three times.
+
 ## A-276 — the routes join the same vocabulary 2026-09-09
 
 253 conversions across `src/pages/admin`, the same eight mappings A-256

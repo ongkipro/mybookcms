@@ -750,3 +750,21 @@ test('legacy language query and cookie cannot change the single storefront local
   assert.equal(followed.headers.get('set-cookie'), null);
   assert.equal(followed.headers.get('vary'), null);
 });
+
+test("the schema status page is reachable by exactly the roles that can read the log pointing at it", () => {
+  // A-271. The destination inherits the audience of the entry that points at
+  // it: a wider audience would be pointless, and a narrower one would publish a
+  // link that some readers of `/admin/settings/log` could not follow.
+  for (const role of ["owner", "admin"] as const) {
+    assert.equal(canAccessAdminRoute(role, "/admin/settings/schema"), true, `${role} must reach it`);
+    assert.equal(
+      canAccessAdminRoute(role, "/admin/settings/schema"),
+      canAccessAdminRoute(role, "/admin/settings/log"),
+      `${role} must see the same answer for the log and its destination`,
+    );
+  }
+  for (const role of ["customer_service", "advertiser"] as const) {
+    assert.equal(canAccessAdminRoute(role, "/admin/settings/schema"), false, `${role} must be refused`);
+    assert.equal(canAccessAdminRoute(role, "/admin/settings/log"), false, `${role} cannot read the log either`);
+  }
+});

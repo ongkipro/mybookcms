@@ -42,6 +42,11 @@ const ADMIN_PAGE_ROUTES = [
   '/admin/settings/developer',
   '/admin/settings/crm',
   '/admin/settings/log',
+  // A-271: the destination inherits the audience of the entry that points at it.
+  // The `schema` log line is only visible to owner and admin, so a wider
+  // audience here would be pointless and a narrower one would publish a link
+  // some readers of that log could not follow.
+  '/admin/settings/schema',
 ] as const;
 
 const ADMIN_API_ROUTES = [

@@ -1,0 +1,89 @@
+---
+import AdminPageHeader from '../../../components/admin/AdminPageHeader.astro';
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { schemaGuidance } from '../../../lib/schema-guidance.ts';
+import { getSchemaVersionStatus } from '../../../lib/schema-version.ts';
+
+export const prerender = false;
+
+/**
+ * A-271. The `schema` system-log entry was the only source that could report
+ * `severity: "error"` and the only one with nowhere to go — the one line an
+ * operator most needs to act on offered them no way to act. This is where it
+ * lands.
+ *
+ * It reads; it does not repair. `getSchemaVersionStatus` already computes the
+ * state, so this is a destination rather than a second diagnosis, and the admin
+ * still exposes no migration control. That is deliberate: pointing an operator
+ * at a page that cannot explain what to do would be worse than the honest
+ * `href: null` this replaces.
+ */
+const status = await getSchemaVersionStatus(Astro.locals);
+const guidance = schemaGuidance(status.state);
+const healthy = status.state === 'match';
+---
+
+<AdminLayout title="Versi Skema Database" activeMenu="settings">
+  <section class="mx-auto max-w-3xl space-y-5">
+    <AdminPageHeader
+      eyebrow="Observability"
+      title="Versi skema database"
+      description="Versi yang dijangka kod, versi yang terpasang, dan apa yang perlu dilakukan apabila keduanya berbeza. Hanya baca."
+      backHref="/admin/settings/log"
+      backLabel="Log sistem"
+    />
+
+    <section
+      class="rounded-xl border border-border bg-card p-5"
+      aria-labelledby="schema-state-heading"
+    >
+      <div class="flex flex-wrap items-center gap-2">
+        <span
+          class={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${
+            healthy ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
+          }`}
+        >
+          <span class="size-1.5 rounded-full bg-current" aria-hidden="true"></span>
+          {healthy ? 'Sepadan' : 'Tidak sepadan'}
+        </span>
+        <code class="rounded bg-muted px-2 py-1 text-xs text-foreground-subtle">{status.state}</code>
+        {status.errorCode && (
+          <code class="rounded bg-muted px-2 py-1 text-xs text-foreground-subtle">{status.errorCode}</code>
+        )}
+      </div>
+
+      <h2 id="schema-state-heading" class="mt-3 text-lg font-semibold text-foreground">
+        {guidance.headline}
+      </h2>
+      <p class="mt-1 text-sm text-slate-600">{guidance.meaning}</p>
+
+      <dl class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div class="rounded-lg bg-muted p-3">
+          <dt class="text-xs font-semibold uppercase tracking-wide text-slate-600">Dijangka kod</dt>
+          <dd class="mt-1 text-2xl font-bold text-foreground">{status.expected}</dd>
+        </div>
+        <div class="rounded-lg bg-muted p-3">
+          <dt class="text-xs font-semibold uppercase tracking-wide text-slate-600">Terpasang</dt>
+          <dd class="mt-1 text-2xl font-bold text-foreground">
+            {status.applied ?? 'Tidak diketahui'}
+          </dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="rounded-xl border border-border bg-card p-5" aria-labelledby="schema-action-heading">
+      <h2 id="schema-action-heading" class="text-sm font-semibold text-foreground">Tindakan seterusnya</h2>
+      <p class="mt-1 text-sm text-slate-600">{guidance.action}</p>
+      {!guidance.safeToOperate && (
+        <p class="mt-3 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
+          Selagi keadaan ini berterusan, jangan andaikan pesanan, stok, atau pembayaran direkod
+          mengikut skema yang dijangka kod.
+        </p>
+      )}
+      <p class="mt-3 text-xs text-slate-600">
+        Halaman ini tidak menjalankan migrasi dan tidak boleh membaikinya. Admin sengaja tidak
+        mempunyai kawalan migrasi.
+      </p>
+    </section>
+  </section>
+</AdminLayout>
