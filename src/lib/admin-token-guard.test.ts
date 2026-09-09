@@ -27,21 +27,38 @@ const CONVERTED: Readonly<Record<string, string>> = {
 };
 
 const LAYOUT = new URL("../layouts/AdminLayout.astro", import.meta.url);
+const ROUTES = new URL("../pages/admin/", import.meta.url);
+
+/** Every `.astro` under `src/pages/admin`, including one directory deep. */
+const routeFiles = (dir: URL, prefix = ""): { name: string; source: string }[] =>
+  readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    if (entry.isDirectory()) return routeFiles(new URL(`${entry.name}/`, dir), `${prefix}${entry.name}/`);
+    if (!entry.name.endsWith(".astro")) return [];
+    return [{ name: `${prefix}${entry.name}`, source: readFileSync(new URL(entry.name, dir), "utf8") }];
+  });
 
 /**
- * The layout is included because it sets the ink every component inherits. It
+ * Components, the layout, and the routes.
+ *
+ * The layout is here because it sets the ink every component inherits — it
  * carried `text-slate-900` on `<body>` until A-256, so converting the children
- * while the parent stayed raw would have produced the mismatch this task exists
+ * under a raw-palette parent would have produced the mismatch both tasks exist
  * to remove.
+ *
+ * The routes are here because of A-276, and because ADR-032 records that
+ * `.astro` frontmatter cannot be usefully linted: Biome reports 81 false errors
+ * on this exact directory. This guard is the only automated check those files
+ * will ever have.
  */
 const components = () => [
   ...readdirSync(ADMIN)
     .filter((name) => name.endsWith(".tsx"))
     .map((name) => ({ name, source: readFileSync(new URL(name, ADMIN), "utf8") })),
   { name: "AdminLayout.astro", source: readFileSync(LAYOUT, "utf8") },
+  ...routeFiles(ROUTES),
 ];
 
-test("no admin component re-introduces a shade the semantic layer names", () => {
+test("no admin surface re-introduces a shade the semantic layer names", () => {
   const files = components();
   assert.ok(files.length > 20, `expected the admin component directory, found ${files.length} files`);
 

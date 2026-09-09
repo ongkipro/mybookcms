@@ -17,8 +17,8 @@ export const prerender = false;
 
     <DokuPaymentSettings client:load />
 
-    <section class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6" aria-labelledby="manual-payment-heading">
-      <h2 id="manual-payment-heading" class="text-lg font-bold text-slate-950">Pembayaran manual</h2>
+    <section class="rounded-xl border border-border bg-card p-4 shadow-sm sm:p-6" aria-labelledby="manual-payment-heading">
+      <h2 id="manual-payment-heading" class="text-lg font-bold text-foreground">Pembayaran manual</h2>
       <p class="mt-1 text-sm leading-6 text-slate-600">Atur ketersediaan COD dan rekening untuk transfer bank manual.</p>
       <CodAvailability client:load />
       <SellerBankAccounts client:load />

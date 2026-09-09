@@ -437,6 +437,28 @@ exactly that separation. They are queued as A-274, which also folds `lint` into
 recorded in the ledger as `lint-baseline-first-run=FAIL` — an executed red, kept
 red, rather than a green derived from a command chosen to pass.
 
+## A-276 — the routes join the same vocabulary 2026-09-09
+
+253 conversions across `src/pages/admin`, the same eight mappings A-256
+established. The entry said ten routes; there are 25 `.astro` files — one more
+stale figure inherited from the original census, and the fourth this pair of
+tasks has had to correct.
+
+The A-256 guard now walks that directory recursively, covering 25 routes, 25
+components and the layout. That matters more here than in A-256: ADR-032 records
+that Biome reports 81 false errors on `.astro` frontmatter and is therefore
+switched off for it, so this guard is the only automated check these files will
+ever have. Mutation-proved against a route, not only against a component, by
+reintroducing `text-slate-500` into `settings.astro`.
+
+All 22 reachable admin routes verified in a real browser at 390 px and 1280 px —
+no overflow, no console errors, no runtime exceptions, every card still computing
+a non-zero radius, and all three inks (`--foreground`, `--foreground-subtle`,
+`--muted-foreground`) resolving rather than falling through to nothing.
+
+Carve-outs unchanged: `text-slate-600` (27 occurrences here), `text-slate-400`,
+and the deliberate dark surfaces.
+
 ## A-256 — the admin speaks one vocabulary 2026-09-09
 
 660 raw palette uses in `src/components/admin` converted to tokens the semantic

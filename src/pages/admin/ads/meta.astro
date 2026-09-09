@@ -15,17 +15,17 @@ export const prerender = false;
     <AdminPageHeader eyebrow="Meta signals" title="Pixel & Conversions API (CAPI)" description="Kelola browser Pixel dan server-side events untuk funnel Malaysia." backHref="/admin/ads" backLabel="Ads & tracking">
       <div slot="actions" class="flex w-full flex-wrap items-center gap-2 sm:w-auto">
         <a href={PUBLIC_CATALOG_FEED_PATH} target="_blank" rel="noopener" class="btn-secondary inline-flex min-h-11 flex-1 items-center justify-center px-4 text-xs sm:flex-none">XML Feed ↗</a>
-        <span id="meta-badge" class="inline-flex min-h-11 flex-1 items-center rounded-full bg-slate-100 px-3 text-xs font-bold text-slate-600 sm:flex-none">Memuat…</span>
+        <span id="meta-badge" class="inline-flex min-h-11 flex-1 items-center rounded-full bg-muted px-3 text-xs font-bold text-slate-600 sm:flex-none">Memuat…</span>
       </div>
     </AdminPageHeader>
     <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><p class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Meta Pixel</p><p id="kpi-pixel" class="mt-2 break-all font-mono text-sm font-extrabold">—</p></div>
-      <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><p class="text-[11px] font-bold uppercase tracking-wider text-slate-500">CAPI</p><p id="kpi-capi" class="mt-2 text-sm font-extrabold">—</p></div>
-      <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><p class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Currency</p><p class="mt-2 text-sm font-extrabold">IDR</p><p class="mt-1 text-xs leading-5 text-slate-500">Kurs tetap RM1 = Rp4.100</p></div>
-      <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><p class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Graph API</p><p class="mt-2 font-mono text-sm font-extrabold">{META_GRAPH_API_VERSION}</p></div>
+      <div class="rounded-xl border border-border bg-card p-4 shadow-sm"><p class="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Meta Pixel</p><p id="kpi-pixel" class="mt-2 break-all font-mono text-sm font-extrabold">—</p></div>
+      <div class="rounded-xl border border-border bg-card p-4 shadow-sm"><p class="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">CAPI</p><p id="kpi-capi" class="mt-2 text-sm font-extrabold">—</p></div>
+      <div class="rounded-xl border border-border bg-card p-4 shadow-sm"><p class="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Currency</p><p class="mt-2 text-sm font-extrabold">IDR</p><p class="mt-1 text-xs leading-5 text-muted-foreground">Kurs tetap RM1 = Rp4.100</p></div>
+      <div class="rounded-xl border border-border bg-card p-4 shadow-sm"><p class="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Graph API</p><p class="mt-2 font-mono text-sm font-extrabold">{META_GRAPH_API_VERSION}</p></div>
     </div>
-    <div class="overflow-x-auto border-b border-slate-200" role="tablist" aria-label="Meta settings">
-      <div class="flex min-w-max gap-1"><button class="meta-tab min-h-11 border-b-2 border-blue-600 px-4 text-xs font-bold text-blue-700" role="tab" aria-selected="true" aria-controls="meta-config" id="meta-tab-config" data-panel="meta-config">Konfigurasi</button><button class="meta-tab min-h-11 border-b-2 border-transparent px-4 text-xs font-bold text-slate-500" role="tab" aria-selected="false" aria-controls="meta-guide" id="meta-tab-guide" data-panel="meta-guide" tabindex="-1">Tutorial</button><button class="meta-tab min-h-11 border-b-2 border-transparent px-4 text-xs font-bold text-slate-500" role="tab" aria-selected="false" aria-controls="meta-policy" id="meta-tab-policy" data-panel="meta-policy" tabindex="-1">Signal policy</button></div>
+    <div class="overflow-x-auto border-b border-border" role="tablist" aria-label="Meta settings">
+      <div class="flex min-w-max gap-1"><button class="meta-tab min-h-11 border-b-2 border-blue-600 px-4 text-xs font-bold text-blue-700" role="tab" aria-selected="true" aria-controls="meta-config" id="meta-tab-config" data-panel="meta-config">Konfigurasi</button><button class="meta-tab min-h-11 border-b-2 border-transparent px-4 text-xs font-bold text-muted-foreground" role="tab" aria-selected="false" aria-controls="meta-guide" id="meta-tab-guide" data-panel="meta-guide" tabindex="-1">Tutorial</button><button class="meta-tab min-h-11 border-b-2 border-transparent px-4 text-xs font-bold text-muted-foreground" role="tab" aria-selected="false" aria-controls="meta-policy" id="meta-tab-policy" data-panel="meta-policy" tabindex="-1">Signal policy</button></div>
     </div>
     <section id="meta-config" role="tabpanel" aria-labelledby="meta-tab-config">
       <Skeleton id="meta-loading" className="h-64 w-full rounded-xl" role="status" aria-live="polite" aria-busy="true" aria-atomic="true"><span class="sr-only">Memuat konfigurasi Meta.</span></Skeleton>
@@ -33,19 +33,19 @@ export const prerender = false;
         <p id="meta-error-text"></p>
         <Button id="retry-meta" type="button" variant="outline" size="lg" className="mt-3 min-h-11">Muat ulang</Button>
       </div>
-      <Card id="meta-card" className="hidden gap-0 py-0 border border-slate-200 shadow-sm">
+      <Card id="meta-card" className="hidden gap-0 py-0 border border-border shadow-sm">
         <form id="meta-form" novalidate aria-busy="false">
           <CardContent className="grid grid-cols-1 gap-5 p-5 md:grid-cols-2 md:gap-6 md:p-6">
             <div class="grid content-start grid-cols-1 gap-1.5">
-              <label for="meta-pixel" class="text-xs font-black text-slate-700">Meta Pixel ID</label>
+              <label for="meta-pixel" class="text-xs font-black text-foreground-subtle">Meta Pixel ID</label>
               <Input id="meta-pixel" className="h-11 font-mono" inputMode="numeric" autoComplete="off" pattern="[0-9]{5,25}" maxLength={25} placeholder="123456789012345" aria-describedby="meta-pixel-help meta-pixel-error" />
-              <p id="meta-pixel-help" class="text-[11px] leading-5 text-slate-500">5–25 digit dari Events Manager → Data Sources.</p>
+              <p id="meta-pixel-help" class="text-[11px] leading-5 text-muted-foreground">5–25 digit dari Events Manager → Data Sources.</p>
               <p id="meta-pixel-error" class="hidden text-[11px] font-bold leading-5 text-rose-700" role="alert"></p>
             </div>
 
             <div class="grid content-start grid-cols-1 gap-1.5">
               <div class="flex items-center justify-between gap-3">
-                <label for="meta-token" class="text-xs font-black text-slate-700">Token Akses CAPI</label>
+                <label for="meta-token" class="text-xs font-black text-foreground-subtle">Token Akses CAPI</label>
                 <span id="token-hint" class="text-[10px] font-bold text-slate-400" aria-hidden="true">Belum ada</span>
               </div>
               <div class="relative">
@@ -53,7 +53,7 @@ export const prerender = false;
                 <Button id="toggle-token" type="button" variant="ghost" size="sm" className="absolute inset-y-0 right-0 h-11 min-w-20 rounded-l-none px-3 text-xs font-bold" aria-controls="meta-token" aria-label="Tampilkan token baru" aria-pressed="false" disabled>Tampilkan</Button>
               </div>
               <p id="token-state" class="text-[11px] font-bold leading-5 text-slate-600" role="status" aria-live="polite" aria-atomic="true">Belum ada token tersimpan.</p>
-              <p id="token-guidance" class="text-[11px] leading-5 text-slate-500">Token disimpan terenkripsi dan tidak pernah ditampilkan kembali ke browser.</p>
+              <p id="token-guidance" class="text-[11px] leading-5 text-muted-foreground">Token disimpan terenkripsi dan tidak pernah ditampilkan kembali ke browser.</p>
               <p id="meta-token-error" class="hidden text-[11px] font-bold leading-5 text-rose-700" role="alert"></p>
               <label id="clear-token-row" class="hidden min-h-11 items-center gap-3 text-xs font-bold text-rose-700">
                 <input id="clear-token" type="checkbox" class="size-4 shrink-0 rounded border border-input accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30" />
@@ -63,35 +63,35 @@ export const prerender = false;
             </div>
           </CardContent>
 
-          <div class="grid grid-cols-1 gap-4 border-t border-slate-200 bg-slate-50/70 p-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end md:px-6">
+          <div class="grid grid-cols-1 gap-4 border-t border-border bg-muted/70 p-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end md:px-6">
             <div class="grid grid-cols-1 gap-1.5">
               <div>
                 <p class="text-xs font-black text-slate-800">Uji sambungan CAPI</p>
-                <p class="mt-0.5 text-[11px] text-slate-500">Kode ini hanya digunakan untuk pengujian dan tidak disimpan.</p>
+                <p class="mt-0.5 text-[11px] text-muted-foreground">Kode ini hanya digunakan untuk pengujian dan tidak disimpan.</p>
               </div>
-              <label for="meta-test-code" class="mt-1 text-xs font-black text-slate-700">Kode Test Event Meta</label>
+              <label for="meta-test-code" class="mt-1 text-xs font-black text-foreground-subtle">Kode Test Event Meta</label>
               <Input id="meta-test-code" className="h-11 font-mono uppercase" autoComplete="off" pattern="TEST[0-9]{3,20}" maxLength={24} placeholder="TEST12345" aria-describedby="meta-test-help meta-test-error" />
-              <p id="meta-test-help" class="text-[11px] leading-5 text-slate-500">Format TEST diikuti 3–20 digit, contoh TEST12345.</p>
+              <p id="meta-test-help" class="text-[11px] leading-5 text-muted-foreground">Format TEST diikuti 3–20 digit, contoh TEST12345.</p>
               <p id="meta-test-error" class="hidden text-[11px] font-bold leading-5 text-rose-700" role="alert"></p>
             </div>
             <Button id="test-meta" type="button" variant="outline" size="xl" className="min-w-40" disabled>Kirim test event</Button>
           </div>
 
-          <CardFooter className="flex flex-col gap-3 border-t border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between md:px-6">
-            <p id="meta-status" class="min-h-5 text-xs font-bold text-slate-500" role="status" aria-live="polite" aria-atomic="true">Perubahan belum ada.</p>
+          <CardFooter className="flex flex-col gap-3 border-t border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between md:px-6">
+            <p id="meta-status" class="min-h-5 text-xs font-bold text-muted-foreground" role="status" aria-live="polite" aria-atomic="true">Perubahan belum ada.</p>
             <Button id="save-meta" type="submit" size="xl" className="w-full min-w-36 sm:w-auto" disabled>Simpan Meta</Button>
           </CardFooter>
         </form>
       </Card>
     </section>
-    <section id="meta-guide" role="tabpanel" aria-labelledby="meta-tab-guide" class="hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm md:p-6"><h3 class="font-extrabold">Setup singkat</h3><ol class="mt-4 list-decimal space-y-3 pl-5 text-sm leading-6 text-slate-600"><li>Buat Pixel pada Meta Events Manager dan salin Pixel ID.</li><li>Buat System User access token dengan akses dataset yang tepat.</li><li>Simpan konfigurasi, lalu gunakan Test Event Code untuk memverifikasi CAPI.</li><li>Gunakan <a href={PUBLIC_CATALOG_FEED_PATH} target="_blank" rel="noopener" class="font-bold text-blue-700 underline underline-offset-2">satu feed XML yang sama</a> pada Meta Commerce Manager; ID offer wajib tetap sama dengan event storefront.</li><li>Pastikan domain storefront diverifikasi pada Business Manager sebelum kampanye aktif.</li></ol></section>
-    <section id="meta-policy" role="tabpanel" aria-labelledby="meta-tab-policy" class="hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm md:p-6"><h3 class="font-extrabold">Signal policy MyBookCMS</h3><dl class="mt-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2"><div class="rounded-lg bg-slate-50 p-4"><dt class="font-bold">Direct signal</dt><dd class="mt-1 text-slate-600">Pixel, CAPI, dan click attribution aktif ketika konfigurasi channel valid.</dd></div><div class="rounded-lg bg-slate-50 p-4"><dt class="font-bold">Server Purchase</dt><dd class="mt-1 text-slate-600">Order dan Purchase outbox ditulis dalam satu transaksi D1; retry berjalan setiap menit.</dd></div><div class="rounded-lg bg-slate-50 p-4"><dt class="font-bold">Browser dedup</dt><dd class="mt-1 text-slate-600">Thanks page memakai event ID invoice yang sama setelah order dan status token diverifikasi.</dd></div><div class="rounded-lg bg-slate-50 p-4"><dt class="font-bold">Advanced matching</dt><dd class="mt-1 text-slate-600">Telefon +60, nama, bandar, negeri, poskod, _fbp dan _fbc.</dd></div></dl></section>
+    <section id="meta-guide" role="tabpanel" aria-labelledby="meta-tab-guide" class="hidden rounded-xl border border-border bg-card p-5 shadow-sm md:p-6"><h3 class="font-extrabold">Setup singkat</h3><ol class="mt-4 list-decimal space-y-3 pl-5 text-sm leading-6 text-slate-600"><li>Buat Pixel pada Meta Events Manager dan salin Pixel ID.</li><li>Buat System User access token dengan akses dataset yang tepat.</li><li>Simpan konfigurasi, lalu gunakan Test Event Code untuk memverifikasi CAPI.</li><li>Gunakan <a href={PUBLIC_CATALOG_FEED_PATH} target="_blank" rel="noopener" class="font-bold text-blue-700 underline underline-offset-2">satu feed XML yang sama</a> pada Meta Commerce Manager; ID offer wajib tetap sama dengan event storefront.</li><li>Pastikan domain storefront diverifikasi pada Business Manager sebelum kampanye aktif.</li></ol></section>
+    <section id="meta-policy" role="tabpanel" aria-labelledby="meta-tab-policy" class="hidden rounded-xl border border-border bg-card p-5 shadow-sm md:p-6"><h3 class="font-extrabold">Signal policy MyBookCMS</h3><dl class="mt-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2"><div class="rounded-lg bg-muted p-4"><dt class="font-bold">Direct signal</dt><dd class="mt-1 text-slate-600">Pixel, CAPI, dan click attribution aktif ketika konfigurasi channel valid.</dd></div><div class="rounded-lg bg-muted p-4"><dt class="font-bold">Server Purchase</dt><dd class="mt-1 text-slate-600">Order dan Purchase outbox ditulis dalam satu transaksi D1; retry berjalan setiap menit.</dd></div><div class="rounded-lg bg-muted p-4"><dt class="font-bold">Browser dedup</dt><dd class="mt-1 text-slate-600">Thanks page memakai event ID invoice yang sama setelah order dan status token diverifikasi.</dd></div><div class="rounded-lg bg-muted p-4"><dt class="font-bold">Advanced matching</dt><dd class="mt-1 text-slate-600">Telefon +60, nama, bandar, negeri, poskod, _fbp dan _fbc.</dd></div></dl></section>
   </div>
   <script>
     import { getMetaAdminFormState } from '../../../lib/meta-admin-form';
 
     const tabs = [...document.querySelectorAll<HTMLButtonElement>('.meta-tab')];
-    const activate = (index: number) => { tabs.forEach((tab, item) => { const active = item === index; tab.setAttribute('aria-selected', String(active)); tab.tabIndex = active ? 0 : -1; tab.classList.toggle('border-blue-600', active); tab.classList.toggle('text-blue-700', active); tab.classList.toggle('border-transparent', !active); tab.classList.toggle('text-slate-500', !active); document.getElementById(tab.dataset.panel || '')?.classList.toggle('hidden', !active); }); tabs[index]?.focus(); };
+    const activate = (index: number) => { tabs.forEach((tab, item) => { const active = item === index; tab.setAttribute('aria-selected', String(active)); tab.tabIndex = active ? 0 : -1; tab.classList.toggle('border-blue-600', active); tab.classList.toggle('text-blue-700', active); tab.classList.toggle('border-transparent', !active); tab.classList.toggle('text-muted-foreground', !active); document.getElementById(tab.dataset.panel || '')?.classList.toggle('hidden', !active); }); tabs[index]?.focus(); };
     tabs.forEach((tab, index) => { tab.addEventListener('click', () => activate(index)); tab.addEventListener('keydown', (event) => { const next = event.key === 'ArrowRight' ? (index + 1) % tabs.length : event.key === 'ArrowLeft' ? (index - 1 + tabs.length) % tabs.length : event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : -1; if (next >= 0) { event.preventDefault(); activate(next); } }); });
     type MetaConfig = {
       meta_pixel_id: string;
