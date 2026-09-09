@@ -760,6 +760,70 @@ test("retry refuses a corrupt persisted money value at the surface, before any p
   assert.equal(refused?.error_class, "local_transition");
 });
 
+test("retry refuses an attempt with no expiry, before any provider call", async () => {
+  // A-279. `payment_attempts.expires_at` is nullable in migration `0059`, and
+  // DOKU answers a body without `order.expired_at` with HTTP 400
+  // `missing_parameter` — observed against sandbox on 2026-09-09. No write path
+  // produces a NULL today, which is why this is written straight to D1: the
+  // guarantee is a runtime habit of two insert statements, not a schema
+  // constraint, and this asserts what happens the day that habit breaks.
+  const variantId = 34096;
+  const token = "access-null-expiry-token-34096";
+  await createAttempt(variantId, token);
+  const created = await attemptFacts(token);
+  const cookie = await accessCookie(token);
+
+  // The shape production actually leaves, not merely one the schema permits.
+  // `retryDokuPayment` enters its reconcile branch only when the active attempt
+  // has a `checkout_url`; without one it carries that row straight to
+  // `checkoutBody`, expiry and all. `local_status` is set to `created` rather
+  // than left at `pending` because that is the pairing `createRetryAttempt`
+  // leaves behind after a failed send — every statement that writes `pending`
+  // sets `checkout_url` in the same UPDATE, so `pending` with no URL is
+  // unreachable. It also matters for the assertion at the end of this test:
+  // `recordAttemptFailureUnguarded` writes `error_class` only
+  // `WHERE checkout_url IS NULL AND local_status = 'created'`, so a `pending`
+  // fixture would have refused the retry correctly and recorded no reason at
+  // all — the A-268 symptom, passing silently.
+  await database.prepare(`
+    UPDATE payment_attempts
+    SET expires_at = NULL, checkout_url = NULL, local_status = 'created'
+    WHERE order_id = (SELECT id FROM orders WHERE order_number = ?)
+  `).bind(created.order_number).run();
+
+  let providerCalls = 0;
+  const response = await handleDokuRetryRequest({
+    request: retryRequest(created.order_number, cookie),
+    database,
+    rootSecret: ROOT_SECRET,
+    clientIp: "203.0.113.45",
+    userAgent: "payment-access-test",
+    fetch: (async () => {
+      providerCalls += 1;
+      throw new Error("a body with no expiry must never reach the provider");
+    }) as typeof fetch,
+    now: () => NOW,
+  });
+
+  assert.equal(response.status, 409);
+  assert.match(await response.text(), /DOKU_CONFLICT/);
+  assert.equal(
+    providerCalls,
+    0,
+    "the refusal must land here, not as a 400 from DOKU after a round trip",
+  );
+  // A-268: a refusal raised before the provider is contacted still owes the
+  // operator a reason, or the system log shows the one failure they could fix
+  // with no explanation. `local_transition` because the bad value is on this
+  // side and DOKU was never asked.
+  const refusedExpiry = await database.prepare(`
+    SELECT pa.error_class FROM payment_attempts pa
+    JOIN orders o ON o.id = pa.order_id
+    WHERE o.submit_token = ? AND pa.local_status = 'created'
+  `).bind(token).first<{ error_class: string | null }>();
+  assert.equal(refusedExpiry?.error_class, "local_transition");
+});
+
 test("retry refuses when the original channel is no longer enabled", async () => {
   const variantId = 34006;
   const token = "access-disabled-channel-token-34006";

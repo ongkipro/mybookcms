@@ -39,7 +39,9 @@ export type DokuCheckoutBodyInput = {
   attemptId: string;
   merchantInvoice: string;
   orderNumber: string;
-  expiresAt: string | null;
+  /** DOKU refuses a null or absent `order.expired_at` with `missing_parameter`,
+   *  so this is not nullable and `requiredExpiry` below refuses an empty one. */
+  expiresAt: string;
   channel: string | null;
   totalAmountSen: number;
   unitPriceSen: number;
@@ -59,6 +61,17 @@ export type DokuCheckoutBodyInput = {
   /** Present on the first attempt only; retry has no browser fingerprint. */
   deviceFingerprint?: string;
 };
+
+/** DOKU answers a missing `order.expired_at` with HTTP 400 `missing_parameter`,
+ *  observed 2026-09-09. The retry path reads its expiry from a D1 column that
+ *  migration `0059` declares nullable, so refuse it here rather than spend a
+ *  provider round trip learning the same thing. */
+function requiredExpiry(value: string): string {
+  if (typeof value !== "string" || value.length === 0) {
+    throw new DokuRequestBodyError("expiry");
+  }
+  return value;
+}
 
 /** Sen to MYR major units, refusing anything that is not a safe, non-negative integer. */
 function majorMyr(sen: number, field: string): number {
@@ -106,7 +119,7 @@ export function buildDokuCheckoutBody(input: DokuCheckoutBodyInput): string {
       invoice_number: input.merchantInvoice,
       currency: "MYR",
       line_items: lineItems,
-      expired_at: input.expiresAt,
+      expired_at: requiredExpiry(input.expiresAt),
     },
     checkout_experience: {
       payment_channels: [input.channel],

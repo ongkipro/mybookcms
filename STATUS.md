@@ -437,6 +437,55 @@ exactly that separation. They are queued as A-274, which also folds `lint` into
 recorded in the ledger as `lint-baseline-first-run=FAIL` — an executed red, kept
 red, rather than a green derived from a command chosen to pass.
 
+## A-279 — the expiry guard, and why it is load-bearing 2026-09-09
+
+`DokuCheckoutBodyInput.expiresAt` is `string` now, with `requiredExpiry`
+refusing an empty one inside the builder. The retry call site passes
+`attempt.expires_at ?? ""`, and the `DokuRequestBodyError` → `DOKU_CONFLICT`
+wrapper that already existed for corrupt sen values converts it into the same
+local refusal — no new error code, no provider round trip to learn what DOKU
+answers with `missing_parameter`.
+
+**The interesting part is that the entry's own analysis was still wrong, and
+writing the test is what exposed it.** Both the entry and the review that
+produced it assumed a nullable `expires_at` could not actually reach the
+builder. The first retry test written on that assumption failed with 502 instead
+of 409, because expiring the attempt sends the flow through
+`createRetryAttempt`, which computes a fresh expiry. Reading further:
+`retryDokuPayment` — the inner function, not the `handleDokuRetryRequest` HTTP
+wrapper, which the first draft of this paragraph named wrongly — enters its
+reconcile-and-replace branch only `if (active?.checkout_url)`, and `checkout_url`
+is nullable in migration `0059` as well, so an active attempt without one is
+carried straight to `checkoutBody` with whatever expiry it holds. No write path
+produces such a row today, so this is still not a live defect; the guard is
+load-bearing rather than decorative.
+
+**The independent review then found the test fixture was not the shape it
+claimed to be, and that the gap mattered.** It left `local_status` at `pending`,
+which no write path pairs with a missing `checkout_url` — every statement that
+writes `pending` sets the URL in the same UPDATE. Worse, `recordAttemptFailure`
+writes `error_class` only `WHERE checkout_url IS NULL AND local_status =
+'created'`, so the `pending` fixture refused the retry correctly and recorded no
+reason at all: the exact A-268 symptom, passing silently in a test written to
+prove the refusal works. The fixture is now `created`, which is what
+`createRetryAttempt` leaves after a failed send, and the test asserts
+`error_class` is `local_transition`. That assertion is mutation-proved too —
+restoring the `pending` fixture turns it red.
+
+Both tests were mutation-proved by reverting the guard: the builder test refuses
+`""`, `null` and `undefined` while still building a valid expiry, and the retry
+test answers 409 `DOKU_CONFLICT` with zero provider calls — and both go red
+without `requiredExpiry`.
+
+The review also found the guard is only half the hole, and the closure text had
+implied otherwise. `attemptFromRow` in `doku-checkout.ts` coerces
+`String(row.expires_at)`, which turns a NULL into the four-character string
+`"null"` — non-empty, so `requiredExpiry` accepts it and it reaches DOKU. The
+four sibling coercions on that same object all guard with
+`row.x ? String(row.x) : null`; `expires_at` is the one that does not. Queued as
+**A-280**, with the question of whether the durable fix is a `NOT NULL` migration
+rather than more coercion guards.
+
 ## A-277 — the guard now names the decision that governs it 2026-09-09
 
 Small change, written because a session already made the mistake it prevents.

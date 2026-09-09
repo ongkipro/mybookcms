@@ -504,3 +504,27 @@ test("a money value that is not a safe non-negative integer never reaches the pr
     assert.equal(dropped.order.line_items.length, 1, `shipping ${shippingCostSen} should drop the line item`);
   }
 });
+
+test("an absent expiry is refused here rather than by DOKU", () => {
+  // A-279. DOKU answers a missing `order.expired_at` with HTTP 400
+  // `missing_parameter`, observed against sandbox on 2026-09-09. The type is
+  // `string`, but the retry path reads its expiry from `payment_attempts`,
+  // whose `expires_at` column migration `0059` declares nullable, and passes
+  // `?? ""` — so the empty case is reachable at runtime and is what this
+  // asserts. `null` and `undefined` are cast because a caller compiled against
+  // an older signature, or a row read with a looser type, is exactly the way
+  // this arrives.
+  for (const expiresAt of ["", null as unknown as string, undefined as unknown as string]) {
+    assert.throws(
+      () => buildDokuCheckoutBody({ ...bodyInput, expiresAt }),
+      (error: unknown) => error instanceof DokuRequestBodyError,
+      `expected refusal for expiresAt ${JSON.stringify(expiresAt)}`,
+    );
+  }
+  // The valid case still builds, so the guard refuses absence rather than
+  // everything.
+  assert.match(
+    JSON.parse(buildDokuCheckoutBody(bodyInput)).order.expired_at,
+    /^2026-09-01T08:00:00\.000Z$/,
+  );
+});

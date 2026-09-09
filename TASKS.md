@@ -1611,39 +1611,67 @@ Surface, and obtain the independent correctness/security review required by
       Dependencies: A-221's outbound half, done 2026-09-09. A DOKU sandbox test instrument for the card channel.
       Done when: one sandbox payment completes for `CREDIT_CARD`, a retrieve on that checkout records the exact channel string DOKU reports, that string is compared against `DOKU_PAYMENT_CHANNELS` and against what `payment_attempts.channel` would hold, and the answer is recorded either as confirmation or as a mismatch with the code change it implies; the same is repeated for at least one e-wallet and FPX; and no card data, token, or credential appears in the evidence.
 
-- [ ] **A-279** — Narrow the checkout body's expiry type, which today permits a request DOKU always refuses.
+- [x] **A-279** — Narrow the checkout body's expiry type, which today permits a request DOKU always refuses. **Done 2026-09-09, and the work found the entry's own analysis still incomplete.** `DokuCheckoutBodyInput.expiresAt` is now `string`, and `requiredExpiry` refuses an empty one inside the builder, so the retry call site passes `attempt.expires_at ?? ""` and the existing `DokuRequestBodyError` → `DOKU_CONFLICT` wrapper — already there for corrupt sen values — converts it into the same local refusal with no new error code and no provider round trip. **The guard turned out to be load-bearing rather than defensive.** This entry, and the review that produced it, both assumed the nullable row could not reach the builder. It can: `retryDokuPayment` — the inner function, not the `handleDokuRetryRequest` HTTP wrapper — enters its reconcile-and-replace branch only `if (active?.checkout_url)`, and `checkout_url` is nullable in migration `0059` too — so an active attempt without one is carried straight to `checkoutBody` with whatever expiry it holds. No write path produces that row today, which is why this is still not a live defect, but the path is real and the first test written for it failed with 502 precisely because it had assumed otherwise. Two tests, each mutation-proved by reverting the guard: the builder refuses `""`, `null` and `undefined` while still building a valid expiry, and the retry surface answers 409 `DOKU_CONFLICT` with zero provider calls.
       Found by a bug in the A-221 probe, kept because the looseness is real.
       Passing `expiresAt: null` produced HTTP 400 `missing_parameter`, *"Required
       parameter order.expired_at is missing."* `DokuCheckoutBodyInput.expiresAt`
-      is typed `string | null` and `doku-request-body.ts:109` writes
+      is typed `string | null` and the builder writes
       `expired_at: input.expiresAt`, so a null reaches DOKU and is refused.
       **This entry's first draft got the reason right and the analysis wrong,
       and the independent review caught it.** The draft said "no caller passes
       null" after enumerating only `doku-checkout.ts`. There are two production
       callers. `doku-checkout.ts:163` passes `order.expiresAt`, typed `string`.
-      **`doku-payment-access.ts:872` passes `attempt.expires_at`, typed
-      `string | null`** (`doku-payment-access.ts:155`), read straight from D1
+      **`checkoutBody` in `doku-payment-access.ts` passes `attempt.expires_at`,
+      typed `string | null` on `AttemptRow`**, read straight from D1
       where migration `0059` line 49 declares `expires_at text` — nullable — and
-      reached through `active || await createRetryAttempt(...)` at `:1160`,
+      reached through `active || await createRetryAttempt(...)` in `retryDokuPayment`,
       where the `active` branch is a raw row.
       It is still **not a live defect**, but for a different and weaker reason
       than the draft gave. Both insert paths bind a string:
-      `order-persistence.ts:142` binds a field typed `string`, and
-      `doku-payment-access.ts:838` binds the value `createRetryAttempt` received
-      as a `string` parameter. So no row holds NULL today. That is a runtime
+      `order-persistence.ts` binds a field typed `string`, and the retry insert
+      binds the value `createRetryAttempt` received as a `string` parameter. So no row holds NULL today. That is a runtime
       invariant the schema does not enforce, not a type guarantee — which is
       precisely the gap worth closing before someone adds a third write path.
-      Note also that `doku-checkout.ts:267` coerces with `String(row.expires_at)`,
+      Note also that `attemptFromRow` in `doku-checkout.ts` coerces with `String(row.expires_at)`,
       which on a NULL row yields the literal `"null"` and would earn a different
       DOKU rejection than `missing_parameter`. It masks a null rather than
       preventing one, so it is not evidence of safety.
       Risk: R1 — one type narrowing, one call site, and its test; no behaviour change for any existing caller, because no caller can currently produce a null.
-      Surface: `src/lib/doku-request-body.ts`, `src/lib/doku-request-body.test.ts`, `src/lib/doku-payment-access.ts` for the retry call site, `src/lib/doku-payment-access.test.ts`, `TASKS.md`, `STATUS.md`.
+      Surface: `src/lib/doku-request-body.ts`, `src/lib/doku-checkout.test.ts` where the builder is actually tested beside A-260's frozen fixtures (an earlier draft named a `doku-request-body.test.ts` that does not exist), `src/lib/doku-payment-access.ts` for the retry call site, `src/lib/doku-payment-access.test.ts`, `TASKS.md`, `STATUS.md`.
       Non-scope: changing the expiry the checkout computes, changing `CHECKOUT_TTL_MS`, a migration adding `NOT NULL` to `expires_at` (a schema change that deserves its own entry if the type work argues for it), and touching any other nullable field without the same evidence.
       Primary requirement: REQ-227
       Constraints: none.
       Dependencies: none.
-      Done when: `DokuCheckoutBodyInput.expiresAt` is `string`; the retry path at `doku-payment-access.ts:872` either narrows its nullable row value or refuses the retry with a named error rather than sending a body DOKU will reject — **the first draft's "every caller still compiles unchanged" was false and is the thing this task must actually solve**; `npm run check` passes; and a test proves the retry path's behaviour when the row's expiry is absent.
+      Done when: `DokuCheckoutBodyInput.expiresAt` is `string`; the retry path's `checkoutBody` either narrows its nullable row value or refuses the retry with a named error rather than sending a body DOKU will reject — **the first draft's "every caller still compiles unchanged" was false and is the thing this task must actually solve**; `npm run check` passes; and a test proves the retry path's behaviour when the row's expiry is absent.
+
+- [ ] **A-280** — Close the coercion that turns an absent expiry into the string `"null"` and walks it past the guard A-279 just added.
+      Found by the independent review of A-279 on 2026-09-09, which noted that
+      entry's own closure text claimed more coverage than the code has.
+      `attemptFromRow` in `doku-checkout.ts` builds `expiresAt: String(row.expires_at)`.
+      On a row whose nullable `expires_at` is NULL that yields the four-character
+      string `"null"`, which is non-empty, so `requiredExpiry` accepts it and it
+      reaches DOKU. A-279 refuses an *absent* expiry; this refuses a *masked*
+      one, and until it lands the create path can still defeat the guard.
+      **Same standing as A-279: not a live defect.** No write path produces a
+      NULL `expires_at` — all four writes were enumerated during A-279 and each
+      binds a string. This is the second half of the same unenforced invariant,
+      and it is worth closing for the same reason: the guarantee lives in the
+      habits of two INSERT statements rather than in the schema or the types.
+      Check the sibling coercions on the same object while there. `checkout_url`,
+      `provider_reference`, `provider_status` and `provider_state` all guard with
+      `row.x ? String(row.x) : null`; `expires_at` is the one that does not, which
+      looks like an oversight rather than a decision. Confirm that reading before
+      changing it — a deliberate difference would be worth a comment instead.
+      Consider whether the durable fix is a migration making `expires_at NOT NULL`
+      rather than more coercion guards. That is a schema change and belongs to its
+      own entry if this one argues for it, but decide rather than default.
+      Risk: R2 — a coercion on the DOKU payment path; no schema, no buyer-facing change, no provider contract change.
+      Surface: `src/lib/doku-checkout.ts`, `src/lib/doku-checkout.test.ts`, `TASKS.md`, `STATUS.md`.
+      Non-scope: a migration adding `NOT NULL`, which is a separate entry if argued for; changing what `requiredExpiry` does; and the four sibling coercions unless the reading above shows they share the defect.
+      Primary requirement: REQ-227
+      Constraints: none.
+      Dependencies: A-279, which established the guard this bypasses.
+      Done when: a NULL `expires_at` on that row is refused or narrowed rather than stringified into `"null"`; a test proves the refusal and is mutation-proved by reverting the change; and the decision about `NOT NULL` is recorded either as done, as a queued entry, or as declined with a reason.
 
 - [ ] **MYS-5** — Release readiness for a specific install. **Approval: required — never run autonomously.**
       Carried over from the retired `UNIMPLEMENTED_SPECS.md`. This is not a product gap: the product does not depend on any external courier or payment service, and a missing provider contract must never be converted into a blocker. Nothing has been deployed to Cloudflare; the local database is the only one that exists.

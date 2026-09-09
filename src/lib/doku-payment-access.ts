@@ -869,7 +869,12 @@ function checkoutBody(
       attemptId: attempt.id,
       merchantInvoice: attempt.merchant_invoice,
       orderNumber: order.orderNumber,
-      expiresAt: attempt.expires_at,
+      // `payment_attempts.expires_at` is nullable in migration `0059`, and
+      // DOKU refuses a body without one. An empty string reaches
+      // `requiredExpiry`, which throws `DokuRequestBodyError`, which the catch
+      // below turns into the same local `DOKU_CONFLICT` a corrupt sen value
+      // already produces — no provider round trip to learn it.
+      expiresAt: attempt.expires_at ?? "",
       channel: attempt.channel,
       totalAmountSen: order.totalAmountSen,
       unitPriceSen: order.unitPriceSen,
