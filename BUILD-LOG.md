@@ -6223,3 +6223,31 @@ previously verified currency implementation.
 Validation: build and checkout browser fixture PASS at 390/1280; artifacts
 `/tmp/mybookcms-a252-browser-B6LqKq`. Final check and currency regression evidence
 are captured by the active A-264 delivery ledger, alongside independent review.
+
+## 2026-09-09 — A-221 outbound half, DOKU sandbox
+
+Owner-approved external verification. Requests to `api-sandbox.doku.com` through
+this repository's own `buildDokuCheckoutBody`, signer and `DokuClient`; fictional
+buyer data; no payment, no webhook, no production resource. Probe ran from a
+temporary directory since removed. Ledger run `RUN-20260908T235720Z-ba0c2d12`.
+
+Validation: create and retrieve both HTTP 200 for all five pinned channels
+(`INTERNET_BANKING_FPX`, `EWALLET_TNG`, `EWALLET_GRABPAY`, `EWALLET_SHOPEEPAY`,
+`CREDIT_CARD`), with `assertDokuMyrPayload` and `assertCheckoutResponseIdentity`
+passing against live responses.
+
+Findings, redacted, as corrected by the independent review of the same day.
+DOKU sends no response signature under any header name — **already found
+2026-09-02 and already decided by ADR-022 / REQ-227 / A-221R**, so this run
+confirms rather than discovers it; A-277 is scoped to pointing the guard at that
+decision and to asking whether production signs. The `payment.channel` string
+does not exist on an unpaid checkout, so the `CREDIT_CARD` question needs one
+sandbox payment plus a retrieve, on the unverified expectation that retrieve
+carries it post-payment (A-278). `expiresAt: null` is refused by DOKU as
+`missing_parameter`; the builder's type permits it and a second caller,
+`doku-payment-access.ts:872`, passes a nullable row value — no row is NULL today
+only because both insert paths bind a string, which the schema does not enforce
+(A-279). Sandbox returns 429 on rapid sequential creates.
+
+No credential value, card datum, signature, or customer datum was read, printed,
+or recorded.

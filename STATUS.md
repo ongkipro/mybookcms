@@ -437,6 +437,102 @@ exactly that separation. They are queued as A-274, which also folds `lint` into
 recorded in the ledger as `lint-baseline-first-run=FAIL` — an executed red, kept
 red, rather than a green derived from a command chosen to pass.
 
+## A-221 outbound half executed against DOKU sandbox 2026-09-09
+
+Owner-approved. Real requests to `api-sandbox.doku.com` using this repository's
+own `buildDokuCheckoutBody`, signer and `DokuClient` — the point was to exercise
+the production code path, not a parallel script. Fictional buyer data only. No
+payment completed, no webhook registered, no production resource, no credential
+value read or printed. The probe ran from a temporary directory that was removed;
+nothing was added to the repository.
+
+**All five pinned channels are accepted.** `INTERNET_BANKING_FPX`,
+`EWALLET_TNG`, `EWALLET_GRABPAY`, `EWALLET_SHOPEEPAY` and `CREDIT_CARD` each
+returned HTTP 200 on create and 200 on retrieve, each echoed back in
+`checkout_experience.payment_channels`. `assertDokuMyrPayload` and
+`assertCheckoutResponseIdentity` passed against live responses, so the amount
+and identity contracts hold against the real provider.
+
+**DOKU sends no response signature — and the first version of this section
+claimed that as a discovery, which the independent review disproved.** It was
+found on 2026-09-02, is recorded in A-221's own evidence lines in `TASKS.md`,
+and was already decided: **ADR-022** (Accepted 2026-09-02) resolves to verify
+`Signature` when present and accept the response without it only after the other
+envelope checks; **REQ-227** encodes that and **A-221R** implemented it and is
+closed. `doku-client.ts:366` is an accepted decision working as written, not an
+unnoticed fail-open. Claiming novelty here is exactly the inflation this
+repository's review gate exists to catch, and it was caught.
+
+What this run genuinely adds is confirmation, seven days on: the omission still
+holds across all five channels and both operations, with a full header inventory
+— `api-version`, `authorization`, `client-id`, `connection`,
+`content-encoding`/`content-length`, `content-type`, `date`,
+`response-timestamp`, `transfer-encoding`, `vary` — showing no signature under
+any name, and with `authorization` identified as DOKU reflecting our own `Basic`
+request header back rather than signing, established from its scheme and length
+and never by printing it.
+
+The residual risk was also understated in the safe direction and is corrected
+here. An unsigned response is not accepted loosely: `readCheckoutResponseEnvelope`
+(`doku-client.ts:167-198`) first requires the absence of the Cards-only
+`Request-Id`, an exact `Client-Id` match, a present and fresh
+`Response-Timestamp`, a JSON content type and an exact `API-Version`, and only
+then do `assertDokuMyrPayload` and `assertCheckoutResponseIdentity` run at
+`:381-382`. Saying "two structural guards" undercounted it. What is missing is
+body-origin HMAC assurance — which is precisely what ADR-022 records as its
+accepted negative consequence. **A-277** is rewritten accordingly: not a posture
+to decide, but a comment pointing the guard at ADR-022 so the next reader does
+not repeat this mistake, plus the still-open question of whether *production*
+signs, which ADR-022's own Context flags as contradicted by DOKU's published
+artifacts and which must be answered before A-222 enables production.
+
+**The `CREDIT_CARD` question A-221 exists to answer cannot be answered
+outbound.** On an unpaid checkout the `payment` object carries `callback_url`,
+`checkout_url`, `currency`, `state: "INITIATE"` and `status: "PENDING"` — and no
+channel field at all, on create or retrieve. The string appears only after a
+payment. The useful half of that result: the mismatch at
+`doku-payment-lifecycle.ts:185` compares against the *notification* channel,
+which needs a public URL, whereas the same string **may** appear on a
+**retrieve** after payment — and retrieve is outbound. Whether it actually does
+is unknown and is not assumed; if it does not, that is itself a finding and the
+question genuinely moves to the inbound half. On that hedge, one completed
+sandbox payment plus one retrieve is worth trying before any webhook, tunnel, or
+deployment. Queued as **A-278**.
+
+Smaller facts pinned so nobody has to rediscover them. The envelope differs by
+operation: create returns `id`, `order`, `checkout_experience`, `payment`,
+`customer`; retrieve omits `checkout_experience` entirely. The sandbox
+rate-limits hard — 429 `rate_limit_exceeded` on rapid sequential creates, with
+eight-second spacing still not always enough and thirty to forty-five seconds
+reliable. The live `checkout_url` host is `staging.doku.com`, which
+`isSafeDokuCheckoutUrl` accepts while rejecting `evil-doku.com`, so the existing
+allowlist covers the real host. DOKU normalises `60123456789` to `+60123456789`
+and echoes amounts in major units matching `majorMyr`.
+
+**One finding came from a bug in the probe and is kept because it is real —
+though the first version of this paragraph got its reasoning wrong.** Passing
+`expiresAt: null` returned HTTP 400 `missing_parameter`, *"Required parameter
+order.expired_at is missing."* `DokuCheckoutBodyInput.expiresAt` is typed
+`string | null` while DOKU refuses null.
+
+The draft said "no caller passes null" after enumerating only
+`doku-checkout.ts`. The review found a second: `doku-payment-access.ts:872`
+passes `attempt.expires_at`, typed `string | null`, read from a D1 column that
+migration `0059` declares nullable, through a code path whose `active` branch is
+a raw row. It is still **not** a live defect, but for a weaker reason than
+claimed: both insert paths happen to bind a string, so no row holds NULL today.
+That is a runtime invariant the schema does not enforce, not a type guarantee.
+`doku-checkout.ts:267`'s `String(row.expires_at)` was also cited as evidence of
+safety and is not — on a NULL row it yields the literal `"null"`, masking a null
+rather than preventing one. **A-279**'s Done-when was correspondingly false
+("every caller still compiles unchanged") and is rewritten: narrowing the type
+will break the retry call site, and deciding what that site does is the actual
+work.
+
+A-221 itself stays open. Its Done-when covers notification, duplicate delivery,
+reconciliation, expiry, retry and stock invariants, none of which the outbound
+half reaches.
+
 ## A-273 — the review gate now has to say what it found 2026-09-09
 
 `AGENTS.md` rule 10 states that a bound `boundary_review` does not by itself

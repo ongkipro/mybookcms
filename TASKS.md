@@ -1527,6 +1527,123 @@ Surface, and obtain the independent correctness/security review required by
       Dependencies: A-256, which must establish the tokens, fix `admin.css`'s literal-class selectors, and build the guard first. The designer/vision handoff.
       Done when: no file under `src/pages/admin` references a raw palette shade for a colour the semantic layer names, verified by the extended A-256 guard mutation-proved against these paths; A-256's Done-when can then be restated as "no admin surface" without becoming false; and a real browser confirms each of the ten routes at 390 px and 1280 px with no new overflow and no regression against the REQ-186 baseline.
 
+- [ ] **A-277** — Point the response-signature guard at the decision that governs it, and confirm production before production.
+      **This entry replaces a wrong one.** Its first draft claimed the absent
+      DOKU response signature as a new discovery and proposed deciding the
+      fail-open posture. The independent review of 2026-09-09 disproved both.
+      The absence was found on **2026-09-02**, is recorded in A-221's own
+      evidence lines above, and was already decided: **ADR-022** ("Narrow DOKU
+      Checkout response-envelope compatibility", Accepted 2026-09-02) resolves
+      to verify `Signature` whenever present and accept the response without it
+      only after the other envelope checks, **REQ-227** encodes that, and
+      **A-221R** implemented it and is closed. So `doku-client.ts:366` is not an
+      unnoticed fail-open; it is an accepted decision working as written. Saying
+      otherwise is the inflation this repository's review gate exists to catch.
+      What the 2026-09-09 outbound run actually added is confirmation, and it is
+      worth having: the omission still holds seven days later, across all five
+      channels and both create and retrieve, with a full header inventory
+      (`api-version`, `authorization`, `client-id`, `connection`,
+      `content-encoding`/`content-length`, `content-type`, `date`,
+      `response-timestamp`, `transfer-encoding`, `vary`) showing no signature
+      under any name, and with the `authorization` header identified as DOKU
+      reflecting our own `Basic` request header back rather than signing.
+      **Two things remain genuinely open, and neither is a re-decision.** First,
+      nothing at the guard tells a reader that ADR-022 governs it, so the next
+      session to read `doku-client.ts:366` will draw the same wrong conclusion
+      this entry's first draft did — that is not hypothetical, it just happened.
+      Second, ADR-022's own Context records conflicting official artifacts: the
+      endpoint OpenAPI models no response headers while the generic Global
+      integrity guide says DOKU signs. Sandbox evidence does not settle
+      production. Confirming production's behaviour belongs before A-222
+      enables production, not after.
+      **State the residual risk as the code actually has it.** An unsigned
+      response is not accepted loosely. `readCheckoutResponseEnvelope`
+      (`doku-client.ts:167-198`) first requires the absence of the Cards-only
+      `Request-Id`, an exact `Client-Id` match, a present and fresh
+      `Response-Timestamp`, a JSON content type, and an exact `API-Version`;
+      only then do `assertDokuMyrPayload` and `assertCheckoutResponseIdentity`
+      run at `:381-382`. An earlier draft of this entry said "two structural
+      guards", which understates it. What is missing is body-origin HMAC
+      assurance, which is exactly what ADR-022 records as its accepted negative
+      consequence.
+      A smaller item belongs here: DOKU reflects our `Authorization: Basic`
+      request header back in the response, so the API key appears in DOKU's
+      response headers. Nothing logs them today — `doku-client.ts:349` passes
+      them only to `readCheckoutResponseEnvelope`, which reads five names by
+      hand — so there is no leak. Record it as a standing constraint before a
+      future diagnostic starts dumping response headers.
+      Risk: R1 — a comment, a constraint, and a question to the provider. It was first written as R3 on the false premise that an undecided security posture was in play; there is no posture to decide.
+      Surface: `src/lib/doku-client.ts` for the comment only, `OBSERVABILITY.md` for the response-header constraint, `TASKS.md`, `STATUS.md`.
+      Non-scope: **re-opening ADR-022 or amending REQ-227**, which is what this entry's first draft wrongly proposed; changing any verification behaviour; the request signature, which DOKU does require and which works; notification signature verification, which is the inbound half and uses the asymmetric key; and switching production to fail-closed, which would refuse every response and stop payments.
+      Primary requirement: REQ-227
+      Constraints: REQ-227
+      Dependencies: none. The production question must be answered before A-222, not by it.
+      Done when: the guard at `doku-client.ts:366` names ADR-022 and REQ-227 and states that DOKU was observed not to sign responses on 2026-09-02 and again on 2026-09-09, so the next reader is not misled; the response-header reflection is recorded as a constraint against logging them; and the question of whether production signs is either answered by DOKU and recorded, or recorded as an open question that A-222 must resolve before enabling production.
+
+- [ ] **A-278** — Complete one sandbox payment and retrieve it, because that is the only way to learn the `CREDIT_CARD` channel string. **Approval: required — a payment at a hosted provider page, even a sandbox one.**
+      A-221's Done-when asks for the exact `payment.channel` string DOKU returns
+      for each enabled channel and singles out `CREDIT_CARD`, which providers
+      commonly report as a card sub-brand and which would strand a paid order as
+      `DOKU_PAYMENT_MISMATCH`. A-242's review deferred the same question here.
+      **The outbound run of 2026-09-09 proved the question cannot be answered
+      without a payment.** On an unpaid checkout the `payment` object carries
+      `callback_url`, `checkout_url`, `currency`, `state: "INITIATE"` and
+      `status: "PENDING"` — and no channel field at all, on create *and* on
+      retrieve. All five channels were confirmed accepted, so the outbound
+      vocabulary is right; the reported string simply does not exist yet.
+      **The useful consequence is that this is much smaller than the inbound
+      half.** The mismatch at `doku-payment-lifecycle.ts:185` compares
+      `attempt.channel` with the *notification* channel, which does need a public
+      URL. But the same string should appear on a **retrieve** after payment, and
+      retrieve is outbound. So one completed sandbox payment at the hosted
+      `checkout_url` plus one retrieve answers the highest-value open question in
+      the payment integration with no webhook, no tunnel, and no deployment.
+      Do `CREDIT_CARD` first; it is the one with a known failure mode. Whether
+      retrieve actually carries the channel post-payment is itself unknown — if
+      it does not, that is a finding, and the question genuinely moves to the
+      inbound half rather than being assumed there.
+      Risk: R4 — a payment at an external provider, with sandbox credentials and no production resource.
+      Surface: DOKU sandbox checkouts and their hosted pages; `STATUS.md`, `BUILD-LOG.md`, `TASKS.md` for redacted evidence. No code change unless a finding demands one, which becomes its own entry.
+      Non-scope: production credentials or any production resource; a real instrument; registering a webhook; the inbound notification half; and recording any card number, token, or signature.
+      Primary requirement: REQ-227
+      Constraints: REQ-227
+      Dependencies: A-221's outbound half, done 2026-09-09. A DOKU sandbox test instrument for the card channel.
+      Done when: one sandbox payment completes for `CREDIT_CARD`, a retrieve on that checkout records the exact channel string DOKU reports, that string is compared against `DOKU_PAYMENT_CHANNELS` and against what `payment_attempts.channel` would hold, and the answer is recorded either as confirmation or as a mismatch with the code change it implies; the same is repeated for at least one e-wallet and FPX; and no card data, token, or credential appears in the evidence.
+
+- [ ] **A-279** — Narrow the checkout body's expiry type, which today permits a request DOKU always refuses.
+      Found by a bug in the A-221 probe, kept because the looseness is real.
+      Passing `expiresAt: null` produced HTTP 400 `missing_parameter`, *"Required
+      parameter order.expired_at is missing."* `DokuCheckoutBodyInput.expiresAt`
+      is typed `string | null` and `doku-request-body.ts:109` writes
+      `expired_at: input.expiresAt`, so a null reaches DOKU and is refused.
+      **This entry's first draft got the reason right and the analysis wrong,
+      and the independent review caught it.** The draft said "no caller passes
+      null" after enumerating only `doku-checkout.ts`. There are two production
+      callers. `doku-checkout.ts:163` passes `order.expiresAt`, typed `string`.
+      **`doku-payment-access.ts:872` passes `attempt.expires_at`, typed
+      `string | null`** (`doku-payment-access.ts:155`), read straight from D1
+      where migration `0059` line 49 declares `expires_at text` — nullable — and
+      reached through `active || await createRetryAttempt(...)` at `:1160`,
+      where the `active` branch is a raw row.
+      It is still **not a live defect**, but for a different and weaker reason
+      than the draft gave. Both insert paths bind a string:
+      `order-persistence.ts:142` binds a field typed `string`, and
+      `doku-payment-access.ts:838` binds the value `createRetryAttempt` received
+      as a `string` parameter. So no row holds NULL today. That is a runtime
+      invariant the schema does not enforce, not a type guarantee — which is
+      precisely the gap worth closing before someone adds a third write path.
+      Note also that `doku-checkout.ts:267` coerces with `String(row.expires_at)`,
+      which on a NULL row yields the literal `"null"` and would earn a different
+      DOKU rejection than `missing_parameter`. It masks a null rather than
+      preventing one, so it is not evidence of safety.
+      Risk: R1 — one type narrowing, one call site, and its test; no behaviour change for any existing caller, because no caller can currently produce a null.
+      Surface: `src/lib/doku-request-body.ts`, `src/lib/doku-request-body.test.ts`, `src/lib/doku-payment-access.ts` for the retry call site, `src/lib/doku-payment-access.test.ts`, `TASKS.md`, `STATUS.md`.
+      Non-scope: changing the expiry the checkout computes, changing `CHECKOUT_TTL_MS`, a migration adding `NOT NULL` to `expires_at` (a schema change that deserves its own entry if the type work argues for it), and touching any other nullable field without the same evidence.
+      Primary requirement: REQ-227
+      Constraints: none.
+      Dependencies: none.
+      Done when: `DokuCheckoutBodyInput.expiresAt` is `string`; the retry path at `doku-payment-access.ts:872` either narrows its nullable row value or refuses the retry with a named error rather than sending a body DOKU will reject — **the first draft's "every caller still compiles unchanged" was false and is the thing this task must actually solve**; `npm run check` passes; and a test proves the retry path's behaviour when the row's expiry is absent.
+
 - [ ] **MYS-5** — Release readiness for a specific install. **Approval: required — never run autonomously.**
       Carried over from the retired `UNIMPLEMENTED_SPECS.md`. This is not a product gap: the product does not depend on any external courier or payment service, and a missing provider contract must never be converted into a blocker. Nothing has been deployed to Cloudflare; the local database is the only one that exists.
       Risk: R4 — production deployment.
