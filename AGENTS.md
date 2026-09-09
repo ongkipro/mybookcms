@@ -77,68 +77,20 @@ Never stage the ledger with `git add -f`.
    what an operator can observe; an unregistered label is a signal the contract
    does not define, and `doku-config-unusable` shipped that way for a day before
    anyone noticed.
-10. **A bound `boundary_review` does not, by itself, satisfy the review gate.**
-    Any run whose `check-boundary` returns `REVIEW_REQUIRED` also records what
-    the review examined and what it found, as a `verification` check beside the
-    `boundary_review` event. A review that found nothing still records what it
-    looked at; "CLEAN" with no surface named is not a finding, it is a shrug.
-    The trigger is the boundary's answer, not the declared risk. A-274 was
-    declared R1, escalated to R2 by `check-boundary`, and its review changed
-    four documented claims — a rule keyed to R3 would have skipped it.
-    The reason, so this is not read as ceremony: the `boundary_review` event has
-    no field for findings. It stores reviewer, model, provider, reasoning
-    effort, the boundary hash, the surface digest, the effective risk, the
-    implementer route, and `status: APPROVED`. There is nowhere to say what was
-    examined, what was found, or whether anything was found at all. So the event
-    proves a review was *claimed*; only the verification check can show one
-    *happened*.
-    Measured across `.delivery/runs/` on 2026-09-09: 64 bound reviews over 53
-    runs, carrying 7 reviewer identities, three of them reused 24, 17 and 15
-    times — one is named `a210_review_retry` and signed off A-211 through A-221.
-    Median gap from run start to bound review is 9.3 minutes, implementation
-    included; twelve were bound inside three minutes, the fastest at 0.7. And 33
-    of the 53 reviewed runs recorded a review-named verification check, so this
-    rule formalises a practice that already holds in most runs rather than
-    inventing one. None of that proves self-review and none of it is an
-    accusation: the ledger cannot distinguish a real review from a renamed one,
-    which `~/dotfiles/docs/task-change-boundary.md` states outright. The
-    contract is sound; what was recorded against it was thin.
-    The contrast is the argument. The four reviews bound by
-    `independent-doku-reviewer` on 2026-09-08 changed the code four times, and
-    the review bound on 2026-09-09 caught two fabricated claims in this
-    repository's own documentation. A gate that cannot tell those apart from a
-    0.7-minute approval is not measuring what it is relied on to measure.
-    Prefer `record --command` for the checks the review asks you to re-run: the
-    `verification` event carries an `executed` field, and executed evidence is
-    the difference between a check that ran and a check that was typed.
-    Widening `boundary_review` itself belongs to `delivery-ledger` in dotfiles
-    and is out of scope here.
-11. `delivery-ledger check-boundary` runs **before** `git commit`, not after.
-    The boundary is evaluated against the HEAD captured at `start`; committing
-    first moves HEAD past it and the check can then only report `repository HEAD
-    moved after baseline capture`, which denies `finish --result PASS` for a run
-    whose work was entirely in surface. There is no re-baseline command, so the
-    run closes `FAIL` and the evidence has to be argued in prose instead of
-    read off the tool. This cost run `RUN-20260908T174024Z-5393afaf` its clean
-    close on 2026-09-09 for exactly that reason and nothing else.
-
-12. A `before()` or `after()` hook that can fail must fail with a message
-    naming itself, and must not throw away the payload it read that message
-    from. The runner prints no test name for a hook, so its failure reaches you
-    as a stack over whatever the hook was holding — and if that payload contains
-    a migration name and a SQL-shaped word, the obvious reading is wrong. One
-    `npm test` exit 1 went unattributed for a full day on 2026-09-08 for exactly
-    that reason: `tail` showed migration
-    `0034_remove_foreign_sample_product.sql`, and the actual cause was a
-    transient port draw.
-    Two traps, both hit while fixing that one. A tool often logs a wrapper line
-    at the same severity as the cause it announces — wrangler emits
-    `Migration <name> failed with the following errors:` through `logger.error`
-    too — so taking the *first* matching line yields a sentence that announces a
-    reason and never gives one. Take the last, and keep the wrapper only when it
-    is all there is. And put the original error on `cause` rather than
-    summarising it away: a short message is for reading a `tail`, not for
-    discarding evidence.
+10. **Ceremony is scoped to money and production (ADR-033).** A delivery-ledger
+    run and an independent review are required only when a change touches
+    payment, production, authorization, or schema. Everything else — features,
+    fixes, tests, docs, tooling — is: change it, `npm run check`, `npm test`,
+    commit. Do not open a ledger run for ordinary work.
+11. When a review does apply, record what it found as a `verification` check
+    beside the `boundary_review` event. That event has no field for findings, so
+    on its own it proves a review was claimed, not that one happened.
+12. Keep task entries and status notes short: what changed, why, what proves it.
+13. A `before()`/`after()` hook that can fail must fail with a message naming
+    itself, and keep the original error on `cause`. The runner prints no test
+    name for a hook, so its failure arrives anonymous — one went unattributed
+    for a day on 2026-09-08. Take the *last* matching error line, not the first:
+    tools log a wrapper at the same severity as the cause it announces.
 
 ```bash
 npm run check

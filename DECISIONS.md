@@ -572,3 +572,23 @@ overwrites that file, so those two are not a backlog anyone should plan to fix
 by hand. `src/lib` — the payment, order, and schema logic — returned clean. The three
 errors are queued as A-274, which also folds `lint` into `check` so CI never
 gates on a baseline it was born red against.
+
+
+## ADR-033 — Ceremony is scoped to money and production
+
+- **Status:** Accepted by the owner on 2026-09-09
+- **Amends:** ADR-028's review obligation, and AGENTS.md rules 10 and 12
+
+Independent review and delivery-ledger runs apply only to changes that touch
+payment, production, authorization, or schema. Everything else — features,
+fixes, tests, docs, tooling — goes: change it, run `npm run check` and
+`npm test`, commit. No ledger run, no reviewer agent, no boundary.
+
+Task entries and status notes are short: what changed, why, what proves it.
+Not essays.
+
+The owner's reason is the right one: the ceremony was costing more than it
+returned on ordinary work. Recorded honestly, it did also earn its keep on
+2026-09-09, catching two fabricated claims and a fix that did not work on real
+input. Both of those were payment-path changes, which is where it still applies.
+Verification did not get cheaper — `check` and `test` still gate every commit.
