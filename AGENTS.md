@@ -97,8 +97,16 @@ npm run check
 npm test
 npm run build
 npm run lint            # biome; folded into `check` by A-274, see ADR-032
+npm run cf:serve        # serve the existing dist; `cf:dev` rebuilds first
 npm run test:coverage   # optional; Node's built-in coverage, baseline in docs/DEVELOPMENT-MAP.md
 ```
+
+`cf:dev` runs a full `astro build` before starting wrangler. Measured
+2026-09-10: the build peaks at **1.5 GB** for about six seconds, while the
+running server holds **~160 MB** — roughly ten to one. On a loaded machine that
+spike is what gets a backgrounded dev server killed, not the server. Use
+`cf:serve` when `dist/` is already current, and prefer running either in the
+foreground rather than as a background task.
 
 `npm run lint` reads `biome.json`: a lint floor only, no formatter, and a rule
 set chosen for defects rather than taste. It covers `src/**/*.ts`, `.tsx` and
