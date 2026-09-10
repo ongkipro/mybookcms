@@ -42,12 +42,36 @@ must use the shared MYR formatter rather than handwritten symbols or separators.
 The admin uses the semantic variables and Tailwind bridge in
 `src/styles/admin.css` plus the existing shadcn components.
 
-Muted text depends on what it sits on, and the two are not interchangeable.
-`slate-500` (`#62748e`) measures 4.76 against a white card and passes the 4.5 AA
-floor; on the admin page background (`#f5f6f8`) it measures 4.41 and fails.
-Muted text placed directly on the page background uses `slate-600`, which gives
-7.01 there. Written down because the failing pair looks identical in source and
-only a measurement tells them apart.
+**Use the tokens, not raw shades.** A-256 and A-276 converted 913 raw palette
+uses across the admin components, the layout and the routes to the semantic
+layer that already named them: `text-muted-foreground`, `text-foreground`,
+`text-foreground-subtle`, `border-border`, `bg-muted`, `bg-card`. The `zinc`
+vocabulary is retired. `src/lib/admin-token-guard.test.ts` fails if any of the
+eight converted shades returns.
+
+That conversion also closed a contrast problem rather than only tidying names.
+`--muted-foreground` resolves to `#5f6a77` and measures **5.50** on a white card,
+**5.13** on the page and **4.97** on a muted panel — all above the 4.5 AA floor.
+The `text-slate-500` (`#62748e`) it replaced measures **4.76 / 4.44 / 4.31**, so
+it was failing on two of the three grounds the admin actually paints.
+
+**Three shades stay raw, deliberately, and the guard asserts they are still
+present so a later sweep cannot quietly take them.**
+
+- `text-slate-600` — muted text placed *directly on the page background*, where
+  it gives 7.26:1. Mapping it to `--muted-foreground` would pass AA and still be
+  a contrast reduction on text that was darkened on purpose. Written down because
+  the two look identical in source and only a measurement tells them apart.
+- `text-slate-400` — split by role rather than mapped: decorative icons and
+  placeholders may stay light, while text nodes among them are live AA failures
+  at 2.56. Deciding each one needs reading it.
+- `bg-slate-900` / `bg-slate-950` — deliberate dark surfaces. `--foreground` is an
+  ink, not a ground, and the semantic layer names no dark surface, so mapping
+  them would invent one.
+
+A third ink level, `--foreground-subtle`, was added for the tier 73 components
+were expressing as `text-slate-700`. It is Tailwind's own slate-700, so naming it
+moved nothing.
 
 Prefer:
 

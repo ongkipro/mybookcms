@@ -22,11 +22,25 @@ npm run check
 npm test
 npm run db:migrate:local
 npm run db:seed:preview:local # optional fictional local preview only
-npm run cf:dev
+npm run dev
 ```
 
-Use `npm run cf:dev` for flows requiring D1, KV, or R2 bindings. `npm run dev`
-is suitable only for rendering work that does not use Worker bindings.
+**`npm run dev` is the everyday one, and it does have Worker bindings.** An
+earlier version of this page said it was "suitable only for rendering work that
+does not use Worker bindings"; that was true of an older adapter and is no
+longer. `@astrojs/cloudflare` 14 wraps `@cloudflare/vite-plugin`, so `astro dev`
+runs the Worker in workerd with the bindings declared in `wrangler.jsonc`,
+against the same `.wrangler/state`, with hot reload and no build step. Verified
+2026-09-11: `localhost:4321` served the seeded store and a real product slug
+from D1, and `/admin` redirected through the session middleware to `/hello`.
+
+Reach for `npm run cf:dev` when you need the **built output** rather than the
+source — before a release, or for a browser verification. That is where a
+build-only defect appears, which is the whole reason the next paragraph exists.
+It costs a full `astro build` first: measured at a 1.5 GB peak against the
+running server's ~160 MB, so on a loaded machine that spike, not the server, is
+what gets killed. `npm run cf:serve` skips the rebuild when `dist/` is already
+current.
 **`--assets dist/client` is not optional.** The generated
 `dist/server/wrangler.json` declares `assets.directory` as the relative
 `../client`, and Wrangler resolves that against the root `wrangler.jsonc` it

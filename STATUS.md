@@ -437,6 +437,37 @@ exactly that separation. They are queued as A-274, which also folds `lint` into
 recorded in the ledger as `lint-baseline-first-run=FAIL` — an executed red, kept
 red, rather than a green derived from a command chosen to pass.
 
+## The rebuild cycle was a habit, not a requirement 2026-09-11
+
+Found while diagnosing why a backgrounded dev server kept being killed. The kills
+were real but the cause was elsewhere: another project's `next-server` had grown
+to 8.6 GB, and `cf:dev` runs a full `astro build` first — measured at a **1.5 GB**
+peak for six seconds against the running server's **~160 MB**, roughly ten to
+one. That spike, not the server, is what a memory watchdog reaches for.
+
+**The larger finding is that the build was avoidable for ordinary work.**
+`@astrojs/cloudflare` 14 wraps `@cloudflare/vite-plugin`, so `astro dev` runs the
+Worker in workerd with the real bindings from `wrangler.jsonc`, against the same
+`.wrangler/state`, with hot reload and no build step. Verified rather than
+assumed: `localhost:4321` served the seeded store name and a real product slug
+from D1 (`/produk/planner-mingguan-2026`, 200), and `/admin` redirected through
+the session middleware to `/hello`.
+
+`INSTALLATION.md` had been telling every new install the opposite — that
+`npm run dev` is "suitable only for rendering work that does not use Worker
+bindings". True of an older adapter; the `platformProxy` option that used to be
+needed no longer exists in v14. Corrected there and in `AGENTS.md`.
+
+`cf:dev` keeps one job HMR cannot do: serving the **built output**, which is
+where a build-only defect appears. A-270 was exactly that — every `/_astro/*`
+chunk 404'd under `wrangler dev` while `astro dev` was fine. Added `cf:serve` for
+when `dist/` is already current.
+
+Two corrections of my own along the way: I said login was at `/admin/login`, a
+path that does not exist — it is `/hello`, per `middleware.ts:199`. And a first
+attempt at stopping the stale servers used `pkill -f` with a pattern that matched
+its own command line, so the shell died before any target did.
+
 ## A-278 — four channel strings answered, the card still open 2026-09-10
 
 Owner-approved. Real sandbox payments driven through DOKU's hosted checkout in a

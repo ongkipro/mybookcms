@@ -6275,3 +6275,19 @@ This says nothing about the **notification** payload, which is what
 `CREDIT_CARD` remains unproved: its page is a direct card form with no simulator
 and needs a sandbox test card held in the DOKU Back Office. No credential or
 customer datum was read, printed, or recorded.
+
+## 2026-09-11 — dev workflow corrected
+
+`npm run dev` has real Worker bindings and always did under this adapter
+version. `@astrojs/cloudflare` 14 wraps `@cloudflare/vite-plugin`, so `astro dev`
+runs workerd with the bindings from `wrangler.jsonc` against the same
+`.wrangler/state`, with hot reload and no build.
+
+Validation: `localhost:4321` served the seeded store name and the product slug
+`/produk/planner-mingguan-2026` (200) from D1, and `/admin` redirected through
+the session middleware to `/hello`.
+
+`INSTALLATION.md` said the opposite and is corrected. `cf:dev` remains the way to
+serve the built output before a release or a browser check; `cf:serve` was added
+to skip the rebuild when `dist/` is current. Build peak measured at 1.5 GB against
+the running server's ~160 MB.
