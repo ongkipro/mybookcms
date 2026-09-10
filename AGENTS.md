@@ -97,16 +97,30 @@ npm run check
 npm test
 npm run build
 npm run lint            # biome; folded into `check` by A-274, see ADR-032
+npm run dev             # HMR with real D1/KV/R2 bindings; the everyday one
 npm run cf:serve        # serve the existing dist; `cf:dev` rebuilds first
 npm run test:coverage   # optional; Node's built-in coverage, baseline in docs/DEVELOPMENT-MAP.md
 ```
 
-`cf:dev` runs a full `astro build` before starting wrangler. Measured
-2026-09-10: the build peaks at **1.5 GB** for about six seconds, while the
-running server holds **~160 MB** — roughly ten to one. On a loaded machine that
-spike is what gets a backgrounded dev server killed, not the server. Use
-`cf:serve` when `dist/` is already current, and prefer running either in the
-foreground rather than as a background task.
+**For ordinary development use `npm run dev`, not `cf:dev`.** The rebuild cycle
+is avoidable and was a habit rather than a requirement. `@astrojs/cloudflare` 14
+wraps `@cloudflare/vite-plugin`, so `astro dev` runs the Worker in workerd with
+the real bindings from `wrangler.jsonc`, against the same `.wrangler/state`, with
+hot reload and no build step. Verified 2026-09-11: `localhost:4321` served the
+seeded store name and a real product slug from D1, and `/admin` redirected
+through the session middleware to `/hello`.
+
+`cf:dev` and `cf:serve` remain useful for one thing HMR cannot do: serving the
+**built output**, which is where a build-only defect shows up. A-270 was exactly
+that — every `/_astro/*` chunk 404'd under `wrangler dev` while `astro dev` was
+fine — so run `cf:dev` before a release or a browser verification, not while
+editing.
+
+The cost of not knowing this: `cf:dev` runs a full `astro build` first, measured
+2026-09-10 at a **1.5 GB** peak for about six seconds against the running
+server's **~160 MB**, roughly ten to one. On a loaded machine that spike is what
+gets a backgrounded dev server killed, not the server itself. Use `cf:serve` when
+`dist/` is already current, and prefer the foreground over a background task.
 
 `npm run lint` reads `biome.json`: a lint floor only, no formatter, and a rule
 set chosen for defects rather than taste. It covers `src/**/*.ts`, `.tsx` and
