@@ -437,6 +437,59 @@ exactly that separation. They are queued as A-274, which also folds `lint` into
 recorded in the ledger as `lint-baseline-first-run=FAIL` — an executed red, kept
 red, rather than a green derived from a command chosen to pass.
 
+## A-278 — four channel strings answered, the card still open 2026-09-10
+
+Owner-approved. Real sandbox payments driven through DOKU's hosted checkout in a
+browser, then retrieved. Fictional buyer data, RM 5.00, sandbox only, no
+production resource, and no card number entered anywhere.
+
+**DOKU echoes the pinned channel string back exactly — but the four are not
+equally proved, and the first draft of this section blurred that.**
+`INTERNET_BANKING_FPX` and `EWALLET_TNG` were carried to **completed** payments
+through the FPX and Touch 'n Go simulators, so their channel was read from a
+finished transaction alongside `bank_code` and `processor.*`.
+`EWALLET_GRABPAY` and `EWALLET_SHOPEEPAY` were only **initiated and abandoned**,
+and at that stage the value is plausibly still an echo of what we pinned in the
+request. The failure this task fears — a provider substituting a sub-brand for
+the pinned string — would surface at completion, which those two never reached.
+So: **two proved on a completed payment, two only at initiation.**
+
+**A sharper result than the entry expected.** A-221 recorded that an unpaid
+checkout carries no `payment.channel`. True but incomplete: the channel appears
+when the buyer *initiates* at the provider, not when the payment completes.
+
+The review rightly called the first control weak, so it was strengthened: all six
+checkouts were re-retrieved **in one pass**, and the two abandoned e-wallets carry
+their channel while both controls carry `null` — with `state: "INITIATE"` and
+`status: "PENDING"` **identical across all four**. Neither elapsed time nor the
+state field can explain the difference; the only variable left is whether the
+buyer reached the provider. One caveat kept rather than buried: the second
+control is a `CREDIT_CARD` checkout, a channel never successfully submitted
+anywhere in this run, so it adds no independent evidence beyond the TNG control.
+A completed payment additionally carries `bank_code`, `processor.approval_code`,
+`processor.response_code` and a top-level `reference_id`.
+
+**One consequence, stated with the hedge the first draft dropped.** Retrieve
+carries the channel, so it is enough to *learn* the string. It is **not** proof
+about the notification: the guard at `doku-payment-lifecycle.ts:185` compares
+`attempt.channel` against the **notification** channel, and this run observed
+only retrieve payloads. `doku-notification.ts:95` does read `payment.channel`
+from the notification body — the same field name — so the inference is
+plausible, but it rests on the schema this repository assumes rather than on
+anything observed here. A-221's own record carried that hedge; deleting it in
+this entry was the error, and the independent review caught it.
+
+**`CREDIT_CARD` is untouched, and it is the one that mattered.** Its hosted page
+is a direct card form with no simulator behind it, unlike FPX and the e-wallets.
+It needs a sandbox test card; DOKU does not publish those — they are in the
+sandbox Back Office under Settings → Simulator, and no dashboard credential
+exists in `secrets-env`. Asked of the owner.
+
+Noted without recording it: the hosted page displays the sandbox merchant
+profile, which carries the owner's own name, email and phone. That is the owner's
+data in the owner's own account, not a leak from this side, and none of it is
+written into this repository.
+
 ## A-271 — the schema entry has somewhere to go 2026-09-09
 
 `/admin/settings/schema` states the expected version, the applied version, the

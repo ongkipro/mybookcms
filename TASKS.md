@@ -1223,35 +1223,45 @@ Surface, and obtain the independent correctness/security review required by
       **Role decision:** the destination inherits the audience of the entry that points at it — owner and admin, exactly matching `/admin/settings/log`. A wider audience would be pointless and a narrower one would publish a link some readers of that log could not follow. Asserted as an equality against the log's own answer, not as a duplicated list.
       `schema-guidance.ts` holds the operator copy so it can be tested and so it does not sit inside the upgrade logic. A test walks all six states and refuses any that claims `safeToOperate` without matching, plus an unknown state degrading to the guidance that promises least. Both the destination and the role gate are mutation-proved.
       Real browser at 390 px and 1280 px confirms the four required facts and that the log page actually renders a link here. Three repository contracts caught what I missed: the code map, the development map, and `mobile-layout-guard`, which refused a `grid` that declared its columns only at `sm:` — the exact shape that has clipped admin controls off a phone three times.
-- [ ] **A-278** — Complete one sandbox payment and retrieve it, because that is the only way to learn the `CREDIT_CARD` channel string. **Approval: required — a payment at a hosted provider page, even a sandbox one.**
-      A-221's Done-when asks for the exact `payment.channel` string DOKU returns
-      for each enabled channel and singles out `CREDIT_CARD`, which providers
-      commonly report as a card sub-brand and which would strand a paid order as
-      `DOKU_PAYMENT_MISMATCH`. A-242's review deferred the same question here.
-      **The outbound run of 2026-09-09 proved the question cannot be answered
-      without a payment.** On an unpaid checkout the `payment` object carries
-      `callback_url`, `checkout_url`, `currency`, `state: "INITIATE"` and
-      `status: "PENDING"` — and no channel field at all, on create *and* on
-      retrieve. All five channels were confirmed accepted, so the outbound
-      vocabulary is right; the reported string simply does not exist yet.
-      **The useful consequence is that this is much smaller than the inbound
-      half.** The mismatch at `doku-payment-lifecycle.ts:185` compares
-      `attempt.channel` with the *notification* channel, which does need a public
-      URL. But the same string should appear on a **retrieve** after payment, and
-      retrieve is outbound. So one completed sandbox payment at the hosted
-      `checkout_url` plus one retrieve answers the highest-value open question in
-      the payment integration with no webhook, no tunnel, and no deployment.
-      Do `CREDIT_CARD` first; it is the one with a known failure mode. Whether
-      retrieve actually carries the channel post-payment is itself unknown — if
-      it does not, that is a finding, and the question genuinely moves to the
-      inbound half rather than being assumed there.
+- [ ] **A-278** — Complete one sandbox payment and retrieve it, because that is the only way to learn the `CREDIT_CARD` channel string. **Approval: required — a payment at a hosted provider, even a sandbox one. Four of five channels answered 2026-09-10; `CREDIT_CARD` still open, and it is the one that mattered.**
+      **What is now known.** DOKU echoes the pinned channel string back exactly,
+      with no transformation, in `payment.channel`. Confirmed for
+      `INTERNET_BANKING_FPX` and `EWALLET_TNG` through completed sandbox payments
+      (`state: "COMPLETED"`, `status: "SUCCESS"`), and for `EWALLET_GRABPAY` and
+      `EWALLET_SHOPEEPAY` from initiated-but-abandoned ones — **two proved on a
+      completed payment, two only at initiation**, where the value may still be
+      an echo of the request rather than the provider's own report.
+      **A sharper finding than this entry expected, proved with a control.**
+      A-221 recorded that an unpaid checkout carries no `payment.channel`. True
+      but incomplete: the channel appears when the buyer **initiates** at the
+      provider, not when the payment completes. Two control checkouts created and
+      merely viewed but never submitted carry `state: "INITIATE"`,
+      `status: "PENDING"` and no channel field at all, while the two abandoned
+      e-wallet payments carry their channel with `status` still `PENDING`. A
+      completed payment adds `bank_code`, `processor.approval_code`,
+      `processor.response_code` and a top-level `reference_id`.
+      **Consequence for A-222, with the hedge this entry's first draft dropped:**
+      retrieve is enough to *learn* the string, but it is not proof about the
+      **notification**, which is what `doku-payment-lifecycle.ts:185` actually
+      compares against. `doku-notification.ts:95` reads `payment.channel` from
+      the notification body — the same field name — so the inference is
+      plausible and rests on this repository's assumed schema, not on anything
+      observed. A-221's record carried that hedge; removing it here was the
+      error.
+      **Why `CREDIT_CARD` is still open.** Its hosted page is a direct card form
+      — number, expiry, CVV — with no simulator behind it, unlike FPX and the
+      e-wallets which each have one. It needs a sandbox test card, and DOKU does
+      not publish those: they live in the sandbox Back Office under
+      Settings → Simulator, and no dashboard credential exists in `secrets-env`.
+      Asked of the owner 2026-09-10. This is the channel A-242's review and this
+      entry both singled out, so the risk it names is untouched.
       Risk: R4 — a payment at an external provider, with sandbox credentials and no production resource.
       Surface: DOKU sandbox checkouts and their hosted pages; `STATUS.md`, `BUILD-LOG.md`, `TASKS.md` for redacted evidence. No code change unless a finding demands one, which becomes its own entry.
       Non-scope: production credentials or any production resource; a real instrument; registering a webhook; the inbound notification half; and recording any card number, token, or signature.
       Primary requirement: REQ-227
       Constraints: REQ-227
-      Dependencies: A-221's outbound half, done 2026-09-09. A DOKU sandbox test instrument for the card channel.
-      Done when: one sandbox payment completes for `CREDIT_CARD`, a retrieve on that checkout records the exact channel string DOKU reports, that string is compared against `DOKU_PAYMENT_CHANNELS` and against what `payment_attempts.channel` would hold, and the answer is recorded either as confirmation or as a mismatch with the code change it implies; the same is repeated for at least one e-wallet and FPX; and no card data, token, or credential appears in the evidence.
+      Dependencies: A-221's outbound half, done 2026-09-09. **The only thing still missing is a DOKU sandbox test card**, which is not published: it is in the sandbox Back Office under Settings → Simulator, and no dashboard credential exists in `secrets-env`. FPX and the e-wallets needed no instrument because each has a simulator; the card page has none.
+      Done when: **(the FPX and e-wallet halves are met as of 2026-09-10; only the card remains)** one sandbox payment completes for `CREDIT_CARD`, a retrieve on that checkout records the exact channel string DOKU reports, that string is compared against `DOKU_PAYMENT_CHANNELS` and against what `payment_attempts.channel` would hold, and the answer is recorded either as confirmation or as a mismatch with the code change it implies; the same is repeated for at least one e-wallet and FPX; and no card data, token, or credential appears in the evidence.
 
 - [x] **A-279** — Narrow the checkout body's expiry type, which today permits a request DOKU always refuses. **Done 2026-09-09, and the work found the entry's own analysis still incomplete.** `DokuCheckoutBodyInput.expiresAt` is now `string`, and `requiredExpiry` refuses an empty one inside the builder, so the retry call site passes `attempt.expires_at ?? ""` and the existing `DokuRequestBodyError` → `DOKU_CONFLICT` wrapper — already there for corrupt sen values — converts it into the same local refusal with no new error code and no provider round trip. **The guard turned out to be load-bearing rather than defensive.** This entry, and the review that produced it, both assumed the nullable row could not reach the builder. It can: `retryDokuPayment` — the inner function, not the `handleDokuRetryRequest` HTTP wrapper — enters its reconcile-and-replace branch only `if (active?.checkout_url)`, and `checkout_url` is nullable in migration `0059` too — so an active attempt without one is carried straight to `checkoutBody` with whatever expiry it holds. No write path produces that row today, which is why this is still not a live defect, but the path is real and the first test written for it failed with 502 precisely because it had assumed otherwise. Two tests, each mutation-proved by reverting the guard: the builder refuses `""`, `null` and `undefined` while still building a valid expiry, and the retry surface answers 409 `DOKU_CONFLICT` with zero provider calls.
       Found by a bug in the A-221 probe, kept because the looseness is real.

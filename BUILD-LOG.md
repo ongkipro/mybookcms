@@ -6251,3 +6251,27 @@ only because both insert paths bind a string, which the schema does not enforce
 
 No credential value, card datum, signature, or customer datum was read, printed,
 or recorded.
+
+## 2026-09-10 — A-278 partial, DOKU sandbox channel strings
+
+Owner-approved sandbox payments driven through the hosted checkout in a browser,
+then retrieved. Fictional buyer data, RM 5.00, no production resource, no card
+number entered. Ledger run `RUN-20260910T011650Z-a951208c`.
+
+Validation, with the completed/initiated split the first draft of this entry
+blurred: `payment.channel` returns the pinned string verbatim on a **completed**
+payment for `INTERNET_BANKING_FPX` and `EWALLET_TNG`, and at **initiation only**
+for `EWALLET_GRABPAY` and `EWALLET_SHOPEEPAY` — where the value may still be an
+echo of the request, since the sub-brand substitution this task fears would
+surface at completion. Two controls never submitted carry no channel at all;
+re-retrieving all six in one pass shows `state` and `status` identical across
+the abandoned pair and the controls, so neither time nor state explains the
+difference. Recorded as an executed, re-runnable check with every value except
+the channel scrubbed.
+
+This says nothing about the **notification** payload, which is what
+`doku-payment-lifecycle.ts:185` actually compares against.
+
+`CREDIT_CARD` remains unproved: its page is a direct card form with no simulator
+and needs a sandbox test card held in the DOKU Back Office. No credential or
+customer datum was read, printed, or recorded.
