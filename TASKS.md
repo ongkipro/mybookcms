@@ -1248,6 +1248,25 @@ Surface, and obtain the independent correctness/security review required by
       plausible and rests on this repository's assumed schema, not on anything
       observed. A-221's record carried that hedge; removing it here was the
       error.
+      **Update 2026-09-13: the risk this entry names is not contradicted, which
+      is weaker than answered and is the honest word.** DOKU reported
+      **`CREDIT_CARD`**, not a card sub-brand. The evidence is a *terminal* card transaction rather than
+      an abandoned one: submitting the industry-standard Visa test PAN — a
+      published dummy number, never issued to anyone, and not a credential — was
+      declined by the sandbox, and the retrieve returns
+      `channel: "CREDIT_CARD"`, `state: "COMPLETED"`, `status: "FAILED"`,
+      `processor.response_code: "14"` and an `acquirer` field. The request
+      reached the acquirer and DOKU still named the channel exactly as pinned, so
+      this is stronger than the two e-wallets that stopped at `PENDING`. **But
+      `response_code: "14"` is *invalid card number*** — the one decline that
+      happens *before* the card brand is resolved, and brand resolution is
+      exactly where a `VISA`/`MASTERCARD` substitution would appear. So a
+      successful card payment remains both unobserved and genuinely necessary;
+      this decline cannot stand in for one.
+      **That decline also exposed a real defect**, now queued as **A-281**:
+      `mapDokuNotificationStatus` treats `state: "COMPLETED"` as a success
+      signal, but DOKU uses it to mean *terminal*, so an ordinary decline
+      resolves to `attention_required` instead of `failed`.
       **Why `CREDIT_CARD` is still open.** Its hosted page is a direct card form
       — number, expiry, CVV — with no simulator behind it, unlike FPX and the
       e-wallets which each have one. It needs a sandbox test card, and DOKU does
@@ -1297,6 +1316,53 @@ Surface, and obtain the independent correctness/security review required by
       Done when: `DokuCheckoutBodyInput.expiresAt` is `string`; the retry path's `checkoutBody` either narrows its nullable row value or refuses the retry with a named error rather than sending a body DOKU will reject — **the first draft's "every caller still compiles unchanged" was false and is the thing this task must actually solve**; `npm run check` passes; and a test proves the retry path's behaviour when the row's expiry is absent.
 
 - [x] **A-280** — Close the coercion that turns an absent expiry into the string `"null"`. **Done 2026-09-09.** `loadPersistedDokuOrder` now guards `expires_at` the way its four siblings on the same object already did — `row.x ? String(row.x) : ""` — so a NULL refuses at `requiredExpiry` instead of reaching DOKU as the four-character string `"null"`. A test pins why the ternary is needed rather than the ternary itself: `buildDokuCheckoutBody` accepts `String(null)`, so the builder cannot be the place this is caught. No `NOT NULL` migration: it is a schema change on a live table for an invariant every write path already holds, and the coercion covers the read side. Still not a live defect — no write path produces a NULL.
+- [ ] **A-281** — A declined card leaves its stock reserved forever, because `COMPLETED` is read as success. **Approval: required — changes how a payment outcome is classified, and therefore when stock is released.**
+      Found 2026-09-13 from real DOKU sandbox data during A-278, not from
+      reasoning about the code. A card decline returns `status: "FAILED"` with
+      `state: "COMPLETED"`, `processor.response_code: "14"` and an `acquirer`
+      field. `mapDokuNotificationStatus` maps that pair to `attention_required`
+      instead of `failed`.
+      The cause is one clause: `successSignal` is
+      `status === "SUCCESS" || state === "COMPLETED"`. DOKU uses `COMPLETED` to
+      mean the transaction reached a **terminal** state, not that it succeeded —
+      which the observed payload proves directly by being `COMPLETED` and
+      `FAILED` at once. A decline therefore trips both the success and failure
+      signals and lands in the contradiction branch.
+      **The consequence is worse than a noisy queue, and an earlier draft of this
+      entry said only that.** `applyDokuPaymentFact` releases reserved stock and
+      writes `orders.payment_status = 'failed'` **only** when the target is
+      `failed` or `expired`. Under `attention_required` neither happens, so a
+      declined card leaves its stock reserved indefinitely and the order never
+      reaches a terminal payment status. That is a direct **REQ-221** violation:
+      *"failed or expired terminal outcomes shall release still-reserved stock
+      once"*. Declines are the commonest outcome after success — insufficient
+      funds, wrong CVV, expired card, issuer refusal — so this strands inventory
+      on ordinary traffic, not on edge cases.
+      **Three combinations are wrong today, not one.** `EXPIRED`/`COMPLETED` and
+      `PENDING`/`COMPLETED` with `orderStatus: "ORDER_EXPIRED"` also resolve to
+      `attention_required`, and REQ-221 says an expired terminal outcome must
+      release stock too. Narrowing `successSignal` to `status === "SUCCESS"`
+      fixes all three. An earlier draft listed the expiry signals as non-scope;
+      that was wrong, and they are in scope for exactly the REQ-221 reason.
+      **An existing test pins the behaviour being changed.**
+      `doku-payment-lifecycle.test.ts` asserts `FAILED`/`COMPLETED` →
+      `attention_required`, and blame shows it landed with the function in one
+      commit, so this is a written contract rather than an oversight. The
+      assertion plausibly encodes the same wrong reading of `COMPLETED`, but
+      inverting a committed assertion must be stated rather than slipped in.
+      The combinations that are correct today and must stay correct:
+      `SUCCESS`/`COMPLETED` → `paid` (guarded by its own explicit
+      `status === "SUCCESS"` test), `PENDING`/`INITIATE` → `pending`, and a
+      genuinely contradictory `SUCCESS` with a failure signal →
+      `attention_required`. The first two are observed from DOKU; the third is a
+      unit-test hypothetical and is not claimed as observed.
+      Risk: R3 — changes the local status a payment outcome resolves to, which drives stock release, the order's payment status, and the operator queue. No schema change, no provider contract change.
+      Surface: `src/lib/doku-payment-lifecycle.ts`, `src/lib/doku-payment-lifecycle.test.ts`, `OBSERVABILITY.md` if the attention-queue description names this case, `TASKS.md`, `STATUS.md`.
+      Non-scope: the `orderStatus` handling beyond the `ORDER_EXPIRED` case named above, anything that changes what `paid` means, and adding a new local status.
+      Primary requirement: REQ-221
+      Constraints: REQ-221, REQ-227
+      Dependencies: none. The evidence is already recorded under A-278.
+      Done when: `FAILED`/`COMPLETED` resolves to `failed` and both expiry combinations resolve to `expired`, so all three release stock as REQ-221 requires; the existing `attention_required` assertion for `FAILED`/`COMPLETED` is **inverted deliberately and the inversion is recorded**; `SUCCESS`/`COMPLETED`, `PENDING`/`INITIATE` and the `SUCCESS`-plus-failure contradiction still resolve as they do today; a test proves stock is released on a decline, which is the actual harm; and every assertion is mutation-proved by reverting the clause.
 - [ ] **MYS-5** — Release readiness for a specific install. **Approval: required — never run autonomously.**
       Carried over from the retired `UNIMPLEMENTED_SPECS.md`. This is not a product gap: the product does not depend on any external courier or payment service, and a missing provider contract must never be converted into a blocker. Nothing has been deployed to Cloudflare; the local database is the only one that exists.
       Risk: R4 — production deployment.

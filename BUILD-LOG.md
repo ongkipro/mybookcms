@@ -6291,3 +6291,23 @@ the session middleware to `/hello`.
 serve the built output before a release or a browser check; `cf:serve` was added
 to skip the rebuild when `dist/` is current. Build peak measured at 1.5 GB against
 the running server's ~160 MB.
+
+## 2026-09-13 — A-278 card channel, and the defect it exposed
+
+Owner-approved sandbox continuation. The industry-standard Visa test PAN was
+submitted to the hosted card form and declined; the retrieve returns
+`channel: "CREDIT_CARD"` on a terminal transaction (`state: "COMPLETED"`,
+`status: "FAILED"`, `processor.response_code: "14"`, `acquirer` present). DOKU
+does not substitute a card sub-brand. A successful card payment remains
+unobserved, so A-278 stays open.
+
+That payload also proved `mapDokuNotificationStatus` misreads `COMPLETED` as a
+success signal, so an ordinary decline resolves to `attention_required` rather
+than `failed` — which means its reserved stock is never released and the order
+never reaches a terminal payment status, a direct REQ-221 violation. Two expiry
+combinations are wrong the same way. Queued as A-281.
+
+`response_code 14` is *invalid card number*, a decline that occurs before brand
+resolution, so this is evidence the substitution risk is **not contradicted**
+rather than answered. No card number, credential, or customer datum was
+recorded.

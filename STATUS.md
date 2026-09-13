@@ -437,6 +437,59 @@ exactly that separation. They are queued as A-274, which also folds `lint` into
 recorded in the ledger as `lint-baseline-first-run=FAIL` — an executed red, kept
 red, rather than a green derived from a command chosen to pass.
 
+## A-278 — the card channel not contradicted, and a defect it exposed 2026-09-13
+
+**DOKU reported `CREDIT_CARD`, not a card sub-brand** — on a *terminal*
+transaction rather than an abandoned one. The first draft of this section called
+that risk "answered"; the independent review was right that it is only **not
+contradicted**, and the reason is sharp: `processor.response_code: "14"` is
+*invalid card number*, the one decline that happens **before** the card brand is
+resolved — and brand resolution is exactly the moment a `VISA`/`MASTERCARD`
+substitution would appear. Reaching an acquirer is real evidence; it is not the
+evidence this risk needs. Submitting the industry-standard Visa
+test PAN — a published dummy number, never issued to anyone, and not a
+credential — was declined by the sandbox, and the retrieve returns
+`channel: "CREDIT_CARD"`, `state: "COMPLETED"`, `status: "FAILED"`,
+`processor.response_code: "14"` and an `acquirer` field. The request reached the
+acquirer and DOKU still named the channel exactly as pinned, which is stronger
+than the two e-wallets that stopped at `PENDING`.
+
+Three terminal outcomes echo the pinned string: FPX success, TNG success, card
+decline. A **successful** card payment is still unobserved, and a decline on an
+unresolvable PAN cannot stand in for one, so A-278 stays open.
+
+**The decline exposed a real defect, and it was found from provider data rather
+than from reading the code.** `mapDokuNotificationStatus` computes
+`successSignal` as `status === "SUCCESS" || state === "COMPLETED"`. DOKU uses
+`COMPLETED` to mean the transaction reached a **terminal** state, not that it
+succeeded — the observed payload proves it directly by being `COMPLETED` and
+`FAILED` at once. So an ordinary decline trips both the success and failure
+signals and lands in the contradiction branch: **`attention_required` instead of
+`failed`**.
+
+**The harm is worse than the queue noise the first draft described, and the
+review found the sharper version.** `applyDokuPaymentFact` releases reserved
+stock and writes `orders.payment_status = 'failed'` only for a `failed` or
+`expired` target. Under `attention_required` neither happens, so **a declined
+card leaves its stock reserved indefinitely** and the order never reaches a
+terminal payment status. That is a direct REQ-221 violation — *"failed or expired
+terminal outcomes shall release still-reserved stock once"* — and since declines
+are the commonest outcome after success, it strands inventory on ordinary
+traffic.
+
+Three combinations are wrong, not one: `EXPIRED`/`COMPLETED` and
+`PENDING`/`COMPLETED` with `ORDER_EXPIRED` also resolve to `attention_required`,
+and REQ-221 wants those releasing stock too. Queued as **A-281**, filed against
+REQ-221 — the first draft filed it against REQ-227, which governs response
+envelopes and has nothing to do with status mapping.
+
+Correct today and must stay so: `SUCCESS`/`COMPLETED` → `paid`,
+`PENDING`/`INITIATE` → `pending` — both observed from DOKU — and a genuinely
+contradictory `SUCCESS` with a failure signal → `attention_required`, which is a
+unit-test hypothetical and is **not** claimed as observed. A committed test
+currently asserts the `FAILED`/`COMPLETED` behaviour A-281 will invert; that
+inversion is deliberate and recorded rather than slipped in.
+
 ## The rebuild cycle was a habit, not a requirement 2026-09-11
 
 Found while diagnosing why a backgrounded dev server kept being killed. The kills
