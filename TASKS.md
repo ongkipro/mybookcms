@@ -1316,53 +1316,45 @@ Surface, and obtain the independent correctness/security review required by
       Done when: `DokuCheckoutBodyInput.expiresAt` is `string`; the retry path's `checkoutBody` either narrows its nullable row value or refuses the retry with a named error rather than sending a body DOKU will reject — **the first draft's "every caller still compiles unchanged" was false and is the thing this task must actually solve**; `npm run check` passes; and a test proves the retry path's behaviour when the row's expiry is absent.
 
 - [x] **A-280** — Close the coercion that turns an absent expiry into the string `"null"`. **Done 2026-09-09.** `loadPersistedDokuOrder` now guards `expires_at` the way its four siblings on the same object already did — `row.x ? String(row.x) : ""` — so a NULL refuses at `requiredExpiry` instead of reaching DOKU as the four-character string `"null"`. A test pins why the ternary is needed rather than the ternary itself: `buildDokuCheckoutBody` accepts `String(null)`, so the builder cannot be the place this is caught. No `NOT NULL` migration: it is a schema change on a live table for an invariant every write path already holds, and the coercion covers the read side. Still not a live defect — no write path produces a NULL.
-- [ ] **A-281** — A declined card leaves its stock reserved forever, because `COMPLETED` is read as success. **Approval: required — changes how a payment outcome is classified, and therefore when stock is released.**
-      Found 2026-09-13 from real DOKU sandbox data during A-278, not from
-      reasoning about the code. A card decline returns `status: "FAILED"` with
-      `state: "COMPLETED"`, `processor.response_code: "14"` and an `acquirer`
-      field. `mapDokuNotificationStatus` maps that pair to `attention_required`
-      instead of `failed`.
-      The cause is one clause: `successSignal` is
-      `status === "SUCCESS" || state === "COMPLETED"`. DOKU uses `COMPLETED` to
-      mean the transaction reached a **terminal** state, not that it succeeded —
-      which the observed payload proves directly by being `COMPLETED` and
-      `FAILED` at once. A decline therefore trips both the success and failure
-      signals and lands in the contradiction branch.
-      **The consequence is worse than a noisy queue, and an earlier draft of this
-      entry said only that.** `applyDokuPaymentFact` releases reserved stock and
-      writes `orders.payment_status = 'failed'` **only** when the target is
-      `failed` or `expired`. Under `attention_required` neither happens, so a
-      declined card leaves its stock reserved indefinitely and the order never
-      reaches a terminal payment status. That is a direct **REQ-221** violation:
-      *"failed or expired terminal outcomes shall release still-reserved stock
-      once"*. Declines are the commonest outcome after success — insufficient
-      funds, wrong CVV, expired card, issuer refusal — so this strands inventory
-      on ordinary traffic, not on edge cases.
-      **Three combinations are wrong today, not one.** `EXPIRED`/`COMPLETED` and
-      `PENDING`/`COMPLETED` with `orderStatus: "ORDER_EXPIRED"` also resolve to
-      `attention_required`, and REQ-221 says an expired terminal outcome must
-      release stock too. Narrowing `successSignal` to `status === "SUCCESS"`
-      fixes all three. An earlier draft listed the expiry signals as non-scope;
-      that was wrong, and they are in scope for exactly the REQ-221 reason.
-      **An existing test pins the behaviour being changed.**
-      `doku-payment-lifecycle.test.ts` asserts `FAILED`/`COMPLETED` →
-      `attention_required`, and blame shows it landed with the function in one
-      commit, so this is a written contract rather than an oversight. The
-      assertion plausibly encodes the same wrong reading of `COMPLETED`, but
-      inverting a committed assertion must be stated rather than slipped in.
-      The combinations that are correct today and must stay correct:
-      `SUCCESS`/`COMPLETED` → `paid` (guarded by its own explicit
-      `status === "SUCCESS"` test), `PENDING`/`INITIATE` → `pending`, and a
-      genuinely contradictory `SUCCESS` with a failure signal →
-      `attention_required`. The first two are observed from DOKU; the third is a
-      unit-test hypothetical and is not claimed as observed.
-      Risk: R3 — changes the local status a payment outcome resolves to, which drives stock release, the order's payment status, and the operator queue. No schema change, no provider contract change.
-      Surface: `src/lib/doku-payment-lifecycle.ts`, `src/lib/doku-payment-lifecycle.test.ts`, `OBSERVABILITY.md` if the attention-queue description names this case, `TASKS.md`, `STATUS.md`.
-      Non-scope: the `orderStatus` handling beyond the `ORDER_EXPIRED` case named above, anything that changes what `paid` means, and adding a new local status.
-      Primary requirement: REQ-221
-      Constraints: REQ-221, REQ-227
-      Dependencies: none. The evidence is already recorded under A-278.
-      Done when: `FAILED`/`COMPLETED` resolves to `failed` and both expiry combinations resolve to `expired`, so all three release stock as REQ-221 requires; the existing `attention_required` assertion for `FAILED`/`COMPLETED` is **inverted deliberately and the inversion is recorded**; `SUCCESS`/`COMPLETED`, `PENDING`/`INITIATE` and the `SUCCESS`-plus-failure contradiction still resolve as they do today; a test proves stock is released on a decline, which is the actual harm; and every assertion is mutation-proved by reverting the clause.
+- [x] **A-281** — A declined card leaves its stock reserved forever, because `COMPLETED` is read as success. **Approval: required — changes how a payment outcome is classified, and therefore when stock is released. Granted 2026-09-13 by the owner's standing instruction to execute the remaining queue; recorded here rather than dropped, because an earlier draft of this closure silently removed the marker. Done 2026-09-13.** `successSignal` is now `status === "SUCCESS"` alone. DOKU uses `COMPLETED` to mean the transaction reached a **terminal** state, which the observed card decline proves by being `COMPLETED` and `FAILED` at once — so reading it as success sent every ordinary decline into the contradiction branch, where `applyDokuPaymentFact` releases no stock and writes no terminal payment status.
+      Three *shapes* were wrong and all three are fixed: `FAILED`/`COMPLETED` → `failed`, `EXPIRED`/`COMPLETED` → `expired`, and any status paired with `COMPLETED` and `orderStatus: "ORDER_EXPIRED"` → `expired`. **That third one is not a single combination and an earlier draft implied it was:** it covers `PENDING` but also `REFUNDED`, the empty string, and any unrecognised status, which now auto-resolve to `expired` where a human used to look. The review brute-forced 360 tuples and found exactly 14 changed, none of them newly resolving to `paid` — structurally impossible, since the `paid` branch tests `status === "SUCCESS"` directly and never consults `successSignal`. All three now release stock, which is what REQ-221 requires of a terminal outcome. The four that were already correct still are, including both genuine contradictions — `SUCCESS`/`FAILED` and `SUCCESS`/`COMPLETED` with `ORDER_EXPIRED` — which remain `attention_required` because nobody can act on them without looking.
+      **A committed assertion was inverted deliberately.** `doku-payment-lifecycle.test.ts` asserted `FAILED`/`COMPLETED` → `attention_required`, landed with the function in one commit. It was pinning the same misreading rather than a contract, and the replacement test says so in place.
+      The test that matters asserts the **harm**, not the mapping: a declined card puts its two reserved units back on the shelf and the order reaches `failed`. **The first mutation proof was insufficient and the review caught it.** Restoring the old clause does turn both tests red, but the stock test then fails on its *mapping* assertion and never reaches the stock ones — proving the mapping twice rather than the stock once. Re-proved correctly by deleting `buildStockRestorationStatements` from the failed/expired branch, which makes it fail on `the reserved unit must go back on the shelf` with 3 against 5. `OBSERVABILITY.md` now states what `attention_required` means, so ordinary declines reappearing there point at this clause.
+- [ ] **A-282** — A re-delivered decline steals the stock an in-flight retry just reserved. **Approval: required — a payment-path race that can charge a buyer for an order that never reaches paid.**
+      Found by the independent review of A-281 on 2026-09-13, which went looking
+      for what that change made newly reachable rather than only checking what it
+      claimed. **The defect is pre-existing**, reachable today through
+      `FAILED`/`FAILED` and `EXPIRED`/`EXPIRED`, so A-281 did not create it — but
+      A-281 moved the *commonest* decline shape onto the same path and made
+      `canRetry` true for it for the first time, which turns a rare exposure into
+      a routine one.
+      The sequence, reproduced by the reviewer against the real D1 fixture:
+      a decline lands, stock is released and `stock_restored_at` is stamped; the
+      buyer retries, and `doku-payment-access.ts` sets
+      `payment_status = 'pending', stock_restored_at = NULL` and re-reserves; the
+      provider re-delivers the *same* decline notification. `applyDokuPaymentFact`
+      has no short-circuit on a repeated `eventKey` — the `payment_events`
+      `INSERT OR IGNORE` dedupes the audit row only. The attempt UPDATE is blocked
+      by its own terminal guard, but the **orders** UPDATE is guarded only by
+      `EXISTS (attempt local_status IN ('failed','expired'))`, which the *first*
+      attempt still satisfies. So it writes `payment_status = 'failed'` again, and
+      `buildStockRestorationStatements` sees the `stock_restored_at IS NULL` the
+      retry just reset and releases the stock a second time.
+      **The end state is the dangerous part.** If that second attempt then
+      succeeds, `orderAlreadyReleased` forces the target to `attention_required`:
+      the buyer is charged and the order never reaches `paid`. That is a REQ-222
+      hazard — *"retry shall atomically revalidate and reserve the same order
+      items"*.
+      Not affected: status retrieval and reconciliation, because `canReconcile`
+      excludes terminal statuses.
+      Risk: R3 — a payment-path race touching stock and order payment status. No schema change unless the fix needs one; if it does, that becomes its own entry.
+      Surface: `src/lib/doku-payment-lifecycle.ts`, `src/lib/doku-payment-lifecycle.test.ts`, `src/lib/doku-payment-access.ts` and its test if the retry side is where the guard belongs, `TASKS.md`, `STATUS.md`.
+      Non-scope: changing what `attention_required` means, the notification signature path, and A-281's status mapping, which is correct and should not be reopened to fix this.
+      Primary requirement: REQ-222
+      Constraints: REQ-221, REQ-222
+      Dependencies: none. A-281 is landed and this is independent of it.
+      Done when: a re-delivered decline cannot release stock a retry has re-reserved, proved by a test that walks the exact sequence the review reproduced — decline, retry, re-delivery — and asserts the stock stays reserved and the order stays `pending`; a second test proves the succeeding retry then reaches `paid` rather than `attention_required`; and both are mutation-proved.
+
 - [ ] **MYS-5** — Release readiness for a specific install. **Approval: required — never run autonomously.**
       Carried over from the retired `UNIMPLEMENTED_SPECS.md`. This is not a product gap: the product does not depend on any external courier or payment service, and a missing provider contract must never be converted into a blocker. Nothing has been deployed to Cloudflare; the local database is the only one that exists.
       Risk: R4 — production deployment.

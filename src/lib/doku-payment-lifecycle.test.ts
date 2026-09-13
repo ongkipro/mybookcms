@@ -140,14 +140,54 @@ test("DOKU status mapping requires an unambiguous completed success", () => {
     providerStatus: "SUCCESS",
     providerState: "COMPLETED",
   }), "paid");
+  // A genuine contradiction: the provider says it succeeded and the state says
+  // it failed. Nobody can act on that without looking, so it stays here.
   assert.equal(mapDokuNotificationStatus({
     providerStatus: "SUCCESS",
     providerState: "FAILED",
   }), "attention_required");
   assert.equal(mapDokuNotificationStatus({
+    providerStatus: "SUCCESS",
+    providerState: "COMPLETED",
+    orderStatus: "ORDER_EXPIRED",
+  }), "attention_required");
+});
+
+test("a terminal state is not a success: FAILED/COMPLETED is a plain failure", () => {
+  // A-281 / REQ-221. **This inverts an assertion committed alongside the
+  // function**, which read `FAILED`/`COMPLETED` as `attention_required`. That
+  // was the same misreading the function carried: DOKU uses `COMPLETED` for
+  // *terminal*, not for *succeeded*. A sandbox card decline observed on
+  // 2026-09-13 returns exactly this pair — `status: "FAILED"`,
+  // `state: "COMPLETED"`, `processor.response_code: "14"` — so the old
+  // assertion was pinning a bug rather than a contract.
+  assert.equal(mapDokuNotificationStatus({
     providerStatus: "FAILED",
     providerState: "COMPLETED",
-  }), "attention_required");
+  }), "failed");
+
+  // Expiry was stranded the same way, and REQ-221 wants these releasing stock
+  // too: "failed or expired terminal outcomes shall release still-reserved
+  // stock once".
+  assert.equal(mapDokuNotificationStatus({
+    providerStatus: "EXPIRED",
+    providerState: "COMPLETED",
+  }), "expired");
+  assert.equal(mapDokuNotificationStatus({
+    providerStatus: "PENDING",
+    providerState: "COMPLETED",
+    orderStatus: "ORDER_EXPIRED",
+  }), "expired");
+
+  // The two observed-from-DOKU combinations that were already right.
+  assert.equal(mapDokuNotificationStatus({
+    providerStatus: "SUCCESS",
+    providerState: "COMPLETED",
+  }), "paid");
+  assert.equal(mapDokuNotificationStatus({
+    providerStatus: "PENDING",
+    providerState: "INITIATE",
+  }), "pending");
 });
 
 test("known pending and terminal failures map without coercing unknown states", () => {
@@ -277,4 +317,36 @@ test("an attempt without a persisted allowlisted channel cannot settle from any 
       .bind(`purchase:${order.orderNumber}`).first<{ count: number }>();
     assert.equal(purchases?.count, 0);
   }
+});
+
+test("a declined card releases its reserved stock, which is the harm A-281 names", async () => {
+  // REQ-221: "failed or expired terminal outcomes shall release still-reserved
+  // stock once". The status mapping is only the mechanism; this is the harm.
+  // Before A-281 a decline resolved to `attention_required`, and
+  // `applyDokuPaymentFact` restores stock and writes `payment_status = 'failed'`
+  // only for a `failed` or `expired` target — so the stock stayed reserved
+  // indefinitely and the order never reached a terminal payment status. On a
+  // real store that strands inventory on the commonest outcome after success.
+  const order = await seedDokuOrder(36021, "declined-card");
+  const config = { id: 1, environment: "sandbox" as const, configRevision: 1 };
+
+  const stockOf = async () => (await database.prepare(
+    "SELECT stock FROM product_variants WHERE id = ?",
+  ).bind(36021).first<{ stock: number }>())?.stock;
+  const paymentStatusOf = async () => (await database.prepare(
+    "SELECT payment_status FROM orders WHERE id = ?",
+  ).bind(order.id).first<{ payment_status: string }>())?.payment_status;
+
+  const reserved = await stockOf();
+  assert.ok(
+    typeof reserved === "number" && reserved < 5,
+    `the fixture must leave stock reserved, or this asserts nothing (got ${reserved})`,
+  );
+
+  // The exact pair a DOKU card decline sends, observed 2026-09-13.
+  const declined = paymentFact(order, "FAILED", "COMPLETED", "card-declined");
+  assert.equal((await applyDokuPaymentFact(database, config, declined, "notification")).status, "failed");
+
+  assert.equal(await stockOf(), 5, "the reserved unit must go back on the shelf");
+  assert.equal(await paymentStatusOf(), "failed", "the order must reach a terminal payment status");
 });

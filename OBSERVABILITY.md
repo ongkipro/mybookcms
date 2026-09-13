@@ -146,7 +146,14 @@ classification. Owner/Admin may request one leased check; Customer Service is
 read-only. Success is a signed provider result applied through the canonical
 lifecycle; retryable failure is a released lease with bounded backoff;
 exhaustion becomes `attention_required`; an uninitiated attempt past its local
-deadline expires and restores stock once. No SLO or paging alert is claimed
+deadline expires and restores stock once. **`attention_required` chiefly means
+the provider's account of the payment is ambiguous or self-contradictory, not
+that it failed** — with two other routes into it that have no provider account at
+all: reconciliation exhaustion, named in the clause above and in the table below,
+and the mapper's catch-all for a shape it does not recognise. A plain decline is `failed` and releases its stock, per REQ-221 — until
+A-281 on 2026-09-13 it did not, because `state: "COMPLETED"` was read as success
+when DOKU uses it for *terminal*. If ordinary declines start appearing in this
+queue again, that clause is where to look. No SLO or paging alert is claimed
 until hosted A-221/A-223 evidence establishes a real measurement and responder.
 
 ### Redacted decision table

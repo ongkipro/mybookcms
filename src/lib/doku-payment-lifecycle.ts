@@ -70,7 +70,17 @@ export function mapDokuNotificationStatus(input: {
   const status = input.providerStatus;
   const state = input.providerState;
   const orderStatus = input.orderStatus;
-  const successSignal = status === "SUCCESS" || state === "COMPLETED";
+  // A-281 / REQ-221. `state === "COMPLETED"` used to count as a success signal.
+  // It does not: DOKU uses `COMPLETED` to mean the transaction reached a
+  // *terminal* state, not that it succeeded. A sandbox card decline observed
+  // 2026-09-13 returns `status: "FAILED"` with `state: "COMPLETED"` — terminal
+  // and failed at once. Reading it as success sent every ordinary decline into
+  // the contradiction branch below, and `applyDokuPaymentFact` releases
+  // reserved stock only for a `failed` or `expired` target, so the stock stayed
+  // reserved indefinitely and the order never reached a terminal payment
+  // status. Two expiry combinations were stranded the same way.
+  // Only `status` says whether it succeeded.
+  const successSignal = status === "SUCCESS";
   const failedSignal = status === "FAILED" || state === "FAILED";
   const expiredSignal =
     status === "EXPIRED" ||

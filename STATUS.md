@@ -437,6 +437,58 @@ exactly that separation. They are queued as A-274, which also folds `lint` into
 recorded in the ledger as `lint-baseline-first-run=FAIL` — an executed red, kept
 red, rather than a green derived from a command chosen to pass.
 
+## A-281 — a declined card no longer strands its stock 2026-09-13
+
+`successSignal` is `status === "SUCCESS"` alone now. DOKU uses `COMPLETED` for
+*terminal*, not for *succeeded* — the observed card decline proves it by being
+both at once — so reading it as success sent every ordinary decline into the
+contradiction branch, where `applyDokuPaymentFact` releases no stock and writes
+no terminal payment status.
+
+**Three shapes were wrong, not one** — and the third is a shape rather than a
+combination, which an earlier draft of this section implied otherwise.
+`FAILED`/`COMPLETED` → `failed`, `EXPIRED`/`COMPLETED` → `expired`, and *any*
+status paired with `COMPLETED` and `ORDER_EXPIRED` → `expired`, which covers
+`REFUNDED`, the empty string and anything unrecognised, not only `PENDING`. Those
+now auto-resolve where a human used to look; it coerces nothing to `paid`, but it
+is the one shape leaving the attention queue on less than certain evidence and is
+worth saying out loud. All three release stock, which is what REQ-221 requires of
+a terminal outcome. The review brute-forced 360 tuples: exactly 14 changed, none
+newly `paid` — structurally impossible, because the `paid` branch tests
+`status === "SUCCESS"` directly and never consults `successSignal`. The four already correct still are, including
+both genuine contradictions — `SUCCESS`/`FAILED` and `SUCCESS`/`COMPLETED` with
+`ORDER_EXPIRED` — which stay `attention_required` because nobody can act on them
+without looking.
+
+**A committed assertion was inverted, deliberately and on the record.** The test
+asserted `FAILED`/`COMPLETED` → `attention_required` and landed with the function
+in one commit. It was pinning the same misreading rather than a contract, and the
+replacement says so where a reader will find it.
+
+The test that matters asserts the **harm** rather than the mapping: a declined
+card puts its two reserved units back on the shelf and the order reaches
+`failed`. **The mutation proof I recorded for it was insufficient and the review
+caught that too.** Restoring the old clause reddens both tests, but the stock test
+fails on its *mapping* assertion and never reaches the stock ones — proving the
+mapping twice rather than the stock once. Re-proved by deleting
+`buildStockRestorationStatements` from the failed/expired branch, which fails it
+on `the reserved unit must go back on the shelf`, 3 against 5.
+
+**The review also found what this change made newly reachable, which is not the
+same question as whether the change is right.** A re-delivered decline can
+release the stock an in-flight retry just re-reserved: `applyDokuPaymentFact` has
+no short-circuit on a repeated `eventKey`, and the orders UPDATE is guarded only
+by an `EXISTS` that the *first* attempt still satisfies. If the retry then
+succeeds, `orderAlreadyReleased` forces `attention_required` — buyer charged,
+order never `paid`. It is **pre-existing**, reachable today through
+`FAILED`/`FAILED`, so A-281 did not create it; A-281 moved the commonest decline
+shape onto that path and made `canRetry` true for it for the first time. Queued
+as **A-282** rather than folded in here.
+
+`OBSERVABILITY.md` now states what `attention_required` means — the provider's
+account is ambiguous, not that the payment failed — so if ordinary declines start
+appearing in that queue again, the clause to look at is named.
+
 ## A-278 — the card channel not contradicted, and a defect it exposed 2026-09-13
 
 **DOKU reported `CREDIT_CARD`, not a card sub-brand** — on a *terminal*
