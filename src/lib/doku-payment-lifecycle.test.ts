@@ -350,3 +350,90 @@ test("a declined card releases its reserved stock, which is the harm A-281 names
   assert.equal(await stockOf(), 5, "the reserved unit must go back on the shelf");
   assert.equal(await paymentStatusOf(), "failed", "the order must reach a terminal payment status");
 });
+
+test("a re-delivered decline cannot take the stock an in-flight retry re-reserved", async () => {
+  // A-282 / REQ-222. Found by the independent review of A-281, which asked what
+  // that change made newly reachable rather than only whether it was right.
+  // The sequence: decline lands and releases stock; the buyer retries, which
+  // re-reserves and resets `stock_restored_at`; the provider re-delivers the
+  // SAME decline. The orders UPDATE used to be guarded only by "is THIS attempt
+  // terminal", which the first attempt satisfies forever, so the redelivery
+  // marked the order failed again and the restoration statement took the stock
+  // the retry had just reserved.
+  //
+  // The retry is reproduced by its persisted effect rather than by driving the
+  // retry endpoint, which would pull the whole capability surface into a
+  // lifecycle test. `pending` with a `provider_reference`, because that is the
+  // pairing `doku-payment-access.ts` actually writes — a first draft used
+  // `created` with a reference, which the real code never produces. The guard
+  // covers both statuses, so this is fidelity rather than coverage.
+  const order = await seedDokuOrder(36031, "retry-race");
+  const config = { id: 1, environment: "sandbox" as const, configRevision: 1 };
+  const stockOf = async () => (await database.prepare(
+    "SELECT stock FROM product_variants WHERE id = ?",
+  ).bind(36031).first<{ stock: number }>())?.stock;
+  const orderRow = async () => await database.prepare(
+    "SELECT payment_status, stock_restored_at FROM orders WHERE id = ?",
+  ).bind(order.id).first<{ payment_status: string; stock_restored_at: string | null }>();
+
+  const reserved = await stockOf();
+  assert.ok(typeof reserved === "number" && reserved < 5, `fixture must reserve stock, got ${reserved}`);
+
+  const declined = paymentFact(order, "FAILED", "COMPLETED", "race-declined");
+  assert.equal((await applyDokuPaymentFact(database, config, declined, "notification")).status, "failed");
+  assert.equal(await stockOf(), 5, "the decline releases the stock once");
+  assert.equal((await orderRow())?.payment_status, "failed");
+
+  // The retry's persisted effect.
+  await database.batch([
+    database.prepare(`
+      UPDATE orders SET payment_status = 'pending', stock_restored_at = NULL WHERE id = ?
+    `).bind(order.id),
+    database.prepare(`
+      UPDATE product_variants SET stock = stock - 2 WHERE id = 36031
+    `),
+    database.prepare(`
+      INSERT INTO payment_attempts (
+        id, order_id, provider_config_id, provider, environment, config_revision,
+        merchant_invoice, idempotency_key, request_fingerprint, amount_sen, currency,
+        channel, provider_reference, expires_at, local_status, created_at, updated_at
+      ) VALUES (?, ?, 1, 'doku', 'sandbox', 1, ?, ?, ?, ?, 'MYR',
+        'INTERNET_BANKING_FPX', ?, ?, 'pending', ?, ?)
+    `).bind(
+      `${order.attemptId}-retry`, order.id, `${order.merchantInvoice}-R`,
+      `idem-${order.attemptId}-R`, `fp-${order.attemptId}-R`, order.totalAmount,
+      `${order.providerReference}R`,
+      new Date(Date.now() + 3600_000).toISOString(),
+      new Date().toISOString(), new Date().toISOString(),
+    ),
+  ]);
+  assert.equal(await stockOf(), 3, "the retry has re-reserved");
+  assert.equal((await orderRow())?.stock_restored_at, null, "and cleared the release stamp");
+
+  // The same decline arrives again. It must change nothing.
+  const redelivered = { ...declined, eventKey: "race-declined-again" };
+  await applyDokuPaymentFact(database, config, redelivered, "notification");
+
+  assert.equal(await stockOf(), 3, "the redelivery must not take the retry's stock");
+  const after = await orderRow();
+  assert.equal(after?.payment_status, "pending", "and must not fail an order with a live attempt");
+  assert.equal(after?.stock_restored_at, null, "and must not stamp it released");
+
+  // The half that matters to the buyer. `orderAlreadyReleased` forces
+  // `attention_required` when the order carries a release stamp or a released
+  // payment status — both of which the unguarded redelivery would have written.
+  // With the guard the retry can still settle normally, so a buyer who is
+  // charged gets a paid order rather than one stuck in an operator queue.
+  const retrySuccess = {
+    ...paymentFact(order, "SUCCESS", "COMPLETED", "race-retry-paid"),
+    merchantInvoice: `${order.merchantInvoice}-R`,
+    providerReference: `${order.providerReference}R`,
+  };
+  assert.equal(
+    (await applyDokuPaymentFact(database, config, retrySuccess, "notification")).status,
+    "paid",
+    "the retry must be able to settle; attention_required here means a charged buyer with no paid order",
+  );
+  assert.equal((await orderRow())?.payment_status, "paid");
+  assert.equal(await stockOf(), 3, "a paid order keeps its stock reserved");
+});

@@ -437,6 +437,38 @@ exactly that separation. They are queued as A-274, which also folds `lint` into
 recorded in the ledger as `lint-baseline-first-run=FAIL` — an executed red, kept
 red, rather than a green derived from a command chosen to pass.
 
+## A-282 — a redelivery can no longer take a retry's stock 2026-09-13
+
+The `failed`/`expired` orders UPDATE asked only whether *this* attempt is
+terminal, which a re-delivered decline satisfies forever. It now also requires
+that no live attempt exists for the order. One clause is enough: the stock
+restoration keys off the `payment_status` that UPDATE writes, in the same batch,
+so blocking the UPDATE blocks the release too.
+
+**This came from the review asking a question I had not.** I checked whether
+A-281 was right; the reviewer checked what it made newly *reachable*. The race is
+pre-existing — `FAILED`/`FAILED` reaches it today — but A-281 moved the commonest
+decline shape onto that path and made `canRetry` true for it for the first time,
+turning a rare exposure into a routine one.
+
+The test walks the reproduced sequence: decline releases stock, retry re-reserves
+and clears the stamp, the same decline arrives again and must change nothing. It
+then asserts the half a buyer feels — the retry can still settle to `paid`, where
+the redelivery's release stamp would otherwise force `attention_required` and
+leave a charged buyer with no paid order.
+
+**Both halves are mutation-proved separately, after the review pointed out that
+the first delivery proved only one.** Removing the clause fails it on *the
+redelivery must not take the retry's stock*; neutralising the stock assertions
+and removing the clause again fails it on *the retry must be able to settle*.
+
+The review's central question was whether the new clause blocks a *legitimate*
+failure — the way this fix could be wrong. It does not, and that was settled
+empirically rather than argued: the reviewer forced the attempt to `created` at
+decline time and the order still reached `failed` with stock returned. The batch
+ordering the fix depends on is the same ordering the pre-existing guard already
+relied on.
+
 ## A-281 — a declined card no longer strands its stock 2026-09-13
 
 `successSignal` is `status === "SUCCESS"` alone now. DOKU uses `COMPLETED` for

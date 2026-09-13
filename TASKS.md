@@ -1320,40 +1320,42 @@ Surface, and obtain the independent correctness/security review required by
       Three *shapes* were wrong and all three are fixed: `FAILED`/`COMPLETED` → `failed`, `EXPIRED`/`COMPLETED` → `expired`, and any status paired with `COMPLETED` and `orderStatus: "ORDER_EXPIRED"` → `expired`. **That third one is not a single combination and an earlier draft implied it was:** it covers `PENDING` but also `REFUNDED`, the empty string, and any unrecognised status, which now auto-resolve to `expired` where a human used to look. The review brute-forced 360 tuples and found exactly 14 changed, none of them newly resolving to `paid` — structurally impossible, since the `paid` branch tests `status === "SUCCESS"` directly and never consults `successSignal`. All three now release stock, which is what REQ-221 requires of a terminal outcome. The four that were already correct still are, including both genuine contradictions — `SUCCESS`/`FAILED` and `SUCCESS`/`COMPLETED` with `ORDER_EXPIRED` — which remain `attention_required` because nobody can act on them without looking.
       **A committed assertion was inverted deliberately.** `doku-payment-lifecycle.test.ts` asserted `FAILED`/`COMPLETED` → `attention_required`, landed with the function in one commit. It was pinning the same misreading rather than a contract, and the replacement test says so in place.
       The test that matters asserts the **harm**, not the mapping: a declined card puts its two reserved units back on the shelf and the order reaches `failed`. **The first mutation proof was insufficient and the review caught it.** Restoring the old clause does turn both tests red, but the stock test then fails on its *mapping* assertion and never reaches the stock ones — proving the mapping twice rather than the stock once. Re-proved correctly by deleting `buildStockRestorationStatements` from the failed/expired branch, which makes it fail on `the reserved unit must go back on the shelf` with 3 against 5. `OBSERVABILITY.md` now states what `attention_required` means, so ordinary declines reappearing there point at this clause.
-- [ ] **A-282** — A re-delivered decline steals the stock an in-flight retry just reserved. **Approval: required — a payment-path race that can charge a buyer for an order that never reaches paid.**
-      Found by the independent review of A-281 on 2026-09-13, which went looking
-      for what that change made newly reachable rather than only checking what it
-      claimed. **The defect is pre-existing**, reachable today through
-      `FAILED`/`FAILED` and `EXPIRED`/`EXPIRED`, so A-281 did not create it — but
-      A-281 moved the *commonest* decline shape onto the same path and made
-      `canRetry` true for it for the first time, which turns a rare exposure into
-      a routine one.
-      The sequence, reproduced by the reviewer against the real D1 fixture:
-      a decline lands, stock is released and `stock_restored_at` is stamped; the
-      buyer retries, and `doku-payment-access.ts` sets
-      `payment_status = 'pending', stock_restored_at = NULL` and re-reserves; the
-      provider re-delivers the *same* decline notification. `applyDokuPaymentFact`
-      has no short-circuit on a repeated `eventKey` — the `payment_events`
-      `INSERT OR IGNORE` dedupes the audit row only. The attempt UPDATE is blocked
-      by its own terminal guard, but the **orders** UPDATE is guarded only by
-      `EXISTS (attempt local_status IN ('failed','expired'))`, which the *first*
-      attempt still satisfies. So it writes `payment_status = 'failed'` again, and
-      `buildStockRestorationStatements` sees the `stock_restored_at IS NULL` the
-      retry just reset and releases the stock a second time.
-      **The end state is the dangerous part.** If that second attempt then
-      succeeds, `orderAlreadyReleased` forces the target to `attention_required`:
-      the buyer is charged and the order never reaches `paid`. That is a REQ-222
-      hazard — *"retry shall atomically revalidate and reserve the same order
-      items"*.
-      Not affected: status retrieval and reconciliation, because `canReconcile`
-      excludes terminal statuses.
-      Risk: R3 — a payment-path race touching stock and order payment status. No schema change unless the fix needs one; if it does, that becomes its own entry.
-      Surface: `src/lib/doku-payment-lifecycle.ts`, `src/lib/doku-payment-lifecycle.test.ts`, `src/lib/doku-payment-access.ts` and its test if the retry side is where the guard belongs, `TASKS.md`, `STATUS.md`.
-      Non-scope: changing what `attention_required` means, the notification signature path, and A-281's status mapping, which is correct and should not be reopened to fix this.
-      Primary requirement: REQ-222
-      Constraints: REQ-221, REQ-222
-      Dependencies: none. A-281 is landed and this is independent of it.
-      Done when: a re-delivered decline cannot release stock a retry has re-reserved, proved by a test that walks the exact sequence the review reproduced — decline, retry, re-delivery — and asserts the stock stays reserved and the order stays `pending`; a second test proves the succeeding retry then reaches `paid` rather than `attention_required`; and both are mutation-proved.
+- [x] **A-282** — A re-delivered decline steals the stock an in-flight retry just reserved. **Approval: required — a payment-path race that can charge a buyer for an order that never reaches paid. Granted 2026-09-13 by the owner's standing instruction to execute the remaining queue. Done 2026-09-13.**
+      The `failed`/`expired` orders UPDATE asked only whether *this* attempt is
+      terminal, which a re-delivered decline satisfies forever. It now also
+      requires that no live attempt exists for the order — `created` or
+      `pending`. One clause is enough because the stock restoration keys off the
+      `payment_status` that UPDATE writes, in the same batch, so blocking the
+      UPDATE blocks the release too.
+      Found by the independent review of A-281, which asked what that change made
+      newly reachable rather than only whether it was right. The defect is
+      **pre-existing** — reachable through `FAILED`/`FAILED` — but A-281 moved the
+      commonest decline shape onto the path and made `canRetry` true for it for
+      the first time.
+      The test walks the sequence the review reproduced: decline releases stock,
+      the retry re-reserves and clears `stock_restored_at`, the same decline
+      arrives again and must change nothing. It then asserts the half that
+      matters to a buyer — the retry can still settle to `paid`, where before the
+      redelivery's release stamp would have forced `attention_required` and left
+      a charged buyer with no paid order. The retry is reproduced by its
+      persisted effect rather than by driving the capability surface, which the
+      test says in place.
+      **Both halves are mutation-proved separately, after the review pointed out
+      that an earlier delivery proved only one.** Removing the clause fails the
+      test on *the redelivery must not take the retry's stock*. Neutralising the
+      three stock assertions and removing the clause again fails it on *the retry
+      must be able to settle*, which is the buyer-facing half. The queued
+      Done-when asked for two tests; this is one test carrying both halves, and
+      saying so is more honest than restating the bar to match what was built.
+      The fixture was also corrected: a first draft wrote the retry attempt as
+      `created` **with** a `provider_reference`, a pairing the real code never
+      produces — `doku-payment-access.ts` writes a reference only alongside
+      `pending`. The guard covers both statuses, so this is fidelity rather than
+      coverage.
+      `doku-reconciliation.ts` carries the same guard shape in
+      `expireUninitiatedAttempt` and is left unchanged with a comment saying why:
+      it is safe only because two live attempts cannot co-exist, and whoever
+      relaxes that should add the clause there rather than rediscover this.
 
 - [ ] **MYS-5** — Release readiness for a specific install. **Approval: required — never run autonomously.**
       Carried over from the retired `UNIMPLEMENTED_SPECS.md`. This is not a product gap: the product does not depend on any external courier or payment service, and a missing provider contract must never be converted into a blocker. Nothing has been deployed to Cloudflare; the local database is the only one that exists.

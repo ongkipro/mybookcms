@@ -199,6 +199,16 @@ async function expireUninitiatedAttempt(database: D1Database, attempt: AttemptRo
       WHERE id = ? AND lease_token = ? AND local_status = 'created'
         AND provider_reference IS NULL AND expires_at IS NOT NULL AND expires_at <= ?
     `).bind(nowIso, nowIso, nowIso, attempt.id, token, nowIso),
+    // A-282 note, deliberately not a change. This carries the same guard shape
+    // the sibling path in doku-payment-lifecycle.ts had to abandon: EXISTS
+    // asks only whether THIS attempt is terminal, never whether the order has a
+    // live attempt that re-reserved stock. Here it is safe, because two live
+    // attempts cannot co-exist — the retry insert at doku-payment-access.ts
+    // carries its own NOT EXISTS (active created/pending) inside one atomic
+    // batch, and only one attempt per order is created at persistence. If that
+    // ever relaxes, this statement releases stock a live attempt is holding,
+    // exactly as the redelivery race did. Add the NOT EXISTS (live) clause here
+    // too rather than rediscovering it.
     database.prepare(`
       UPDATE orders SET payment_status = 'failed'
       WHERE id = ? AND payment_method = 'doku'

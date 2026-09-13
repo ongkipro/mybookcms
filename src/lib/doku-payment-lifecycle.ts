@@ -264,7 +264,24 @@ export async function applyDokuPaymentFact(
             SELECT 1 FROM payment_attempts
             WHERE id = ? AND local_status IN ('failed', 'expired')
           )
-      `).bind(attempt.order_id, attempt.attempt_id),
+          -- A-282 / REQ-222. The EXISTS above asks whether THIS attempt is
+          -- terminal, which a re-delivered decline satisfies forever. It does
+          -- not ask whether the order has moved on. A buyer who retries gets a
+          -- fresh attempt and re-reserved stock, and the retry resets
+          -- stock_restored_at to NULL -- so without this clause a redelivery of
+          -- the original decline marks the order failed again, and the
+          -- restoration statement below, which keys off the payment_status this
+          -- UPDATE writes in the same batch, releases the stock the retry just
+          -- took. If that retry then succeeds, orderAlreadyReleased forces
+          -- attention_required: the buyer is charged and the order never
+          -- reaches paid.
+          AND NOT EXISTS (
+            SELECT 1 FROM payment_attempts live
+            WHERE live.order_id = ?
+              AND live.provider = 'doku'
+              AND live.local_status IN ('created', 'pending')
+          )
+      `).bind(attempt.order_id, attempt.attempt_id, attempt.order_id),
       ...buildStockRestorationStatements(database, [attempt.order_id], true),
     );
   }
